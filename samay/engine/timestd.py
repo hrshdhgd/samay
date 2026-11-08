@@ -7,7 +7,7 @@ how far tzdata can be trusted for that era.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -128,7 +128,7 @@ def resolve_local_time(
     if entry:
         cite = entry.source["text"] + (f", {entry.source['locus']}" if entry.source.get("locus") else "")
         return TimeResolution(
-            utc=(local - entry.offset).replace(tzinfo=timezone.utc),
+            utc=(local - entry.offset).replace(tzinfo=UTC),
             offset=entry.offset,
             source=f"{_fmt_offset(entry.offset)} {entry.name} ({cite})",
             confidence=entry.confidence,
@@ -136,9 +136,9 @@ def resolve_local_time(
 
     zone = ZoneInfo(place.tz)
     first, second = local.replace(tzinfo=zone, fold=0), local.replace(tzinfo=zone, fold=1)
-    if first.astimezone(timezone.utc).astimezone(zone).replace(tzinfo=None) != local:
+    if first.astimezone(UTC).astimezone(zone).replace(tzinfo=None) != local:
         raise NonexistentTime(f"{local:%Y-%m-%d %H:%M} never occurred on clocks in {place.tz}")
-    u0, u1 = first.astimezone(timezone.utc), second.astimezone(timezone.utc)
+    u0, u1 = first.astimezone(UTC), second.astimezone(UTC)
     if u0 != u1 and fold is None:
         return AmbiguousTime(options=tuple(sorted((u0, u1))))
     chosen = second if fold == 1 else first
@@ -147,7 +147,7 @@ def resolve_local_time(
     confidence = "tzdata" if local.year >= TZDATA_RELIABLE_FROM else "low"
     warning = INDIA_WARNING if place.country == "IN" and local.date() < INDIA_UNIFIED_FROM else None
     return TimeResolution(
-        utc=chosen.astimezone(timezone.utc),
+        utc=chosen.astimezone(UTC),
         offset=offset,
         source=f"{_fmt_offset(offset)} {chosen.tzname()} (tzdata {place.tz})",
         confidence=confidence,

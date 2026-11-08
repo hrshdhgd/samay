@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -36,7 +36,7 @@ def test_rules_filtered_by_school():
 
 
 def test_dasha_year_length_is_configurable():
-    birth = datetime(1990, 8, 15, 9, tzinfo=timezone.utc)
+    birth = datetime(1990, 8, 15, 9, tzinfo=UTC)
     p365 = vimshottari(100.0, birth)
     p360 = vimshottari(100.0, birth, year_days=360.0)
     assert (p360[-1].end - p360[0].start).days < (p365[-1].end - p365[0].start).days

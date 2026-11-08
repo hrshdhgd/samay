@@ -1,15 +1,21 @@
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from samay.engine.ephemeris import Chart, Placement, ascendant_tropical, lahiri_ayanamsa, mean_lunar_node
 from samay.engine.rules import Context, evaluate, fired, load_rules
 from samay.engine.vedic import (
-    DASHA_ORDER, antardashas, current_dasha, house_from, nakshatra, navamsa_sign, vimshottari,
+    DASHA_ORDER,
+    antardashas,
+    current_dasha,
+    house_from,
+    nakshatra,
+    navamsa_sign,
+    vimshottari,
 )
 
-BIRTH = datetime(1990, 8, 15, 9, 0, tzinfo=timezone.utc)
+BIRTH = datetime(1990, 8, 15, 9, 0, tzinfo=UTC)
 
 
 def test_lahiri_at_j2000():
@@ -82,6 +88,6 @@ def test_dsl_combinators():
 def test_full_chart_smoke():
     from samay.engine.ephemeris import compute_chart
 
-    c = compute_chart(datetime(2000, 1, 1, 12, tzinfo=timezone.utc), 18.52, 73.86)
+    c = compute_chart(datetime(2000, 1, 1, 12, tzinfo=UTC), 18.52, 73.86)
     # Sun near 280.4° tropical at J2000 -> ~256.5° sidereal (Sagittarius)
     assert c.planets["sun"].longitude == pytest.approx(256.5, abs=0.2)

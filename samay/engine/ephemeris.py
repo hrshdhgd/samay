@@ -8,18 +8,18 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
 from .errors import EphemerisMissing, OutOfEphemerisRange, UnsupportedLatitude
 from .paths import EPHEMERIS_PATH
 
 # Coverage of de440s.bsp, kept one day inside the kernel's segment boundaries.
-EPHEMERIS_START = datetime(1849, 12, 26, tzinfo=timezone.utc)
-EPHEMERIS_END = datetime(2150, 1, 20, tzinfo=timezone.utc)
+EPHEMERIS_START = datetime(1849, 12, 26, tzinfo=UTC)
+EPHEMERIS_END = datetime(2150, 1, 20, tzinfo=UTC)
 # The whole-sign lagna formula is ill-defined inside the polar circles.
 MAX_ABS_LATITUDE = 66.5
-UTC_LEAP_SECONDS_FROM = datetime(1972, 1, 1, tzinfo=timezone.utc)
+UTC_LEAP_SECONDS_FROM = datetime(1972, 1, 1, tzinfo=UTC)
 # Retrograde is the sign of motion between t - RETRO_STEP and t + RETRO_STEP.
 RETRO_STEP = timedelta(hours=1)
 
@@ -140,7 +140,7 @@ def _tropical_longitudes(t, node_fn) -> dict[str, float]:
     earth = eph["earth"]
     out = {}
     for name, target in KERNEL_TARGETS.items():
-        lat, lon, _ = earth.at(t).observe(eph[target]).apparent().frame_latlon(ecliptic_frame)
+        _lat, lon, _ = earth.at(t).observe(eph[target]).apparent().frame_latlon(ecliptic_frame)
         out[name] = lon.degrees % 360.0
     node = node_fn(t.tt)
     out["rahu"] = node
@@ -162,7 +162,7 @@ def compute_chart(
         raise ValueError(f"unsupported ayanamsa {ayanamsa!r}")
     if node not in NODES:
         raise ValueError(f"unsupported node {node!r}")
-    utc = utc.astimezone(timezone.utc)
+    utc = utc.astimezone(UTC)
     if not EPHEMERIS_START <= utc <= EPHEMERIS_END:
         raise OutOfEphemerisRange(
             f"{utc:%Y-%m-%d} is outside {EPHEMERIS_START:%Y-%m-%d}..{EPHEMERIS_END:%Y-%m-%d}"

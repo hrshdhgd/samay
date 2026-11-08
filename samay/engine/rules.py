@@ -38,7 +38,7 @@ class Context:
     signs: dict[str, int]  # body -> sign index, includes "lagna"
 
     @classmethod
-    def from_chart(cls, chart: Chart) -> "Context":
+    def from_chart(cls, chart: Chart) -> Context:
         signs = {p: sign_index(pl.longitude) for p, pl in chart.planets.items()}
         signs["lagna"] = sign_index(chart.ascendant)
         return cls(signs)

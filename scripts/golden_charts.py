@@ -8,7 +8,7 @@ ephemeris (built in, no data files).
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import swisseph as swe
@@ -39,7 +39,7 @@ def main() -> None:
         _, ascmc = swe.houses_ex(jd, lat, lon, b"W", swe.FLG_SIDEREAL)
         out["charts"].append({
             "name": name,
-            "utc": utc.replace(tzinfo=timezone.utc).isoformat(),
+            "utc": utc.replace(tzinfo=UTC).isoformat(),
             "latitude": lat,
             "longitude": lon,
             "ayanamsa_mean": swe.get_ayanamsa_ex_ut(jd, swe.FLG_MOSEPH | swe.FLG_NONUT)[1],

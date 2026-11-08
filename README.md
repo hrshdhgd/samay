@@ -6,20 +6,34 @@ each rule citing its source.
 
 > Traditional interpretation, for reflection and fun. Not a guarantee of events.
 
-## Quick start
-```bash
-cp .env.example .env            # set TELEGRAM_TOKEN from @BotFather
-docker compose up -d --build    # add --profile llm for local Ollama narration
-```
-
-## Bot commands
-`/birth DD-MM-YYYY HH:MM City[, CC]` · `/chart` · `/dasha` · `/today` · `/forget`
-
 ## Development
 ```bash
-pip install -r requirements.txt pytest
-curl -o data/de440s.bsp https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp
-pytest -q
+uv sync
+scripts/fetch-ephemeris.sh      # downloads and checksum-verifies data/de440s.bsp
+uv run pytest -q
+uv run ruff check
 ```
 
-See `HANDOFF.md` for design decisions and the roadmap.
+## CLI
+```bash
+uv run samay chart --date 1990-08-15 --time 14:30 --place "Pune"
+uv run samay dasha ... --now 2026-01-01T00:00:00
+uv run samay today ...
+uv run samay data-info          # versions of every data source a reading uses
+```
+Enter the local clock time at the birthplace; samay works out the offset. If a place or a
+time is ambiguous, the command exits with code 2 and lists `--choice` or `--fold` options.
+
+Every chart shows the time standard used and its confidence, the tradition profile, and a
+version stamp. Charts say "not yet checked against reference software" until validation
+(sub-project 2) is complete.
+
+## Data
+- Ephemeris: JPL DE440s (1849–2150), public domain.
+- Places: GeoNames (CC-BY 4.0), via geonamescache.
+- Time zones: IANA tzdata, overridden by cited entries in `data/time_standards/`.
+- Golden charts in `tests/fixtures/` were generated with Swiss Ephemeris
+  (`scripts/golden_charts.py`), used as a reference oracle only.
+
+The Telegram bot is being rebuilt on the service layer (plan 1C). See
+`docs/superpowers/specs/2026-11-08-foundation-design.md` for the design and roadmap.

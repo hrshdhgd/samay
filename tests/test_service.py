@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -14,7 +14,7 @@ PUNE_1990 = BirthInput("1990-08-15", "14:30", "Pune")
 def test_resolve_with_provenance():
     b = service.resolve_birth(PUNE_1990)
     assert isinstance(b, ResolvedBirth)
-    assert b.utc == datetime(1990, 8, 15, 9, 0, tzinfo=timezone.utc)
+    assert b.utc == datetime(1990, 8, 15, 9, 0, tzinfo=UTC)
     assert b.provenance.offset == timedelta(hours=5, minutes=30)
     assert b.provenance.confidence == "tzdata"
 
@@ -67,7 +67,7 @@ def test_natal_report_is_stamped_unvalidated_and_cached():
 @needs_kernel
 def test_today_report_uses_injected_now():
     b = service.resolve_birth(PUNE_1990)
-    now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    now = datetime(2026, 1, 1, tzinfo=UTC)
     t = service.today_report(b, now)
     assert t.now == now and t.sky.utc == now
     assert dict(t.transit_houses).keys() == {"jupiter", "saturn", "rahu", "ketu"}

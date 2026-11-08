@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -17,7 +17,7 @@ NONE: tuple = ()
 def test_ist_after_1970():
     r = resolve_local_time(datetime(1990, 8, 15, 14, 30), PUNE, entries=NONE)
     assert isinstance(r, TimeResolution)
-    assert r.utc == datetime(1990, 8, 15, 9, 0, tzinfo=timezone.utc)
+    assert r.utc == datetime(1990, 8, 15, 9, 0, tzinfo=UTC)
     assert r.offset == timedelta(hours=5, minutes=30)
     assert r.confidence == "tzdata" and r.warning is None
     assert "UTC+05:30" in r.source
@@ -52,7 +52,7 @@ def test_curated_entry_overrides_tzdata():
     entries = load_standards(FIXTURES)
     r = resolve_local_time(datetime(1952, 8, 5, 6, 0), PUNE, entries=entries)
     assert r.offset == timedelta(hours=4, minutes=51)
-    assert r.utc == datetime(1952, 8, 5, 1, 9, tzinfo=timezone.utc)
+    assert r.utc == datetime(1952, 8, 5, 1, 9, tzinfo=UTC)
     assert r.confidence == "probable" and "Test fixture" in r.source and r.warning is None
 
 

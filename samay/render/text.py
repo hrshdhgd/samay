@@ -62,10 +62,8 @@ def render_dasha(report: NatalReport, now: datetime) -> str:
 
 def render_today(report: TodayReport) -> str:
     natal_moon = sign_index(report.natal.chart.planets["moon"].longitude)
-    lines = [
-        f"Today ({report.now:%d %b %Y}). Natal Moon in {SIGNS[natal_moon]}; "
-        f"Moon now in {fmt_longitude(report.sky.planets['moon'].longitude)}.",
-    ]
+    moon_now = fmt_longitude(report.sky.planets["moon"].longitude)
+    lines = [f"Today ({report.now:%d %b %Y}). Natal Moon in {SIGNS[natal_moon]}; Moon now in {moon_now}."]
     for g, h in report.transit_houses:
         lines.append(f"Transiting {g.title()} is in house {h} from your Moon.")
     if report.current_dasha:

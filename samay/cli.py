@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import sys
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import click
 
@@ -73,7 +73,7 @@ def chart(**kw) -> None:
 def dasha(now: datetime | None, **kw) -> None:
     """Vimshottari mahadashas."""
     birth = _resolve(**kw)
-    when = now.replace(tzinfo=timezone.utc) if now else datetime.now(timezone.utc)
+    when = now.replace(tzinfo=UTC) if now else datetime.now(UTC)
     _run(lambda: render_dasha(service.natal_report(birth), when))
 
 
@@ -83,7 +83,7 @@ def dasha(now: datetime | None, **kw) -> None:
 def today(now: datetime | None, **kw) -> None:
     """Transits relative to the natal Moon."""
     birth = _resolve(**kw)
-    when = now.replace(tzinfo=timezone.utc) if now else datetime.now(timezone.utc)
+    when = now.replace(tzinfo=UTC) if now else datetime.now(UTC)
     _run(lambda: render_today(service.today_report(birth, when)))
 
 

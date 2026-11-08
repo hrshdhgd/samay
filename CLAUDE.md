@@ -14,11 +14,14 @@ Read `HANDOFF.md` first. It has the full background, decisions, and the ordered 
 - **Portable.** Must build and run on both amd64 and arm64 (Oracle Ampere).
 
 ## Conventions
-- Python 3.12, type hints, frozen dataclasses, pure functions in `vedic.py`/`rules.py`.
+- Python 3.12, type hints, frozen dataclasses. `samay/engine/` is pure and imports nothing else
+  from samay; front ends call only `samay/service.py`; all user-facing wording is in `render/`.
 - All longitudes are sidereal degrees in [0, 360). Times are timezone-aware UTC internally.
+- Disputed calculation choices belong in `data/profiles/*.yaml`, not in code.
+- Historical offsets go in `data/time_standards/*.yaml` only with a cited primary source.
 - New rule predicates go in `rules.evaluate` with a test in `tests/`.
-- Run `pytest -q` before committing. The ephemeris smoke test needs `data/de440s.bsp`.
+- Run `uv run ruff check` and `uv run pytest -q` before committing
+  (`scripts/fetch-ephemeris.sh` first).
 
 ## Start here
-`HANDOFF.md` §4 step 1: download the ephemeris, run the tests, then validate charts against
-Jagannatha Hora / swetest and turn those comparisons into fixtures.
+Spec: `docs/superpowers/specs/2026-11-08-foundation-design.md`. Plans: `docs/superpowers/plans/`.
