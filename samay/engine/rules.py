@@ -9,6 +9,8 @@ Condition DSL (all keys optional, combinable):
 """
 from __future__ import annotations
 
+import hashlib
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -69,7 +71,8 @@ def evaluate(cond: dict[str, Any], ctx: Context) -> bool:
     return True
 
 
-def load_rules(directory: Path = RULES_DIR) -> list[Rule]:
+def load_rules(directory: Path = RULES_DIR, schools: Iterable[str] | None = None) -> list[Rule]:
+    """All rules in `directory`, optionally limited to the given schools."""
     rules = []
     for path in sorted(directory.glob("*.yaml")):
         for raw in yaml.safe_load(path.read_text(encoding="utf-8")) or []:
@@ -77,7 +80,19 @@ def load_rules(directory: Path = RULES_DIR) -> list[Rule]:
     ids = [r.id for r in rules]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate rule ids")
+    if schools is not None:
+        wanted = set(schools)
+        rules = [r for r in rules if r.school in wanted]
     return rules
+
+
+def rules_hash(directory: Path = RULES_DIR) -> str:
+    """Short content hash of every rule file, for version stamps."""
+    h = hashlib.sha256()
+    for path in sorted(directory.glob("*.yaml")):
+        h.update(path.name.encode())
+        h.update(path.read_bytes())
+    return h.hexdigest()[:12]
 
 
 def fired(chart: Chart, rules: list[Rule] | None = None) -> list[Rule]:

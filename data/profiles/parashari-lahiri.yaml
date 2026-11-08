@@ -1,0 +1,32 @@
+# Default tradition profile. Every disputed calculation choice lives here, not in code.
+# `validated` stays false until sub-project 2 checks this profile against reference software.
+id: parashari-lahiri
+name: Parashari, Lahiri ayanamsa
+ayanamsa: lahiri_mean
+node: mean
+houses: whole_sign
+dasha_year_days: 365.25
+method: drik
+schools: [parashari]
+conflict_rule: >-
+  No weighting yet. Every fired rule is shown with its citation; where rules disagree,
+  all readings are listed side by side.
+validated: false
+citations:
+  - topic: ayanamsa
+    text: Report of the Calendar Reform Committee, Government of India
+    locus: null
+    verified: false
+    note: Reference value 23.245524743 deg at JD 2435553.5 follows Swiss Ephemeris SE_SIDM_LAHIRI.
+  - topic: node
+    text: Meeus, Astronomical Algorithms (2nd ed.)
+    locus: "eq. 47.7"
+    verified: false
+  - topic: houses
+    text: Brihat Parashara Hora Shastra
+    locus: null
+    verified: false
+  - topic: dasha_year_days
+    text: Brihat Parashara Hora Shastra
+    locus: null
+    verified: false

@@ -31,7 +31,7 @@ DASHA_ORDER = [
     ("rahu", 18), ("jupiter", 16), ("saturn", 19), ("mercury", 17),
 ]
 DASHA_YEARS = dict(DASHA_ORDER)
-YEAR_DAYS = 365.25  # TODO: schools differ (365.25 vs 360 vs sidereal year); make configurable
+YEAR_DAYS = 365.25  # default; tradition profiles may choose another year length
 
 
 def sign_index(lon: float) -> int:
@@ -69,20 +69,20 @@ class Period:
         return self.start <= when < self.end
 
 
-def _years(y: float) -> timedelta:
-    return timedelta(days=y * YEAR_DAYS)
+def _years(y: float, year_days: float = YEAR_DAYS) -> timedelta:
+    return timedelta(days=y * year_days)
 
 
-def vimshottari(moon_lon: float, birth: datetime) -> list[Period]:
+def vimshottari(moon_lon: float, birth: datetime, year_days: float = YEAR_DAYS) -> list[Period]:
     """The nine mahadashas, the first one starting (partially elapsed) before birth."""
     idx, _ = nakshatra(moon_lon)
     first = idx % 9
     elapsed = (moon_lon % NAK_SPAN) / NAK_SPAN
-    start = birth - _years(elapsed * DASHA_ORDER[first][1])
+    start = birth - _years(elapsed * DASHA_ORDER[first][1], year_days)
     periods = []
     for k in range(9):
         lord, yrs = DASHA_ORDER[(first + k) % 9]
-        end = start + _years(yrs)
+        end = start + _years(yrs, year_days)
         periods.append(Period(lord, start, end))
         start = end
     return periods
@@ -101,8 +101,10 @@ def antardashas(maha: Period) -> list[Period]:
     return periods
 
 
-def current_dasha(moon_lon: float, birth: datetime, when: datetime) -> tuple[Period, Period] | None:
-    for maha in vimshottari(moon_lon, birth):
+def current_dasha(
+    moon_lon: float, birth: datetime, when: datetime, year_days: float = YEAR_DAYS
+) -> tuple[Period, Period] | None:
+    for maha in vimshottari(moon_lon, birth, year_days):
         if maha.contains(when):
             for antar in antardashas(maha):
                 if antar.contains(when):
