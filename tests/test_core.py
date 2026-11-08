@@ -3,10 +3,10 @@ from datetime import datetime, timezone
 
 import pytest
 
-from samay.ephemeris import Chart, Placement, ascendant_tropical, lahiri_ayanamsa, mean_lunar_node
-from samay.geo import find_place, local_to_utc
-from samay.rules import Context, evaluate, fired, load_rules
-from samay.vedic import (
+from samay.engine.ephemeris import Chart, Placement, ascendant_tropical, lahiri_ayanamsa, mean_lunar_node
+from samay.engine.geo import find_place, local_to_utc
+from samay.engine.rules import Context, evaluate, fired, load_rules
+from samay.engine.vedic import (
     DASHA_ORDER, antardashas, current_dasha, house_from, nakshatra, navamsa_sign, vimshottari,
 )
 
@@ -89,7 +89,7 @@ def test_offline_geocoding_and_tz():
 @pytest.mark.skipif(not os.path.exists(os.environ.get("SAMAY_EPHEMERIS", "data/de440s.bsp")),
                     reason="ephemeris file not present")
 def test_full_chart_smoke():
-    from samay.ephemeris import compute_chart
+    from samay.engine.ephemeris import compute_chart
 
     c = compute_chart(datetime(2000, 1, 1, 12, tzinfo=timezone.utc), 18.52, 73.86)
     # Sun near 280.4° tropical at J2000 -> ~256.5° sidereal (Sagittarius)

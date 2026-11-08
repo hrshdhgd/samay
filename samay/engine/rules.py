@@ -16,9 +16,8 @@ from typing import Any
 import yaml
 
 from .ephemeris import Chart
+from .paths import RULES_DIR
 from .vedic import SIGNS, sign_index
-
-RULES_DIR = Path(__file__).resolve().parent.parent / "rules"
 
 
 @dataclass(frozen=True)
