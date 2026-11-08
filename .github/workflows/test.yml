@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v7
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: data/de440s.bsp
           key: de440s-${{ hashFiles('scripts/fetch-ephemeris.sh') }}
