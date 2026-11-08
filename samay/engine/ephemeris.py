@@ -7,20 +7,29 @@ converted to the sidereal zodiac with the Lahiri (Chitrapaksha) ayanamsa.
 from __future__ import annotations
 
 import math
-import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 
-EPHEMERIS_PATH = os.environ.get("SAMAY_EPHEMERIS", "data/de440s.bsp")
+from .errors import EphemerisMissing, OutOfEphemerisRange, UnsupportedLatitude
+from .paths import EPHEMERIS_PATH
 
-# samay name -> JPL kernel target
+# Coverage of de440s.bsp, kept one day inside the kernel's segment boundaries.
+EPHEMERIS_START = datetime(1849, 12, 26, tzinfo=timezone.utc)
+EPHEMERIS_END = datetime(2150, 1, 20, tzinfo=timezone.utc)
+# The whole-sign lagna formula is ill-defined inside the polar circles.
+MAX_ABS_LATITUDE = 66.5
+# Retrograde is the sign of motion between t - RETRO_STEP and t + RETRO_STEP.
+RETRO_STEP = timedelta(hours=1)
+
+# samay name -> JPL kernel target. DE440s carries only the Mars barycentre, which is
+# within metres of the planet.
 KERNEL_TARGETS = {
     "sun": "sun",
     "moon": "moon",
     "mercury": "mercury",
     "venus": "venus",
-    "mars": "mars",
+    "mars": "mars barycenter",
     "jupiter": "jupiter barycenter",
     "saturn": "saturn barycenter",
 }
@@ -91,12 +100,12 @@ class Chart:
 def _kernel():
     from skyfield.api import load_file
 
-    if not os.path.exists(EPHEMERIS_PATH):
-        raise FileNotFoundError(
-            f"Ephemeris not found at {EPHEMERIS_PATH}. Download de440s.bsp from "
-            "https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/ (the Docker build does this)."
+    if not EPHEMERIS_PATH.exists():
+        raise EphemerisMissing(
+            f"Ephemeris not found at {EPHEMERIS_PATH}. Run scripts/fetch-ephemeris.sh "
+            "(the Docker build bundles it)."
         )
-    return load_file(EPHEMERIS_PATH)
+    return load_file(str(EPHEMERIS_PATH))
 
 
 @lru_cache(maxsize=1)
@@ -106,7 +115,11 @@ def _timescale():
     return load.timescale(builtin=True)  # bundled leap-second data, no download
 
 
-def _tropical_longitudes(t) -> dict[str, float]:
+AYANAMSAS = {"lahiri_mean": lahiri_ayanamsa}
+NODES = {"mean": mean_lunar_node}
+
+
+def _tropical_longitudes(t, node_fn) -> dict[str, float]:
     from skyfield.framelib import ecliptic_frame
 
     eph = _kernel()
@@ -115,28 +128,45 @@ def _tropical_longitudes(t) -> dict[str, float]:
     for name, target in KERNEL_TARGETS.items():
         lat, lon, _ = earth.at(t).observe(eph[target]).apparent().frame_latlon(ecliptic_frame)
         out[name] = lon.degrees % 360.0
-    node = mean_lunar_node(t.tt)
+    node = node_fn(t.tt)
     out["rahu"] = node
     out["ketu"] = (node + 180.0) % 360.0
     return out
 
 
-def compute_chart(utc: datetime, latitude: float, longitude: float) -> Chart:
+def compute_chart(
+    utc: datetime,
+    latitude: float,
+    longitude: float,
+    ayanamsa: str = "lahiri_mean",
+    node: str = "mean",
+) -> Chart:
     """Sidereal chart for a UTC moment and a place (east longitude positive)."""
     if utc.tzinfo is None:
         raise ValueError("utc must be timezone-aware")
+    if ayanamsa not in AYANAMSAS:
+        raise ValueError(f"unsupported ayanamsa {ayanamsa!r}")
+    if node not in NODES:
+        raise ValueError(f"unsupported node {node!r}")
     utc = utc.astimezone(timezone.utc)
+    if not EPHEMERIS_START <= utc <= EPHEMERIS_END:
+        raise OutOfEphemerisRange(
+            f"{utc:%Y-%m-%d} is outside {EPHEMERIS_START:%Y-%m-%d}..{EPHEMERIS_END:%Y-%m-%d}"
+        )
+    if abs(latitude) > MAX_ABS_LATITUDE:
+        raise UnsupportedLatitude(f"latitude {latitude:.2f} is inside a polar circle")
+
     ts = _timescale()
     t = ts.from_datetime(utc)
-    t_next = ts.from_datetime(utc + timedelta(hours=6))
-
-    ayan = lahiri_ayanamsa(t.tt)
-    now = _tropical_longitudes(t)
-    later = _tropical_longitudes(t_next)
+    node_fn = NODES[node]
+    ayan = AYANAMSAS[ayanamsa](t.tt)
+    now = _tropical_longitudes(t, node_fn)
+    before = _tropical_longitudes(ts.from_datetime(utc - RETRO_STEP), node_fn)
+    after = _tropical_longitudes(ts.from_datetime(utc + RETRO_STEP), node_fn)
 
     planets = {}
     for name, lon in now.items():
-        delta = ((later[name] - lon + 180.0) % 360.0) - 180.0
+        delta = ((after[name] - before[name] + 180.0) % 360.0) - 180.0
         retro = name in ("rahu", "ketu") or (name not in ("sun", "moon") and delta < 0)
         planets[name] = Placement(longitude=(lon - ayan) % 360.0, retrograde=retro)
 
