@@ -1,195 +1,251 @@
 # Sub-project 1: Foundation — design
 
-*2026-11-08. Status: draft for review.*
+*2026-11-08. Status: hardened (brainstorm + crucible), approved.*
+
+## Framing
+
+The architecture — pure engine, report models, renderers, thin front ends — held under adversarial
+review. What changed is scope and honesty: Foundation builds every *mechanism* the later
+sub-projects need (provenance, version stamps, tradition profiles, time-standard overrides) but
+ships only one validated-in-principle configuration, and nothing in it claims accuracy until it is
+checked against a named reference.
 
 ## Context
 
 samay is a self-contained Telegram bot that computes sidereal (Jyotish) charts from bundled data
-and interprets them with a rule engine built from classical texts (see `HANDOFF.md`). The current
-code is a rough draft (~830 lines). The product is being built out locally in eight sub-projects,
-each with its own spec → plan → implementation cycle, and deployed last:
+and interprets them with a rule engine built from classical texts (see `HANDOFF.md`). Its users
+are the owner and family, including elderly, non-technical relatives born anywhere in the world.
+The goal is the most accurate possible representation of the tradition, built on cited research,
+never on memory.
+
+### Roadmap
 
 | # | Sub-project | Depends on |
 |---|---|---|
-| **1** | **Foundation: service layer, hardening, CLI, data freshness** (this spec) | — |
-| 2 | Validation: reference-chart fixtures (Jagannatha Hora / swetest) | 1 |
+| **1** | **Foundation** (this spec) | — |
+| 2 | Validation + historical time-standard research (India, Ukraine, USA, Italy) | 1 |
 | 3 | i18n: English, Hindi, Marathi | 1 |
-| 4 | Rule base: more yogas, weighting, transit rules for `/today` | 2, 3 |
-| 5 | Privacy: encryption at rest | 1 |
-| 6 | Jataka PDF: panchanga, D1/D9 charts (South Indian default, North Indian option), dashas, yogas | 3, 4 |
-| 7 | Ontology: OWL/SKOS/SHACL export | 4 |
-| 8 | Deploy to the shared Oracle Ampere instance alongside stockbro | all |
+| 4 | Conversational input: free text and voice (EN/HI/MR), LLM extracts, user confirms | 3 |
+| 5 | Rule base: more yogas, conflict weighting, transit rules for `/today` | 2, 3 |
+| 6 | Additional tradition profiles: true Chitrapaksha, Raman — each validated as added | 2 |
+| 7 | KP system: Placidus cusps, star/sub-lords | 2 |
+| 8 | Encryption at rest + backup/export — **hard gate before deploy** | 1 |
+| 9 | Jataka PDF: panchanga, D1/D9 charts (South Indian default, North Indian option), dashas, yogas | 3, 5 |
+| 10 | Ontology (OWL/SKOS/SHACL) — only if a concrete consumer exists by then | 5 |
+| 11 | Deploy to the shared Oracle Ampere instance alongside stockbro | all required |
+
+**Feedback without deploying:** after sub-projects 1 and 2, a CLI chart (and later a PDF) is shown
+to one relative locally, and their reaction is recorded in the next spec.
 
 ### Decisions already made
 
-- **Audience:** private bot (owner + family/friends), enforced by a chat-ID allowlist.
-- **LLM:** the host's existing Ollama (shared with stockbro), no sidecar. Default `llama3.2:3b`.
-- **Deploy model (sub-project 8):** rsync from the Mac, build on the server, like stockbro.
-- **Packaging:** `pyproject.toml` + `uv` + `uv.lock`. CLI via `click` (matches stockbro's `bro`).
-- **CLI:** stateless — birth data passed as arguments; never touches the user DB.
-- **Architecture:** pure engine → report model → renderers; front ends are thin adapters.
-- **Data updates:** Dependabot PRs against `uv.lock`, gated by CI.
+- Private bot, chat-ID allowlist. Host Ollama shared with stockbro; no sidecar.
+- Deploy via rsync + server-side build, like stockbro (sub-project 11).
+- `pyproject.toml` + `uv` + `uv.lock`; `click` CLI; CLI is stateless.
+- Users enter only the local clock time at the birthplace. samay derives the offset; the user is
+  never asked for one. Converting inputs to IST was considered and rejected — it does not touch the
+  real error, which is in reading the local clock.
 
-## Goals
+## Definition of correct
 
-1. A service layer every front end (bot, CLI, later PDF) calls, returning plain report objects.
-2. Fix the draft's correctness/robustness issues (event-loop blocking, DST ambiguity, no access
-   control, unpinned ephemeris, coarse retrograde check).
-3. Make it efficient on a shared 4-core ARM box (cached natal charts, indexed place lookup,
-   warm start, short LLM timeout).
-4. A visible, testable process for keeping time-zone and other bundled data current.
-
-## Non-goals
-
-Accuracy validation against reference software (#2), translations (#3), new rules (#4),
-encryption (#5), PDF (#6), ontology (#7), server deployment (#8). Astronomy formulas
-(ayanamsa, node, houses) do not change here except the retrograde check.
+- **Astronomy:** agreement with `swetest` (Swiss Ephemeris) and Jagannatha Hora — planets within
+  1′, lagna within 3′, ayanamsa within 1″. These tools are reference oracles only, never
+  dependencies.
+- **Time resolution:** the time-standard table's cited primary sources (sub-project 2), falling
+  back to tzdata.
+- **Interpretation:** the active tradition profile's cited texts. Where texts disagree, the
+  profile's documented conflict rule decides, and both readings are shown with citations.
+- Until sub-project 2 passes, every report states that it is unvalidated.
 
 ## Architecture
 
 ```
 samay/
-  engine/        ephemeris.py vedic.py rules.py geo.py   pure, sync; moved from samay/
+  engine/        ephemeris.py vedic.py rules.py geo.py timestd.py profiles.py   pure, sync
   models.py      frozen dataclasses
   service.py     the only API front ends call
   render/text.py report → plain text; all user-facing wording lives in render/
-  bot.py         async Telegram adapter
+  bot/           app.py (wiring), flow.py (guided conversation), handlers.py
   cli.py         click CLI (stateless)
-  store.py       user profiles, SQLite (bot only)
-  narrate.py     optional Ollama rewording (bot only)
+  store.py       SQLite: users, drafts (bot only)
+  narrate.py     optional Ollama rewording, off by default (bot only)
+data/
+  profiles/*.yaml          tradition profiles
+  time_standards/*.yaml    curated offset overrides (schema now, researched entries in #2)
+  gazetteer.sqlite         built artifact (not in git), sha256 pinned in repo
 rules/  tests/  scripts/  .github/
 ```
 
-Dependency direction: `bot`/`cli` → `service` → `engine`; `bot`/`cli` → `render`. The engine
-imports nothing from the rest of samay. Narration stays outside the service so the "LLM only
-rewords computed facts" rule lives in one place.
+Dependency direction: `bot`/`cli` → `service` → `engine`; `bot`/`cli` → `render`. The engine imports
+nothing from the rest of samay. The CLI and the bot both go through the same `resolve_birth`.
 
 ### Models (`models.py`)
 
-- `BirthInput(local: datetime, place_query: str, fold: int | None = None)` — `local` is naive.
-- `ResolvedBirth(utc: datetime, place: Place, tz: str)` — `utc` is timezone-aware UTC.
-- `NeedsDisambiguation(kind: Literal["place", "time"], options: list[Place] | list[datetime])` —
-  up to 3 places (most populous first), or the two UTC instants of an ambiguous local time.
-- `NatalReport(birth: ResolvedBirth, chart: Chart, dashas: list[Period], yogas: list[Rule])`
-- `TodayReport(natal: NatalReport, sky: Chart, now: datetime, current_dasha: tuple[Period, Period] | None, facts: list[str])`
+- `BirthInput(date_text, time_text, place_text, place_choice: str | None, fold: int | None, profile: str)`
+  — exactly what the user typed and chose.
+- `Provenance(offset, offset_source, confidence: Literal["verified","probable","tzdata","low"], place_approximate: bool, approx_note: str | None)`
+- `ResolvedBirth(utc, place: Place, tz, provenance: Provenance)`
+- `NeedsDisambiguation(kind: Literal["place","time"], options: list[Place] | list[datetime])` —
+  up to 3 places (labelled with region and country), or the two UTC instants of an ambiguous time.
+- `VersionStamp(git_sha, rules_hash, profile_id, profile_hash, timestd_version, tzdata_version, ephemeris_sha256, gazetteer_sha256)`
+- `NatalReport(birth, chart, dashas, yogas, stamp, validated: bool)`
+- `TodayReport(natal, sky, now, current_dasha, facts, stamp)`
 
 ### Service (`service.py`, synchronous)
 
 - `resolve_birth(BirthInput) -> ResolvedBirth | NeedsDisambiguation`
-- `natal_report(ResolvedBirth) -> NatalReport` — `lru_cache(maxsize=64)` keyed on
-  `(utc, latitude, longitude)`.
-- `today_report(ResolvedBirth, now: datetime) -> TodayReport` — `now` is always injected.
-- `warm() -> None` — loads kernel, timescale, city index and rules.
-- `data_info() -> DataInfo` — versions of tzdata, skyfield, geonamescache; ephemeris sha256 and
-  valid date range; rule count.
-- Typed errors: `PlaceNotFound`, `NonexistentTime`, `OutOfEphemerisRange`, `EphemerisMissing`.
-  Ambiguity is a return value, not an exception.
+- `natal_report(ResolvedBirth, profile) -> NatalReport` — `lru_cache(maxsize=64)` keyed on
+  `(utc, latitude, longitude, profile_id)`. Data versions are fixed per process; every deploy
+  restarts the process, so a cached result cannot outlive its data.
+- `today_report(ResolvedBirth, profile, now)` — `now` always injected.
+- `warm()`, `data_info() -> VersionStamp`.
+- Typed errors: `PlaceNotFound`, `NonexistentTime`, `OutOfEphemerisRange`, `EphemerisMissing`,
+  `UnknownProfile`, `UnsupportedLatitude`. Ambiguity is a return value, not an exception.
 
-### Store (`store.py`)
+## Time standards (`engine/timestd.py`)
 
-SQLite `users` table as today, with schema versioning via `PRAGMA user_version` and an ordered
-list of migrations, so later sub-projects can add columns (language, chart style, encrypted
-fields) without manual SQL. `/forget` deletes the row.
+- `data/time_standards/<country>.yaml` entries: `region` (GeoNames country + admin1/admin2),
+  `from`/`to` dates, `offset`, `name` (e.g. "Bombay Time"), `confidence`, and `source` with
+  `text`, `locus`, `verified`.
+- Resolution order: matching curated entry → tzdata.
+- Foundation ships the schema, loader, matcher and tests, with **no unverified historical entries**.
+  Entries are added only in sub-project 2, from primary sources (Gazette notifications, government
+  orders, railway time tables, contemporary newspapers).
+- Without a curated entry, confidence comes from the era: `tzdata` for 1970 onwards; `low` before
+  1970, and `low` with an explicit warning for India before 1956, where tzdata is known to model
+  the whole country as one zone.
+- Every chart shows the offset used, its source and its confidence.
+- DST overlaps (births abroad) still ask "first or second 01:30?" — a question about the clock
+  reading, not the offset. Nonexistent local times are rejected with an explanation.
 
-## Hardening and front ends
+## Tradition profiles (`engine/profiles.py`)
 
-### `bot.py`
+- `data/profiles/<id>.yaml`: ayanamsa, node (mean/true), house system, dasha year length,
+  calculation method (drik), rule schools included, conflict rule, `validated` flag, citations for
+  every formula and constant.
+- Rules are filtered by the profile's schools (the existing `school` field in `rules/*.yaml`).
+- Every report and stamp records the profile. Each user's stored choices include their profile.
+- **Foundation ships one profile:** `parashari-lahiri` — Lahiri (mean), mean node, whole-sign
+  houses, 365.25-day dasha year. Other profiles arrive in sub-projects 6 and 7.
+- Drik vs siddhantic calculation is recorded as an open decision for sub-project 2.
 
-- **Allowlist:** `ALLOWED_CHAT_IDS` (comma-separated ints) → `filters.Chat(...)` on every handler.
-  Empty or unset → refuse to start. Non-allowlisted chats get no reply.
-- All service calls via `await asyncio.to_thread(...)`.
-- `post_init` calls `service.warm()` and logs `data_info()` plus `GIT_SHA`;
+## Places (`engine/geo.py`)
+
+- **Data:** GeoNames `cities500` worldwide, plus full country files for `GEONAMES_FULL_COUNTRIES`
+  (default `IN,US,UA,IT`) filtered to feature classes P and A, plus `alternateNamesV2` filtered to
+  `hi, mr, uk, ru, it, en`. Licence CC-BY; attribution in README and `/help`.
+- **Build:** `scripts/build-gazetteer.py` downloads the files once, records their sha256 and the
+  snapshot date, and writes `data/gazetteer.sqlite` (names, alternate names, admin1/admin2,
+  country, coordinates, population, timezone). The artifact's sha256 is committed in
+  `data/gazetteer.lock`. The Dockerfile only copies the artifact and verifies the hash; nothing is
+  downloaded or built on the server. Refreshing is a deliberate step in `update-data.sh`.
+- **Matching:** Devanagari input is romanized offline (`indic-transliteration`); Cyrillic and
+  Latin are matched directly against alternate names. All names are folded (case, accents,
+  aspirates, vowel length, common spelling variants such as "oo" → "u"), then candidates are
+  ranked with `rapidfuzz` and population.
+- **Duplicates:** up to 3 buttons labelled "Name, Region, Country".
+- **Not found:** the bot asks for the nearest town or the district; provenance records
+  "approximate: nearest X, about N km", and the chart says so.
+- **Test fixture:** the owner supplies 30–50 real family birthplaces, written the way family
+  members would actually type them (misspellings, Devanagari, Cyrillic). Target hit rate ≥ 95%.
+  CI uses a small committed fixture gazetteer; the full hit-rate test runs locally against the
+  real artifact.
+
+## Bot (`bot/`)
+
+- **Allowlist:** `ALLOWED_CHAT_IDS` → `filters.Chat` on every handler; empty → refuse to start;
+  non-allowlisted chats get no reply.
+- **Guided conversation** (PTB `ConversationHandler`, no LLM): one plain question per step, buttons
+  wherever possible, a permanent Menu keyboard, and a Start over button on every step. Slash
+  commands remain as shortcuts: `/start /help /birth /chart /dasha /today /forget`.
+- **Robustness:** every callback carries a step token; stale or unknown taps get a friendly
+  restart; typed text where a button was expected re-asks the same question.
+- **Drafts:** half-finished entries are saved in the `drafts` table and resume after a restart.
+  Drafts expire after 30 minutes and are deleted.
+- All service calls via `asyncio.to_thread`. `post_init` warms data and logs the version stamp;
   `post_shutdown` closes the narrate client.
-- Error handler logs traceback with chat ID and error type only (never birth data) and replies
-  with a generic message.
-- `allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY]`.
-- Disambiguation via inline keyboards: up to 3 places, or "first/second HH:MM" for a DST overlap.
-  Nonexistent local times (skipped by DST) are rejected with an explanation.
-- Commands: `/start` `/help` `/birth` `/chart` `/dasha` `/today` `/forget` (same as draft).
+- Error handler logs chat ID and error type only — never birth data. `httpx` and `telegram`
+  loggers are set to WARNING (their INFO logs include the bot token in URLs).
+- `allowed_updates=[MESSAGE, CALLBACK_QUERY]`.
 
-### `cli.py` (click, entry point `samay = "samay.cli:cli"`)
+## CLI (`cli.py`, click, stateless)
 
-- `samay chart --date YYYY-MM-DD --time HH:MM --place "City[, CC]" [--fold 0|1]`
+- `samay chart --date YYYY-MM-DD --time HH:MM --place "…" [--choice ID] [--fold 0|1] [--profile ID]`
 - `samay dasha …` · `samay today … [--now ISO8601]` · `samay data-info`
-- Ambiguous input: exit code 2, options listed on stderr. Never prompts interactively.
+- Ambiguity: exit code 2, options listed on stderr; never prompts.
 
-### `engine/geo.py`
+## Store (`store.py`)
 
-- City index built once (`lru_cache`): casefolded name and alternate names → list of cities.
-- `local_to_utc(local, tz, fold)` detects ambiguous/nonexistent times by comparing `fold=0` and
-  `fold=1` round-trips and returns a result type instead of silently picking one.
+- `users`: raw `BirthInput` fields as typed, place choice, fold, profile. Every read re-resolves
+  from the raw input, so data corrections apply automatically.
+- `drafts`: in-progress conversation state with expiry.
+- Schema versioned with `PRAGMA user_version` and an ordered list of migrations.
+- `/forget` deletes the user's row and any draft.
 
-### `engine/ephemeris.py`
+## Narration (`narrate.py`)
 
-- Retrograde from the sign of longitude change over ±1 hour (was +6 hours forward-only).
-- Dates outside the kernel's range raise `OutOfEphemerisRange`.
+Off by default (`OLLAMA_URL` unset → the template is the reading). When enabled: one shared
+`httpx.AsyncClient`, `OLLAMA_MODEL` default `llama3.2:3b`, 20 s timeout, any failure → template,
+no `keep_alive` override. The LLM only rewords facts the engine computed.
 
-### `narrate.py`
+## Packaging, container, CI
 
-- One module-level `httpx.AsyncClient`. `OLLAMA_URL` empty → template only.
-- `OLLAMA_MODEL` default `llama3.2:3b`; 20 s timeout; any failure → template. No `keep_alive`
-  override (Ollama's default unloads idle models, which matters on the shared box).
-
-### Packaging and container
-
-- `pyproject.toml` (Python 3.12, deps as today plus `click`; dev group: `pytest`, `ruff`) and
-  `uv.lock`. `requirements.txt` is removed.
-- Dockerfile: `uv sync --frozen --no-dev`; `ADD --checksum=sha256:…` for `de440s.bsp`, using the
-  hash recorded in `scripts/fetch-ephemeris.sh` on first download (single source of truth);
-  `ENV PYTHONTZPATH=""` so `zoneinfo` uses only the pinned `tzdata` package;
-  `ARG GIT_SHA` → env; non-root user kept.
-- `docker-compose.yml`: remove the `ollama` sidecar and `llm` profile; add `mem_limit: 512m`,
-  `cpus: 1.0`; `.env.example` gains `ALLOWED_CHAT_IDS` and documents `OLLAMA_URL`/`OLLAMA_MODEL`.
-  Server-specific wiring (`172.17.0.1`) is sub-project 8.
-
-## Data freshness
-
-| Data | Source | Staleness risk |
-|---|---|---|
-| Time zones / DST history | `tzdata` (IANA) | High — historical corrections move the lagna |
-| Leap seconds / ΔT | built into `skyfield` | Negligible for charts |
-| Ephemeris | `de440s.bsp` (1849–2150) | None in range; out-of-range is an explicit error |
-| Cities | `geonamescache` | Low |
-| Rules | `rules/*.yaml` | Versioned in git |
-
-- `samay data-info` and the bot's startup log show exactly which data versions are in use.
-- `scripts/update-data.sh`: `uv lock --upgrade-package tzdata --upgrade-package skyfield
-  --upgrade-package geonamescache`, then `uv run pytest`.
-- `.github/dependabot.yml`: `uv` ecosystem, monthly.
-- `.github/workflows/test.yml`: on push/PR, `uv sync --frozen`, fetch the ephemeris (cached,
-  checksum-verified via `scripts/fetch-ephemeris.sh`), `uv run ruff check`, `uv run pytest`.
-  Runs on amd64; local development covers arm64.
-- Once sub-project 2 lands, its reference-chart fixtures are the regression gate that catches a
-  tzdata update changing a historical offset.
+- `pyproject.toml` (Python 3.12; deps: skyfield, python-telegram-bot 21, pyyaml, tzdata, httpx,
+  click, rapidfuzz, indic-transliteration; dev: pytest, ruff) and `uv.lock`. `requirements.txt`
+  removed; `geonamescache` removed.
+- Dockerfile: `uv sync --frozen --no-dev`; `ADD --checksum=sha256:…` for `de440s.bsp` (hash shared
+  with `scripts/fetch-ephemeris.sh`); copies and verifies `gazetteer.sqlite`;
+  `ENV PYTHONTZPATH=""`; `ARG GIT_SHA`; non-root user.
+- `docker-compose.yml`: no Ollama sidecar; `mem_limit: 512m`, `cpus: 1.0`. Server wiring is
+  sub-project 11.
+- CI (`.github/workflows/test.yml`, amd64): `uv sync --frozen`, cached checksum-verified
+  ephemeris, `uv run ruff check`, `uv run pytest`.
+- arm64: `scripts/test-arm64.sh` runs the suite inside the built image locally; required before
+  each deploy.
+- Data freshness: `samay data-info`; `scripts/update-data.sh` (tzdata, skyfield, gazetteer
+  refresh, then tests); Dependabot (`uv`, monthly).
 
 ## Testing
 
 - Existing unit tests move to `engine/` imports with assertions unchanged.
-- `scripts/fetch-ephemeris.sh` downloads and sha256-verifies `de440s.bsp`; ephemeris-dependent
-  tests skip when it is absent.
-- Geo: index results equal the old linear scan on a sample; "Pune, IN" resolves; an ambiguous
-  name yields options.
+- **Golden charts:** 5 charts (including a southern-hemisphere birth, a DST-boundary birth and a
+  1950s Indian birth) with expected values from `swetest`, produced by a separate script and
+  committed as fixture values, checked within the tolerances above.
+- Time standards: schema validation; curated-entry precedence over tzdata (using a test-only
+  fixture entry); confidence by era; India-before-1956 warning.
 - DST: `America/New_York` 2021-11-07 01:30 (ambiguous), 2021-03-14 02:30 (nonexistent),
-  `Asia/Kolkata` as the no-DST control.
-- Service: report structure for a fixed input and `now`; a repeat call is a cache hit;
-  a 1800 birth year raises `OutOfEphemerisRange`.
-- Retrograde: a known Mercury station date (ephemeris required).
-- CLI: `CliRunner` happy path, ambiguous → exit 2 with options, malformed date.
-- Bot: empty `ALLOWED_CHAT_IDS` refuses to start.
-- Narrate: `httpx.MockTransport` timeout and HTTP 500 both fall back to the template.
-- Logs: a test asserts the error handler's log record contains no birth date/time.
-
-## Error handling
-
-Engine and service raise the typed errors above. Each front end maps them to one user-facing
-message (bot reply / CLI stderr + non-zero exit). Raw exceptions never reach users. Logs never
-contain birth data.
+  `Asia/Kolkata` control.
+- Places: fixture gazetteer; folding and fuzzy matching ("Kolapur" → Kolhapur, "पुणे" → Pune,
+  "Kiev" → Kyiv, "Forli" → Forlì); region-labelled duplicates; approximate fallback; the owner's
+  hit-rate fixture locally.
+- Profiles: loader, rule filtering by school, profile recorded in the stamp, unknown profile error.
+- Service: report structure for a fixed input and `now`; cache hit; 1800 birth year →
+  `OutOfEphemerisRange`.
+- Retrograde: a known Mercury station date.
+- Bot flow: guided-flow transitions, stale-tap recovery, draft resume and expiry, empty allowlist
+  refuses to start.
+- CLI: `CliRunner` happy path, ambiguity → exit 2, malformed date.
+- Narrate: disabled by default; `httpx.MockTransport` timeout and 500 → template.
+- Logs: error-handler records contain no birth data; `httpx` logger level is WARNING.
 
 ## Done when
 
-1. `uv run pytest` passes with the ephemeris fetched, and `uv run ruff check` is clean.
-2. `samay chart --date 1990-08-15 --time 14:30 --place "Pune, IN"` prints a full chart.
-3. The bot runs locally with the owner's chat ID allowlisted and handles all seven commands,
-   including a DST disambiguation flow.
-4. `docker build` succeeds locally on arm64 with the pinned ephemeris.
-5. CI is green on GitHub (after the repo is pushed).
+1. `uv run pytest` and `uv run ruff check` pass locally and in CI; `scripts/test-arm64.sh` passes.
+2. The 5 golden charts are within tolerance.
+3. The owner's birthplace fixture reaches ≥ 95%.
+4. `samay chart --date 1990-08-15 --time 14:30 --place "Pune"` prints a chart with provenance,
+   profile and an "unvalidated" note.
+5. The bot runs locally with the owner allowlisted and completes the guided flow, including a DST
+   disambiguation and a restart mid-flow.
+6. `docker build` succeeds locally on arm64.
+
+## Known risks
+
+- Plaintext birth data in `users` and `drafts` until sub-project 8. Acceptable while local;
+  sub-project 8 is a hard gate before deploy.
+- No backup/export of the store until sub-project 8.
+- Monthly Dependabot may cause churn; switch to quarterly if it does.
+- Re-resolution applies data corrections automatically, but readings already given are not
+  migrated or annotated; version stamps make them reproducible.
+- 30–50 birthplaces is a small sample; extend the fixture as real usage reveals misses.
+- Feedback before deploy is limited to local demos.
