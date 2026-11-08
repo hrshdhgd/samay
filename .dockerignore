@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+.env
+.pytest_cache
+.ruff_cache
+__pycache__
+docs
+HANDOFF.md
+# GeoNames source dumps and local runtime files stay out of the build context
+data/geonames-src
+data/de440s.bsp
+data/*.db
+*.db

@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # tzdata corrections can move historical offsets; the golden charts and tests gate each bump.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

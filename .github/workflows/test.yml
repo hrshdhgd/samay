@@ -1,0 +1,22 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/cache@v4
+        with:
+          path: data/de440s.bsp
+          key: de440s-${{ hashFiles('scripts/fetch-ephemeris.sh') }}
+      - run: scripts/fetch-ephemeris.sh
+      - run: uv sync --frozen
+      - run: uv run ruff check
+      # Uses the small GeoNames extract in tests/fixtures; the full-database tests skip in CI.
+      - run: uv run pytest -q

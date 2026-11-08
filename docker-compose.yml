@@ -1,21 +1,20 @@
 services:
   samay:
-    build: .
+    build:
+      context: .
+      target: runtime
+      args:
+        GIT_SHA: ${GIT_SHA:-dev}
     image: samay:latest
     restart: unless-stopped
     env_file: .env
+    # Shares a 4-core box with other projects; the bot idles at ~100 MB.
+    mem_limit: 512m
+    cpus: 1.0
     volumes:
       - samay-data:/var/lib/samay
-
-  # Optional local LLM: docker compose --profile llm up -d
-  # then: docker compose exec ollama ollama pull qwen2.5:3b
-  ollama:
-    image: ollama/ollama:latest
-    profiles: ["llm"]
-    restart: unless-stopped
-    volumes:
-      - ollama-models:/root/.ollama
+    # Narration is off unless OLLAMA_URL is set in .env. On the Oracle server the host Ollama is
+    # reached at the docker0 gateway (http://172.17.0.1:11434); there is no Ollama sidecar.
 
 volumes:
   samay-data:
-  ollama-models:
