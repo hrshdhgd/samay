@@ -22,6 +22,7 @@ class BirthInput:
     place_choice: str | None = None
     fold: int | None = None
     profile: str = DEFAULT_PROFILE
+    approx_for: str | None = None  # birthplace the user named, when a nearby town stands in for it
 
 
 @dataclass(frozen=True)

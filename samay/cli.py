@@ -24,6 +24,7 @@ def birth_options(fn: Callable) -> Callable:
         click.option("--choice", "place_choice", help="Place id from a previous ambiguity listing."),
         click.option("--fold", type=click.IntRange(0, 1), help="0 = first, 1 = second occurrence of a repeated time."),
         click.option("--profile", default=DEFAULT_PROFILE, show_default=True, help="Tradition profile."),
+        click.option("--approx-for", "approx_for", help="Real birthplace name, when --place is a nearby town."),
     ]
     for option in reversed(options):
         fn = option(fn)

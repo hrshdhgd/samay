@@ -42,3 +42,10 @@ def test_malformed_date():
 def test_data_info():
     r = CliRunner().invoke(cli, ["data-info"])
     assert r.exit_code == 0 and "profile_id: parashari-lahiri" in r.output
+
+
+@needs_kernel
+def test_approximate_place_is_stated_on_the_chart():
+    r = CliRunner().invoke(cli, ["chart", *PUNE, "--approx-for", "Wagholi"])
+    assert r.exit_code == 0, r.output
+    assert "Place approximate" in r.output and "Wagholi" in r.output

@@ -66,7 +66,18 @@ def resolve_birth(inp: BirthInput) -> ResolvedBirth | NeedsDisambiguation:
         local=local,
         utc=res.utc,
         place=place,
-        provenance=Provenance(res.offset, res.source, res.confidence, res.warning),
+        provenance=Provenance(
+            res.offset,
+            res.source,
+            res.confidence,
+            res.warning,
+            place_approximate=bool(inp.approx_for),
+            approx_note=(
+                f"birthplace {inp.approx_for!r} was not found; this chart uses nearby {place.label}"
+                if inp.approx_for
+                else None
+            ),
+        ),
         profile=inp.profile,
     )
 

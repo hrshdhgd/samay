@@ -77,3 +77,10 @@ def test_today_report_uses_injected_now():
 @needs_kernel
 def test_warm_returns_stamp():
     assert service.warm().profile_id == "parashari-lahiri"
+
+
+def test_nearby_town_is_flagged_approximate():
+    b = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune", approx_for="Wagholi"))
+    assert b.provenance.place_approximate
+    assert "Wagholi" in b.provenance.approx_note and "Pune" in b.provenance.approx_note
+    assert not service.resolve_birth(PUNE_1990).provenance.place_approximate
