@@ -19,6 +19,7 @@ EPHEMERIS_START = datetime(1849, 12, 26, tzinfo=timezone.utc)
 EPHEMERIS_END = datetime(2150, 1, 20, tzinfo=timezone.utc)
 # The whole-sign lagna formula is ill-defined inside the polar circles.
 MAX_ABS_LATITUDE = 66.5
+UTC_LEAP_SECONDS_FROM = datetime(1972, 1, 1, tzinfo=timezone.utc)
 # Retrograde is the sign of motion between t - RETRO_STEP and t + RETRO_STEP.
 RETRO_STEP = timedelta(hours=1)
 
@@ -115,6 +116,19 @@ def _timescale():
     return load.timescale(builtin=True)  # bundled leap-second data, no download
 
 
+def _skyfield_time(utc: datetime):
+    """Civil time -> Skyfield Time.
+
+    UTC with leap seconds only exists from 1972. Earlier civil clocks followed mean solar time
+    (GMT ~ UT1), so treating them as UTC would shift sidereal time by ~12 s (~3' of lagna).
+    """
+    ts = _timescale()
+    if utc >= UTC_LEAP_SECONDS_FROM:
+        return ts.from_datetime(utc)
+    seconds = utc.second + utc.microsecond / 1e6
+    return ts.ut1(utc.year, utc.month, utc.day, utc.hour, utc.minute, seconds)
+
+
 AYANAMSAS = {"lahiri_mean": lahiri_ayanamsa}
 NODES = {"mean": mean_lunar_node}
 
@@ -156,13 +170,12 @@ def compute_chart(
     if abs(latitude) > MAX_ABS_LATITUDE:
         raise UnsupportedLatitude(f"latitude {latitude:.2f} is inside a polar circle")
 
-    ts = _timescale()
-    t = ts.from_datetime(utc)
+    t = _skyfield_time(utc)
     node_fn = NODES[node]
     ayan = AYANAMSAS[ayanamsa](t.tt)
     now = _tropical_longitudes(t, node_fn)
-    before = _tropical_longitudes(ts.from_datetime(utc - RETRO_STEP), node_fn)
-    after = _tropical_longitudes(ts.from_datetime(utc + RETRO_STEP), node_fn)
+    before = _tropical_longitudes(_skyfield_time(utc - RETRO_STEP), node_fn)
+    after = _tropical_longitudes(_skyfield_time(utc + RETRO_STEP), node_fn)
 
     planets = {}
     for name, lon in now.items():
