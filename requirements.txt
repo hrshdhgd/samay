@@ -1,6 +1,0 @@
-skyfield>=1.49
-python-telegram-bot>=21,<22
-pyyaml>=6
-geonamescache>=2
-tzdata
-httpx
