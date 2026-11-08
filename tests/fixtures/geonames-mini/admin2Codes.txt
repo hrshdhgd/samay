@@ -1,0 +1,20 @@
+CA.08.3539	Middlesex County	Middlesex County	6073256
+GB.ENG.GLA	Greater London	Greater London	2648110
+IN.16.530	Kolhapur	Kolhapur	1266287
+IN.28.342	Kolkata	Kolkata	1275005
+IN.16.500	Buldhana	Buldhana	1275118
+IN.34.235	Aurangābād	Aurangabad	1278150
+IN.16.515	Aurangabad	Aurangabad	8131498
+IN.16.505	Nagpur Division	Nagpur Division	8131500
+IN.16.521	Pune Division	Pune Division	8133375
+IN.10.089	Palwal	Palwal	9747986
+IN.16.519	Mumbai	Mumbai	9747998
+IT.05.FC	Provincia di Forlì-Cesena	Provincia di Forli-Cesena	3176745
+UA.07.6312	Kharkiv Raion	Kharkiv Raion	9114284
+US.IL.167	Sangamon County	Sangamon County	4249472
+US.MO.077	Greene County	Greene County	4388781
+US.IL.031	Cook County	Cook County	4888671
+US.MA.013	Hampden County	Hampden County	4938741
+US.MN.123	Ramsey County	Ramsey County	5042563
+US.NJ.013	Essex County	Essex County	5097707
+US.OR.039	Lane County	Lane County	5735869

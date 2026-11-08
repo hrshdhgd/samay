@@ -10,3 +10,4 @@ RULES_DIR = Path(os.environ.get("SAMAY_RULES_DIR", ROOT / "rules"))
 EPHEMERIS_PATH = Path(os.environ.get("SAMAY_EPHEMERIS", DATA_DIR / "de440s.bsp"))
 PROFILES_DIR = DATA_DIR / "profiles"
 TIME_STANDARDS_DIR = DATA_DIR / "time_standards"
+GAZETTEER_PATH = Path(os.environ.get("SAMAY_GAZETTEER", DATA_DIR / "gazetteer.sqlite"))

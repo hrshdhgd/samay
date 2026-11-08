@@ -1,0 +1,4 @@
+1278146	Aurangābād	Aurangabad		28.02823	77.32959	P	PPL	IN		10	089	429		0		195	Asia/Kolkata	2024-01-06
+1256848	Shendurjan	Shendurjan	sendurajana,शेंदूरजन	20.12847	76.38657	P	PPL	IN		16	500	3986		0		597	Asia/Kolkata	2024-01-06
+9747998	Mumbai	Mumbai	MMB,Mumbai,Mumbai District,bambaے,bmbyy,mmbay,mmbyy,mumba'i,mwmbay,بمبئی,بَمبَے,ممبئي,ممبئی,ممبای,مومباى,مومباي,مومبای,मुंबई	18.95963	72.84962	A	ADM2	IN		16	519			0		-9999	Asia/Kolkata	2023-07-02
+12683948	Mumbai	Mumbai		18.97055	72.82578	A	ADM3	IN		16	519	999		3085411		5	Asia/Kolkata	2023-12-17

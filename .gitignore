@@ -4,3 +4,8 @@ data/*.bsp
 __pycache__/
 .pytest_cache/
 .venv/
+
+# gazetteer: source dumps and the built database are artifacts; data/gazetteer.lock is committed
+data/geonames-src/
+data/gazetteer.sqlite
+data/gazetteer.sqlite.part

@@ -32,3 +32,7 @@ class UnknownProfile(SamayError):
 
 class UnsupportedLatitude(SamayError):
     pass
+
+
+class GazetteerMissing(SamayError):
+    pass

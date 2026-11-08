@@ -1,0 +1,9 @@
+# Real birthplaces of the owner's family, written the way relatives type them.
+# So far the owner has supplied these three; add more whenever a lookup misses.
+# A hit means the expected place is among the first three results.
+- query: "Mumbai, India"
+  expect: {country: IN, name: Mumbai}
+- query: "Kiev, Ukraine"
+  expect: {country: UA, name: Kyiv}
+- query: "Maplewood, MN, USA"
+  expect: {country: US, name: Maplewood, admin1: MN}

@@ -1,0 +1,21 @@
+{
+  "countries": [
+    "IN",
+    "US",
+    "UA",
+    "IT"
+  ],
+  "database_sha256": "3c17cfae792ef7f86f896c9d572626c477ec640af4fbf64c6c3ca700c7ca820f",
+  "snapshot": "2026-11-08",
+  "sources": {
+    "IN.zip": "fa369f3c3c9860d34b31c9c7b1921419922268226dc94238d1dca65cfdaafd14",
+    "IT.zip": "ab028aba1d65054ea89051a1ab4d33d937e895758deada7f9c77b2c94bfb3bcc",
+    "UA.zip": "9b6d24b4ec799bf57f7b4f77a8440b082d8fa4e12a2d321428c23757d17d9578",
+    "US.zip": "518113a2ed2f6b5c2b0c22efb5b9ce4cd99914ba2ff094d024074dff02103532",
+    "admin1CodesASCII.txt": "2e4867f5397acb056ea26377601b57af37cb4c81399770225018e9e439e91ad3",
+    "admin2Codes.txt": "0015daec87ac29d9618607ba6642decada8093c07913f1983e96f932f5ce94f2",
+    "alternateNamesV2.zip": "75703cd2ed918ce38bf78ab50c7d7a93cba7f077325feefbd1df95e0474c3f7e",
+    "cities500.zip": "5cb3f5ba1cc8606eac5f80299e04d89bdd517045b1f876ba4fb01e4950f364ed",
+    "countryInfo.txt": "79f8f59ea01cbb40438bf1856dd6c2ff201f03f8fc72d0530b2646aaf603ef04"
+  }
+}

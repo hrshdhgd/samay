@@ -98,7 +98,7 @@ def data_info(profile_id: str = DEFAULT_PROFILE) -> VersionStamp:
         timestd_version=_timestd_version(),
         tzdata_version=importlib.metadata.version("tzdata"),
         ephemeris=_ephemeris_id(),
-        gazetteer="geonamescache " + importlib.metadata.version("geonamescache"),
+        gazetteer=geo.gazetteer_stamp(),
     )
 
 

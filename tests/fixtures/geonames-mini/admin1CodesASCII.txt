@@ -1,0 +1,17 @@
+CA.08	Ontario	Ontario	6093943
+GB.ENG	England	England	6269131
+IN.28	West Bengal	West Bengal	1252881
+IN.16	Maharashtra	Maharashtra	1264418
+IN.10	Haryana	Haryana	1270260
+IN.34	Bihar	Bihar	1275715
+IT.05	Emilia-Romagna	Emilia-Romagna	3177401
+UA.13	Kyiv Oblast	Kyiv Oblast	703446
+UA.12	Kyiv City	Kyiv City	703447
+UA.07	Kharkiv	Kharkiv	706482
+US.MO	Missouri	Missouri	4398678
+US.IL	Illinois	Illinois	4896861
+US.MN	Minnesota	Minnesota	5037779
+US.NJ	New Jersey	New Jersey	5101760
+US.NY	New York	New York	5128638
+US.OR	Oregon	Oregon	5744337
+US.MA	Massachusetts	Massachusetts	6254926

@@ -1,0 +1,6 @@
+CA	CAN	124	CA	Canada	Ottawa	9984670	41651653	NA	.ca	CAD	Dollar	1	@#@ #@#	^([ABCEGHJKLMNPRSTVXY]\d[ABCEGHJKLMNPRSTVWXYZ]) ?(\d[ABCEGHJKLMNPRSTVWXYZ]\d)$ 	en-CA,fr-CA,iu	6251999	US	
+GB	GBR	826	UK	United Kingdom	London	244820	69487000	EU	.uk	GBP	Pound	44	@# #@@|@## #@@|@@# #@@|@@## #@@|@#@ #@@|@@#@ #@@|GIR0AA	^([Gg][Ii][Rr]\s?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z]))))\s?[0-9][A-Za-z]{2})$	en-GB,cy-GB,gd	2635167	IE	
+IN	IND	356	IN	India	New Delhi	3287590	1463865525	AS	.in	INR	Rupee	91	######	^(\d{6})$	en-IN,hi,bn,te,mr,ta,ur,gu,kn,ml,or,pa,as,bh,sat,ks,ne,sd,kok,doi,mni,sit,sa,fr,lus,inc	1269750	CN,NP,MM,BT,PK,BD	
+IT	ITA	380	IT	Italy	Rome	301230	58915656	EU	.it	EUR	Euro	39	#####	^(\d{5})$	it-IT,de-IT,fr-IT,sc,ca,co,sl	3175395	CH,VA,SI,SM,FR,AT	
+UA	UKR	804	UP	Ukraine	Kyiv	603700	38980376	EU	.ua	UAH	Hryvnia	380	#####	^(\d{5})$	uk,ru-UA,rom,pl,hu	690791	PL,MD,HU,SK,BY,RO,RU	
+US	USA	840	US	United States	Washington	9629091	341784857	NA	.us	USD	Dollar	1	#####-####	^\d{5}(-\d{4})?$	en-US,es-US,haw,fr	6252001	CA,MX,CU	

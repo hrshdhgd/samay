@@ -30,7 +30,8 @@ version stamp. Charts say "not yet checked against reference software" until val
 
 ## Data
 - Ephemeris: JPL DE440s (1849–2150), public domain.
-- Places: GeoNames (CC-BY 4.0), via geonamescache.
+- Places: GeoNames (CC-BY 4.0): cities500 worldwide plus full India, US, Ukraine and Italy files,
+  built into `data/gazetteer.sqlite` by `scripts/build_gazetteer.py` and pinned in `data/gazetteer.lock`.
 - Time zones: IANA tzdata, overridden by cited entries in `data/time_standards/`.
 - Golden charts in `tests/fixtures/` were generated with Swiss Ephemeris
   (`scripts/golden_charts.py`), used as a reference oracle only.
