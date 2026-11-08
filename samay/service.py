@@ -4,6 +4,8 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import os
+import re
+from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
 
@@ -23,24 +25,49 @@ from .models import (
     VersionStamp,
 )
 
-DATE_FORMATS = ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y")
+DATE_FORMATS = (
+    "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d.%m.%Y", "%d %B %Y", "%d %b %Y", "%B %d %Y", "%b %d %Y",
+)
 TRANSIT_GRAHAS = ("jupiter", "saturn", "rahu", "ketu")
+_ORDINAL = re.compile(r"(?<=\d)(st|nd|rd|th)\b", re.IGNORECASE)
+_CLOCK = re.compile(r"(\d{1,2})(?:[:.](\d{2}))?\s*(?:([ap])\.?\s*m\.?)?", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class Clock:
+    hour: int  # 24-hour reading of what was typed
+    minute: int
+    ambiguous: bool  # typed 1-12 with no am/pm, so the hour could mean morning or evening
+
+
+def parse_date(text: str) -> datetime:
+    """'1952-08-15', '15-08-1952', '15/8/1952', '15th August 1952', 'August 15, 1952'."""
+    cleaned = " ".join(_ORDINAL.sub("", text.replace(",", " ")).split())
+    for fmt in DATE_FORMATS:
+        try:
+            return datetime.strptime(cleaned, fmt)
+        except ValueError:
+            continue
+    raise InvalidInput(f"could not read the date {text!r}; use DD-MM-YYYY, e.g. 15-08-1952")
+
+
+def parse_clock(text: str) -> Clock:
+    """'6:30', '6.30', '6pm', '6:30 PM', '18:30'."""
+    m = _CLOCK.fullmatch(text.strip())
+    if not m:
+        raise InvalidInput(f"could not read the time {text!r}; use HH:MM, e.g. 6:30 am")
+    hour, minute, marker = int(m[1]), int(m[2] or 0), (m[3] or "").lower()
+    if minute > 59 or hour > 23 or (marker and not 1 <= hour <= 12):
+        raise InvalidInput(f"{text!r} is not a valid time")
+    if marker:
+        hour = hour % 12 + (12 if marker == "p" else 0)
+    return Clock(hour, minute, ambiguous=not marker and 1 <= hour <= 12)
 
 
 def parse_local(date_text: str, time_text: str) -> datetime:
-    for fmt in DATE_FORMATS:
-        try:
-            day = datetime.strptime(date_text.strip(), fmt)
-            break
-        except ValueError:
-            continue
-    else:
-        raise InvalidInput(f"could not read the date {date_text!r}; use YYYY-MM-DD")
-    try:
-        t = datetime.strptime(time_text.strip(), "%H:%M")
-    except ValueError:
-        raise InvalidInput(f"could not read the time {time_text!r}; use HH:MM (24-hour)") from None
-    return day.replace(hour=t.hour, minute=t.minute)
+    """Local birth time. Times without am/pm are read as 24-hour."""
+    clock = parse_clock(time_text)
+    return parse_date(date_text).replace(hour=clock.hour, minute=clock.minute)
 
 
 def resolve_birth(inp: BirthInput) -> ResolvedBirth | NeedsDisambiguation:

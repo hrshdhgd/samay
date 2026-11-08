@@ -36,5 +36,15 @@ version stamp. Charts say "not yet checked against reference software" until val
 - Golden charts in `tests/fixtures/` were generated with Swiss Ephemeris
   (`scripts/golden_charts.py`), used as a reference oracle only.
 
-The Telegram bot is being rebuilt on the service layer (plan 1C). See
-`docs/superpowers/specs/2026-11-08-foundation-design.md` for the design and roadmap.
+## Telegram bot
+```bash
+cp .env.example .env     # set TELEGRAM_TOKEN (from @BotFather) and ALLOWED_CHAT_IDS
+set -a; . ./.env; set +a
+SAMAY_DB=data/samay.db uv run python -m samay.bot
+```
+Long polling, so no public port. Only chats listed in `ALLOWED_CHAT_IDS` get answers (the bot
+refuses to start with an empty list). Relatives use a button menu and a guided conversation; the
+slash commands `/birth /chart /dasha /today /forget` also work. Birth details are stored in
+plaintext in the SQLite file until the encryption sub-project, so do not deploy before that.
+
+See `docs/superpowers/specs/2026-11-08-foundation-design.md` for the design and roadmap.

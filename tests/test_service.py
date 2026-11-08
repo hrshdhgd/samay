@@ -38,7 +38,7 @@ def test_time_disambiguation():
     assert b.utc == d.options[1]
 
 
-@pytest.mark.parametrize("date_text,time_text", [("1990-13-40", "14:30"), ("1990-08-15", "2pm")])
+@pytest.mark.parametrize("date_text,time_text", [("1990-13-40", "14:30"), ("1990-08-15", "25:61"), ("1990-08-15", "13pm")])
 def test_bad_input(date_text, time_text):
     with pytest.raises(InvalidInput):
         service.resolve_birth(BirthInput(date_text, time_text, "Pune"))
@@ -84,3 +84,23 @@ def test_nearby_town_is_flagged_approximate():
     assert b.provenance.place_approximate
     assert "Wagholi" in b.provenance.approx_note and "Pune" in b.provenance.approx_note
     assert not service.resolve_birth(PUNE_1990).provenance.place_approximate
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["1952-08-15", "15-08-1952", "15/8/1952", "15.08.1952", "15 August 1952", "15th Aug 1952", "August 15, 1952"],
+)
+def test_friendly_dates(text):
+    assert service.parse_date(text) == datetime(1952, 8, 15)
+
+
+@pytest.mark.parametrize(
+    "text,hour,minute,ambiguous",
+    [
+        ("6:30", 6, 30, True), ("6.30", 6, 30, True), ("6", 6, 0, True), ("12:15", 12, 15, True),
+        ("6:30 am", 6, 30, False), ("6:30PM", 18, 30, False), ("6pm", 18, 0, False),
+        ("12 am", 0, 0, False), ("12:30 pm", 12, 30, False), ("18:30", 18, 30, False), ("0:45", 0, 45, False),
+    ],
+)
+def test_friendly_clock(text, hour, minute, ambiguous):
+    assert service.parse_clock(text) == service.Clock(hour, minute, ambiguous)
