@@ -1,0 +1,87 @@
+# Classical yogas. Effects are paraphrased in our own words (translations are
+# often copyrighted). `source.verified: false` means the chapter/verse reference
+# still needs to be checked against the Sanskrit text before release.
+
+- id: gajakesari
+  name: Gaja Kesari Yoga
+  school: parashari
+  source: {text: Phaladeepika, locus: "Ch. 6", verified: false}
+  when:
+    house_from: {planet: jupiter, reference: moon, houses: [1, 4, 7, 10]}
+  effect: Jupiter in a kendra from the Moon; read classically as reputation, wisdom and lasting prosperity.
+  tags: [lunar, wealth]
+
+- id: budhaditya
+  name: Budha-Aditya Yoga
+  school: parashari
+  source: {text: "common tradition (find primary text)", locus: null, verified: false}
+  when:
+    same_sign: [sun, mercury]
+  effect: Sun and Mercury together; read as intelligence, skill with words and learning.
+  tags: [intellect]
+
+- id: chandra_mangala
+  name: Chandra-Mangala Yoga
+  school: parashari
+  source: {text: Phaladeepika, locus: "Ch. 6", verified: false}
+  when:
+    same_sign: [moon, mars]
+  effect: Moon and Mars together; read as drive for earning and a restless, enterprising temperament.
+  tags: [lunar, wealth]
+
+# Pancha Mahapurusha yogas: planet in own or exaltation sign AND in a kendra from lagna.
+# (Some authors also count kendras from the Moon; add a variant rule if desired.)
+- id: ruchaka
+  name: Ruchaka Yoga
+  school: parashari
+  source: {text: BPHS, locus: "Pancha Mahapurusha Yoga chapter", verified: false}
+  when:
+    all:
+      - in_sign: {planet: mars, signs: [Aries, Scorpio, Capricorn]}
+      - in_house: {planet: mars, houses: [1, 4, 7, 10]}
+  effect: Strong Mars in a kendra; read as courage, physical vigour and leadership.
+  tags: [mahapurusha]
+
+- id: bhadra
+  name: Bhadra Yoga
+  school: parashari
+  source: {text: BPHS, locus: "Pancha Mahapurusha Yoga chapter", verified: false}
+  when:
+    all:
+      - in_sign: {planet: mercury, signs: [Gemini, Virgo]}
+      - in_house: {planet: mercury, houses: [1, 4, 7, 10]}
+  effect: Strong Mercury in a kendra; read as intellect, eloquence and commercial skill.
+  tags: [mahapurusha]
+
+- id: hamsa
+  name: Hamsa Yoga
+  school: parashari
+  source: {text: BPHS, locus: "Pancha Mahapurusha Yoga chapter", verified: false}
+  when:
+    all:
+      - in_sign: {planet: jupiter, signs: [Sagittarius, Pisces, Cancer]}
+      - in_house: {planet: jupiter, houses: [1, 4, 7, 10]}
+  effect: Strong Jupiter in a kendra; read as righteousness, learning and respect.
+  tags: [mahapurusha]
+
+- id: malavya
+  name: Malavya Yoga
+  school: parashari
+  source: {text: BPHS, locus: "Pancha Mahapurusha Yoga chapter", verified: false}
+  when:
+    all:
+      - in_sign: {planet: venus, signs: [Taurus, Libra, Pisces]}
+      - in_house: {planet: venus, houses: [1, 4, 7, 10]}
+  effect: Strong Venus in a kendra; read as comfort, refinement and artistic taste.
+  tags: [mahapurusha]
+
+- id: sasa
+  name: Sasa Yoga
+  school: parashari
+  source: {text: BPHS, locus: "Pancha Mahapurusha Yoga chapter", verified: false}
+  when:
+    all:
+      - in_sign: {planet: saturn, signs: [Capricorn, Aquarius, Libra]}
+      - in_house: {planet: saturn, houses: [1, 4, 7, 10]}
+  effect: Strong Saturn in a kendra; read as authority over people, endurance and discipline.
+  tags: [mahapurusha]

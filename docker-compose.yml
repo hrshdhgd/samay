@@ -1,0 +1,21 @@
+services:
+  samay:
+    build: .
+    image: samay:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - samay-data:/var/lib/samay
+
+  # Optional local LLM: docker compose --profile llm up -d
+  # then: docker compose exec ollama ollama pull qwen2.5:3b
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["llm"]
+    restart: unless-stopped
+    volumes:
+      - ollama-models:/root/.ollama
+
+volumes:
+  samay-data:
+  ollama-models:
