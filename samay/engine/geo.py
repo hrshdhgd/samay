@@ -1,44 +1,70 @@
-"""Offline place lookup (GeoNames cities >= 15k population, bundled in geonamescache)."""
+"""Offline place lookup.
+
+Backend: GeoNames cities >= 15k population via geonamescache. Plan 1B replaces the backend with
+a bundled worldwide gazetteer; `find_places` keeps its signature.
+"""
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from functools import lru_cache
-from zoneinfo import ZoneInfo
 
 
 @dataclass(frozen=True)
 class Place:
+    id: str
     name: str
     country: str
+    admin1: str | None
+    admin2: str | None
     latitude: float
     longitude: float
     tz: str
+    population: int
+
+    @property
+    def label(self) -> str:
+        region = f", {self.admin1}" if self.admin1 else ""
+        return f"{self.name}{region}, {self.country}"
 
 
 @lru_cache(maxsize=1)
-def _cities() -> list[dict]:
+def _index() -> dict[str, list[Place]]:
+    """Casefolded name and alternate names -> places. Built once."""
     import geonamescache
 
-    return list(geonamescache.GeonamesCache().get_cities().values())
+    index: dict[str, list[Place]] = defaultdict(list)
+    for c in geonamescache.GeonamesCache().get_cities().values():
+        place = Place(
+            id=str(c["geonameid"]),
+            name=c["name"],
+            country=c["countrycode"],
+            admin1=c.get("admin1code") or None,
+            admin2=None,
+            latitude=c["latitude"],
+            longitude=c["longitude"],
+            tz=c["timezone"],
+            population=c["population"],
+        )
+        keys = {c["name"].casefold(), *(a.casefold() for a in c.get("alternatenames", []) if a)}
+        for key in keys:
+            index[key].append(place)
+    return dict(index)
 
 
-def find_place(query: str) -> Place | None:
-    """'Pune' or 'Pune, IN'. Picks the most populous match; caller should echo it back."""
+def find_places(query: str, limit: int = 3) -> list[Place]:
+    """'Pune' or 'Pune, IN'. Most populous first; [] when nothing matches."""
     name, _, cc = (s.strip() for s in query.partition(","))
-    key, cc = name.casefold(), cc.upper()
-    matches = [
-        c for c in _cities()
-        if (c["name"].casefold() == key or key in (a.casefold() for a in c.get("alternatenames", [])))
-        and (not cc or c["countrycode"] == cc)
-    ]
-    if not matches:
-        return None
-    c = max(matches, key=lambda c: c["population"])
-    return Place(c["name"], c["countrycode"], c["latitude"], c["longitude"], c["timezone"])
+    matches = _index().get(name.casefold(), [])
+    if cc:
+        matches = [p for p in matches if p.country == cc.upper()]
+    return sorted(matches, key=lambda p: -p.population)[:limit]
 
 
-def local_to_utc(local: datetime, tz: str) -> datetime:
-    """Interpret a naive local birth time in an IANA zone (historical offsets/DST via tzdata)."""
-    # TODO: ambiguous/nonexistent times around DST changes; ask the user when fold matters.
-    return local.replace(tzinfo=ZoneInfo(tz)).astimezone(timezone.utc)
+@lru_cache(maxsize=1)
+def _by_id() -> dict[str, Place]:
+    return {p.id: p for places in _index().values() for p in places}
+
+
+def get_place(place_id: str) -> Place | None:
+    return _by_id().get(place_id)

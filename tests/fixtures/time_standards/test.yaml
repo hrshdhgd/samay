@@ -1,0 +1,9 @@
+# Test-only entry. Not a researched value.
+- country: IN
+  admin1: "16"
+  from: 1950-01-01
+  to: 1955-01-01
+  offset: "+04:51:00"
+  name: Test Local Time
+  confidence: probable
+  source: {text: Test fixture, locus: "n/a", verified: false}

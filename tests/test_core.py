@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import pytest
 
 from samay.engine.ephemeris import Chart, Placement, ascendant_tropical, lahiri_ayanamsa, mean_lunar_node
-from samay.engine.geo import find_place, local_to_utc
 from samay.engine.rules import Context, evaluate, fired, load_rules
 from samay.engine.vedic import (
     DASHA_ORDER, antardashas, current_dasha, house_from, nakshatra, navamsa_sign, vimshottari,
@@ -76,14 +75,6 @@ def test_dsl_combinators():
     ctx = Context({"lagna": 0, "moon": 3, "mars": 3})
     assert evaluate({"any": [{"same_sign": ["moon", "mars"]}, {"in_house": {"planet": "moon", "houses": [1]}}]}, ctx)
     assert not evaluate({"not": {"same_sign": ["moon", "mars"]}}, ctx)
-
-
-def test_offline_geocoding_and_tz():
-    p = find_place("Pune, IN")
-    assert p and p.tz == "Asia/Kolkata"
-    assert local_to_utc(datetime(1990, 8, 15, 14, 30), p.tz) == datetime(1990, 8, 15, 9, 0, tzinfo=timezone.utc)
-    # historical US DST
-    assert local_to_utc(datetime(1990, 7, 1, 12, 0), "America/Chicago").hour == 17
 
 
 @pytest.mark.skipif(not os.path.exists(os.environ.get("SAMAY_EPHEMERIS", "data/de440s.bsp")),
