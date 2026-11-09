@@ -24,8 +24,8 @@ never on memory.
 |---|---|---|
 | **1** | **Foundation** (this spec) | — |
 | 2 | Validation + historical time-standard research (India, Ukraine, USA, Italy) | 1 |
-| 3 | i18n: English, Hindi, Marathi | 1 |
-| 4 | Conversational input: free text and voice (EN/HI/MR), LLM extracts, user confirms | 3 |
+| 3 | ~~i18n: English, Hindi, Marathi~~ — dropped 2026-11-08: every user reads English. Revisit only if that changes. | — |
+| 4 | Grounded free Q&A in English (the app's headline feature): answers only from computed chart facts and cited entries, shows the citation, says so when it has no sourced answer; no answers from the model's own knowledge | 2, 5 |
 | 5 | Rule base: more yogas, conflict weighting, transit rules for `/today` | 2, 3 |
 | 6 | Additional tradition profiles: true Chitrapaksha, Raman — each validated as added | 2 |
 | 7 | KP system: Placidus cusps, star/sub-lords | 2 |
@@ -39,6 +39,8 @@ to one relative locally, and their reaction is recorded in the next spec.
 
 ### Decisions already made
 
+- English only. No meaning text ships until its source is researched and cited (Q&A, /today and
+  glossary answers included); until then the bot shows computed facts only.
 - Private bot, chat-ID allowlist. Host Ollama shared with stockbro; no sidecar.
 - Deploy via rsync + server-side build, like stockbro (sub-project 11).
 - `pyproject.toml` + `uv` + `uv.lock`; `click` CLI; CLI is stateless.
