@@ -21,7 +21,11 @@ ENTRIES_DIR = DATA_DIR / "entries"
 LEVELS = ("unchecked", "translation-checked", "sanskrit-checked")
 SERVABLE_LEVELS = frozenset(LEVELS[1:])
 TOPIC = re.compile(r"[a-z0-9_]+(:[a-z0-9_]+){0,3}")  # e.g. "dasha:saturn", "transit:saturn:11"
-_REQUIRED = {"id", "topic", "english", "citation", "verification"}
+_REQUIRED = {"id", "topic", "system", "english", "citation", "verification"}
+# "any": not tied to a calculation system (e.g. the nature of a planet). Otherwise the system the
+# entry describes, e.g. "vimshottari"; such an entry only answers questions about that system.
+ANY_SYSTEM = "any"
+SYSTEM = re.compile(r"[a-z0-9-]+")
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,7 @@ class Verification:
 class Entry:
     id: str
     topic: str
+    system: str
     english: str
     citation: dict  # text, chapter, verse, edition
     verification: Verification
@@ -71,6 +76,8 @@ def _parse(raw: dict, where: str) -> Entry:
         raise ValueError(f"{where}: missing {sorted(missing)}")
     if not is_topic(raw["topic"]):
         raise ValueError(f"{where}: topic {raw['topic']!r} must look like 'dasha:saturn'")
+    if not SYSTEM.fullmatch(str(raw["system"])):
+        raise ValueError(f"{where}: system must be 'any' or an id like 'vimshottari'")
     if not {"text", "chapter", "verse", "edition"} <= raw["citation"].keys():
         raise ValueError(f"{where}: citation needs text, chapter, verse and edition")
     v = raw["verification"]
@@ -87,7 +94,7 @@ def _parse(raw: dict, where: str) -> Entry:
             raise ValueError(f"{where}: a verse needs both devanagari and roman text")
         verse = Verse(rv["devanagari"], rv["roman"], bool(rv.get("text_checked")))
     return Entry(
-        id=raw["id"], topic=raw["topic"], english=raw["english"].strip(), citation=dict(raw["citation"]),
+        id=raw["id"], topic=raw["topic"], system=raw["system"], english=raw["english"].strip(), citation=dict(raw["citation"]),
         verification=Verification(v["level"], v.get("checked_by"), v.get("checked_on"), v.get("against")),
         verse=verse,
     )
@@ -105,7 +112,10 @@ def load_entries(directory: Path = ENTRIES_DIR) -> tuple[Entry, ...]:
     return tuple(entries)
 
 
-def answers_for(topic: str, directory: Path = ENTRIES_DIR) -> list[Entry]:
-    """Entries that may be shown for a topic: checked ones only, most thoroughly checked first."""
-    found = [e for e in load_entries(directory) if e.topic == topic and e.servable]
+def answers_for(topic: str, systems: frozenset[str] = frozenset(), directory: Path = ENTRIES_DIR) -> list[Entry]:
+    """Entries that may be shown for a topic: checked ones only, most thoroughly checked first.
+    An entry tied to a calculation system is only returned when that system is in `systems`
+    (the systems the user's chart was computed with), so it never explains a different system."""
+    allowed = {ANY_SYSTEM, *systems}
+    found = [e for e in load_entries(directory) if e.topic == topic and e.servable and e.system in allowed]
     return sorted(found, key=lambda e: -LEVELS.index(e.verification.level))

@@ -117,7 +117,7 @@ def research_queue(limit: int) -> None:
     if not rows:
         click.echo("No unanswered topics recorded yet.")
     for topic, count in rows:
-        state = "has a checked entry (now answerable)" if answers_for(topic) else "needs research"
+        state = "has a checked entry (now answerable)" if answers_for(topic, frozenset({"vimshottari"})) else "needs research"
         click.echo(f"{count:5}  {topic}  {state}")
 
 

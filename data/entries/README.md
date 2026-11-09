@@ -6,6 +6,8 @@ user until its `verification.level` is `translation-checked` or `sanskrit-checke
 ```yaml
 - id: brihat-jataka-2-1-sun        # unique
   topic: planet:sun                # what a question must be sorted into: kind:subject[:detail]
+  system: any                      # 'any', or the calculation system it describes (e.g. vimshottari);
+                                   # a system-specific entry only answers questions about that system
   english: "<our own words>"       # a paraphrase: translations are often still under copyright
   citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "<edition read>"}
   verse:                           # optional; shown only if text_checked is true

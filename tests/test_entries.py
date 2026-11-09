@@ -10,7 +10,7 @@ from samay.engine.entries import LEVELS, Entry, answers_for, is_topic, load_entr
 
 def raw(**changes):
     base = {
-        "id": "e1", "topic": "planet:sun", "english": "Our own words.",
+        "id": "e1", "topic": "planet:sun", "system": "any", "english": "Our own words.",
         "citation": {"text": "Brihat Jataka", "chapter": 2, "verse": 1, "edition": "Iyer 1885"},
         "verification": {"level": "unchecked"},
     }
@@ -35,14 +35,14 @@ def test_shipped_entries_directory_loads():
 
 def test_unchecked_entries_are_stored_but_never_served(tmp_path):
     d = write(tmp_path, raw())
-    assert len(load_entries(d)) == 1 and answers_for("planet:sun", d) == []
+    assert len(load_entries(d)) == 1 and answers_for("planet:sun", directory=d) == []
 
 
 def test_checked_entries_are_served_best_checked_first(tmp_path):
     scholar = {"level": "sanskrit-checked", "checked_by": "Scholar", "checked_on": date(2026, 11, 10)}
     d = write(tmp_path, raw(id="a", verification=CHECKED), raw(id="b", verification=scholar), raw(id="c"))
-    assert [e.id for e in answers_for("planet:sun", d)] == ["b", "a"]
-    assert answers_for("planet:moon", d) == []
+    assert [e.id for e in answers_for("planet:sun", directory=d)] == ["b", "a"]
+    assert answers_for("planet:moon", directory=d) == []
 
 
 @pytest.mark.parametrize(
@@ -54,6 +54,7 @@ def test_checked_entries_are_served_best_checked_first(tmp_path):
         ({"verification": {"level": "translation-checked", "checked_by": "H", "checked_on": date(2026, 1, 1)}}, "against"),
         ({"verification": {"level": "sanskrit-checked", "checked_by": "H"}}, "checked_on"),
         ({"citation": {"text": "Brihat Jataka"}}, "citation"),
+        ({"system": "Vimshottari Dasha"}, "system"),
         ({"verse": {"devanagari": "x"}}, "devanagari and roman"),
     ],
 )
@@ -92,3 +93,12 @@ def test_topic_keys(good):
 @pytest.mark.parametrize("bad", ["", "Dasha:Saturn", "will I marry this year", "a:b:c:d:e", "x" * 70, "dasha:sat urn"])
 def test_free_text_is_not_a_topic(bad):
     assert not is_topic(bad)
+
+
+def test_a_system_specific_entry_never_answers_for_another_system(tmp_path):
+    d = write(tmp_path,
+              raw(id="bj", topic="dasha:saturn", system="brihat-jataka-dasa", verification=CHECKED),
+              raw(id="vim", topic="dasha:saturn", system="vimshottari", verification=CHECKED),
+              raw(id="gen", topic="dasha:saturn", system="any", verification=CHECKED))
+    assert {e.id for e in answers_for("dasha:saturn", frozenset({"vimshottari"}), d)} == {"vim", "gen"}
+    assert {e.id for e in answers_for("dasha:saturn", directory=d)} == {"gen"}

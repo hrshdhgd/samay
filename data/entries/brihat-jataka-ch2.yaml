@@ -1,0 +1,69 @@
+# Brihat Jataka of Varahamihira, chapter II, stanza 1: what each planet stands for.
+# Written from N. Chidambaram Iyer's English translation (Madras: Foster Press, 1885), which is in
+# the public domain (Public Domain Mark on the Wellcome copy, archive.org item b2488442x, p. 14).
+# Paraphrased in our own words. UNCHECKED: not shown to anyone until a person compares each
+# paraphrase with stanza 1 of that translation and fills in the verification block.
+# Stanza 1 names seven planets only; it says nothing about Rahu or Ketu.
+
+- id: bj-2-1-sun
+  topic: planet:sun
+  system: any
+  english: >-
+    Varahamihira describes the Sun as the soul of the cosmic person. Among the planets he counts it
+    as a king, together with the Moon.
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-moon
+  topic: planet:moon
+  system: any
+  english: >-
+    Varahamihira describes the Moon as the mind of the cosmic person. Among the planets he counts it
+    as a king, together with the Sun.
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-mars
+  topic: planet:mars
+  system: any
+  english: >-
+    Varahamihira describes Mars as the strength of the cosmic person. Among the planets he calls it
+    the general (commander of the army).
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-mercury
+  topic: planet:mercury
+  system: any
+  english: >-
+    Varahamihira describes Mercury as the speech of the cosmic person. Among the planets he calls it
+    the prince (heir to the throne).
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-jupiter
+  topic: planet:jupiter
+  system: any
+  english: >-
+    Varahamihira describes Jupiter as the knowledge and health of the cosmic person. Among the
+    planets he counts it as a counsellor (minister), together with Venus.
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-venus
+  topic: planet:venus
+  system: any
+  english: >-
+    Varahamihira describes Venus as the desire of the cosmic person. Among the planets he counts it
+    as a counsellor (minister), together with Jupiter.
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
+
+- id: bj-2-1-saturn
+  topic: planet:saturn
+  system: any
+  english: >-
+    Varahamihira describes Saturn as the sorrow of the cosmic person. Among the planets he calls it
+    the servant.
+  citation: {text: Brihat Jataka, chapter: 2, verse: 1, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
+  verification: {level: unchecked}
