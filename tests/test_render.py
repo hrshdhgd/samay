@@ -135,3 +135,61 @@ def test_today_can_carry_extra_lines_before_the_footer():
     report = service.today_report(birth, datetime(2026, 11, 9, tzinfo=UTC))
     lines = render_today(report, technical=False, extras=("⚠ Rahu Kaala today: X",)).splitlines()
     assert "⚠ Rahu Kaala today: X" in lines and lines.index("⚠ Rahu Kaala today: X") < len(lines) - 3
+
+
+def test_ordinals():
+    from samay.render.text import ordinal
+
+    assert [ordinal(n) for n in (1, 2, 3, 4, 11, 12)] == ["1st", "2nd", "3rd", "4th", "11th", "12th"]
+
+
+def _today(now=datetime(2026, 11, 9, tzinfo=UTC)):
+    birth = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    return service.today_report(birth, now)
+
+
+def test_chat_today_explains_in_plain_words_then_shows_the_technical_details():
+    from samay.render.text import render_today
+
+    text = render_today(_today(), technical=False, extras=("⚠ Rahu Kaala today: X",))
+    lines = text.splitlines()
+    assert lines[0] == "🌙 Today, Monday 09 November 2026"
+    assert "Your birth Moon sign is Taurus (Vrishabha)" in text
+    assert "Saturn is in Pisces (Meena), the 11th sign from your Moon sign." in text  # counted from Taurus
+    assert "Jupiter is in Leo (Simha), the 4th sign from your Moon sign." in text
+    assert "You are in your Jupiter life chapter (dasha), which lasts 16 years in all and runs until Feb 2033." in text
+    assert "Inside it you are in the Venus sub-chapter, until 02 Sep 2027." in text
+    assert lines.index("⚠ Rahu Kaala today: X") < lines.index("Technical details")
+    assert "Transiting Saturn is in house 11 from your Moon." in lines[lines.index("Technical details"):]
+
+
+def test_plain_today_has_no_meanings_only_computed_facts():
+    from samay.render.text import plain_today
+
+    text = " ".join(plain_today(_today())).lower()
+    for meaning_word in ("auspicious", "good for", "bad for", "indicates", "brings", "sade sati", "will "):
+        assert meaning_word not in text
+
+
+def test_cli_today_is_unchanged():
+    from samay.render.text import render_today
+
+    text = render_today(_today())
+    assert text.startswith("Today (09 Nov 2026).") and "Technical details" not in text
+
+
+def test_chat_dasha_is_explained_with_lengths_dates_and_the_current_sub_chapters():
+    now = datetime(2026, 11, 9, tzinfo=UTC)
+    text = render_dasha(_report(), now, technical=False)
+    assert text.startswith("Your life chapters (dashas)") and "120 years" in text
+    rows = [line for line in text.splitlines() if " · " in line and "years" in line]
+    assert len(rows) == 9 and sum(1 for r in rows if "← now" in r) == 1
+    assert next(r for r in rows if "← now" in r).startswith("Jupiter · 16 years · ")
+    assert rows[0].split(" · ")[2].startswith("birth –")  # the first chapter began before birth
+    assert "Rahu and Ketu are not planets you can see" in text
+    assert "Sub-chapters inside your Jupiter chapter:" in text
+    assert sum(1 for line in text.splitlines() if line.endswith("← now")) == 2  # chapter + sub-chapter
+
+
+def test_cli_dasha_is_unchanged():
+    assert render_dasha(_report(), datetime(2026, 11, 9, tzinfo=UTC)).startswith("Vimshottari mahadashas:")

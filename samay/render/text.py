@@ -5,7 +5,17 @@ from datetime import datetime, timedelta
 
 from ..engine.daylight import RahuKaala
 from ..engine.ephemeris import GRAHAS
-from ..engine.vedic import NAKSHATRAS, RASHIS, SIGNS, Period, house_from, nakshatra, sign_index
+from ..engine.vedic import (
+    DASHA_YEARS,
+    NAKSHATRAS,
+    RASHIS,
+    SIGNS,
+    Period,
+    antardashas,
+    house_from,
+    nakshatra,
+    sign_index,
+)
 from ..models import NatalReport, NeedsDisambiguation, TodayReport
 from . import prompts
 
@@ -74,7 +84,44 @@ def render_chart(report: NatalReport, technical: bool = True) -> str:
     return "\n".join(lines + _footer(report, technical))
 
 
+RAHU_KETU_NOTE = (
+    "Rahu and Ketu are not planets you can see. They are the two points where the Moon's path "
+    "crosses the Sun's path in the sky."
+)
+
+
+def ordinal(n: int) -> str:
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
+def _plain_dasha(report: NatalReport, now: datetime) -> list[str]:
+    born = report.birth.utc
+    lines = [
+        "Your life chapters (dashas)",
+        ("Jyotish divides time into chapters, each ruled by one planet. They follow a fixed order and "
+        "last 6 to 20 years each; the full cycle is 120 years. Which chapter you began in depends on "
+        "where the Moon was at your birth."),
+        "",
+    ]
+    current = None
+    for p in report.dashas:
+        start = "birth" if p.start < born else f"{p.start:%b %Y}"
+        mark = " ← now" if p.contains(now) else ""
+        lines.append(f"{p.lord.title()} · {DASHA_YEARS[p.lord]} years · {start} – {p.end:%b %Y}{mark}")
+        current = p if p.contains(now) else current
+    lines += ["", RAHU_KETU_NOTE]
+    if current is not None:
+        lines += ["", f"Sub-chapters inside your {current.lord.title()} chapter:"]
+        for a in antardashas(current):
+            mark = " ← now" if a.contains(now) else ""
+            lines.append(f"{a.lord.title()} · {a.start:%b %Y} – {a.end:%b %Y}{mark}")
+    return lines
+
+
 def render_dasha(report: NatalReport, now: datetime, technical: bool = True) -> str:
+    if not technical:
+        return "\n".join([*_plain_dasha(report, now), *_footer(report, technical)])
     lines = ["Vimshottari mahadashas:"]
     for p in report.dashas:
         mark = " ← now" if p.contains(now) else ""
@@ -95,13 +142,43 @@ def today_facts(report: TodayReport) -> list[str]:
     return facts
 
 
+def plain_today(report: TodayReport) -> list[str]:
+    """Today's facts in everyday words: where the slow planets are, counted from the birth Moon
+    sign, and which life chapter is running. No meanings, only computed facts."""
+    moon_sign = sign_index(report.natal.chart.planets["moon"].longitude)
+    lines = [
+        (f"Your birth Moon sign is {SIGNS[moon_sign]} ({RASHIS[moon_sign]}). Jyotish counts signs "
+        "from it: that sign is the 1st, the next is the 2nd, and so on."),
+        "",
+    ]
+    for g, house in report.transit_houses:
+        sign = sign_index(report.sky.planets[g].longitude)
+        lines.append(f"{g.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), the {ordinal(house)} sign from your Moon sign.")
+    if report.current_dasha:
+        maha, antar = report.current_dasha
+        lines += [
+            "",
+            (f"You are in your {maha.lord.title()} life chapter (dasha), which lasts {DASHA_YEARS[maha.lord]} "
+            f"years in all and runs until {maha.end:%b %Y}. Inside it you are in the {antar.lord.title()} "
+            f"sub-chapter, until {antar.end:%d %b %Y}."),
+        ]
+    return lines
+
+
 def render_today(
     report: TodayReport, reading: str | None = None, technical: bool = True, extras: tuple[str, ...] = ()
 ) -> str:
-    """Today's transits. `reading` replaces the plain fact list (e.g. reworded by narrate);
-    `extras` are further lines shown before the footer (such as Rahu Kaala)."""
-    body = reading if reading is not None else "\n".join(today_facts(report))
-    return "\n".join([body, *extras, *_footer(report.natal, technical)])
+    """Today's transits. `reading` replaces the fact list (e.g. reworded by narrate); `extras` are
+    further lines (such as Rahu Kaala). For chat (technical=False) the plain-words section comes
+    first and the exact positions follow under "Technical details"."""
+    if technical:
+        body = reading if reading is not None else "\n".join(today_facts(report))
+        return "\n".join([body, *extras, *_footer(report.natal, technical)])
+    head = f"🌙 Today, {report.now:%A %d %B %Y}"
+    if reading is not None:
+        return "\n".join([head, reading, *extras, *_footer(report.natal, technical)])
+    lines = [head, *plain_today(report), "", *extras, "", "Technical details", *today_facts(report)]
+    return "\n".join([*lines, *_footer(report.natal, technical)])
 
 
 def clock12(moment: datetime) -> str:
