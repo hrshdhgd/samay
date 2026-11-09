@@ -158,7 +158,7 @@ def answer_topic(
     facts: list[str] = []
     if birth is not None and subject in GRAHAS:
         facts = _planet_facts(subject, birth) if kind == "planet" else _dasha_facts(subject, birth, now)
-    notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") and not found else ()
+    notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") else ()  # astronomy, always useful
     alias = name_used(question, subject) if subject in GRAHAS else None
     name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject.title()}." if alias else None
     return Answer(topic, tuple(found), tuple(facts), notes, name_line)

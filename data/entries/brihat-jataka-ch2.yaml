@@ -74,7 +74,7 @@
   verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
                  against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. II st. 1, p. 14"}
 
-# ---- Brihat Jataka I.4: what "the cosmic person (Kalapurusha)" means. UNCHECKED. ----------------
+# ---- Brihat Jataka I.4: what "the cosmic person (Kalapurusha)" means. Checked by h2, 2026-11-09. ----------------
 - id: bj-1-4-kalapurusha
   topic: concept:kalapurusha
   system: any
@@ -83,16 +83,18 @@
     (Kalapurusha): from Aries as the head, through the face, chest, heart, belly, navel, lower
     abdomen, genitals, thighs, knees and ankles, down to Pisces as the feet.
   citation: {text: Brihat Jataka, chapter: 1, verse: 4, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
-# ---- Brihat Jataka II.2-3: other classical names of the planets. UNCHECKED. ---------------------
+# ---- Brihat Jataka II.2-3: other classical names of the planets. Checked by h2, 2026-11-09. ---------------------
 - id: bj-2-2-names-sun
   topic: planet:sun
   system: any
   english: >-
     Varahamihira gives Heli as another classical name for the Sun.
   citation: {text: Brihat Jataka, chapter: 2, verse: 2, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-2-names-moon
   topic: planet:moon
@@ -100,7 +102,8 @@
   english: >-
     Varahamihira gives Sitarashmi ("the cool-rayed one") as another classical name for the Moon.
   citation: {text: Brihat Jataka, chapter: 2, verse: 2, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-2-names-mercury
   topic: planet:mercury
@@ -109,7 +112,8 @@
     Varahamihira gives Hemna, Vit, Jna, Bodhana and Induputra ("son of the Moon") as other classical
     names for Mercury.
   citation: {text: Brihat Jataka, chapter: 2, verse: 2, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-2-names-mars
   topic: planet:mars
@@ -118,7 +122,8 @@
     Varahamihira gives Ara, Vakra, Kruradrik and Avaneya ("son of the Earth") as other classical names
     for Mars.
   citation: {text: Brihat Jataka, chapter: 2, verse: 2, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-2-names-saturn
   topic: planet:saturn
@@ -127,7 +132,8 @@
     Varahamihira gives Kona, Manda, Suryaputra ("son of the Sun") and Asita ("the black planet") as
     other classical names for Saturn.
   citation: {text: Brihat Jataka, chapter: 2, verse: 2, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-3-names-jupiter
   topic: planet:jupiter
@@ -136,7 +142,8 @@
     Varahamihira gives Jeeva, Angirasa, Suraguru ("teacher of the gods"), Vachaspati and Ijya as other
     classical names for Jupiter.
   citation: {text: Brihat Jataka, chapter: 2, verse: 3, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-3-names-venus
   topic: planet:venus
@@ -145,7 +152,8 @@
     Varahamihira gives Sukra, Bhrigu, Bhrigusuta, Sita ("the white planet") and Asphujit as other
     classical names for Venus.
   citation: {text: Brihat Jataka, chapter: 2, verse: 3, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-3-names-rahu
   topic: planet:rahu
@@ -154,7 +162,8 @@
     Varahamihira gives Tama ("darkness"), Agu and Asura as other names for Rahu, which he identifies
     as the Moon's ascending node.
   citation: {text: Brihat Jataka, chapter: 2, verse: 3, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-3-names-ketu
   topic: planet:ketu
@@ -163,9 +172,10 @@
     Varahamihira gives Sikhi as another name for Ketu, which he identifies as the Moon's descending
     node.
   citation: {text: Brihat Jataka, chapter: 2, verse: 3, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
-# ---- Brihat Jataka II.4-11: colour, gender, element, temperament, appearance. UNCHECKED. --------
+# ---- Brihat Jataka II.4-11: colour, gender, element, temperament, appearance. Checked by h2, 2026-11-09. --------
 # Stanza 7's first half (caste) is deliberately not used. Stanzas 4-6 and 8-11 do not cover Rahu and Ketu.
 - id: bj-2-4-colour-sun
   topic: planet:sun
@@ -173,7 +183,8 @@
   english: >-
     Varahamihira says Sun is red and dark brown, and presides over copper colour.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-sun
   topic: planet:sun
@@ -181,7 +192,8 @@
   english: >-
     Varahamihira counts Sun as male, gives it the element fire (from the translator's note), and its temperament as good (sattva).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-8-appearance-sun
   topic: planet:sun
@@ -189,7 +201,8 @@
   english: >-
     Varahamihira pictures Sun with somewhat yellow eyes, the height of a man's outstretched arms, a bilious nature and very little hair on the head.
   citation: {text: Brihat Jataka, chapter: 2, verse: 8, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-moon
   topic: planet:moon
@@ -197,7 +210,8 @@
   english: >-
     Varahamihira says Moon is white, and presides over white.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-moon
   topic: planet:moon
@@ -205,7 +219,8 @@
   english: >-
     Varahamihira counts Moon as female, gives it the element water (from the translator's note), and its temperament as good (sattva).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-8-appearance-moon
   topic: planet:moon
@@ -213,7 +228,8 @@
   english: >-
     Varahamihira pictures Moon with a thin, round body, a very windy and phlegmatic nature, learning, a soft voice and beautiful eyes.
   citation: {text: Brihat Jataka, chapter: 2, verse: 8, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-mars
   topic: planet:mars
@@ -221,7 +237,8 @@
   english: >-
     Varahamihira says Mars is both red and white, and presides over red; it is not tall.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-mars
   topic: planet:mars
@@ -229,7 +246,8 @@
   english: >-
     Varahamihira counts Mars as male, gives it the element fire, and its temperament as dark (tamas).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-9-appearance-mars
   topic: planet:mars
@@ -237,7 +255,8 @@
   english: >-
     Varahamihira pictures Mars with sharp, cruel eyes, a young body, a generous but unsteady mind, a bilious nature and a narrow waist.
   citation: {text: Brihat Jataka, chapter: 2, verse: 9, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-mercury
   topic: planet:mercury
@@ -245,7 +264,8 @@
   english: >-
     Varahamihira says Mercury is green like durva grass, and presides over green.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-mercury
   topic: planet:mercury
@@ -253,7 +273,8 @@
   english: >-
     Varahamihira counts Mercury as neither male nor female (the translator's note says 'female'), gives it the element earth, and its temperament as passionate (rajas).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-9-appearance-mercury
   topic: planet:mercury
@@ -261,7 +282,8 @@
   english: >-
     Varahamihira pictures Mercury with a halting speech, a fondness for jokes, and a bilious, windy and phlegmatic nature.
   citation: {text: Brihat Jataka, chapter: 2, verse: 9, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-jupiter
   topic: planet:jupiter
@@ -269,7 +291,8 @@
   english: >-
     Varahamihira says Jupiter is yellow like molten gold, and presides over yellow.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-jupiter
   topic: planet:jupiter
@@ -277,7 +300,8 @@
   english: >-
     Varahamihira counts Jupiter as male, gives it the element ether (akasha), and its temperament as good (sattva).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-10-appearance-jupiter
   topic: planet:jupiter
@@ -285,7 +309,8 @@
   english: >-
     Varahamihira pictures Jupiter with a large body, yellow hair and eyes, high intellect and a phlegmatic nature.
   citation: {text: Brihat Jataka, chapter: 2, verse: 10, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-venus
   topic: planet:venus
@@ -293,7 +318,8 @@
   english: >-
     Varahamihira says Venus is neither very white nor very dark, and presides over a mix of colours.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-venus
   topic: planet:venus
@@ -301,7 +327,8 @@
   english: >-
     Varahamihira counts Venus as female, gives it the element water, and its temperament as passionate (rajas).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-10-appearance-venus
   topic: planet:venus
@@ -309,7 +336,8 @@
   english: >-
     Varahamihira pictures Venus with a comfortable life, a beautiful body, fair eyes, black curly hair, and a windy and phlegmatic nature.
   citation: {text: Brihat Jataka, chapter: 2, verse: 10, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-4-colour-saturn
   topic: planet:saturn
@@ -317,7 +345,8 @@
   english: >-
     Varahamihira says Saturn is black, and presides over black.
   citation: {text: Brihat Jataka, chapter: 2, verse: "4-5", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-6-nature-saturn
   topic: planet:saturn
@@ -325,7 +354,8 @@
   english: >-
     Varahamihira counts Saturn as neither male nor female (the translator's note says 'male'), gives it the element air, and its temperament as dark (tamas).
   citation: {text: Brihat Jataka, chapter: 2, verse: "6-7", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}
 
 - id: bj-2-11-appearance-saturn
   topic: planet:saturn
@@ -333,4 +363,5 @@
   english: >-
     Varahamihira pictures Saturn with laziness, golden-coloured eyes, a thin and tall body, large teeth, stiff hair and a windy nature.
   citation: {text: Brihat Jataka, chapter: 2, verse: 11, edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-09,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain)"}

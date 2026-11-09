@@ -551,12 +551,13 @@ async def test_ask_menu_and_bare_command_prompt_for_a_question(ctx):
     assert last_reply(msg) == prompts.ASK_QUESTION
 
 
-async def test_rahu_question_gets_the_astronomy_note_when_no_entry_exists(ctx, store):
+async def test_rahu_question_gets_its_sourced_names_and_the_astronomy_note(ctx, store):
     update, msg = message(ALLOWED, "what is rahu")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert prompts.NO_SOURCE in text and "Moon's path crosses the Sun's path" in text
-    assert store.top_misses() == [("planet:rahu", 1)]
+    assert "Moon's ascending node" in text and "— Brihat Jataka 2.3 (translation-checked)" in text
+    assert "Moon's path crosses the Sun's path" in text and prompts.NO_SOURCE not in text
+    assert store.top_misses() == []
 
 
 async def test_answer_has_no_sanskrit_button_without_a_checked_verse(ctx):

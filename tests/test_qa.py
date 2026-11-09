@@ -75,9 +75,11 @@ def test_answer_without_a_topic_is_empty():
     assert qa.answer_topic("planet:pluto", None, NOW).topic is None
 
 
-def test_checked_entry_is_returned_word_for_word_without_birth():
+def test_checked_entries_are_returned_in_source_order_without_birth():
     a = qa.answer_topic("planet:moon", None, NOW)
-    assert [e.id for e in a.entries] == ["bj-2-1-moon"] and a.facts == () and a.notes == ()
+    assert [e.id for e in a.entries] == [
+        "bj-2-1-moon", "bj-2-2-names-moon", "bj-2-4-colour-moon", "bj-2-6-nature-moon", "bj-2-8-appearance-moon"]
+    assert a.facts == () and a.notes == ()
 
 
 @needs_kernel
@@ -105,9 +107,11 @@ def test_current_dasha_without_birth_stays_general():
     assert a.topic == "dasha:current" and a.facts == ()
 
 
-def test_rahu_without_an_entry_gets_the_astronomy_note():
-    a = qa.answer_topic("planet:rahu", None, NOW)
-    assert a.entries == () and a.notes == (qa.RAHU_KETU_FACT,)
+def test_rahu_and_ketu_always_get_the_astronomy_note_alongside_their_entries():
+    for node in ("rahu", "ketu"):
+        a = qa.answer_topic(f"planet:{node}", None, NOW)
+        assert [e.id for e in a.entries] == [f"bj-2-3-names-{node}"] and a.notes == (qa.RAHU_KETU_FACT,)
+    assert qa.answer_topic("planet:saturn", None, NOW).notes == ()
 
 
 @pytest.mark.parametrize(
@@ -133,7 +137,20 @@ def test_name_line_comes_first_in_the_rendered_answer():
     assert text.startswith("Shani is the Sanskrit and Hindi name for Saturn.\n\nVarahamihira describes Saturn")
 
 
-def test_unchecked_entries_stay_hidden_from_answers():
-    saturn = qa.answer_topic("planet:saturn", None, NOW)
-    assert [e.id for e in saturn.entries] == ["bj-2-1-saturn"]
-    assert qa.answer_topic("concept:kalapurusha", None, NOW).entries == ()
+def test_kalapurusha_question_gets_its_entry():
+    assert [e.id for e in qa.answer_topic("concept:kalapurusha", None, NOW).entries] == ["bj-1-4-kalapurusha"]
+
+
+def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
+    import yaml
+
+    from samay.engine import entries as entry_store
+
+    draft = {"id": "d", "topic": "planet:saturn", "system": "any", "english": "draft",
+             "citation": {"text": "T", "chapter": 1, "verse": 1, "edition": "e"}, "verification": {"level": "unchecked"}}
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([draft]))
+    entry_store.load_entries.cache_clear()
+    try:
+        assert qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries == ()
+    finally:
+        entry_store.load_entries.cache_clear()
