@@ -47,4 +47,12 @@ refuses to start with an empty list). Relatives use a button menu and a guided c
 slash commands `/birth /chart /dasha /today /forget` also work. Birth details are stored in
 plaintext in the SQLite file until the encryption sub-project, so do not deploy before that.
 
+### Questions
+Relatives can type a question or tap **❓ Ask a question**. Answers are built only from checked
+entries in `data/entries/` (quoted word for word, with their citation) plus facts from the person's
+own chart. The local model, when `OLLAMA_URL` is set, only sorts a question into a known topic; it
+never writes the answer. Questions without a sourced answer say so, and only their topic key (never
+the words) is counted for `uv run samay research-queue`. How entries are researched and checked:
+`research/program.md`.
+
 See `docs/superpowers/specs/2026-11-08-foundation-design.md` for the design and roadmap.

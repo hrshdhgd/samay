@@ -38,9 +38,24 @@ BRIEF_OFF = "Done. No more morning messages."
 BRIEF_STATUS_ON = "Your morning message is on, at {time} ({place} time)."
 BRIEF_STATUS_OFF = "Your morning message is off."
 BRIEF_NEED_HOME = "First, I need to know where you live now, so I can send the right time.\n\n"
+ASK_QUESTION = (
+    "What would you like to know? Ask about a planet or a dasha, for example:\n"
+    "• What does Saturn stand for?\n• What is my current dasha?\n• Where is Jupiter in my chart?"
+)
+NO_TOPIC = (
+    "I can only answer from classical texts that have been checked, and from your own chart. "
+    "I don't predict events.\n\n"
+    "Try asking about a planet or a dasha, for example: “What does Saturn stand for?”"
+)
+NO_SOURCE = (
+    "I don't have a checked source for this yet, so I won't guess. "
+    "I have noted the topic so it can be researched."
+)
+NEED_BIRTH_FOR_FACTS = "Tell me your birth details (“✏️ Change birth details”) and I can add facts from your own chart."
+BTN_SANSKRIT = "📜 Show Sanskrit"
+BTN_ENGLISH = "🔤 English"
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."
-UNKNOWN_TEXT = "I didn't understand that. Please use the menu below, or tap “My chart”."
 NEED_BIRTH = "First I need your birth details."
 CHANGED = "Your saved place is no longer unique, so please tell me your birth details again."
 FORGET_ASK = "Shall I delete everything I know about you?"
@@ -63,7 +78,8 @@ MENU_CHANGE = "✏️ Change birth details"
 MENU_HOME = "📍 Where I live"
 MENU_BRIEF = "🌅 Morning message"
 MENU_FORGET = "🗑 Forget me"
-MENU_ROWS = ((MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_HOME, MENU_BRIEF), (MENU_FORGET,))
+MENU_ASK = "❓ Ask a question"
+MENU_ROWS = ((MENU_ASK,), (MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_HOME, MENU_BRIEF), (MENU_FORGET,))
 
 WELCOME = (
     NAMASTE + "\n\nUse the buttons at the bottom of the screen. "
@@ -73,6 +89,7 @@ WELCOME = (
 # Single source of truth for slash commands: the "/" menu in Telegram and /help are both built
 # from this, in this order. Every command the bot registers must have an entry (tested).
 COMMANDS = {
+    "ask": "Ask about a planet or a dasha",
     "chart": "Your birth chart (kundali)",
     "dasha": "Your life chapters (dasha periods)",
     "today": "Today's sky and what is running now",
@@ -83,7 +100,7 @@ COMMANDS = {
     "forget": "Delete everything I know about you",
     "start": "Say namaste and show the menu",
 }
-HELP_ORDER = ("chart", "dasha", "today", "brief", "home", "birth", "forget")
+HELP_ORDER = ("ask", "chart", "dasha", "today", "brief", "home", "birth", "forget")
 
 
 def help_text() -> str:

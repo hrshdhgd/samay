@@ -31,13 +31,14 @@ from telegram.ext import (
     filters,
 )
 
-from .. import narrate, service
+from .. import narrate, qa, service
 from ..engine import geo
 from ..engine.errors import SamayError
 from ..models import BirthInput, NeedsDisambiguation, ResolvedBirth
 from ..render import prompts
 from ..render.chart_image import STYLES, render_chart_png
 from ..render.text import (
+    render_answer,
     render_brief,
     render_chart,
     render_dasha,
@@ -51,6 +52,7 @@ from . import flow
 log = logging.getLogger("samay")
 STORE_KEY, ALLOWED_KEY = "store", "allowed"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
+QA_PREFIX = "qa:"  # qa:<sa|en>:<topic>
 BRIEF_PREFIX = "brief:"  # brief:<hour> or brief:off
 BRIEF_HOURS = (6, 7, 8, 9)
 BRIEF_CHECK_SECONDS = 300
@@ -187,6 +189,59 @@ async def cmd_birth(update: Update, ctx) -> None:
     await _begin(update, ctx, update.effective_chat.id)
 
 
+async def _resolved_birth(ctx, chat_id: int) -> ResolvedBirth | None:
+    saved = await asyncio.to_thread(_store(ctx).get_user, chat_id)
+    if saved is None:
+        return None
+    resolved = await asyncio.to_thread(service.resolve_birth, saved)
+    return resolved if isinstance(resolved, ResolvedBirth) else None
+
+
+def answer_markup(answer: qa.Answer, sanskrit: bool) -> InlineKeyboardMarkup | ReplyKeyboardMarkup:
+    """A Sanskrit/English switch when an entry in the answer has a checked verse; else the menu."""
+    if not any(e.shows_verse for e in answer.entries):
+        return MENU
+    label, mode = (prompts.BTN_ENGLISH, "en") if sanskrit else (prompts.BTN_SANSKRIT, "sa")
+    return InlineKeyboardMarkup([[InlineKeyboardButton(label, callback_data=f"{QA_PREFIX}{mode}:{answer.topic}")]])
+
+
+async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> None:
+    """Sort the question into a topic, answer from checked entries and chart facts, and count the
+    topic (never the words) when there is no sourced answer."""
+    topic = await qa.sort_with_model(question) if narrate.enabled() else qa.sort_question(question)
+    birth = await _resolved_birth(ctx, chat_id)
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now())
+    if answer.topic is not None and not answer.entries:
+        await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
+    await _say(update, render_answer(answer, birth_known=birth is not None), answer_markup(answer, False))
+
+
+async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None:
+    mode, _, topic = choice.partition(":")
+    if mode not in ("sa", "en") or topic not in qa.TOPICS:
+        return
+    birth = await _resolved_birth(ctx, chat_id)
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now())
+    sanskrit = mode == "sa"
+    try:
+        await update.callback_query.edit_message_text(
+            render_answer(answer, sanskrit, birth_known=birth is not None),
+            reply_markup=answer_markup(answer, sanskrit),
+        )
+    except BadRequest as e:
+        if "not modified" not in str(e).lower():
+            raise
+
+
+@guarded
+async def cmd_ask(update: Update, ctx) -> None:
+    question = " ".join(ctx.args or ())
+    if not question:
+        await _say(update, prompts.ASK_QUESTION, MENU)
+        return
+    await _answer_question(update, ctx, update.effective_chat.id, question)
+
+
 @guarded
 async def cmd_home(update: Update, ctx) -> None:
     await _send_flow(update, ctx, update.effective_chat.id, flow.begin_home())
@@ -295,6 +350,7 @@ async def on_text(update: Update, ctx) -> None:
         prompts.MENU_TODAY: lambda: _show(update, ctx, chat_id, "today"),
         prompts.MENU_CHANGE: lambda: _begin(update, ctx, chat_id),
         prompts.MENU_HOME: lambda: cmd_home(update, ctx),
+        prompts.MENU_ASK: lambda: _say(update, prompts.ASK_QUESTION, MENU),
         prompts.MENU_BRIEF: lambda: cmd_brief(update, ctx),
         prompts.MENU_FORGET: lambda: cmd_forget(update, ctx),
     }
@@ -303,7 +359,7 @@ async def on_text(update: Update, ctx) -> None:
         return
     stored = await asyncio.to_thread(store.get_draft, chat_id)
     if stored is None:
-        await _say(update, prompts.UNKNOWN_TEXT, MENU)
+        await _answer_question(update, ctx, chat_id, text)
         return
     out = await asyncio.to_thread(flow.on_text, flow.Draft.from_dict(stored), text)
     await _send_flow(update, ctx, chat_id, out)
@@ -335,6 +391,9 @@ async def on_button(update: Update, ctx) -> None:
     query = update.callback_query
     await query.answer()
     chat_id, data = update.effective_chat.id, query.data or ""
+    if data.startswith(QA_PREFIX):
+        await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX):])
+        return
     if data.startswith(BRIEF_PREFIX):
         await _set_brief(update, ctx, chat_id, data[len(BRIEF_PREFIX):])
         return
@@ -405,7 +464,7 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
     )
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
     for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
-                     ("home", cmd_home), ("brief", cmd_brief),
+                     ("home", cmd_home), ("brief", cmd_brief), ("ask", cmd_ask),
                      ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
         app.add_handler(CommandHandler(name, fn))
     app.add_handler(CallbackQueryHandler(on_button))

@@ -1,6 +1,7 @@
 """Bot adapter: allowlist, wiring, persistence and logging. Handlers are driven with stub updates."""
 import logging
 import os
+import sqlite3
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -161,10 +162,10 @@ async def test_stale_button_after_restart_offers_a_fresh_start(ctx):
     assert last_buttons(msg)[0].callback_data == "new"
 
 
-async def test_text_without_a_conversation_points_to_the_menu(ctx):
+async def test_text_without_a_conversation_is_treated_as_a_question(ctx):
     update, msg = message(ALLOWED, "namaste")
     await bot.on_text(update, ctx)
-    assert last_reply(msg) == prompts.UNKNOWN_TEXT
+    assert last_reply(msg) == prompts.NO_TOPIC
 
 
 async def test_asking_for_a_chart_without_details_starts_the_conversation(ctx, store):
@@ -232,7 +233,7 @@ async def test_menu_is_registered_from_live_handlers_in_the_defined_order(store)
     await bot._register_commands(fake)
     menu = fake.bot.set_my_commands.await_args.args[0]
     assert [c.command for c in menu] == list(prompts.COMMANDS)
-    assert menu[0].description == prompts.COMMANDS["chart"]
+    assert menu[0].command == "ask" and menu[0].description == prompts.COMMANDS["ask"]
 
 
 async def test_a_command_without_a_description_stops_start_up(store):
@@ -490,3 +491,118 @@ async def test_one_failed_delivery_does_not_stop_the_others_or_leak_details(ctx,
 def test_a_job_is_scheduled_when_the_scheduler_is_available(store):
     app = bot.build_application("123:abc", frozenset({1}), store)
     assert app.job_queue is not None and [j.name for j in app.job_queue.jobs()] == ["morning_brief"]
+
+
+# --- grounded questions and answers ----------------------------------------------------------------
+
+import yaml
+
+from samay.engine import entries as entry_store
+
+
+@needs_kernel
+async def test_question_about_a_planet_quotes_the_checked_entry_and_adds_chart_facts(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, tzinfo=UTC))
+    _save_pune(store)
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert "Varahamihira describes Saturn as the sorrow of the cosmic person (Kalapurusha)." in text
+    assert "— Brihat Jataka 2.1 (translation-checked)" in text
+    assert "From your chart:\nIn your birth chart, Saturn is in Sagittarius (Dhanu), the 2nd house" in text
+    assert store.top_misses() == []  # answered, so nothing to research
+
+
+@needs_kernel
+async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_topic(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, tzinfo=UTC))
+    _save_pune(store)
+    update, msg = message(ALLOWED, "what does my current dasha mean for me and my son's marriage?")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert prompts.NO_SOURCE in text and "Your Jupiter chapter (dasha) lasts 16 years" in text and "you are in it now" in text
+    assert store.top_misses() == [("dasha:jupiter", 1)]
+    with sqlite3.connect(store.path) as c:
+        dump = "\n".join(c.iterdump())
+    assert "marriage" not in dump and "son's" not in dump and "current dasha mean" not in dump
+
+
+async def test_prediction_questions_are_declined_and_not_recorded(ctx, store):
+    update, msg = message(ALLOWED, "Will I get married this year?")
+    await bot.on_text(update, ctx)
+    assert last_reply(msg) == prompts.NO_TOPIC and store.top_misses() == []
+
+
+async def test_without_birth_details_the_entry_is_still_shown_and_the_person_is_invited(ctx, store):
+    update, msg = message(ALLOWED, "/ask")
+    ctx.args = ["what", "is", "mars?"]
+    await bot.cmd_ask(update, ctx)
+    text = last_reply(msg)
+    assert "Mars as the strength" in text and prompts.NEED_BIRTH_FOR_FACTS in text and "From your chart" not in text
+
+
+async def test_ask_menu_and_bare_command_prompt_for_a_question(ctx):
+    update, msg = message(ALLOWED, prompts.MENU_ASK)
+    await bot.on_text(update, ctx)
+    assert last_reply(msg) == prompts.ASK_QUESTION
+    update, msg = message(ALLOWED, "/ask")
+    ctx.args = []
+    await bot.cmd_ask(update, ctx)
+    assert last_reply(msg) == prompts.ASK_QUESTION
+
+
+async def test_rahu_question_gets_the_astronomy_note_when_no_entry_exists(ctx, store):
+    update, msg = message(ALLOWED, "what is rahu")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert prompts.NO_SOURCE in text and "Moon's path crosses the Sun's path" in text
+    assert store.top_misses() == [("planet:rahu", 1)]
+
+
+async def test_answer_has_no_sanskrit_button_without_a_checked_verse(ctx):
+    update, msg = message(ALLOWED, "what is venus")
+    await bot.on_text(update, ctx)
+    assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
+
+
+async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(ctx, tmp_path, monkeypatch):
+    entry = {
+        "id": "t-venus", "topic": "planet:venus", "system": "any", "english": "English words.",
+        "citation": {"text": "Test", "chapter": 1, "verse": 1, "edition": "test"},
+        "verse": {"devanagari": "शुक्रः", "roman": "śukraḥ", "text_checked": True},
+        "verification": {"level": "translation-checked", "checked_by": "t", "checked_on": "2026-11-09",
+                         "against": "test"},
+    }
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([entry], allow_unicode=True))
+    monkeypatch.setattr(entry_store, "ENTRIES_DIR", tmp_path)
+    entry_store.load_entries.cache_clear()
+    try:
+        update, msg = message(ALLOWED, "what is venus")
+        await bot.on_text(update, ctx)
+        assert "English words." in last_reply(msg)
+        assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+
+        update, msg = tap(ALLOWED, "qa:sa:planet:venus")
+        update.callback_query.edit_message_text = AsyncMock()
+        await bot.on_button(update, ctx)
+        edit = update.callback_query.edit_message_text.await_args
+        assert "शुक्रः\nśukraḥ" in edit.args[0] and "English words." not in edit.args[0]
+        assert buttons_of(edit.kwargs["reply_markup"]) == {prompts.BTN_ENGLISH: "qa:en:planet:venus"}
+    finally:
+        entry_store.load_entries.cache_clear()
+
+
+async def test_bad_toggle_data_is_ignored(ctx):
+    for data in ("qa:xx:planet:venus", "qa:sa:planet:pluto", "qa:sa:", "qa:"):
+        update, msg = tap(ALLOWED, data)
+        update.callback_query.edit_message_text = AsyncMock()
+        await bot.on_button(update, ctx)
+        update.callback_query.edit_message_text.assert_not_awaited()
+        msg.reply_text.assert_not_awaited()
+
+
+async def test_strangers_cannot_ask(ctx, store):
+    update, msg = message(STRANGER, "what is saturn")
+    await bot.on_text(update, ctx)
+    msg.reply_text.assert_not_awaited()
+    assert store.top_misses() == []

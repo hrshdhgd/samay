@@ -1,7 +1,7 @@
-"""Turn computed facts into a reading. The template is the default; a local Ollama rewords it
-only when OLLAMA_URL is set.
+"""Talk to the local Ollama, when OLLAMA_URL is set. Off by default.
 
-The LLM only rephrases facts we pass in; it must not invent placements or rules.
+Two uses only: rewording facts we pass in (narrate), and sorting a question into a known topic key
+(qa.sort_with_model, through complete). The model never adds placements, rules or meanings.
 """
 from __future__ import annotations
 
@@ -48,18 +48,25 @@ async def close() -> None:
         _client = None
 
 
+async def complete(system: str, prompt: str, client: httpx.AsyncClient | None = None) -> str | None:
+    """The model's reply, or None when the model is off, slow, failing or silent."""
+    if not enabled():
+        return None
+    try:
+        r = await (client or _get_client()).post(
+            f"{OLLAMA_URL.rstrip('/')}/api/generate",
+            json={"model": OLLAMA_MODEL, "system": system, "prompt": prompt, "stream": False},
+        )
+        r.raise_for_status()
+        return r.json().get("response", "").strip() or None
+    except (httpx.HTTPError, ValueError) as e:  # nothing may fail because the LLM is down
+        log.warning("model call failed: %s", type(e).__name__)
+        return None
+
+
 async def narrate(facts: list[str], client: httpx.AsyncClient | None = None) -> str:
     """Reworded facts, or the plain template when narration is off or the model is unavailable."""
     if not enabled():
         return template(facts)
     prompt = "Facts:\n" + "\n".join(f"- {f}" for f in facts) + "\n\nWrite today's reading."
-    try:
-        r = await (client or _get_client()).post(
-            f"{OLLAMA_URL.rstrip('/')}/api/generate",
-            json={"model": OLLAMA_MODEL, "system": SYSTEM, "prompt": prompt, "stream": False},
-        )
-        r.raise_for_status()
-        return r.json().get("response", "").strip() or template(facts)
-    except (httpx.HTTPError, ValueError) as e:  # a reading must never fail because the LLM is down
-        log.warning("narration failed, using template: %s", type(e).__name__)
-        return template(facts)
+    return await complete(SYSTEM, prompt, client) or template(facts)

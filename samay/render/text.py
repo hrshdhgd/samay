@@ -207,6 +207,26 @@ def render_brief(
     return "\n".join(lines)
 
 
+def render_answer(answer, sanskrit: bool = False, birth_known: bool = True) -> str:
+    """A grounded answer: checked entries word for word with their citations, then the person's own
+    chart facts. `sanskrit` shows each entry's checked verse in place of the English, where it has one."""
+    if answer.topic is None:
+        return prompts.NO_TOPIC
+    blocks: list[str] = []
+    for e in answer.entries:
+        body = f"{e.verse.devanagari}\n{e.verse.roman}" if sanskrit and e.shows_verse else e.english
+        blocks.append(f"{body}\n— {e.citation_text()}")
+    if not answer.entries:
+        blocks.append(prompts.NO_SOURCE)
+    blocks += list(answer.notes)
+    if answer.facts:
+        blocks.append("From your chart:\n" + "\n".join(answer.facts))
+    if not birth_known:
+        blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
+    blocks.append(DISCLAIMER)
+    return "\n\n".join(blocks)
+
+
 def render_options(d: NeedsDisambiguation) -> list[str]:
     """One line per option, in the same order as d.options."""
     if d.kind == "place":
