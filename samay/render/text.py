@@ -9,6 +9,8 @@ from ..models import NatalReport, NeedsDisambiguation, TodayReport
 
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
 UNVALIDATED = "Not yet checked against reference software; treat positions as provisional."
+YOGA_SOURCES_PENDING = "ⓘ The book references for these yogas are still being checked."
+OLD_CLOCKS = "⚠ Old clock records can be uncertain, so please double-check the birth time."
 
 
 def fmt_longitude(lon: float) -> str:
@@ -18,7 +20,23 @@ def fmt_longitude(lon: float) -> str:
     return f"{SIGNS[s]} ({RASHIS[s]}) {int(d)}°{int(d % 1 * 60):02d}' · {NAKSHATRAS[n]} p{p}"
 
 
-def _footer(report: NatalReport) -> list[str]:
+def _family_footer(report: NatalReport) -> list[str]:
+    """Short footer for chat: what was understood, a caution only when one applies, the disclaimer."""
+    b, p = report.birth, report.birth.provenance
+    lines = ["", f"Born {b.local:%d %b %Y, %H:%M} · {b.place.label}"]
+    if p.warning:
+        lines.append(f"⚠ {p.warning}")
+    elif p.confidence == "low":
+        lines.append(OLD_CLOCKS)
+    if p.place_approximate and p.approx_note:
+        lines.append(f"⚠ Place approximate: {p.approx_note}")
+    return [*lines, DISCLAIMER, f"ref {report.stamp.code()}"]
+
+
+def _footer(report: NatalReport, technical: bool = True) -> list[str]:
+    """Technical footer (CLI): UTC conversion, time standard, profile and the full version stamp."""
+    if not technical:
+        return _family_footer(report)
     b = report.birth
     lines = [
         "",
@@ -36,7 +54,7 @@ def _footer(report: NatalReport) -> list[str]:
     return lines
 
 
-def render_chart(report: NatalReport) -> str:
+def render_chart(report: NatalReport, technical: bool = True) -> str:
     c = report.chart
     lagna = sign_index(c.ascendant)
     lines = [f"Lagna: {fmt_longitude(c.ascendant)}", ""]
@@ -49,15 +67,17 @@ def render_chart(report: NatalReport) -> str:
     for r in report.yogas:
         locus = f", {r.source['locus']}" if r.source.get("locus") else ""
         lines.append(f"• {r.name} — {r.effect} [{r.source['text']}{locus}]")
-    return "\n".join(lines + _footer(report))
+    if not technical and any(not r.source.get("verified") for r in report.yogas):
+        lines.append(YOGA_SOURCES_PENDING)
+    return "\n".join(lines + _footer(report, technical))
 
 
-def render_dasha(report: NatalReport, now: datetime) -> str:
+def render_dasha(report: NatalReport, now: datetime, technical: bool = True) -> str:
     lines = ["Vimshottari mahadashas:"]
     for p in report.dashas:
         mark = " ← now" if p.contains(now) else ""
         lines.append(f"{p.lord.title():8} {p.start:%b %Y} – {p.end:%b %Y}{mark}")
-    return "\n".join(lines + _footer(report))
+    return "\n".join(lines + _footer(report, technical))
 
 
 def today_facts(report: TodayReport) -> list[str]:
@@ -73,10 +93,10 @@ def today_facts(report: TodayReport) -> list[str]:
     return facts
 
 
-def render_today(report: TodayReport, reading: str | None = None) -> str:
+def render_today(report: TodayReport, reading: str | None = None, technical: bool = True) -> str:
     """Today's transits. `reading` replaces the plain fact list (e.g. reworded by narrate)."""
     body = reading if reading is not None else "\n".join(today_facts(report))
-    return "\n".join([body, *_footer(report.natal)])
+    return "\n".join([body, *_footer(report.natal, technical)])
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:

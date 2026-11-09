@@ -1,6 +1,7 @@
 """Report models shared by every front end. All frozen; renderers only read them."""
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Literal
@@ -60,6 +61,10 @@ class VersionStamp:
     tzdata_version: str
     ephemeris: str
     gazetteer: str
+
+    def code(self) -> str:
+        """Eight-character reference for this exact combination of data and rule versions."""
+        return hashlib.sha256(self.short().encode()).hexdigest()[:8]
 
     def short(self) -> str:
         return (

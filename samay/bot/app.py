@@ -12,7 +12,15 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
+from telegram import (
+    BotCommand,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaPhoto,
+    ReplyKeyboardMarkup,
+    Update,
+)
+from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -26,6 +34,7 @@ from .. import narrate, service
 from ..engine.errors import SamayError
 from ..models import NeedsDisambiguation
 from ..render import prompts
+from ..render.chart_image import STYLES, render_chart_png
 from ..render.text import render_chart, render_dasha, render_today, today_facts
 from ..store import Store
 from . import flow
@@ -33,6 +42,7 @@ from . import flow
 log = logging.getLogger("samay")
 STORE_KEY, ALLOWED_KEY = "store", "allowed"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
+CHART_PREFIX = "img:"  # img:<south|north>:<0|1 = degrees shown>
 NETWORK_TIMEOUT = 20.0  # seconds
 MENU = ReplyKeyboardMarkup([list(row) for row in prompts.MENU_ROWS], resize_keyboard=True)
 
@@ -53,6 +63,16 @@ def _keyboard(reply: flow.Reply) -> InlineKeyboardMarkup | None:
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton(b.label, callback_data=b.data) for b in row] for row in reply.buttons]
     )
+
+
+def chart_markup(style: str, degrees: bool) -> InlineKeyboardMarkup:
+    """The two switches under the chart picture: South/North style and degrees on/off."""
+    other = "north" if style == "south" else "south"
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(f"🔄 {other.title()} Indian", callback_data=f"{CHART_PREFIX}{other}:{int(degrees)}"),
+        InlineKeyboardButton("🔢 Hide degrees" if degrees else "🔢 Show degrees",
+                             callback_data=f"{CHART_PREFIX}{style}:{int(not degrees)}"),
+    ]])
 
 
 def guarded(handler):
@@ -107,10 +127,13 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     if kind == "today":
         report = await asyncio.to_thread(service.today_report, resolved, now)
         reading = await narrate.narrate(today_facts(report)) if narrate.enabled() else None
-        text = render_today(report, reading)
+        text = render_today(report, reading, technical=False)
     else:
         natal = await asyncio.to_thread(service.natal_report, resolved)
-        text = render_dasha(natal, now) if kind == "dasha" else render_chart(natal)
+        if kind == "chart":
+            picture = await asyncio.to_thread(render_chart_png, natal, "south", False)
+            await update.effective_message.reply_photo(photo=picture, reply_markup=chart_markup("south", False))
+        text = render_dasha(natal, now, technical=False) if kind == "dasha" else render_chart(natal, technical=False)
     await _say(update, text, MENU)
 
 
@@ -169,11 +192,35 @@ async def on_text(update: Update, ctx) -> None:
     await _send_flow(update, ctx, chat_id, out)
 
 
+async def _redraw_chart(update: Update, ctx, chat_id: int, choice: str) -> None:
+    """Swap the picture in place for the requested style and degrees setting."""
+    style, _, degrees = choice.partition(":")
+    if style not in STYLES or degrees not in ("0", "1"):
+        return
+    saved = await asyncio.to_thread(_store(ctx).get_user, chat_id)
+    resolved = await asyncio.to_thread(service.resolve_birth, saved) if saved else None
+    if resolved is None or isinstance(resolved, NeedsDisambiguation):
+        await _say(update, prompts.NEED_BIRTH)
+        return
+    natal = await asyncio.to_thread(service.natal_report, resolved)
+    picture = await asyncio.to_thread(render_chart_png, natal, style, degrees == "1")
+    try:
+        await update.callback_query.edit_message_media(
+            media=InputMediaPhoto(picture), reply_markup=chart_markup(style, degrees == "1")
+        )
+    except BadRequest as e:
+        if "not modified" not in str(e).lower():  # a double tap asks for the picture already shown
+            raise
+
+
 @guarded
 async def on_button(update: Update, ctx) -> None:
     query = update.callback_query
     await query.answer()
     chat_id, data = update.effective_chat.id, query.data or ""
+    if data.startswith(CHART_PREFIX):
+        await _redraw_chart(update, ctx, chat_id, data[len(CHART_PREFIX):])
+        return
     if data in (FORGET_YES, FORGET_NO):
         if data == FORGET_YES:
             await asyncio.to_thread(_store(ctx).forget, chat_id)
@@ -213,7 +260,7 @@ async def _register_commands(app) -> None:
 
 async def _post_init(app: Application) -> None:
     stamp = await asyncio.to_thread(service.warm)
-    log.info("samay ready: %s", stamp.short())
+    log.info("samay ready: ref %s = %s", stamp.code(), stamp.short())
     await _register_commands(app)
 
 

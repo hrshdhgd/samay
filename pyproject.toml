@@ -13,6 +13,7 @@ dependencies = [
     "click>=8.1",
     "rapidfuzz>=3.14.6",
     "indic-transliteration>=2.3.82",
+    "pillow>=13.0.0",
 ]
 
 [project.scripts]

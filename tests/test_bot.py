@@ -27,14 +27,14 @@ def ctx(store):
 
 
 def message(chat_id: int, text: str):
-    msg = SimpleNamespace(text=text, reply_text=AsyncMock())
+    msg = SimpleNamespace(text=text, reply_text=AsyncMock(), reply_photo=AsyncMock())
     return SimpleNamespace(effective_chat=SimpleNamespace(id=chat_id), effective_message=msg,
                            callback_query=None), msg
 
 
 def tap(chat_id: int, data: str):
-    msg = SimpleNamespace(text=None, reply_text=AsyncMock())
-    query = SimpleNamespace(data=data, answer=AsyncMock())
+    msg = SimpleNamespace(text=None, reply_text=AsyncMock(), reply_photo=AsyncMock())
+    query = SimpleNamespace(data=data, answer=AsyncMock(), edit_message_media=AsyncMock())
     return SimpleNamespace(effective_chat=SimpleNamespace(id=chat_id), effective_message=msg,
                            callback_query=query), msg
 
@@ -134,7 +134,8 @@ async def test_full_conversation_saves_birth_and_shows_the_chart(ctx, store):
     assert store.get_draft(ALLOWED) is None
     texts = [c.args[0] for c in msg.reply_text.await_args_list]
     assert texts[0] == prompts.SAVED and texts[1].startswith("Lagna:")
-    assert "confidence: low" in texts[1] and "Bombay Time" in texts[1]
+    assert "Bombay Time" in texts[1]  # the caution that matters for a 1952 Indian birth
+    assert "samay dev" not in texts[1] and "confidence:" not in texts[1] and "Profile:" not in texts[1]
 
 
 async def test_draft_survives_a_restart(ctx, store):
@@ -267,3 +268,89 @@ def test_start_up_keeps_retrying_when_telegram_is_unreachable(monkeypatch, no_to
     monkeypatch.setattr(bot, "build_application", lambda *a: fake)
     bot.main()
     assert fake.run_polling.call_args.kwargs["bootstrap_retries"] == -1
+
+
+# --- chart picture and its switches ----------------------------------------------------------------
+
+
+def buttons_of(markup):
+    return {b.text: b.callback_data for row in markup.inline_keyboard for b in row}
+
+
+def test_chart_markup_offers_the_other_style_and_the_opposite_degrees_setting():
+    assert buttons_of(bot.chart_markup("south", False)) == {
+        "🔄 North Indian": "img:north:0", "🔢 Show degrees": "img:south:1"}
+    assert buttons_of(bot.chart_markup("north", True)) == {
+        "🔄 South Indian": "img:south:1", "🔢 Hide degrees": "img:north:0"}
+
+
+def _save_pune(store):
+    from samay.models import BirthInput
+
+    store.save_user(ALLOWED, BirthInput("1990-08-15", "14:30", "Pune"))
+
+
+@needs_kernel
+async def test_my_chart_sends_the_south_picture_first_then_the_text(ctx, store):
+    _save_pune(store)
+    update, msg = message(ALLOWED, prompts.MENU_CHART)
+    await bot.on_text(update, ctx)
+    photo = msg.reply_photo.await_args
+    assert photo.kwargs["photo"][:8] == b"\x89PNG\r\n\x1a\n"
+    assert buttons_of(photo.kwargs["reply_markup"]) == buttons_of(bot.chart_markup("south", False))
+    assert last_reply(msg).startswith("Lagna:")  # the text comes as its own message
+
+
+@needs_kernel
+async def test_buttons_redraw_the_picture_in_place(ctx, store):
+    from telegram import InputMediaPhoto
+
+    _save_pune(store)
+    update, msg = tap(ALLOWED, "img:north:1")
+    await bot.on_button(update, ctx)
+    edit = update.callback_query.edit_message_media.await_args
+    assert isinstance(edit.kwargs["media"], InputMediaPhoto)
+    assert buttons_of(edit.kwargs["reply_markup"]) == buttons_of(bot.chart_markup("north", True))
+    msg.reply_text.assert_not_awaited()  # edited in place, no new message
+
+
+@needs_kernel
+async def test_the_four_pictures_differ(ctx, store):
+    _save_pune(store)
+    pictures = set()
+    for choice in ("south:0", "south:1", "north:0", "north:1"):
+        update, _ = tap(ALLOWED, f"img:{choice}")
+        await bot.on_button(update, ctx)
+        pictures.add(update.callback_query.edit_message_media.await_args.kwargs["media"].media.input_file_content)
+    assert len(pictures) == 4
+
+
+@needs_kernel
+async def test_double_tap_on_a_switch_is_ignored_but_other_errors_are_not(ctx, store):
+    from telegram.error import BadRequest
+
+    _save_pune(store)
+    update, _ = tap(ALLOWED, "img:north:0")
+    update.callback_query.edit_message_media.side_effect = BadRequest("Message is not modified")
+    await bot.on_button(update, ctx)  # swallowed
+    update.callback_query.edit_message_media.side_effect = BadRequest("Message to edit not found")
+    with pytest.raises(BadRequest):
+        await bot.on_button(update, ctx)
+
+
+async def test_bad_switch_data_is_ignored_and_missing_details_start_the_conversation(ctx, store):
+    for data in ("img:round:0", "img:south:2", "img:south", "img:"):
+        update, msg = tap(ALLOWED, data)
+        await bot.on_button(update, ctx)
+        update.callback_query.edit_message_media.assert_not_awaited()
+        msg.reply_text.assert_not_awaited()
+    update, msg = tap(ALLOWED, "img:north:0")  # valid, but nothing saved yet
+    await bot.on_button(update, ctx)
+    assert last_reply(msg) == prompts.NEED_BIRTH
+
+
+async def test_strangers_cannot_use_the_chart_switches(ctx, store):
+    _save_pune(store)
+    update, _ = tap(STRANGER, "img:north:0")
+    await bot.on_button(update, ctx)
+    update.callback_query.edit_message_media.assert_not_awaited()
