@@ -24,6 +24,20 @@ NONEXISTENT = (
     "Please tell me the time again."
 )
 SAVED = "Thank you. I have your birth details saved. Here is your chart:"
+ASK_HOME = (
+    "Which town or city do you live in now?\n"
+    "I use it to work out sunrise and sunset for today's Rahu Kaala. For example: Maplewood, Minnesota"
+)
+HOME_NOT_FOUND = "I couldn't find that place. Please try the nearest bigger city, or add the country."
+HOME_SAVED = "Thank you, I will use {place} for sunrise-based timings."
+NEED_HOME = "To work out Rahu Kaala I need to know where you live now."
+NO_SUNRISE = "The Sun does not both rise and set today in {place}, so there is no Rahu Kaala window."
+BRIEF_ASK = "Every morning I can send a short message with today's date, Rahu Kaala and your running dasha.\nAt what time?"
+BRIEF_ON = "Done. I will message you every morning at {time} ({place} time)."
+BRIEF_OFF = "Done. No more morning messages."
+BRIEF_STATUS_ON = "Your morning message is on, at {time} ({place} time)."
+BRIEF_STATUS_OFF = "Your morning message is off."
+BRIEF_NEED_HOME = "First, I need to know where you live now, so I can send the right time.\n\n"
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."
 UNKNOWN_TEXT = "I didn't understand that. Please use the menu below, or tap “My chart”."
@@ -40,13 +54,16 @@ BTN_AM = "Morning (AM)"
 BTN_PM = "Evening (PM)"
 BTN_YES_DELETE = "Yes, delete"
 BTN_NO = "No, keep"
+BTN_BRIEF_OFF = "Turn off"
 
 MENU_CHART = "🪐 My chart"
 MENU_DASHA = "⏳ Dasha periods"
 MENU_TODAY = "🌙 Today"
 MENU_CHANGE = "✏️ Change birth details"
+MENU_HOME = "📍 Where I live"
+MENU_BRIEF = "🌅 Morning message"
 MENU_FORGET = "🗑 Forget me"
-MENU_ROWS = ((MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_FORGET,))
+MENU_ROWS = ((MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_HOME, MENU_BRIEF), (MENU_FORGET,))
 
 WELCOME = (
     NAMASTE + "\n\nUse the buttons at the bottom of the screen. "
@@ -60,11 +77,13 @@ COMMANDS = {
     "dasha": "Your life chapters (dasha periods)",
     "today": "Today's sky and what is running now",
     "birth": "Enter or change your birth details",
+    "home": "Tell me which city you live in now",
+    "brief": "Daily morning message on or off",
     "help": "How to use samay",
     "forget": "Delete everything I know about you",
     "start": "Say namaste and show the menu",
 }
-HELP_ORDER = ("chart", "dasha", "today", "birth", "forget")
+HELP_ORDER = ("chart", "dasha", "today", "brief", "home", "birth", "forget")
 
 
 def help_text() -> str:

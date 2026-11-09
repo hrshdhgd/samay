@@ -8,9 +8,12 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from functools import lru_cache
+from zoneinfo import ZoneInfo
 
-from .engine import ephemeris, geo, timestd
+from .engine import daylight, ephemeris, geo, timestd
+from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
+from .engine.geo import Place
 from .engine.paths import EPHEMERIS_PATH, TIME_STANDARDS_DIR
 from .engine.profiles import DEFAULT_PROFILE, load_profile
 from .engine.rules import fired, load_rules, rules_hash
@@ -173,6 +176,13 @@ def today_report(birth: ResolvedBirth, now: datetime) -> TodayReport:
     )
     dasha = current_dasha(natal.chart.planets["moon"].longitude, birth.utc, now, profile.dasha_year_days)
     return TodayReport(natal=natal, sky=sky, now=now, current_dasha=dasha, transit_houses=transits)
+
+
+def rahu_kaala_for(place: Place, now: datetime) -> RahuKaala | None:
+    """Rahu Kaala for the local calendar day it is `now` at `place`; None if the Sun does not
+    rise and set that day."""
+    day = now.astimezone(ZoneInfo(place.tz)).date()
+    return daylight.rahu_kaala(place.latitude, place.longitude, place.tz, day)
 
 
 def warm() -> VersionStamp:

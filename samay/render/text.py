@@ -1,11 +1,13 @@
 """Reports -> plain text for Telegram and the CLI. All user-facing wording lives in render/."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from ..engine.daylight import RahuKaala
 from ..engine.ephemeris import GRAHAS
-from ..engine.vedic import NAKSHATRAS, RASHIS, SIGNS, house_from, nakshatra, sign_index
+from ..engine.vedic import NAKSHATRAS, RASHIS, SIGNS, Period, house_from, nakshatra, sign_index
 from ..models import NatalReport, NeedsDisambiguation, TodayReport
+from . import prompts
 
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
 UNVALIDATED = "Not yet checked against reference software; treat positions as provisional."
@@ -93,10 +95,39 @@ def today_facts(report: TodayReport) -> list[str]:
     return facts
 
 
-def render_today(report: TodayReport, reading: str | None = None, technical: bool = True) -> str:
-    """Today's transits. `reading` replaces the plain fact list (e.g. reworded by narrate)."""
+def render_today(
+    report: TodayReport, reading: str | None = None, technical: bool = True, extras: tuple[str, ...] = ()
+) -> str:
+    """Today's transits. `reading` replaces the plain fact list (e.g. reworded by narrate);
+    `extras` are further lines shown before the footer (such as Rahu Kaala)."""
     body = reading if reading is not None else "\n".join(today_facts(report))
-    return "\n".join([body, *_footer(report.natal, technical)])
+    return "\n".join([body, *extras, *_footer(report.natal, technical)])
+
+
+def clock12(moment: datetime) -> str:
+    """'8:00 am', rounded to the nearest minute."""
+    moment += timedelta(seconds=30)
+    return f"{moment.hour % 12 or 12}:{moment.minute:02d} {'am' if moment.hour < 12 else 'pm'}"
+
+
+def render_rahu_kaala(rahu: RahuKaala | None, place_label: str) -> str:
+    if rahu is None:
+        return prompts.NO_SUNRISE.format(place=place_label)
+    return f"⚠ Rahu Kaala today: {clock12(rahu.start)} – {clock12(rahu.end)} ({place_label})"
+
+
+def render_brief(
+    local_now: datetime, rahu: RahuKaala | None, place_label: str, dasha: tuple[Period, Period] | None
+) -> str:
+    """The short morning message: date, Rahu Kaala, running dasha. Facts only, no meanings."""
+    lines = [f"🌅 Good morning! Today is {local_now:%A, %d %B %Y}.", render_rahu_kaala(rahu, place_label)]
+    if dasha:
+        maha, antar = dasha
+        lines.append(
+            f"Running now: {maha.lord.title()} chapter (mahadasha) until {maha.end:%b %Y}, "
+            f"{antar.lord.title()} sub-chapter (antardasha) until {antar.end:%d %b %Y}."
+        )
+    return "\n".join(lines)
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:

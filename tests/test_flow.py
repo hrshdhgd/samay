@@ -1,4 +1,5 @@
 from samay.bot import flow
+from samay.engine import geo
 from samay.render import prompts
 
 
@@ -121,3 +122,40 @@ def test_draft_survives_a_json_round_trip():
 
 def test_free_text_with_no_draft_starts_the_conversation():
     assert flow.on_text(None, "hello").reply.text == prompts.ASK_DATE
+
+
+# --- the "where do you live now" question --------------------------------------------------------
+
+
+def test_home_question_saves_a_unique_city_and_stores_what_was_typed():
+    o = flow.begin_home()
+    assert o.reply.text == prompts.ASK_HOME and o.draft.purpose == "home" and o.draft.step == "home_place"
+    o = flow.on_text(o.draft, "Maplewood, Minnesota")
+    assert o.draft is None and o.done is None
+    text, place_id = o.home
+    assert text == "Maplewood, Minnesota" and geo.get_place(place_id).admin1 == "MN"
+    assert "Maplewood" in o.reply.text
+
+
+def test_home_with_several_matches_offers_buttons_then_saves_the_one_tapped():
+    o = flow.on_text(flow.begin_home().draft, "Maplewood")
+    assert o.draft.step == "pick_place" and o.home is None
+    done = tap(o, "Maplewood, Essex County, New Jersey, US")
+    assert done.home[0] == "Maplewood" and geo.get_place(done.home[1]).admin1 == "NJ" and done.draft is None
+
+
+def test_home_not_found_asks_again_without_the_approximate_detour():
+    o = flow.on_text(flow.begin_home().draft, "Nowhereville")
+    assert o.draft.step == "home_place" and o.reply.text.startswith(prompts.HOME_NOT_FOUND)
+    assert o.home is None and o.draft.approx_for is None
+
+
+def test_home_draft_round_trips_and_old_drafts_without_a_purpose_still_load():
+    o = flow.begin_home()
+    assert flow.Draft.from_dict(o.draft.to_dict()) == o.draft
+    old = {k: v for k, v in flow.begin().draft.to_dict().items() if k != "purpose"}
+    assert flow.Draft.from_dict(old).purpose == "birth"
+
+
+def test_birth_flow_is_unchanged_by_the_home_purpose():
+    assert say(flow.begin(), "15-08-1952", "18:30", "Pune, India").done is not None

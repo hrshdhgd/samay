@@ -11,6 +11,7 @@ import logging
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from telegram import (
     BotCommand,
@@ -31,20 +32,35 @@ from telegram.ext import (
 )
 
 from .. import narrate, service
+from ..engine import geo
 from ..engine.errors import SamayError
-from ..models import NeedsDisambiguation
+from ..models import BirthInput, NeedsDisambiguation, ResolvedBirth
 from ..render import prompts
 from ..render.chart_image import STYLES, render_chart_png
-from ..render.text import render_chart, render_dasha, render_today, today_facts
-from ..store import Store
+from ..render.text import (
+    render_brief,
+    render_chart,
+    render_dasha,
+    render_rahu_kaala,
+    render_today,
+    today_facts,
+)
+from ..store import Home, Store
 from . import flow
 
 log = logging.getLogger("samay")
 STORE_KEY, ALLOWED_KEY = "store", "allowed"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
+BRIEF_PREFIX = "brief:"  # brief:<hour> or brief:off
+BRIEF_HOURS = (6, 7, 8, 9)
+BRIEF_CHECK_SECONDS = 300
 CHART_PREFIX = "img:"  # img:<south|north>:<0|1 = degrees shown>
 NETWORK_TIMEOUT = 20.0  # seconds
 MENU = ReplyKeyboardMarkup([list(row) for row in prompts.MENU_ROWS], resize_keyboard=True)
+
+
+def _now() -> datetime:
+    return datetime.now(UTC)
 
 
 def parse_allowed(text: str) -> frozenset[int]:
@@ -101,6 +117,14 @@ async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefi
     store = _store(ctx)
     if out.draft is not None:
         await asyncio.to_thread(store.save_draft, chat_id, out.draft.to_dict())
+    if out.home is not None:
+        await asyncio.to_thread(store.save_home, chat_id, *out.home)
+        await asyncio.to_thread(store.delete_draft, chat_id)
+        await _say(update, out.reply.text, MENU)
+        place = geo.get_place(out.home[1])
+        rahu = await asyncio.to_thread(service.rahu_kaala_for, place, _now())
+        await _say(update, render_rahu_kaala(rahu, place.label), MENU)
+        return
     if out.done is not None:
         await asyncio.to_thread(store.save_user, chat_id, out.done)
         await asyncio.to_thread(store.delete_draft, chat_id)
@@ -114,6 +138,16 @@ async def _begin(update: Update, ctx, chat_id: int, prefix: str = "") -> None:
     await _send_flow(update, ctx, chat_id, flow.begin(), prefix)
 
 
+async def _rahu_line(ctx, chat_id: int, now: datetime) -> str:
+    """Today's Rahu Kaala for the city the person lives in, or a nudge to say where that is."""
+    home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
+    if home is None:
+        return f"{prompts.NEED_HOME} Tap “{prompts.MENU_HOME}”."
+    place = geo.get_place(home.place_id)
+    rahu = await asyncio.to_thread(service.rahu_kaala_for, place, now)
+    return render_rahu_kaala(rahu, place.label)
+
+
 async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     saved = await asyncio.to_thread(_store(ctx).get_user, chat_id)
     if saved is None:
@@ -123,11 +157,12 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     if isinstance(resolved, NeedsDisambiguation):
         await _begin(update, ctx, chat_id, prompts.CHANGED + "\n\n")
         return
-    now = datetime.now(UTC)
+    now = _now()
     if kind == "today":
         report = await asyncio.to_thread(service.today_report, resolved, now)
         reading = await narrate.narrate(today_facts(report)) if narrate.enabled() else None
-        text = render_today(report, reading, technical=False)
+        extras = (await _rahu_line(ctx, chat_id, now),)
+        text = render_today(report, reading, technical=False, extras=extras)
     else:
         natal = await asyncio.to_thread(service.natal_report, resolved)
         if kind == "chart":
@@ -150,6 +185,86 @@ async def cmd_help(update: Update, ctx) -> None:
 @guarded
 async def cmd_birth(update: Update, ctx) -> None:
     await _begin(update, ctx, update.effective_chat.id)
+
+
+@guarded
+async def cmd_home(update: Update, ctx) -> None:
+    await _send_flow(update, ctx, update.effective_chat.id, flow.begin_home())
+
+
+def _hour_label(hour: int) -> str:
+    return f"{hour % 12 or 12} {'am' if hour < 12 else 'pm'}"
+
+
+def brief_markup() -> InlineKeyboardMarkup:
+    hours = [InlineKeyboardButton(_hour_label(h), callback_data=f"{BRIEF_PREFIX}{h}") for h in BRIEF_HOURS]
+    off = [InlineKeyboardButton(prompts.BTN_BRIEF_OFF, callback_data=f"{BRIEF_PREFIX}off")]
+    return InlineKeyboardMarkup([hours, off])
+
+
+def _brief_status(home: Home, place) -> str:
+    if home.brief_hour is None:
+        return prompts.BRIEF_STATUS_OFF
+    return prompts.BRIEF_STATUS_ON.format(time=_hour_label(home.brief_hour), place=place.name)
+
+
+@guarded
+async def cmd_brief(update: Update, ctx) -> None:
+    chat_id = update.effective_chat.id
+    home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
+    if home is None:
+        await _send_flow(update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME)
+        return
+    place = geo.get_place(home.place_id)
+    await _say(update, f"{_brief_status(home, place)}\n\n{prompts.BRIEF_ASK}", brief_markup())
+
+
+async def _set_brief(update: Update, ctx, chat_id: int, choice: str) -> None:
+    hours = {str(h): h for h in BRIEF_HOURS}
+    if choice != "off" and choice not in hours:
+        return
+    store = _store(ctx)
+    home = await asyncio.to_thread(store.get_home, chat_id)
+    if home is None:
+        await _send_flow(update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME)
+        return
+    hour = None if choice == "off" else hours[choice]
+    await asyncio.to_thread(store.set_brief, chat_id, hour)
+    place = geo.get_place(home.place_id)
+    text = prompts.BRIEF_OFF if hour is None else prompts.BRIEF_ON.format(time=_hour_label(hour), place=place.name)
+    await _say(update, text, MENU)
+
+
+def compose_brief(saved: BirthInput | None, place, now: datetime) -> str:
+    """The morning message for someone living at `place`. Synchronous; the bot runs it in a thread."""
+    dasha = None
+    if saved is not None:
+        resolved = service.resolve_birth(saved)
+        if isinstance(resolved, ResolvedBirth):
+            dasha = service.today_report(resolved, now).current_dasha
+    local_now = now.astimezone(ZoneInfo(place.tz))
+    return render_brief(local_now, service.rahu_kaala_for(place, now), place.label, dasha)
+
+
+async def _brief_job(ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    """Every few minutes: send the morning message to anyone whose local hour has come and who has
+    not had one today. Restart-safe, because "sent today" is stored."""
+    store, allowed = ctx.application.bot_data[STORE_KEY], ctx.application.bot_data[ALLOWED_KEY]
+    now = _now()
+    for chat_id, home in await asyncio.to_thread(store.briefs_enabled):
+        if chat_id not in allowed:
+            continue
+        try:
+            place = geo.get_place(home.place_id)
+            today = now.astimezone(ZoneInfo(place.tz))
+            if today.hour != home.brief_hour or home.brief_last == today.date().isoformat():
+                continue
+            saved = await asyncio.to_thread(store.get_user, chat_id)
+            text = await asyncio.to_thread(compose_brief, saved, place, now)
+            await ctx.bot.send_message(chat_id, text, reply_markup=MENU)
+            await asyncio.to_thread(store.mark_brief_sent, chat_id, today.date().isoformat())
+        except Exception as e:  # noqa: BLE001 - one person's failure must not stop the others
+            log.error("morning message failed chat=%s error=%s", chat_id, type(e).__name__)
 
 
 @guarded
@@ -179,6 +294,8 @@ async def on_text(update: Update, ctx) -> None:
         prompts.MENU_DASHA: lambda: _show(update, ctx, chat_id, "dasha"),
         prompts.MENU_TODAY: lambda: _show(update, ctx, chat_id, "today"),
         prompts.MENU_CHANGE: lambda: _begin(update, ctx, chat_id),
+        prompts.MENU_HOME: lambda: cmd_home(update, ctx),
+        prompts.MENU_BRIEF: lambda: cmd_brief(update, ctx),
         prompts.MENU_FORGET: lambda: cmd_forget(update, ctx),
     }
     if text in shortcuts:
@@ -218,6 +335,9 @@ async def on_button(update: Update, ctx) -> None:
     query = update.callback_query
     await query.answer()
     chat_id, data = update.effective_chat.id, query.data or ""
+    if data.startswith(BRIEF_PREFIX):
+        await _set_brief(update, ctx, chat_id, data[len(BRIEF_PREFIX):])
+        return
     if data.startswith(CHART_PREFIX):
         await _redraw_chart(update, ctx, chat_id, data[len(CHART_PREFIX):])
         return
@@ -285,11 +405,16 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
     )
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
     for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
+                     ("home", cmd_home), ("brief", cmd_brief),
                      ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
         app.add_handler(CommandHandler(name, fn))
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_error_handler(on_error)
+    if app.job_queue is not None:
+        app.job_queue.run_repeating(_brief_job, interval=BRIEF_CHECK_SECONDS, first=15, name="morning_brief")
+    else:
+        log.warning("job queue unavailable: morning messages are disabled")
     return app
 
 

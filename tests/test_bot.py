@@ -1,13 +1,16 @@
 """Bot adapter: allowlist, wiring, persistence and logging. Handlers are driven with stub updates."""
 import logging
 import os
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
 
 from samay.bot import app as bot
+from samay.engine import geo
 from samay.engine.paths import EPHEMERIS_PATH
+from samay.models import BirthInput
 from samay.render import prompts
 from samay.store import Store
 
@@ -97,7 +100,7 @@ def test_alternative_token_variable_is_accepted(monkeypatch, no_token_or_env_fil
 def test_application_registers_every_command(store):
     app = bot.build_application("123:abc", frozenset({1}), store)
     commands = {c for group in app.handlers.values() for h in group for c in getattr(h, "commands", ())}
-    assert commands == {"start", "help", "birth", "forget", "chart", "dasha", "today"}
+    assert commands == set(prompts.COMMANDS)
 
 
 async def test_strangers_get_no_reply_and_store_nothing(ctx, store):
@@ -171,8 +174,6 @@ async def test_asking_for_a_chart_without_details_starts_the_conversation(ctx, s
 
 
 async def test_forget_asks_first_then_deletes_everything(ctx, store):
-    from samay.models import BirthInput
-
     store.save_user(ALLOWED, BirthInput("1952-08-15", "06:30", "Pune"))
     store.save_draft(ALLOWED, {"step": "date"})
     update, msg = message(ALLOWED, prompts.MENU_FORGET)
@@ -285,8 +286,6 @@ def test_chart_markup_offers_the_other_style_and_the_opposite_degrees_setting():
 
 
 def _save_pune(store):
-    from samay.models import BirthInput
-
     store.save_user(ALLOWED, BirthInput("1990-08-15", "14:30", "Pune"))
 
 
@@ -354,3 +353,140 @@ async def test_strangers_cannot_use_the_chart_switches(ctx, store):
     update, _ = tap(STRANGER, "img:north:0")
     await bot.on_button(update, ctx)
     update.callback_query.edit_message_media.assert_not_awaited()
+
+
+# --- where I live, Rahu Kaala, and the morning message ---------------------------------------------
+
+
+
+MAPLEWOOD = lambda: geo.find_places("Maplewood, MN")[0]
+
+
+@needs_kernel
+async def test_home_conversation_saves_the_city_and_shows_todays_rahu_kaala(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
+    update, msg = message(ALLOWED, "/home")
+    await bot.cmd_home(update, ctx)
+    assert last_reply(msg) == prompts.ASK_HOME
+    update, msg = message(ALLOWED, "Maplewood, Minnesota")
+    await bot.on_text(update, ctx)
+    texts = [c.args[0] for c in msg.reply_text.await_args_list]
+    assert "Maplewood" in texts[0] and texts[1].startswith("⚠ Rahu Kaala today: 8:") and "(Maplewood" in texts[1]
+    assert store.get_home(ALLOWED).place_id == MAPLEWOOD().id and store.get_draft(ALLOWED) is None
+
+
+@needs_kernel
+async def test_today_shows_rahu_kaala_for_the_home_city_or_asks_for_one(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
+    _save_pune(store)
+    update, msg = message(ALLOWED, prompts.MENU_TODAY)
+    await bot.on_text(update, ctx)
+    assert prompts.NEED_HOME in last_reply(msg) and prompts.MENU_HOME in last_reply(msg)
+    store.save_home(ALLOWED, "Maplewood", MAPLEWOOD().id)
+    update, msg = message(ALLOWED, "/today")
+    await bot._command("today")(update, ctx)
+    assert "Rahu Kaala today: 8:" in last_reply(msg) and "Transiting Saturn" in last_reply(msg)
+
+
+async def test_brief_without_a_home_city_asks_for_it_first(ctx, store):
+    update, msg = message(ALLOWED, "/brief")
+    await bot.cmd_brief(update, ctx)
+    assert last_reply(msg).startswith(prompts.BRIEF_NEED_HOME) and store.get_draft(ALLOWED)["purpose"] == "home"
+
+
+async def test_brief_buttons_turn_the_message_on_off_and_ignore_bad_choices(ctx, store):
+    store.save_home(ALLOWED, "Maplewood", MAPLEWOOD().id)
+    update, msg = message(ALLOWED, prompts.MENU_BRIEF)
+    await bot.on_text(update, ctx)
+    assert prompts.BRIEF_STATUS_OFF in last_reply(msg)
+    assert list(buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]).values()) == [
+        "brief:6", "brief:7", "brief:8", "brief:9", "brief:off"]
+    update, msg = tap(ALLOWED, "brief:7")
+    await bot.on_button(update, ctx)
+    assert store.get_home(ALLOWED).brief_hour == 7 and last_reply(msg) == prompts.BRIEF_ON.format(
+        time="7 am", place="Maplewood")
+    update, msg = message(ALLOWED, "/brief")
+    await bot.cmd_brief(update, ctx)
+    assert prompts.BRIEF_STATUS_ON.format(time="7 am", place="Maplewood") in last_reply(msg)
+    for bad in ("brief:3", "brief:x", "brief:"):
+        update, msg = tap(ALLOWED, bad)
+        await bot.on_button(update, ctx)
+        msg.reply_text.assert_not_awaited()
+    assert store.get_home(ALLOWED).brief_hour == 7
+    update, msg = tap(ALLOWED, "brief:off")
+    await bot.on_button(update, ctx)
+    assert store.get_home(ALLOWED).brief_hour is None and last_reply(msg) == prompts.BRIEF_OFF
+
+
+async def test_brief_switches_are_closed_to_strangers(ctx, store):
+    store.save_home(STRANGER, "Maplewood", MAPLEWOOD().id)
+    update, _ = tap(STRANGER, "brief:7")
+    await bot.on_button(update, ctx)
+    assert store.get_home(STRANGER).brief_hour is None
+
+
+def job_ctx(ctx, allowed=(ALLOWED,)):
+    ctx.application.bot_data[bot.ALLOWED_KEY] = frozenset(allowed)
+    ctx.bot = SimpleNamespace(send_message=AsyncMock())
+    return ctx
+
+
+@needs_kernel
+async def test_morning_job_sends_once_a_day_at_the_local_hour(ctx, store, monkeypatch):
+    ctx = job_ctx(ctx)
+    store.save_home(ALLOWED, "Maplewood", MAPLEWOOD().id)
+    store.set_brief(ALLOWED, 7)
+    _save_pune(store)
+
+    clock = {"now": datetime(2026, 11, 9, 12, 5, tzinfo=UTC)}  # 6:05 am in Minnesota: too early
+    monkeypatch.setattr(bot, "_now", lambda: clock["now"])
+    await bot._brief_job(ctx)
+    ctx.bot.send_message.assert_not_awaited()
+
+    clock["now"] = datetime(2026, 11, 9, 13, 5, tzinfo=UTC)  # 7:05 am
+    await bot._brief_job(ctx)
+    chat, text = ctx.bot.send_message.await_args.args
+    assert chat == ALLOWED and "Good morning! Today is Monday, 09 November 2026." in text
+    assert "Rahu Kaala today: 8:" in text and "Jupiter chapter (mahadasha)" in text and "(Maplewood" in text
+    assert store.get_home(ALLOWED).brief_last == "2026-11-09"
+
+    clock["now"] = datetime(2026, 11, 9, 13, 50, tzinfo=UTC)  # same morning: no repeat
+    await bot._brief_job(ctx)
+    assert ctx.bot.send_message.await_count == 1
+    clock["now"] = datetime(2026, 11, 10, 13, 5, tzinfo=UTC)  # next morning
+    await bot._brief_job(ctx)
+    assert ctx.bot.send_message.await_count == 2
+
+
+@needs_kernel
+async def test_morning_job_works_without_saved_birth_details_and_skips_people_off_the_allowlist(ctx, store, monkeypatch):
+    ctx = job_ctx(ctx)
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
+    for chat in (ALLOWED, STRANGER):
+        store.save_home(chat, "Maplewood", MAPLEWOOD().id)
+        store.set_brief(chat, 7)
+    await bot._brief_job(ctx)
+    assert ctx.bot.send_message.await_count == 1
+    chat, text = ctx.bot.send_message.await_args.args
+    assert chat == ALLOWED and "Running now" not in text and "Rahu Kaala today" in text
+
+
+@needs_kernel
+async def test_one_failed_delivery_does_not_stop_the_others_or_leak_details(ctx, store, monkeypatch, caplog):
+    other = 222
+    ctx = job_ctx(ctx, allowed=(ALLOWED, other))
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
+    for chat in (ALLOWED, other):
+        store.save_home(chat, "Maplewood", MAPLEWOOD().id)
+        store.set_brief(chat, 7)
+    ctx.bot.send_message.side_effect = [RuntimeError("secret Maplewood details"), None]
+    with caplog.at_level(logging.ERROR, logger="samay"):
+        await bot._brief_job(ctx)
+    assert ctx.bot.send_message.await_count == 2
+    assert "RuntimeError" in caplog.text and "secret" not in caplog.text
+    assert store.get_home(ALLOWED).brief_last is None and store.get_home(other).brief_last == "2026-11-09"
+
+
+def test_a_job_is_scheduled_when_the_scheduler_is_available(store):
+    app = bot.build_application("123:abc", frozenset({1}), store)
+    assert app.job_queue is not None and [j.name for j in app.job_queue.jobs()] == ["morning_brief"]

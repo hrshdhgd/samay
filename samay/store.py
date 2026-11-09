@@ -10,12 +10,22 @@ import json
 import os
 import sqlite3
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 from .engine.paths import DATA_DIR
 from .models import BirthInput
 
 DRAFT_TTL_SECONDS = 30 * 60
+
+
+@dataclass(frozen=True)
+class Home:
+    place_text: str  # what the person typed
+    place_id: str
+    brief_hour: int | None = None  # local hour for the morning message; None = off
+    brief_last: str | None = None  # local date (YYYY-MM-DD) the last message was sent
+
 
 MIGRATIONS = [
     """
@@ -27,6 +37,13 @@ MIGRATIONS = [
     );
     CREATE TABLE drafts (
         chat_id INTEGER PRIMARY KEY, data TEXT NOT NULL, updated_at INTEGER NOT NULL
+    );
+    """,
+    # Where the person lives now (for sunrise-based timings) and their morning-message setting.
+    """
+    CREATE TABLE homes (
+        chat_id INTEGER PRIMARY KEY, place_text TEXT NOT NULL, place_id TEXT NOT NULL,
+        brief_hour INTEGER, brief_last TEXT
     );
     """,
 ]
@@ -91,8 +108,41 @@ class Store:
         with self._conn() as c:
             return c.execute("DELETE FROM drafts WHERE updated_at < ?", (int(now - DRAFT_TTL_SECONDS),)).rowcount
 
+    def save_home(self, chat_id: int, place_text: str, place_id: str) -> None:
+        """Set or change the living city; the morning-message setting is kept."""
+        with self._conn() as c:
+            c.execute(
+                "INSERT INTO homes (chat_id, place_text, place_id) VALUES (?,?,?) "
+                "ON CONFLICT(chat_id) DO UPDATE SET place_text = excluded.place_text, "
+                "place_id = excluded.place_id, brief_last = NULL",
+                (chat_id, place_text, place_id),
+            )
+
+    @staticmethod
+    def _home(r: sqlite3.Row) -> Home:
+        return Home(r["place_text"], r["place_id"], r["brief_hour"], r["brief_last"])
+
+    def get_home(self, chat_id: int) -> Home | None:
+        with self._conn() as c:
+            r = c.execute("SELECT * FROM homes WHERE chat_id = ?", (chat_id,)).fetchone()
+        return self._home(r) if r else None
+
+    def set_brief(self, chat_id: int, hour: int | None) -> None:
+        """Turn the morning message on at a local hour, or off with None. Needs a home city."""
+        with self._conn() as c:
+            c.execute("UPDATE homes SET brief_hour = ?, brief_last = NULL WHERE chat_id = ?", (hour, chat_id))
+
+    def mark_brief_sent(self, chat_id: int, local_date: str) -> None:
+        with self._conn() as c:
+            c.execute("UPDATE homes SET brief_last = ? WHERE chat_id = ?", (local_date, chat_id))
+
+    def briefs_enabled(self) -> list[tuple[int, Home]]:
+        with self._conn() as c:
+            rows = c.execute("SELECT * FROM homes WHERE brief_hour IS NOT NULL").fetchall()
+        return [(r["chat_id"], self._home(r)) for r in rows]
+
     def forget(self, chat_id: int) -> None:
         """Remove everything stored about a chat."""
         with self._conn() as c:
-            c.execute("DELETE FROM users WHERE chat_id = ?", (chat_id,))
-            c.execute("DELETE FROM drafts WHERE chat_id = ?", (chat_id,))
+            for table in ("users", "drafts", "homes"):
+                c.execute(f"DELETE FROM {table} WHERE chat_id = ?", (chat_id,))

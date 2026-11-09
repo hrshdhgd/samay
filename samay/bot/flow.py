@@ -46,6 +46,7 @@ class Draft:
     fold: int | None = None
     options: tuple[str, ...] = ()
     profile: str = DEFAULT_PROFILE
+    purpose: str = "birth"  # "birth", or "home" for the living-city question
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -60,6 +61,7 @@ class Outcome:
     draft: Draft | None
     reply: Reply
     done: BirthInput | None = None
+    home: tuple[str, str] | None = None  # (what was typed, place id) when the living city is set
 
 
 def _start_over() -> tuple[Button, ...]:
@@ -91,6 +93,8 @@ def _ask(draft: Draft) -> Reply:
             ))
         case "place":
             return _reply(prompts.ASK_PLACE)
+        case "home_place":
+            return _reply(prompts.ASK_HOME)
         case "nearby":
             return _reply(prompts.ASK_NEARBY.format(place=draft.approx_for))
         case "pick_place":
@@ -104,6 +108,16 @@ def _ask(draft: Draft) -> Reply:
             )
             return _reply(prompts.PICK_FOLD, rows)
     raise ValueError(f"unknown step {draft.step!r}")
+
+
+def begin_home() -> Outcome:
+    draft = _next(Draft(step="home_place", purpose="home"))
+    return Outcome(draft, _ask(draft))
+
+
+def _finish_home(draft: Draft, place_id: str) -> Outcome:
+    place = geo.get_place(place_id)
+    return Outcome(None, Reply(prompts.HOME_SAVED.format(place=place.label)), home=(draft.place_text, place_id))
 
 
 def begin(profile: str = DEFAULT_PROFILE) -> Outcome:
@@ -132,6 +146,16 @@ def _finish(draft: Draft) -> Outcome:
         labels = tuple(render_options(result))
         return _go(draft, step="pick_fold", options=labels)
     return Outcome(None, Reply(prompts.SAVED), birth)
+
+
+def _search_home(draft: Draft, text: str) -> Outcome:
+    places = geo.find_places(text)
+    if not places:
+        return _go(draft, prompts.HOME_NOT_FOUND + "\n\n", step="home_place")
+    draft = replace(draft, place_text=text)
+    if len(places) == 1:
+        return _finish_home(draft, places[0].id)
+    return _go(draft, step="pick_place", options=tuple(p.id for p in places))
 
 
 def _search(draft: Draft, text: str) -> Outcome:
@@ -166,6 +190,8 @@ def on_text(draft: Draft | None, text: str) -> Outcome:
             if clock.ambiguous:
                 return _go(draft, step="ampm", hour=clock.hour, minute=clock.minute)
             return _go(draft, step="place", time_text=f"{clock.hour:02d}:{clock.minute:02d}")
+        case "home_place":
+            return _search_home(draft, text)
         case "place" | "nearby":
             return _search(draft, text)
     return Outcome(draft, replace(_ask(draft), text=prompts.RE_ASK + "\n\n" + _ask(draft).text))
@@ -182,6 +208,8 @@ def on_button(draft: Draft | None, data: str) -> Outcome:
             hour = draft.hour % 12 + (12 if action == "pm" else 0)
             return _go(draft, step="place", time_text=f"{hour:02d}:{draft.minute:02d}", hour=None, minute=None)
         case "pick_place", ("place", "=", pid) if pid in draft.options:
+            if draft.purpose == "home":
+                return _finish_home(draft, pid)
             return _finish(replace(draft, place_choice=pid))
         case "pick_fold", ("fold", "=", i) if i in ("0", "1"):
             return _finish(replace(draft, fold=int(i)))
