@@ -54,3 +54,16 @@ def test_approximate_place_is_stated_on_the_chart():
 def test_bot_command_is_listed():
     r = CliRunner().invoke(cli, ["--help"])
     assert "bot" in r.output and "Telegram" in r.output
+
+
+def test_research_queue_lists_the_most_wanted_topics(tmp_path, monkeypatch):
+    from samay.store import Store
+
+    monkeypatch.setenv("SAMAY_DB", str(tmp_path / "q.db"))
+    assert "No unanswered topics" in CliRunner().invoke(cli, ["research-queue"]).output
+    store = Store()
+    for topic in ("dasha:saturn", "dasha:saturn", "planet:rahu"):
+        store.record_miss(topic)
+    out = CliRunner().invoke(cli, ["research-queue"]).output.splitlines()
+    assert out[0].split()[:2] == ["2", "dasha:saturn"] and "needs research" in out[0]
+    assert out[1].split()[:2] == ["1", "planet:rahu"]

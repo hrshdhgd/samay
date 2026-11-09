@@ -1,5 +1,7 @@
 import sqlite3
 
+import pytest
+
 from samay.models import BirthInput
 from samay.store import DRAFT_TTL_SECONDS, MIGRATIONS, Store
 
@@ -91,3 +93,28 @@ def test_existing_database_upgrades_in_place(tmp_path):
     assert s.get_user(1).place_text == "Pune"
     s.save_home(1, "Maplewood", "5")
     assert s.get_home(1).place_id == "5"
+
+
+def test_unanswered_topics_are_counted_without_any_wording_or_chat_id(tmp_path):
+    s = Store(tmp_path / "t.db")
+    for topic in ("dasha:saturn", "dasha:saturn", "planet:rahu", "dasha:saturn"):
+        s.record_miss(topic)
+    assert s.top_misses() == [("dasha:saturn", 3), ("planet:rahu", 1)]
+    assert s.top_misses(limit=1) == [("dasha:saturn", 3)]
+    with sqlite3.connect(tmp_path / "t.db") as c:
+        assert [r[1] for r in c.execute("PRAGMA table_info(topic_misses)")] == ["topic", "count"]
+
+
+@pytest.mark.parametrize("words", ["will my son marry this year?", "Saturn", "dasha:Saturn", ""])
+def test_free_text_is_refused_as_a_topic(tmp_path, words):
+    s = Store(tmp_path / "t.db")
+    with pytest.raises(ValueError):
+        s.record_miss(words)
+    assert s.top_misses() == []
+
+
+def test_forget_does_not_touch_the_anonymous_topic_counts(tmp_path):
+    s = Store(tmp_path / "t.db")
+    s.record_miss("dasha:saturn")
+    s.forget(1)
+    assert s.top_misses() == [("dasha:saturn", 1)]

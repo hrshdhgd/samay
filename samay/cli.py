@@ -106,6 +106,21 @@ def data_info(profile: str) -> None:
     _run(show)
 
 
+@cli.command("research-queue")
+@click.option("--limit", default=20, show_default=True)
+def research_queue(limit: int) -> None:
+    """Topics people asked about that have no sourced answer yet, most wanted first."""
+    from .engine.entries import answers_for
+    from .store import Store
+
+    rows = Store().top_misses(limit)
+    if not rows:
+        click.echo("No unanswered topics recorded yet.")
+    for topic, count in rows:
+        state = "has a checked entry (now answerable)" if answers_for(topic) else "needs research"
+        click.echo(f"{count:5}  {topic}  {state}")
+
+
 @cli.command()
 def bot() -> None:
     """Run the Telegram bot (long polling). Reads TELEGRAM_TOKEN, ALLOWED_CHAT_IDS and .env."""

@@ -13,6 +13,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from .engine.entries import is_topic
 from .engine.paths import DATA_DIR
 from .models import BirthInput
 
@@ -45,6 +46,10 @@ MIGRATIONS = [
         chat_id INTEGER PRIMARY KEY, place_text TEXT NOT NULL, place_id TEXT NOT NULL,
         brief_hour INTEGER, brief_last TEXT
     );
+    """,
+    # Topics people asked about that had no sourced answer. Topics and counts only: never wording or a chat id.
+    """
+    CREATE TABLE topic_misses (topic TEXT PRIMARY KEY, count INTEGER NOT NULL);
     """,
 ]
 
@@ -140,6 +145,21 @@ class Store:
         with self._conn() as c:
             rows = c.execute("SELECT * FROM homes WHERE brief_hour IS NOT NULL").fetchall()
         return [(r["chat_id"], self._home(r)) for r in rows]
+
+    def record_miss(self, topic: str) -> None:
+        """Count one unanswered question under its sorted topic. Anything that is not a plain
+        topic key (which could carry someone's words) is refused."""
+        if not is_topic(topic):
+            raise ValueError("record_miss takes a topic key like 'dasha:saturn', never free text")
+        with self._conn() as c:
+            c.execute(
+                "INSERT INTO topic_misses VALUES (?, 1) ON CONFLICT(topic) DO UPDATE SET count = count + 1", (topic,)
+            )
+
+    def top_misses(self, limit: int = 20) -> list[tuple[str, int]]:
+        with self._conn() as c:
+            rows = c.execute("SELECT topic, count FROM topic_misses ORDER BY count DESC, topic LIMIT ?", (limit,))
+            return [(r["topic"], r["count"]) for r in rows]
 
     def forget(self, chat_id: int) -> None:
         """Remove everything stored about a chat."""
