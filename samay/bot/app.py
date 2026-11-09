@@ -33,6 +33,7 @@ from . import flow
 log = logging.getLogger("samay")
 STORE_KEY, ALLOWED_KEY = "store", "allowed"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
+NETWORK_TIMEOUT = 20.0  # seconds
 MENU = ReplyKeyboardMarkup([list(row) for row in prompts.MENU_ROWS], resize_keyboard=True)
 
 
@@ -221,7 +222,20 @@ async def _post_shutdown(app: Application) -> None:
 
 
 def build_application(token: str, allowed: frozenset[int], store: Store) -> Application:
-    app = Application.builder().token(token).post_init(_post_init).post_shutdown(_post_shutdown).build()
+    app = (
+        Application.builder()
+        .token(token)
+        # PTB's 5 s defaults are too tight for a slow or flaky connection.
+        .connect_timeout(NETWORK_TIMEOUT)
+        .read_timeout(NETWORK_TIMEOUT)
+        .write_timeout(NETWORK_TIMEOUT)
+        .pool_timeout(NETWORK_TIMEOUT)
+        .get_updates_connect_timeout(NETWORK_TIMEOUT)
+        .get_updates_read_timeout(NETWORK_TIMEOUT)
+        .post_init(_post_init)
+        .post_shutdown(_post_shutdown)
+        .build()
+    )
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
     for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
                      ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
@@ -253,4 +267,6 @@ def main() -> None:
         raise SystemExit("Set TELEGRAM_TOKEN (or SAMAY_TELEGRAM_BOT_TOKEN) to the token from @BotFather")
     app = build_application(token, allowed, Store())
     log.info("samay starting (long polling, %d allowed chat(s))", len(allowed))
-    app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY])
+    # bootstrap_retries=-1: keep retrying the first connection instead of exiting if Telegram is
+    # briefly unreachable.
+    app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY], bootstrap_retries=-1)

@@ -256,3 +256,14 @@ async def test_help_is_silent_for_strangers(ctx):
     update, msg = message(STRANGER, "/help")
     await bot.cmd_help(update, ctx)
     msg.reply_text.assert_not_awaited()
+
+
+def test_start_up_keeps_retrying_when_telegram_is_unreachable(monkeypatch, no_token_or_env_file):
+    from unittest.mock import MagicMock
+
+    monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
+    monkeypatch.setenv("SAMAY_TELEGRAM_BOT_TOKEN", "123:abc")
+    fake = MagicMock()
+    monkeypatch.setattr(bot, "build_application", lambda *a: fake)
+    bot.main()
+    assert fake.run_polling.call_args.kwargs["bootstrap_retries"] == -1
