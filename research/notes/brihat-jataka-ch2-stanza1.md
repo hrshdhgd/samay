@@ -13,8 +13,8 @@ https://archive.org/details/b2488442x (full text: `b2488442x_djvu.txt`). Re-fetc
 > counsellors and Saturn is servant.
 
 **Paraphrase choices**
-- "Kalapurusha" is rendered "the cosmic person" (literally the "person of time"; the zodiac seen as
-  one body). A checker may prefer to keep the Sanskrit word.
+- "Kalapurusha" is rendered "the cosmic person (Kalapurusha)" (literally the "person of time"; the
+  zodiac seen as one body). The Sanskrit word is kept in brackets at h2's request, for transparency.
 - "First prince" is rendered "prince (heir to the throne)".
 - Stanza 7 of the same chapter assigns castes to the planets. Deliberately not used.
 - Rahu and Ketu: stanza 3 gives only their names (Rahu: Tama "darkness", Agu, Asura; Ketu: Sikhi).
