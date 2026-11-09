@@ -241,6 +241,27 @@ no `keep_alive` override. The LLM only rewords facts the engine computed.
    disambiguation and a restart mid-flow.
 6. `docker build` succeeds locally on arm64.
 
+## Grounded Q&A (sub-project 4): decisions so far
+
+Free Q&A is the app's headline feature. It is English-only and grounded:
+
+- **Entries:** plain-English paraphrases of the public-domain Sanskrit texts (BPHS, Brihat Jataka,
+  Saravali, Phaladeepika, Jataka Parijata), each citing chapter and verse.
+- **Verification levels**, stored per entry and shown next to the citation: `unchecked` (draft,
+  never shown as an answer), `translation-checked` (compared with a named public-domain English
+  translation, with who checked and when), `sanskrit-checked` (read against the verse by a
+  Sanskrit reader). No family member reads Sanskrit, so entries start at `translation-checked`;
+  a scholar upgrades the most-used ones later.
+- **The model only sorts the question** into a topic (for example `topic: dasha, planet: saturn`).
+  samay writes the answer from checked entries, word for word, plus computed chart facts, with
+  citations. The model writes none of the answer.
+- **No sourced answer:** the bot says so and shows the related computed facts.
+- **Unanswered questions:** only the sorted topic and a count are stored, never the wording or a
+  chat id. `samay research-queue` lists the most-wanted topics.
+- **Tooling:** word-by-word breakdown aids for reviewers live in a `research` dependency group
+  that is not installed in the Docker image or in CI. Experiments live in `research/` with a
+  `program.md` and `results.tsv`. Machine output is an aid, never the check.
+
 ## Known risks
 
 - Plaintext birth data in `users` and `drafts` until sub-project 8. Acceptable while local;
