@@ -38,9 +38,9 @@ version stamp. Charts say "not yet checked against reference software" until val
 
 ## Telegram bot
 ```bash
-cp .env.example .env     # set TELEGRAM_TOKEN (from @BotFather) and ALLOWED_CHAT_IDS
-set -a; . ./.env; set +a
-SAMAY_DB=data/samay.db uv run python -m samay.bot
+echo "ALLOWED_CHAT_IDS=<your chat id>" > .env     # git-ignored; comma-separate several ids
+export SAMAY_TELEGRAM_BOT_TOKEN=<token from @BotFather>   # or TELEGRAM_TOKEN
+uv run samay bot
 ```
 Long polling, so no public port. Only chats listed in `ALLOWED_CHAT_IDS` get answers (the bot
 refuses to start with an empty list). Relatives use a button menu and a guided conversation; the

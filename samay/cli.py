@@ -93,3 +93,11 @@ def today(now: datetime | None, **kw) -> None:
 def data_info(profile: str) -> None:
     """Versions of every data source a reading depends on."""
     _run(lambda: "\n".join(f"{k}: {v}" for k, v in vars(service.data_info(profile)).items()))
+
+
+@cli.command()
+def bot() -> None:
+    """Run the Telegram bot (long polling). Reads TELEGRAM_TOKEN, ALLOWED_CHAT_IDS and .env."""
+    from .bot.app import main
+
+    main()

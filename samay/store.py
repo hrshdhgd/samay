@@ -12,6 +12,7 @@ import sqlite3
 import time
 from pathlib import Path
 
+from .engine.paths import DATA_DIR
 from .models import BirthInput
 
 DRAFT_TTL_SECONDS = 30 * 60
@@ -33,7 +34,7 @@ MIGRATIONS = [
 
 class Store:
     def __init__(self, path: str | os.PathLike | None = None):
-        self.path = Path(path or os.environ.get("SAMAY_DB", "samay.db"))
+        self.path = Path(path or os.environ.get("SAMAY_DB") or DATA_DIR / "samay.db")
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self._conn() as c:
             version = c.execute("PRAGMA user_version").fetchone()[0]

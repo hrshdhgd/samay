@@ -1,5 +1,6 @@
 """Bot adapter: allowlist, wiring, persistence and logging. Handlers are driven with stub updates."""
 import logging
+import os
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -57,10 +58,39 @@ def test_empty_or_bad_allowlist_refuses_to_start():
     assert bot.parse_allowed("12, 34") == frozenset({12, 34})
 
 
-def test_missing_token_refuses_to_start(monkeypatch):
-    monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
+@pytest.fixture
+def no_token_or_env_file(monkeypatch, tmp_path):
+    """Neither a real token nor the developer's own .env may leak into these tests."""
+    monkeypatch.setenv("SAMAY_ENV_FILE", str(tmp_path / "absent.env"))
     monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
+    monkeypatch.delenv("SAMAY_TELEGRAM_BOT_TOKEN", raising=False)
+
+
+def test_missing_token_refuses_to_start(monkeypatch, no_token_or_env_file):
+    monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
     with pytest.raises(SystemExit, match="TELEGRAM_TOKEN"):
+        bot.main()
+
+
+def test_env_file_supplies_settings_but_never_overrides_the_environment(monkeypatch, tmp_path):
+    env = tmp_path / ".env"
+    env.write_text("# comment\nALLOWED_CHAT_IDS=5, 6\nSAMAY_TEST_KEY='quoted'\nSAMAY_TEST_SET=from-file\n\nbad line\n")
+    monkeypatch.delenv("ALLOWED_CHAT_IDS", raising=False)
+    monkeypatch.delenv("SAMAY_TEST_KEY", raising=False)
+    monkeypatch.setenv("SAMAY_TEST_SET", "from-env")
+    bot.load_env_file(env)
+    assert bot.parse_allowed(os.environ["ALLOWED_CHAT_IDS"]) == frozenset({5, 6})
+    assert os.environ["SAMAY_TEST_KEY"] == "quoted" and os.environ["SAMAY_TEST_SET"] == "from-env"
+    for name in ("ALLOWED_CHAT_IDS", "SAMAY_TEST_KEY"):
+        monkeypatch.delenv(name, raising=False)
+    bot.load_env_file(tmp_path / "missing.env")  # a missing file is fine
+
+
+def test_alternative_token_variable_is_accepted(monkeypatch, no_token_or_env_file):
+    monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
+    monkeypatch.setenv("SAMAY_TELEGRAM_BOT_TOKEN", "123:abc")
+    monkeypatch.setattr(bot, "build_application", lambda *a: (_ for _ in ()).throw(RuntimeError("reached")))
+    with pytest.raises(RuntimeError, match="reached"):
         bot.main()
 
 
@@ -172,9 +202,8 @@ async def test_error_handler_logs_type_not_details_and_apologises(ctx, caplog):
     assert last_reply(msg) == prompts.GENERIC_ERROR
 
 
-def test_main_silences_loggers_that_print_the_bot_token(monkeypatch):
+def test_main_silences_loggers_that_print_the_bot_token(monkeypatch, no_token_or_env_file):
     monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
-    monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
     with pytest.raises(SystemExit):
         bot.main()
     for name in ("httpx", "httpcore", "telegram"):

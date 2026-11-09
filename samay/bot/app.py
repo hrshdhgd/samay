@@ -10,6 +10,7 @@ import functools
 import logging
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 from telegram.ext import (
@@ -213,14 +214,25 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
     return app
 
 
+def load_env_file(path: Path) -> None:
+    """Add KEY=VALUE lines from a .env file to the environment; real environment variables win."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        key, sep, value = line.strip().partition("=")
+        if sep and key and not key.startswith("#"):
+            os.environ.setdefault(key.strip(), value.strip().strip("'\""))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     for noisy in ("httpx", "httpcore", "telegram", "apscheduler"):
         logging.getLogger(noisy).setLevel(logging.WARNING)  # their INFO lines include the bot token
+    load_env_file(Path(os.environ.get("SAMAY_ENV_FILE", ".env")))
     allowed = parse_allowed(os.environ.get("ALLOWED_CHAT_IDS", ""))
-    token = os.environ.get("TELEGRAM_TOKEN", "")
+    token = os.environ.get("TELEGRAM_TOKEN") or os.environ.get("SAMAY_TELEGRAM_BOT_TOKEN", "")
     if not token:
-        raise SystemExit("TELEGRAM_TOKEN is not set")
+        raise SystemExit("Set TELEGRAM_TOKEN (or SAMAY_TELEGRAM_BOT_TOKEN) to the token from @BotFather")
     app = build_application(token, allowed, Store())
     log.info("samay starting (long polling, %d allowed chat(s))", len(allowed))
     app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY])
