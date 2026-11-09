@@ -1,0 +1,10 @@
+# Published figures to compare against. Each entry names where the figure was read and when.
+# Times are minute-rounded as published, so tests allow one minute either way.
+- source: https://ishvaram.com/rahu-kaal/ (read 2026-11-09)
+  place: New Delhi
+  latitude: 28.6139
+  longitude: 77.2090
+  tz: Asia/Kolkata
+  date: 2026-11-09
+  sunrise: "06:39"
+  rahu_kaala: ["08:00", "09:22"]

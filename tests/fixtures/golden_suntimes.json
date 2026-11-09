@@ -1,0 +1,59 @@
+{
+  "generator": "pyswisseph 2.10.03, Moshier, upper limb, standard refraction",
+  "cases": [
+    {
+      "name": "pune",
+      "latitude": 18.5196,
+      "longitude": 73.8553,
+      "tz": "Asia/Kolkata",
+      "date": "2026-11-09",
+      "sunrise": "2026-11-09T06:37:56.152986+05:30",
+      "sunset": "2026-11-09T17:58:37.768031+05:30"
+    },
+    {
+      "name": "new-delhi",
+      "latitude": 28.6139,
+      "longitude": 77.209,
+      "tz": "Asia/Kolkata",
+      "date": "2026-11-09",
+      "sunrise": "2026-11-09T06:38:54.535812+05:30",
+      "sunset": "2026-11-09T17:30:42.726141+05:30"
+    },
+    {
+      "name": "maplewood-mn-dst-ended",
+      "latitude": 44.953,
+      "longitude": -93.023,
+      "tz": "America/Chicago",
+      "date": "2026-11-09",
+      "sunrise": "2026-11-09T07:01:40.374578-06:00",
+      "sunset": "2026-11-09T16:49:40.278812-06:00"
+    },
+    {
+      "name": "kyiv-midsummer",
+      "latitude": 50.4501,
+      "longitude": 30.5234,
+      "tz": "Europe/Kyiv",
+      "date": "2026-06-21",
+      "sunrise": "2026-06-21T04:46:18.658944+03:00",
+      "sunset": "2026-06-21T21:13:05.860996+03:00"
+    },
+    {
+      "name": "sydney-southern",
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "tz": "Australia/Sydney",
+      "date": "2026-12-21",
+      "sunrise": "2026-12-21T05:40:39.746574+11:00",
+      "sunset": "2026-12-21T20:05:23.259763+11:00"
+    },
+    {
+      "name": "mumbai-1990",
+      "latitude": 19.076,
+      "longitude": 72.8777,
+      "tz": "Asia/Kolkata",
+      "date": "1990-08-15",
+      "sunrise": "1990-08-15T06:19:25.034571+05:30",
+      "sunset": "1990-08-15T19:06:23.885305+05:30"
+    }
+  ]
+}
