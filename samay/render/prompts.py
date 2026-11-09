@@ -1,7 +1,7 @@
 """Everything the bot says in conversation. Plain, short, warm; one question at a time."""
 from __future__ import annotations
 
-NAMASTE = "Namaste 🙏 I'm samay. I can show your Jyotish birth chart from your date, time and place of birth."
+NAMASTE = "Namaste 🙏 Main Samay Hoon. I can show your Jyotish birth chart from your date, time and place of birth."
 
 ASK_DATE = "When were you born?\nPlease type the date, for example 15-08-1952"
 BAD_DATE = "I couldn't read that date. Please type it like this: 15-08-1952"
