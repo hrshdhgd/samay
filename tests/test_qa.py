@@ -25,6 +25,8 @@ NOW = datetime(2026, 11, 9, tzinfo=UTC)
         ("namaste", None),
         ("", None),
         ("Mars and Venus together?", "planet:mars"),  # the first planet named
+        ("What is Kalapurusha?", "concept:kalapurusha"),
+        ("what is the cosmic person", "concept:kalapurusha"),
     ],
 )
 def test_rule_based_sorter(question, topic):
@@ -34,7 +36,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 19
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 20
 
 
 def _client(reply):
@@ -106,3 +108,32 @@ def test_current_dasha_without_birth_stays_general():
 def test_rahu_without_an_entry_gets_the_astronomy_note():
     a = qa.answer_topic("planet:rahu", None, NOW)
     assert a.entries == () and a.notes == (qa.RAHU_KETU_FACT,)
+
+
+@pytest.mark.parametrize(
+    "question,line",
+    [
+        ("What does Shani stand for?", "Shani is the Sanskrit and Hindi name for Saturn."),
+        ("tell me about guru", "Guru is the Sanskrit and Hindi name for Jupiter."),
+        ("what is shukra", "Shukra is the Sanskrit and Hindi name for Venus."),
+        ("what is saturn", None),
+        ("is shani the same as saturn?", None),  # the English name is already in the question
+        ("what is rahu", None),
+    ],
+)
+def test_answer_names_the_planet_when_asked_by_its_sanskrit_name(question, line):
+    assert qa.answer_topic(qa.sort_question(question), None, NOW, question=question).name_line == line
+
+
+def test_name_line_comes_first_in_the_rendered_answer():
+    from samay.render.text import render_answer
+
+    q = "What does Shani stand for?"
+    text = render_answer(qa.answer_topic(qa.sort_question(q), None, NOW, question=q), birth_known=False)
+    assert text.startswith("Shani is the Sanskrit and Hindi name for Saturn.\n\nVarahamihira describes Saturn")
+
+
+def test_unchecked_entries_stay_hidden_from_answers():
+    saturn = qa.answer_topic("planet:saturn", None, NOW)
+    assert [e.id for e in saturn.entries] == ["bj-2-1-saturn"]
+    assert qa.answer_topic("concept:kalapurusha", None, NOW).entries == ()

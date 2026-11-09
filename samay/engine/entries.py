@@ -118,4 +118,5 @@ def answers_for(topic: str, systems: frozenset[str] = frozenset(), directory: Pa
     (the systems the user's chart was computed with), so it never explains a different system."""
     allowed = {ANY_SYSTEM, *systems}
     found = [e for e in load_entries(directory) if e.topic == topic and e.servable and e.system in allowed]
+    # Most thoroughly checked first, then in the order the source gives them (file order).
     return sorted(found, key=lambda e: -LEVELS.index(e.verification.level))

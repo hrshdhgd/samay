@@ -212,7 +212,7 @@ def render_answer(answer, sanskrit: bool = False, birth_known: bool = True) -> s
     chart facts. `sanskrit` shows each entry's checked verse in place of the English, where it has one."""
     if answer.topic is None:
         return prompts.NO_TOPIC
-    blocks: list[str] = []
+    blocks: list[str] = [answer.name_line] if answer.name_line else []
     for e in answer.entries:
         body = f"{e.verse.devanagari}\n{e.verse.roman}" if sanskrit and e.shows_verse else e.english
         blocks.append(f"{body}\n— {e.citation_text()}")

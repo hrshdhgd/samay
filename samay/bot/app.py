@@ -210,7 +210,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
     topic (never the words) when there is no sourced answer."""
     topic = await qa.sort_with_model(question) if narrate.enabled() else qa.sort_question(question)
     birth = await _resolved_birth(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now())
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, question)
     if answer.topic is not None and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     await _say(update, render_answer(answer, birth_known=birth is not None), answer_markup(answer, False))

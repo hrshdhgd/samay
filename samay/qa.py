@@ -36,8 +36,9 @@ PLANET_NAMES = {
 }
 _ALIAS = {alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases}
 DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
+KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 TOPICS = frozenset(
-    [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + ["dasha:current"]
+    [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + ["dasha:current", "concept:kalapurusha"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -53,12 +54,15 @@ class Answer:
     entries: tuple[Entry, ...]
     facts: tuple[str, ...]  # computed from the person's own chart
     notes: tuple[str, ...] = ()  # general astronomical notes, not about this person
+    name_line: str | None = None  # "Shani is the Sanskrit and Hindi name for Saturn." when asked by that name
 
 
 def sort_question(text: str) -> str | None:
     """Rule-based sorter: a planet name (English or Sanskrit) and whether the question is about a
     dasha. Returns a key from TOPICS, or None."""
     words = _WORD.findall(text.casefold())
+    if any(w in KALAPURUSHA_WORDS for w in words) or "cosmic person" in text.casefold():
+        return "concept:kalapurusha"
     planets = [_ALIAS[w] for w in words if w in _ALIAS]
     about_dasha = any(w in DASHA_WORDS for w in words)
     if planets:
@@ -87,6 +91,17 @@ async def sort_with_model(text: str, client=None) -> str | None:
         if key == "none":
             return None
     return sort_question(text)
+
+
+def name_used(question: str, planet: str) -> str | None:
+    """The Sanskrit or Hindi name the person used for `planet`, if they did not use the English one."""
+    words = _WORD.findall(question.casefold())
+    if planet in words:
+        return None
+    for w in words:
+        if _ALIAS.get(w) == planet and w != planet:
+            return w
+    return None
 
 
 def _planet_facts(planet: str, birth: ResolvedBirth) -> list[str]:
@@ -128,7 +143,11 @@ def resolve_topic(topic: str | None, birth: ResolvedBirth | None, now: datetime)
 
 
 def answer_topic(
-    topic: str | None, birth: ResolvedBirth | None, now: datetime, entries_dir: Path | None = None
+    topic: str | None,
+    birth: ResolvedBirth | None,
+    now: datetime,
+    entries_dir: Path | None = None,
+    question: str = "",
 ) -> Answer:
     """The answer for a sorted topic: checked entries for it, plus the person's own chart facts."""
     topic = resolve_topic(topic, birth, now)
@@ -140,4 +159,6 @@ def answer_topic(
     if birth is not None and subject in GRAHAS:
         facts = _planet_facts(subject, birth) if kind == "planet" else _dasha_facts(subject, birth, now)
     notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") and not found else ()
-    return Answer(topic, tuple(found), tuple(facts), notes)
+    alias = name_used(question, subject) if subject in GRAHAS else None
+    name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject.title()}." if alias else None
+    return Answer(topic, tuple(found), tuple(facts), notes, name_line)
