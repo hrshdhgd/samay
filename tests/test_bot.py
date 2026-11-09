@@ -208,3 +208,51 @@ def test_main_silences_loggers_that_print_the_bot_token(monkeypatch, no_token_or
         bot.main()
     for name in ("httpx", "httpcore", "telegram"):
         assert logging.getLogger(name).level == logging.WARNING
+
+
+# --- "/" menu and /help ----------------------------------------------------------------------------
+
+
+def _live_commands(store):
+    app = bot.build_application("123:abc", frozenset({1}), store)
+    return app, {c for h in app.handlers[0] if hasattr(h, "commands") for c in h.commands}
+
+
+def test_every_registered_command_has_a_description_and_vice_versa(store):
+    _, live = _live_commands(store)
+    assert live == set(prompts.COMMANDS)
+    assert all(0 < len(d) <= 256 for d in prompts.COMMANDS.values())  # Telegram's limit
+
+
+async def test_menu_is_registered_from_live_handlers_in_the_defined_order(store):
+    app, _ = _live_commands(store)
+    fake = SimpleNamespace(handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock()))
+    await bot._register_commands(fake)
+    menu = fake.bot.set_my_commands.await_args.args[0]
+    assert [c.command for c in menu] == list(prompts.COMMANDS)
+    assert menu[0].description == prompts.COMMANDS["chart"]
+
+
+async def test_a_command_without_a_description_stops_start_up(store):
+    app, _ = _live_commands(store)
+    handler = next(h for h in app.handlers[0] if hasattr(h, "commands"))
+    handler.commands = frozenset({*handler.commands, "mystery"})
+    fake = SimpleNamespace(handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock()))
+    with pytest.raises(RuntimeError, match="mystery"):
+        await bot._register_commands(fake)
+
+
+async def test_help_lists_the_commands_and_the_first_step(ctx):
+    update, msg = message(ALLOWED, "/help")
+    await bot.cmd_help(update, ctx)
+    text = last_reply(msg)
+    for cmd in prompts.HELP_ORDER:
+        assert f"/{cmd} – {prompts.COMMANDS[cmd]}" in text
+    assert prompts.MENU_CHANGE in text and "/start" in text
+    assert text != prompts.WELCOME
+
+
+async def test_help_is_silent_for_strangers(ctx):
+    update, msg = message(STRANGER, "/help")
+    await bot.cmd_help(update, ctx)
+    msg.reply_text.assert_not_awaited()

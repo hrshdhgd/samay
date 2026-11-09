@@ -48,7 +48,32 @@ MENU_CHANGE = "✏️ Change birth details"
 MENU_FORGET = "🗑 Forget me"
 MENU_ROWS = ((MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_FORGET,))
 
-HELP = (
+WELCOME = (
     NAMASTE + "\n\nUse the buttons at the bottom of the screen. "
     "The first time, I will ask for your birth details."
 )
+
+# Single source of truth for slash commands: the "/" menu in Telegram and /help are both built
+# from this, in this order. Every command the bot registers must have an entry (tested).
+COMMANDS = {
+    "chart": "Your birth chart (kundali)",
+    "dasha": "Your life chapters (dasha periods)",
+    "today": "Today's sky and what is running now",
+    "birth": "Enter or change your birth details",
+    "help": "How to use samay",
+    "forget": "Delete everything I know about you",
+    "start": "Say namaste and show the menu",
+}
+HELP_ORDER = ("chart", "dasha", "today", "birth", "forget")
+
+
+def help_text() -> str:
+    lines = [f"/{cmd} – {COMMANDS[cmd]}" for cmd in HELP_ORDER]
+    return (
+        "How to use samay 🙏\n\n"
+        "Use the buttons at the bottom of the screen, or type a command:\n\n"
+        + "\n".join(lines)
+        + "\n\nFirst time? Tap “" + MENU_CHANGE + "” and I will ask three simple questions: "
+        "your date, time and place of birth.\n\n"
+        "If a button stops working, just send /start."
+    )

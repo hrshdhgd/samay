@@ -12,7 +12,7 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, Update
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -115,7 +115,12 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
 
 @guarded
 async def cmd_start(update: Update, ctx) -> None:
-    await _say(update, prompts.HELP, MENU)
+    await _say(update, prompts.WELCOME, MENU)
+
+
+@guarded
+async def cmd_help(update: Update, ctx) -> None:
+    await _say(update, prompts.help_text(), MENU)
 
 
 @guarded
@@ -193,9 +198,22 @@ async def on_error(update: object, ctx: ContextTypes.DEFAULT_TYPE) -> None:
             log.error("could not send the error notice: %s", type(e).__name__)
 
 
+async def _register_commands(app) -> None:
+    """Fill Telegram's "/" menu from the handlers that are really registered, in prompts.COMMANDS
+    order, so a new command can never be missing from the menu or left in it by mistake."""
+    live = {c for h in app.handlers.get(0, []) if isinstance(h, CommandHandler) for c in h.commands}
+    unlisted = live - prompts.COMMANDS.keys()
+    if unlisted:
+        raise RuntimeError(f"commands without a description in prompts.COMMANDS: {sorted(unlisted)}")
+    menu = [BotCommand(cmd, desc) for cmd, desc in prompts.COMMANDS.items() if cmd in live]
+    await app.bot.set_my_commands(menu)
+    log.info("registered %d commands in the Telegram menu", len(menu))
+
+
 async def _post_init(app: Application) -> None:
     stamp = await asyncio.to_thread(service.warm)
     log.info("samay ready: %s", stamp.short())
+    await _register_commands(app)
 
 
 async def _post_shutdown(app: Application) -> None:
@@ -205,7 +223,7 @@ async def _post_shutdown(app: Application) -> None:
 def build_application(token: str, allowed: frozenset[int], store: Store) -> Application:
     app = Application.builder().token(token).post_init(_post_init).post_shutdown(_post_shutdown).build()
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
-    for name, fn in [("start", cmd_start), ("help", cmd_start), ("birth", cmd_birth), ("forget", cmd_forget),
+    for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
                      ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
         app.add_handler(CommandHandler(name, fn))
     app.add_handler(CallbackQueryHandler(on_button))
