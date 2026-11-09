@@ -262,6 +262,22 @@ Free Q&A is the app's headline feature. It is English-only and grounded:
   that is not installed in the Docker image or in CI. Experiments live in `research/` with a
   `program.md` and `results.tsv`. Machine output is an aid, never the check.
 
+### Verse display and sources (decided 2026-11-09)
+
+- **Display:** answers show the English paraphrase first, with a **Show Sanskrit** button that swaps
+  in the Devanagari verse (plus Roman letters) in place, and an **English** button that swaps back.
+  Devanagari is sent as Telegram text, never drawn into images.
+- **Each entry stores:** Devanagari verse, Roman-letter form, English paraphrase, citation (text,
+  chapter, verse), verification level, and who checked it and when. A verse is shown only if its
+  text was checked against a second copy; a mistyped verse under a citation is worse than none.
+- **Start with Brihat Jataka.** N. Chidambaram Iyer's 1885 English translation appears to be
+  public domain (Wellcome Collection and HathiTrust list it so; to be confirmed when the entries
+  are written), which makes the `translation-checked` level possible. For BPHS no clearly
+  public-domain English translation was found (one Internet Archive edition is CC BY-ND, which
+  bars derivatives), so BPHS entries wait for a checkable source.
+- **Open:** a clean, licensed source for typed Devanagari verse text. Internet Archive scans are
+  page images that would need OCR, and nobody in the family can proofread Sanskrit.
+
 ## Known risks
 
 - Plaintext birth data in `users` and `drafts` until sub-project 8. Acceptable while local;
