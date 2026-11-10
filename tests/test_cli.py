@@ -56,7 +56,7 @@ def test_bot_command_is_listed():
     assert "bot" in r.output and "Telegram" in r.output
 
 
-def test_research_queue_lists_the_most_wanted_topics(tmp_path, monkeypatch):
+def test_research_queue_lists_the_most_wanted_topics(tmp_path, monkeypatch, empty_entries):
     from samay.store import Store
 
     monkeypatch.setenv("SAMAY_DB", str(tmp_path / "q.db"))

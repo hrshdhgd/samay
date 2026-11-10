@@ -1,5 +1,5 @@
 # Mantreswara's Phaladeepika, chapter 19 (dasa effects), from Dr G. S. Kapoor's English translation (a modern
-# translation, in copyright, so everything below is PARAPHRASED, never quoted). UNCHECKED.
+# translation, in copyright, so everything below is PARAPHRASED, never quoted). Checked by h2, 2026-11-10.
 # Only verses 18-26 are used. The translator's note after verse 17 says verses 5-17 describe other dasha
 # systems and that verses 18-26 give the effects for the Vimshottari system, in its order. See
 # research/notes/phaladeepika-ch19.md.
@@ -13,7 +13,8 @@
     Moon, Mars, Rahu, Jupiter, Saturn, Mercury, Ketu and Venus. Their periods last 6, 10, 7, 18, 16, 19,
     17, 7 and 20 years. Which chapter a person is born into depends on the Moon's star at birth.
   citation: {text: Phaladeepika, chapter: 19, verse: "2", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-18-sun
   topic: dasha:sun
@@ -21,7 +22,8 @@
   english: >-
     For the Sun chapter (dasha), Mantreswara's Phaladeepika lists in general: wealth gained through harsh deeds, kings or fighting; burning in the eyes, stomach and tooth trouble; serious trouble for wife and children; loss of servants and wealth; and separation from respected elders and parents.
   citation: {text: Phaladeepika, chapter: 19, verse: "18", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-19-moon
   topic: dasha:moon
@@ -29,7 +31,8 @@
   english: >-
     For the Moon chapter (dasha), Mantreswara's Phaladeepika lists in general: wealth gained through hymns (mantras) and the favour of deities, Brahmins and the king; gaining a wife, wealth and farmland; flowers, clothes, ornaments and pleasures of many tastes; but also hostility from wicked people, loss of wealth and rheumatism.
   citation: {text: Phaladeepika, chapter: 19, verse: "19", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-20-mars
   topic: dasha:mars
@@ -37,7 +40,8 @@
   english: >-
     For the Mars chapter (dasha), Mantreswara's Phaladeepika lists in general: efforts to earn money through land, lawsuits and the king; gaining farmland and cattle; quarrels with sons and brothers; attraction to women of bad repute; impure blood, illness from heat and loss through fire; and loss of wealth.
   citation: {text: Phaladeepika, chapter: 19, verse: "20", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-21-rahu
   topic: dasha:rahu
@@ -45,7 +49,8 @@
   english: >-
     For the Rahu chapter (dasha), Mantreswara's Phaladeepika lists in general: a wicked disposition; a dangerous illness; the destruction of wife and children; danger from poison; trouble from enemies; diseases of the eye and heart; and hostility with friends, farm workers and the king.
   citation: {text: Phaladeepika, chapter: 19, verse: "21", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-22-jupiter
   topic: dasha:jupiter
@@ -53,7 +58,8 @@
   english: >-
     For the Jupiter chapter (dasha), Mantreswara's Phaladeepika lists in general: new clothes and possessions, servants and a retinue, dignity and respect, the birth of children, gain of wealth and friends and admiration for the person's speech; but also separation from elders, ear disease and phlegmatic troubles.
   citation: {text: Phaladeepika, chapter: 19, verse: "22", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-23-saturn
   topic: dasha:saturn
@@ -61,7 +67,8 @@
   english: >-
     For the Saturn chapter (dasha), Mantreswara's Phaladeepika lists in general: wealth gained through war or disturbance in the country; gaining servants, old women, buffaloes and bulls; trouble for wife and children; wind-type diseases such as rheumatism and gout, phlegm, piles and burning in the hands and feet.
   citation: {text: Phaladeepika, chapter: 19, verse: "23", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-24-mercury
   topic: dasha:mercury
@@ -69,7 +76,8 @@
   english: >-
     For the Mercury chapter (dasha), Mantreswara's Phaladeepika lists in general: learning from teachers, or becoming a learned and influential teacher; gain of farmland, cows, horses and money from Brahmins; company of people of high standing; worship of the gods and great wealth; but also troubles of wind, heat and phlegm.
   citation: {text: Phaladeepika, chapter: 19, verse: "24", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-25-ketu
   topic: dasha:ketu
@@ -77,7 +85,8 @@
   english: >-
     For the Ketu chapter (dasha), Mantreswara's Phaladeepika lists in general: sorrow and confusion caused by women; trouble from the rich and loss of wealth; acting unjustly toward others; banishment from the home country; tooth trouble, leg pain and phlegm.
   citation: {text: Phaladeepika, chapter: 19, verse: "25", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}
 
 - id: ph-19-26-venus
   topic: dasha:venus
@@ -85,4 +94,5 @@
   english: >-
     For the Venus chapter (dasha), Mantreswara's Phaladeepika lists in general: gaining a wife, jewels, clothes, gems, hidden treasure, wealth, ornaments and horses; money from trade, farming and import and export; but also separation from elders such as parents, loss of peace of mind and distress for relatives.
   citation: {text: Phaladeepika, chapter: 19, verse: "26", edition: "tr. Dr G. S. Kapoor, Phala Deepika (PDF at panchanga.lv), pp. 174-181"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "Phala Deepika, tr. Dr G. S. Kapoor (panchanga.lv PDF), ch. 19 v. 2 and 18-26, pp. 174-181"}

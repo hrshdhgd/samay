@@ -234,7 +234,8 @@ no `keep_alive` override. The LLM only rewords facts the engine computed.
 
 1. `uv run pytest` and `uv run ruff check` pass locally and in CI; `scripts/test-arm64.sh` passes.
 2. The 5 golden charts are within tolerance.
-3. The owner's birthplace fixture reaches ≥ 95%.
+3. The birthplace fixture (the owner's three places, plus messy spellings of them) all resolve. The owner
+   decided on 2026-11-10 that no longer list is needed; add a place to `tests/fixtures/birthplaces.yaml` whenever a lookup misses.
 4. `samay chart --date 1990-08-15 --time 14:30 --place "Pune"` prints a chart with provenance,
    profile and an "unvalidated" note.
 5. The bot runs locally with the owner allowlisted and completes the guided flow, including a DST
