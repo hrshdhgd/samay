@@ -9,15 +9,15 @@ translation is public domain), with these scan corrections:
 
 | Scan reads | Written as | Where |
 |---|---|---|
-| digrace … hauds | disgrace … hands | XX.3, Sun 7th |
-| bliud | blind | XX.3, Sun 8th |
-| he subjugated by his enemy | be subjugated by his enemy | XX.2, Sun 6th. **Check the page:** "he subjugated" would be ungrammatical, but read it yourself |
+| digrace … hauds | disgrace … hands | XX.3, Sun 7th ("digrace" is a printer's slip in the 1885 book itself) |
+| bliud | blind | XX.3, Sun 8th (printed so in the 1885 book) |
+| he subjugated by his enemy | be subjugated by his enemy | XX.2, Sun 6th. **Page image (p. 181) checked: it prints "be subjugated"** |
 | fiickleminded / bejealous | fickle-minded / be jealous | XX.5, Moon 8th / 7th |
 | virtuons | virtuous | XX.5, Moon 10th |
 | null be … indinstinct | will be … indistinct | XX.9, Saturn 1st |
 | Ids rnnlc in 1 ife | his rank in life | XX.7, Jupiter 8th |
 | Muon, Satm'u, Sagittari, Capricoru | Moon, Saturn, Sagittarius, Capricorn | II.15-17, XX.9 |
-| **Jupiter "31" degrees** | **11** | VII note (f). **Assumed; check p. 62 before marking checked** |
+| Jupiter "31" degrees | 11 | VII note (f). **Page image (p. 62) checked: it prints 11** |
 
 **Judgements I made (part of the check):**
 - Each line is labelled good, bad or mixed so that stanza 11's share rule can be applied.
@@ -34,6 +34,8 @@ translation is public domain), with these scan corrections:
 
 **Guardrails in the bot:** quoted text only, with citation; the strength rule shown; a fixed line
 saying this is a 6th-century text and not a forecast; any row can be set `hidden: true`.
+
+**Page images checked by Claude on 2026-11-10** (not a person's sign-off): p. 62 (the Astangata table) and p. 181 (XX.1-3 for the Sun) match the data. Page images are at `https://archive.org/download/b2488442x/page/n<leaf-1>_w1100.jpg`; printed page 62 is leaf 104 and page 181 is leaf 223 (map: `b2488442x_page_numbers.json`).
 
 **To check:** read pp. 181-186 against the `effects` rows; confirm the corrections above (especially
 Sun 6th and Jupiter's Astangata limit); then set `verification: {level: translation-checked,

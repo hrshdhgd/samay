@@ -19,7 +19,8 @@ strength:
   neutrals: {sun: [mercury], moon: [mars, jupiter, venus, saturn], mars: [venus, saturn],
              mercury: [mars, jupiter, saturn], jupiter: [saturn], venus: [mars, jupiter], saturn: [jupiter]}
   # Translator's note (f) to chapter VII: degrees from the Sun within which a planet is Astangata (obscured).
-  # JUPITER: the scan reads "31"; 11 is assumed. CHECK AGAINST THE PRINTED PAGE (p. 62) before use.
+  # Jupiter: the OCR text reads "31" but the page image (p. 62, archive.org leaf 104) prints 11. The other
+  # values in this table were read off the same image and agree with the OCR.
   astangata_degrees: {moon: 12, mars: 17, mercury: 14, jupiter: 11, venus: 10, saturn: 15}
   astangata_degrees_retrograde: {mercury: 12, venus: 8}
   # XX.11: share of the GOOD effects that come to pass. Neutral signs are not mentioned in stanza 11.
