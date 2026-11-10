@@ -37,8 +37,15 @@ PLANET_NAMES = {
 _ALIAS = {alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases}
 DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
+LAGNA_WORDS = ("lagna", "ascendant", "rising")
+ORDINAL_WORDS = {
+    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8,
+    "ninth": 9, "tenth": 10, "eleventh": 11, "twelfth": 12,
+}
+_HOUSE_NUMBER = re.compile(r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b")
 TOPICS = frozenset(
-    [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + ["dasha:current", "concept:kalapurusha"]
+    [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
+    + ["dasha:current", "concept:kalapurusha"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -65,6 +72,9 @@ def sort_question(text: str) -> str | None:
         return "concept:kalapurusha"
     planets = [_ALIAS[w] for w in words if w in _ALIAS]
     about_dasha = any(w in DASHA_WORDS for w in words)
+    house = _house_asked(text.casefold(), words)
+    if house and not planets:
+        return f"house:{house}"
     if planets:
         return f"{'dasha' if about_dasha else 'planet'}:{planets[0]}"
     if about_dasha:
@@ -91,6 +101,20 @@ async def sort_with_model(text: str, client=None) -> str | None:
         if key == "none":
             return None
     return sort_question(text)
+
+
+def _house_asked(text: str, words: list[str]) -> int | None:
+    """The house number a question is about: '4th house', 'house 4', 'fourth house', or the lagna."""
+    m = _HOUSE_NUMBER.search(text)
+    if m:
+        n = int(m.group(1) or m.group(2))
+        return n if 1 <= n <= 12 else None
+    for i, w in enumerate(words[:-1]):
+        if w in ORDINAL_WORDS and words[i + 1] in ("house", "bhava"):
+            return ORDINAL_WORDS[w]
+    if any(w in LAGNA_WORDS for w in words):
+        return 1
+    return None
 
 
 def name_used(question: str, planet: str) -> str | None:
@@ -158,6 +182,11 @@ def answer_topic(
     facts: list[str] = []
     if birth is not None and subject in GRAHAS:
         facts = _planet_facts(subject, birth) if kind == "planet" else _dasha_facts(subject, birth, now)
+    if kind == "planet" and birth is not None and subject in GRAHAS:
+        # What the house this planet sits in stands for, so "Saturn in your 4th house" is explained.
+        chart = service.natal_report(birth).chart
+        house = house_from(sign_index(chart.ascendant), sign_index(chart.planets[subject].longitude))
+        found = [*found, *entry_store.answers_for(f"house:{house}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)]
     notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") else ()  # astronomy, always useful
     alias = name_used(question, subject) if subject in GRAHAS else None
     name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject.title()}." if alias else None

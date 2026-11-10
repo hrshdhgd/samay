@@ -39,8 +39,8 @@ BRIEF_STATUS_ON = "Your morning message is on, at {time} ({place} time)."
 BRIEF_STATUS_OFF = "Your morning message is off."
 BRIEF_NEED_HOME = "First, I need to know where you live now, so I can send the right time.\n\n"
 ASK_QUESTION = (
-    "What would you like to know? Ask about a planet or a dasha, for example:\n"
-    "• What does Saturn stand for?\n• What is my current dasha?\n• Where is Jupiter in my chart?"
+    "What would you like to know? Ask about a planet, a house or a dasha, for example:\n"
+    "• What does Saturn stand for?\n• What does the 4th house mean?\n• What is my current dasha?"
 )
 NO_TOPIC = (
     "I can only answer from classical texts that have been checked, and from your own chart. "
@@ -89,7 +89,7 @@ WELCOME = (
 # Single source of truth for slash commands: the "/" menu in Telegram and /help are both built
 # from this, in this order. Every command the bot registers must have an entry (tested).
 COMMANDS = {
-    "ask": "Ask about a planet or a dasha",
+    "ask": "Ask about a planet, a house or a dasha",
     "chart": "Your birth chart (kundali)",
     "dasha": "Your life chapters (dasha periods)",
     "today": "Today's sky and what is running now",

@@ -26,6 +26,13 @@ NOW = datetime(2026, 11, 9, tzinfo=UTC)
         ("", None),
         ("Mars and Venus together?", "planet:mars"),  # the first planet named
         ("What is Kalapurusha?", "concept:kalapurusha"),
+        ("what does the 4th house mean", "house:4"),
+        ("tell me about house 10", "house:10"),
+        ("what is the seventh house", "house:7"),
+        ("what is my lagna", "house:1"),
+        ("what does ascendant mean", "house:1"),
+        ("what about the 13th house", None),
+        ("Saturn in my 4th house?", "planet:saturn"),  # the planet leads; its house is added
         ("what is the cosmic person", "concept:kalapurusha"),
     ],
 )
@@ -36,7 +43,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 20
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 32
 
 
 def _client(reply):
@@ -152,5 +159,37 @@ def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
     entry_store.load_entries.cache_clear()
     try:
         assert qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries == ()
+    finally:
+        entry_store.load_entries.cache_clear()
+
+
+def test_house_question_returns_only_checked_house_entries():
+    from samay.engine.entries import load_entries
+
+    load_entries.cache_clear()
+    drafts = [e for e in load_entries() if e.topic == "house:4"]
+    assert drafts and all(not e.servable for e in drafts)  # unchecked until h2 checks them
+    assert qa.answer_topic("house:4", None, NOW).entries == ()
+
+
+@needs_kernel
+def test_planet_answer_with_a_birth_adds_the_entries_for_its_house(tmp_path):
+    import yaml
+
+    from samay.engine import entries as entry_store
+
+    def entry(eid, topic):
+        return {"id": eid, "topic": topic, "system": "any", "english": eid,
+                "citation": {"text": "T", "chapter": 1, "verse": 1, "edition": "e"},
+                "verification": {"level": "translation-checked", "checked_by": "t", "checked_on": "2026-11-10",
+                                 "against": "t"}}
+
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([entry("sat", "planet:saturn"), entry("h2", "house:2"),
+                                                     entry("h4", "house:4")]))
+    entry_store.load_entries.cache_clear()
+    try:
+        a = qa.answer_topic("planet:saturn", _birth(), NOW, entries_dir=tmp_path)  # Saturn is in the 2nd house here
+        assert [e.id for e in a.entries] == ["sat", "h2"]
+        assert [e.id for e in qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries] == ["sat"]
     finally:
         entry_store.load_entries.cache_clear()
