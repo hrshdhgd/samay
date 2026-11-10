@@ -26,6 +26,10 @@ NOW = datetime(2026, 11, 9, tzinfo=UTC)
         ("", None),
         ("Mars and Venus together?", "planet:mars"),  # the first planet named
         ("What is Kalapurusha?", "concept:kalapurusha"),
+        ("what is a dasha", "concept:dasha"),
+        ("explain the dasha system", "concept:dasha"),
+        ("what dasha is it now", "dasha:current"),
+        ("how long does my dasha last", "dasha:current"),
         ("what does the 4th house mean", "house:4"),
         ("tell me about house 10", "house:10"),
         ("what is the seventh house", "house:7"),
@@ -43,7 +47,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 32
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 33
 
 
 def _client(reply):
@@ -97,7 +101,7 @@ def test_planet_facts_come_from_the_persons_chart():
 
 
 @needs_kernel
-def test_current_dasha_resolves_to_the_running_chapter_and_shows_its_dates():
+def test_current_dasha_resolves_to_the_running_chapter_and_shows_its_dates(empty_entries):
     a = qa.answer_topic("dasha:current", _birth(), NOW)
     assert a.topic == "dasha:jupiter" and a.entries == ()
     assert a.facts == ("Your Jupiter chapter (dasha) lasts 16 years: Feb 2017 – Feb 2033; you are in it now.",)
@@ -234,10 +238,62 @@ def test_render_ai_labels_the_answer_and_adds_the_caveat():
     assert out.startswith("🤖 AI says: “Some words.”") and out.endswith("may be wrong.")
 
 
-def test_wording_changes_only_when_an_ai_answer_follows():
+def test_wording_changes_only_when_an_ai_answer_follows(empty_entries):
     from samay.render.text import render_answer
 
     assert render_answer(qa.answer_topic(None, None, NOW), ai_follows=True) == "I have no checked source for this."
     unsourced = render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False, ai_follows=True)
     assert "I have noted the topic" in unsourced and "won't guess" not in unsourced
     assert "won't guess" in render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False)
+
+
+def test_shipped_dasha_entries_cover_every_planet_from_the_vimshottari_verses_only():
+    from samay.engine.entries import load_entries
+
+    load_entries.cache_clear()
+    ph = {e.id: e for e in load_entries() if e.id.startswith("ph-19-")}
+    assert {e.topic for e in ph.values()} == {"concept:dasha", *(f"dasha:{g}" for g in qa.GRAHAS)}
+    assert all(e.system == "vimshottari" for e in ph.values())
+    assert sorted(int(e.citation["verse"]) for e in ph.values()) == [2, *range(18, 27)]  # not verses 5-17
+    order = ["sun", "moon", "mars", "rahu", "jupiter", "saturn", "mercury", "ketu", "venus"]  # the text's order, v. 18-26
+    assert [ph[f"ph-19-{18 + i}-{g}"].topic for i, g in enumerate(order)] == [f"dasha:{g}" for g in order]
+    assert all("Phaladeepika" in e.english or "Mantreswara" in e.english for e in ph.values())
+
+
+def _checked_dasha_entry(system="vimshottari"):
+    return {"id": "d", "topic": "dasha:saturn", "system": system, "english": "listed effects",
+            "citation": {"text": "Phaladeepika", "chapter": 19, "verse": "23", "edition": "e"},
+            "verification": {"level": "translation-checked", "checked_by": "t", "checked_on": "2026-11-10",
+                             "against": "t"}}
+
+
+def test_a_dasha_answer_with_sourced_entries_carries_the_not_a_forecast_frame(tmp_path):
+    import yaml
+
+    from samay.engine import entries as entry_store
+    from samay.render import prompts
+    from samay.render.text import render_answer
+
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([_checked_dasha_entry()]))
+    entry_store.load_entries.cache_clear()
+    try:
+        text = render_answer(qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path), birth_known=False)
+        assert "listed effects" in text and prompts.DASHA_FRAME in text and "It is not a forecast." in text
+        assert text.index("listed effects") < text.index(prompts.DASHA_FRAME)
+        other = render_answer(qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path), birth_known=False)
+        assert prompts.DASHA_FRAME not in other  # the frame belongs to dasha answers only
+    finally:
+        entry_store.load_entries.cache_clear()
+
+
+def test_an_entry_for_a_different_dasha_system_never_answers_a_vimshottari_question(tmp_path):
+    import yaml
+
+    from samay.engine import entries as entry_store
+
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([_checked_dasha_entry(system="brihat-jataka-dasa")]))
+    entry_store.load_entries.cache_clear()
+    try:
+        assert qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path).entries == ()
+    finally:
+        entry_store.load_entries.cache_clear()

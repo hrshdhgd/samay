@@ -58,6 +58,10 @@ NO_SOURCE = (
 NEED_BIRTH_FOR_FACTS = "Tell me your birth details (“✏️ Change birth details”) and I can add facts from your own chart."
 BTN_SANSKRIT = "📜 Show Sanskrit"
 BTN_ENGLISH = "🔤 English"
+DASHA_FRAME = (
+    "This is what an old text lists in general for this chapter of life. Its modern translator stresses that how much "
+    "of it applies depends on how strong and well placed the planet is in the chart. It is not a forecast."
+)
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."

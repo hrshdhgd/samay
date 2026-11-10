@@ -530,7 +530,7 @@ async def test_question_about_a_planet_quotes_the_checked_entry_and_adds_chart_f
 
 
 @needs_kernel
-async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_topic(ctx, store, monkeypatch):
+async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_topic(ctx, store, monkeypatch, empty_entries):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, tzinfo=UTC))
     _save_pune(store)
     update, msg = message(ALLOWED, "what does my current dasha mean for me and my son's marriage?")
@@ -668,7 +668,7 @@ async def test_the_ai_answers_what_the_sources_cannot(ctx, store, ai_on):
     assert store.top_misses() == []  # nothing was sorted into a topic, so nothing is counted
 
 
-async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(ctx, store, ai_on):
+async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(ctx, store, ai_on, empty_entries):
     ai_on["sort"] = "dasha:venus"
     update, msg = message(ALLOWED, "what does my venus dasha mean")
     await bot.on_text(update, ctx)

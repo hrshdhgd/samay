@@ -26,6 +26,20 @@ def isolated_database(monkeypatch, tmp_path):
     monkeypatch.setattr(crypto, "KEY_FILE", tmp_path / "isolated" / "samay.key")
 
 
+@pytest.fixture
+def empty_entries(monkeypatch, tmp_path):
+    """No sourced entries at all, for tests of the 'no checked source' paths (which must not depend on which
+    topics happen to have entries today)."""
+    from samay.engine import entries
+
+    folder = tmp_path / "no-entries"
+    folder.mkdir()
+    monkeypatch.setattr(entries, "ENTRIES_DIR", folder)
+    entries.load_entries.cache_clear()
+    yield
+    entries.load_entries.cache_clear()
+
+
 @pytest.fixture(scope="session", autouse=True)
 def real_data_is_untouched():
     """Fail loudly if the suite changes the developer's real database."""

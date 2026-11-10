@@ -37,6 +37,7 @@ PLANET_NAMES = {
 }
 _ALIAS = {alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases}
 DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
+PERSONAL_WORDS = ("my", "mine", "me", "i", "am", "current", "running", "now", "own")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 LAGNA_WORDS = ("lagna", "ascendant", "rising")
 ORDINAL_WORDS = {
@@ -46,7 +47,7 @@ ORDINAL_WORDS = {
 _HOUSE_NUMBER = re.compile(r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b")
 TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
-    + ["dasha:current", "concept:kalapurusha"]
+    + ["dasha:current", "concept:kalapurusha", "concept:dasha"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -80,8 +81,8 @@ def sort_question(text: str) -> str | None:
         return f"house:{house}"
     if planets:
         return f"{'dasha' if about_dasha else 'planet'}:{planets[0]}"
-    if about_dasha:
-        return "dasha:current"
+    if about_dasha:  # "my current dasha" is personal; "what is a dasha?" asks for the idea
+        return "dasha:current" if any(w in PERSONAL_WORDS for w in words) else "concept:dasha"
     return None
 
 
