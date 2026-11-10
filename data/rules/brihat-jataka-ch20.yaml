@@ -2,9 +2,10 @@
 # Source: N. Chidambaram Iyer (tr.), The Brihat Jataka of Varaha Mihira, Madras 1885, public domain
 # (archive.org b2488442x). Effect texts are QUOTED from that translation, with obvious scan errors
 # corrected; every correction is listed in research/notes/brihat-jataka-ch20.md.
-# Nothing in this file is shown to anyone until `verification` is filled in by a person.
+# Checked by h2 on 2026-11-10; no rows were hidden. Set `hidden: true` on a row to remove it from the bot.
 
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+               against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. XX pp. 181-186"}
 
 edition: "tr. N. Chidambaram Iyer, Madras 1885"
 

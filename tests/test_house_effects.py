@@ -37,11 +37,28 @@ def chart(lagna: str, **places) -> Chart:
     return Chart(datetime(2000, 1, 1, tzinfo=UTC), 0, 0, 24.0, SIGN[lagna] * 30 + 1, planets)
 
 
-def test_shipped_rules_load_and_are_unchecked():
+def test_shipped_rules_are_checked_and_cover_the_seven_planets():
     hx.load_rules.cache_clear()
     rules = hx.load_rules()
-    assert not rules.servable and len(rules.effects) > 60
-    assert hx.reading(chart("aries", saturn="cancer"), "saturn") is None  # nothing until a person checks it
+    assert rules.servable and rules.checked_by == "h2" and len(rules.effects) > 60
+    assert {e["planet"] for e in rules.effects} == set(hx.PLANETS)
+    r = hx.reading(chart("aries", saturn="cancer"), "saturn")  # Saturn in the 4th: the Sun's effects there
+    assert r is not None and r.level == "translation-checked" and r.effects[0].borrowed_from == "sun"
+
+
+def test_a_rules_file_that_nobody_has_checked_is_never_used(tmp_path):
+    import yaml
+
+    raw = yaml.safe_load(hx.RULES_PATH.read_text())
+    raw["verification"] = {"level": "unchecked"}
+    path = tmp_path / "unchecked.yaml"
+    path.write_text(yaml.safe_dump(raw, allow_unicode=True))
+    hx.load_rules.cache_clear()
+    try:
+        assert not hx.load_rules(path).servable
+        assert hx.reading(chart("aries", saturn="cancer"), "saturn", path) is None
+    finally:
+        hx.load_rules.cache_clear()
 
 
 @pytest.mark.parametrize(
