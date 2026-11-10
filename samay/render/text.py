@@ -214,8 +214,11 @@ def render_answer(answer, sanskrit: bool = False, birth_known: bool = True, ai_f
         return prompts.NO_TOPIC_AI if ai_follows else prompts.NO_TOPIC
     blocks: list[str] = [answer.name_line] if answer.name_line else []
     for e in answer.entries:
-        body = f"{e.verse.devanagari}\n{e.verse.roman}" if sanskrit and e.shows_verse else e.english
-        blocks.append(f"{body}\n— {e.citation_text()}")
+        if sanskrit and e.shows_verse:
+            note = "" if e.verse.proofread else f"\n{prompts.VERSE_UNPROOFREAD}"
+            blocks.append(f"{e.verse.devanagari}\n{e.verse.roman}\n— {e.citation_text()}{note}")
+        else:
+            blocks.append(f"{e.english}\n— {e.citation_text()}")
     if any(e.topic.startswith("dasha:") for e in answer.entries):
         blocks.append(prompts.DASHA_FRAME)
     if not answer.entries:

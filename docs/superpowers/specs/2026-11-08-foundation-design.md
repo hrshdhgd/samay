@@ -289,8 +289,9 @@ the sourced answer.
   are written), which makes the `translation-checked` level possible. For BPHS no clearly
   public-domain English translation was found (one Internet Archive edition is CC BY-ND, which
   bars derivatives), so BPHS entries wait for a checkable source.
-- **Open:** a clean, licensed source for typed Devanagari verse text. Internet Archive scans are
-  page images that would need OCR, and nobody in the family can proofread Sanskrit.
+- **Verses (decided 2026-11-10):** shown for 29 Brihat Jataka entries from the sanskritdocuments.org text, checked
+  against GRETIL, each with a line saying a Sanskrit reader has not proofread it (`proofread: false` per entry).
+  See `research/notes/devanagari-sources.md`.
 
 ## Known risks
 

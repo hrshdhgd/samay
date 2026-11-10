@@ -13,7 +13,9 @@ user until its `verification.level` is `translation-checked` or `sanskrit-checke
   verse:                           # optional; shown only if text_checked is true
     devanagari: "<verse>"
     roman: "<verse in Roman letters>"
-    text_checked: false            # true only after comparing with a second copy of the text
+    text_checked: false            # true after comparing with a second copy of the text
+    proofread: false               # true only if a Sanskrit reader has read it; the bot says so when false
+    source: "<where the typed text comes from>"
   verification:
     level: unchecked               # unchecked | translation-checked | sanskrit-checked
     checked_by: <name>             # required once checked

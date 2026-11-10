@@ -56,6 +56,10 @@ NO_SOURCE = (
     "I have noted the topic so it can be researched."
 )
 NEED_BIRTH_FOR_FACTS = "Tell me your birth details (“✏️ Change birth details”) and I can add facts from your own chart."
+VERSE_UNPROOFREAD = (
+    "ⓘ Verse text: a typed copy from sanskritdocuments.org, compared with the GRETIL copy. No Sanskrit reader "
+    "has proofread it, so a typing slip is possible."
+)
 BTN_SANSKRIT = "📜 Show Sanskrit"
 BTN_ENGLISH = "🔤 English"
 DASHA_FRAME = (

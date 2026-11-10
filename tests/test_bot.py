@@ -577,9 +577,22 @@ async def test_rahu_question_gets_its_sourced_names_and_the_astronomy_note(ctx, 
 
 
 async def test_answer_has_no_sanskrit_button_without_a_checked_verse(ctx):
-    update, msg = message(ALLOWED, "what is venus")
+    update, msg = message(ALLOWED, "what does my venus dasha mean")  # Phaladeepika entries carry no verse text
     await bot.on_text(update, ctx)
     assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
+
+
+async def test_planet_answers_offer_the_sanskrit_view_and_label_the_typed_text(ctx):
+    update, msg = message(ALLOWED, "what is venus")
+    await bot.on_text(update, ctx)
+    assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+    update, msg = tap(ALLOWED, "qa:sa:planet:venus")
+    update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(update, ctx)
+    text = update.callback_query.edit_message_text.await_args.args[0]
+    assert "मदनो" in text and "madano" in text  # verse 2.1: Venus is desire (madana)
+    assert text.count(prompts.VERSE_UNPROOFREAD) == 2  # one for each verse shown (2.1 and 2.3)
+    assert "Varahamihira describes Venus as the desire" not in text  # the English is swapped out, not added to
 
 
 async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(ctx, tmp_path, monkeypatch):
@@ -604,6 +617,7 @@ async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(ctx, tmp_path, mon
         await bot.on_button(update, ctx)
         edit = update.callback_query.edit_message_text.await_args
         assert "शुक्रः\nśukraḥ" in edit.args[0] and "English words." not in edit.args[0]
+        assert prompts.VERSE_UNPROOFREAD in edit.args[0]  # these test entries are not marked proofread
         assert buttons_of(edit.kwargs["reply_markup"]) == {prompts.BTN_ENGLISH: "qa:en:planet:venus"}
     finally:
         entry_store.load_entries.cache_clear()

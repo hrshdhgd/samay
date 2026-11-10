@@ -32,7 +32,9 @@ SYSTEM = re.compile(r"[a-z0-9-]+")
 class Verse:
     devanagari: str
     roman: str
-    text_checked: bool  # the verse text itself was compared with a second copy
+    text_checked: bool  # the verse text was compared with a second copy of the text (mechanically)
+    proofread: bool = False  # a Sanskrit reader has read it; False means typed text nobody fluent has proofread
+    source: str | None = None  # where the typed text comes from
 
 
 @dataclass(frozen=True)
@@ -92,7 +94,8 @@ def _parse(raw: dict, where: str) -> Entry:
         rv = raw["verse"]
         if not (rv.get("devanagari") and rv.get("roman")):
             raise ValueError(f"{where}: a verse needs both devanagari and roman text")
-        verse = Verse(rv["devanagari"], rv["roman"], bool(rv.get("text_checked")))
+        verse = Verse(rv["devanagari"], rv["roman"], bool(rv.get("text_checked")), bool(rv.get("proofread")),
+                      rv.get("source"))
     return Entry(
         id=raw["id"], topic=raw["topic"], system=raw["system"], english=raw["english"].strip(), citation=dict(raw["citation"]),
         verification=Verification(v["level"], v.get("checked_by"), v.get("checked_on"), v.get("against")),
