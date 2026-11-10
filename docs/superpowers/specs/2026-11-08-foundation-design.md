@@ -262,6 +262,19 @@ Free Q&A is the app's headline feature. It is English-only and grounded:
   that is not installed in the Docker image or in CI. Experiments live in `research/` with a
   `program.md` and `results.tsv`. Machine output is an aid, never the check.
 
+### AI answers alongside sourced ones (decided 2026-11-10)
+
+The owner asked to have both. When the local model is on (`OLLAMA_URL`), every question gets two
+messages: the sourced answer first (never delayed by the model), then a separate message
+**"AI says: “…”"** with the model's own words and a fixed line saying it is from general knowledge,
+not a checked source, and may be wrong. This supersedes the earlier rule that the model only sorts
+questions. Guardrails: the model is told Jyotish is a belief system, not to predict events or give
+medical, legal or financial advice, and is given the verified facts as context; replies are length
+capped; the question text is never stored or logged (only a sorted topic key may be counted); the
+sorter and the answer can use different models (`OLLAMA_QA_MODEL`); rewording `/today` stays a
+separate, off-by-default switch (`OLLAMA_NARRATE`). A model failure shows a short notice and keeps
+the sourced answer.
+
 ### Verse display and sources (decided 2026-11-09)
 
 - **Display:** answers show the English paraphrase first, with a **Show Sanskrit** button that swaps

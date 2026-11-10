@@ -57,11 +57,16 @@ created at `data/samay.key`. **Back the key up separately**: without it the data
 `uv run samay backup --out FILE` copies the database; the copy stays encrypted and needs the same key.
 
 ### Questions
-Relatives can type a question or tap **❓ Ask a question**. Answers are built only from checked
-entries in `data/entries/` (quoted word for word, with their citation) plus facts from the person's
-own chart. The local model, when `OLLAMA_URL` is set, only sorts a question into a known topic; it
-never writes the answer. Questions without a sourced answer say so, and only their topic key (never
-the words) is counted for `uv run samay research-queue`. How entries are researched and checked:
-`research/program.md`.
+Relatives can type a question or tap **❓ Ask a question**. The reply has up to two parts, always in separate messages:
+1. **The sourced answer**: checked entries from `data/entries/` quoted word for word with their citation, plus
+   facts from the person's own chart (and, with a saved birth, what Brihat Jataka chapter 20 says about each planet).
+   It is sent first.
+2. **"AI says:"** (only when `OLLAMA_URL` is set): the local model's own answer, labelled as such, with a line saying
+   it is not from a checked source and may be wrong. The model is told to avoid predicting events and giving
+   medical, legal or financial advice, and is given the verified facts as context.
+
+Questions without a sourced answer say so, and only their topic key (never the words) is counted for
+`uv run samay research-queue`. The question text is not stored or logged. How entries are researched and
+checked: `research/program.md`
 
 See `docs/superpowers/specs/2026-11-08-foundation-design.md` for the design and roadmap.

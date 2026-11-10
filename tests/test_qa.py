@@ -198,3 +198,46 @@ def test_planet_answer_with_a_birth_adds_the_entries_for_its_house(tmp_path):
         assert [e.id for e in qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries] == ["sat"]
     finally:
         entry_store.load_entries.cache_clear()
+
+
+def test_the_ai_is_told_the_guardrails():
+    for phrase in ("not science", "Do not predict specific events", "medical, legal or financial advice",
+                   "never contradict them", "no markdown", "at most 120 words"):
+        assert phrase in qa.AI_SYSTEM, phrase
+
+
+def test_the_ai_prompt_carries_verified_facts_and_a_bounded_question():
+    a = qa.answer_topic("planet:moon", None, NOW)
+    prompt = qa._ai_prompt("x" * 2000, a)
+    assert prompt.startswith("Verified facts:\n- Varahamihira describes the Moon as the mind")
+    assert prompt.count("x") == qa.MAX_QUESTION_CHARS
+    assert qa._ai_prompt("what is a nakshatra?", qa.Answer(None, (), ())) == "Question: what is a nakshatra?"
+
+
+async def test_a_long_ai_reply_is_cut_at_a_word_with_an_ellipsis(model_on, monkeypatch):
+    async def long_reply(*args, **kwargs):
+        return "word " * 1000
+
+    monkeypatch.setattr(narrate, "complete", long_reply)
+    out = await qa.ai_answer("q", qa.Answer(None, (), ()))
+    assert len(out) <= qa.MAX_AI_CHARS + 1 and out.endswith("word…")
+
+
+async def test_ai_answer_is_none_when_the_model_says_nothing(model_on):
+    assert await qa.ai_answer("q", qa.Answer(None, (), ()), _client("")) is None
+
+
+def test_render_ai_labels_the_answer_and_adds_the_caveat():
+    from samay.render.text import render_ai
+
+    out = render_ai("Some words.")
+    assert out.startswith("🤖 AI says: “Some words.”") and out.endswith("may be wrong.")
+
+
+def test_wording_changes_only_when_an_ai_answer_follows():
+    from samay.render.text import render_answer
+
+    assert render_answer(qa.answer_topic(None, None, NOW), ai_follows=True) == "I have no checked source for this."
+    unsourced = render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False, ai_follows=True)
+    assert "I have noted the topic" in unsourced and "won't guess" not in unsourced
+    assert "won't guess" in render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False)

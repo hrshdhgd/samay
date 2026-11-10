@@ -207,17 +207,17 @@ def render_brief(
     return "\n".join(lines)
 
 
-def render_answer(answer, sanskrit: bool = False, birth_known: bool = True) -> str:
+def render_answer(answer, sanskrit: bool = False, birth_known: bool = True, ai_follows: bool = False) -> str:
     """A grounded answer: checked entries word for word with their citations, then the person's own
     chart facts. `sanskrit` shows each entry's checked verse in place of the English, where it has one."""
     if answer.topic is None:
-        return prompts.NO_TOPIC
+        return prompts.NO_TOPIC_AI if ai_follows else prompts.NO_TOPIC
     blocks: list[str] = [answer.name_line] if answer.name_line else []
     for e in answer.entries:
         body = f"{e.verse.devanagari}\n{e.verse.roman}" if sanskrit and e.shows_verse else e.english
         blocks.append(f"{body}\n— {e.citation_text()}")
     if not answer.entries:
-        blocks.append(prompts.NO_SOURCE)
+        blocks.append(prompts.NO_SOURCE_AI if ai_follows else prompts.NO_SOURCE)
     blocks += list(answer.notes)
     if answer.reading is not None:
         blocks.append(render_reading(answer.reading, answer.shares))
@@ -272,6 +272,11 @@ def render_reading(r, shares) -> str:
         lines.append("By the text's own rule (20.11), " + "; ".join(parts) + ".")
     lines += [f"— {r.citation} ({r.level})", prompts.READING_FRAME]
     return "\n".join(lines)
+
+
+def render_ai(reply: str) -> str:
+    """The AI's own answer, labelled so it is never mistaken for a sourced one."""
+    return f"🤖 AI says: “{reply}”\n\n{prompts.AI_CAVEAT}"
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:

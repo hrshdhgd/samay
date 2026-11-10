@@ -79,6 +79,7 @@ if (( INIT )); then
     printf 'TELEGRAM_TOKEN=%s\n' "$SAMAY_TELEGRAM_BOT_TOKEN"
     grep '^ALLOWED_CHAT_IDS=' .env
     printf 'SAMAY_DB_KEY=%s\n' "$(cat "$SERVER_KEY_COPY")"
+    printf 'OLLAMA_URL=%s\n' "http://172.17.0.1:11434"   # the host's Ollama, as stockbro uses it
   } | ssh "$HOST" "umask 077; cat > $DIR/.env"
   say "created $DIR/.env on the server (mode 600)"
 fi

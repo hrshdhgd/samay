@@ -623,3 +623,99 @@ async def test_strangers_cannot_ask(ctx, store):
     await bot.on_text(update, ctx)
     msg.reply_text.assert_not_awaited()
     assert store.top_misses() == []
+
+
+# --- "AI says:" answers, separate from the sourced ones ---------------------------------------------
+
+from samay import narrate, qa
+
+
+@pytest.fixture
+def ai_on(monkeypatch):
+    """The model is on; its replies are scripted. cfg["sort"] answers the topic sorter, cfg["ai"] the open answer."""
+    monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
+    cfg = {"sort": "planet:saturn", "ai": "Saturn is linked with discipline and patience in Jyotish.", "calls": []}
+
+    async def fake(system, prompt, client=None, model=None, timeout=None):
+        cfg["calls"].append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
+        return cfg["sort"] if system == qa.MODEL_SYSTEM else cfg["ai"]
+
+    monkeypatch.setattr(narrate, "complete", fake)
+    return cfg
+
+
+def _texts(msg):
+    return [c.args[0] for c in msg.reply_text.await_args_list]
+
+
+async def test_sourced_answer_comes_first_then_the_ai_in_its_own_labelled_message(ctx, ai_on):
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    first, second = _texts(msg)
+    assert "— Brihat Jataka 2.1 (translation-checked)" in first and "AI says" not in first
+    assert second == f"🤖 AI says: “Saturn is linked with discipline and patience in Jyotish.”\n\n{prompts.AI_CAVEAT}"
+    call = next(c for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM)
+    assert "Verified facts:" in call["prompt"] and "sorrow of the cosmic person" in call["prompt"]
+    assert call["model"] == narrate.AI_MODEL and call["timeout"] == narrate.AI_TIMEOUT_SECONDS
+
+
+async def test_the_ai_answers_what_the_sources_cannot(ctx, store, ai_on):
+    ai_on["sort"], ai_on["ai"] = "none", "A nakshatra is one of 27 divisions of the Moon's path."
+    update, msg = message(ALLOWED, "what is a nakshatra?")
+    await bot.on_text(update, ctx)
+    first, second = _texts(msg)
+    assert first == prompts.NO_TOPIC_AI and second.startswith("🤖 AI says: “A nakshatra is one of 27")
+    assert store.top_misses() == []  # nothing was sorted into a topic, so nothing is counted
+
+
+async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(ctx, store, ai_on):
+    ai_on["sort"] = "dasha:venus"
+    update, msg = message(ALLOWED, "what does my venus dasha mean")
+    await bot.on_text(update, ctx)
+    first, second = _texts(msg)
+    assert prompts.NO_SOURCE_AI in first and "won't guess" not in first and second.startswith("🤖 AI says")
+    assert store.top_misses() == [("dasha:venus", 1)]
+
+
+async def test_when_the_ai_fails_the_person_is_told_and_keeps_the_sourced_answer(ctx, ai_on):
+    ai_on["ai"] = None
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    first, second = _texts(msg)
+    assert "Brihat Jataka 2.1" in first and second == prompts.AI_UNAVAILABLE
+
+
+async def test_without_the_model_there_is_one_message_in_the_original_wording(ctx):
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    assert len(_texts(msg)) == 1 and "AI says" not in _texts(msg)[0]
+    update, msg = message(ALLOWED, "what is a nakshatra?")
+    await bot.on_text(update, ctx)
+    assert _texts(msg) == [prompts.NO_TOPIC]
+
+
+async def test_the_question_is_neither_stored_nor_logged(ctx, store, ai_on, caplog):
+    update, _ = message(ALLOWED, "what does shani mean for my brother Raju in Wagholi?")
+    with caplog.at_level(logging.DEBUG):
+        await bot.on_text(update, ctx)
+    with sqlite3.connect(store.path) as c:
+        dump = "\n".join(c.iterdump())
+    assert "Raju" not in dump and "Wagholi" not in dump and "Raju" not in caplog.text
+
+
+async def test_strangers_get_no_ai_answer_and_cost_no_model_call(ctx, ai_on):
+    update, msg = message(STRANGER, "what is saturn")
+    await bot.on_text(update, ctx)
+    msg.reply_text.assert_not_awaited()
+    assert ai_on["calls"] == []
+
+
+@needs_kernel
+async def test_the_model_does_not_replace_the_plain_today_unless_rewording_is_switched_on(ctx, store, ai_on, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
+    _save_pune(store)
+    update, msg = message(ALLOWED, "/today")
+    await bot._command("today")(update, ctx)
+    text = last_reply(msg)
+    assert "Your birth Moon sign is" in text and "Technical details" in text
+    assert not any(c["system"] == narrate.SYSTEM for c in ai_on["calls"])

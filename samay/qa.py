@@ -201,3 +201,38 @@ def answer_topic(
         else:
             reading = None
     return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares)
+
+
+AI_SYSTEM = (
+    "You answer questions about Vedic astrology (Jyotish) for a family app. "
+    "Answer in plain English in at most 120 words, as plain text with no markdown. "
+    "Be honest that Jyotish is a traditional belief system and not science. "
+    "Do not predict specific events in anyone's life, and do not give medical, legal or financial advice. "
+    "Verified facts may be supplied; never contradict them. Everything else you say is your own general "
+    "knowledge, so if you are unsure, say so."
+)
+MAX_QUESTION_CHARS = 500
+MAX_AI_CHARS = 1200
+
+
+def _ai_prompt(question: str, answer: Answer) -> str:
+    verified = [e.english for e in answer.entries] + list(answer.facts) + list(answer.notes)
+    parts = []
+    if verified:
+        parts.append("Verified facts:\n" + "\n".join(f"- {f}" for f in verified))
+    parts.append(f"Question: {question[:MAX_QUESTION_CHARS]}")
+    return "\n\n".join(parts)
+
+
+async def ai_answer(question: str, answer: Answer, client=None) -> str | None:
+    """The model's own answer to the question, shown apart from the sourced one and labelled as the AI's.
+    It is given the checked entries and chart facts as verified context. None if the model is off or fails."""
+    reply = await narrate.complete(
+        AI_SYSTEM, _ai_prompt(question, answer), client,
+        model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS,
+    )
+    if not reply:
+        return None
+    if len(reply) > MAX_AI_CHARS:
+        reply = reply[:MAX_AI_CHARS].rsplit(" ", 1)[0].rstrip() + "…"
+    return reply

@@ -1,7 +1,8 @@
 """Talk to the local Ollama, when OLLAMA_URL is set. Off by default.
 
-Two uses only: rewording facts we pass in (narrate), and sorting a question into a known topic key
-(qa.sort_with_model, through complete). The model never adds placements, rules or meanings.
+Three uses: sorting a question into a known topic key (qa.sort_with_model), a free-form answer that the
+bot always shows apart from the sourced one and labels "AI says:" (qa.ai_answer), and, only with
+OLLAMA_NARRATE=1, rewording facts (narrate). The model never writes the sourced answer.
 """
 from __future__ import annotations
 
@@ -15,6 +16,9 @@ log = logging.getLogger("samay.narrate")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 TIMEOUT_SECONDS = 20.0
+# Free-form answers are longer than sorting a question, and a bigger model can be used for them.
+AI_MODEL = os.environ.get("OLLAMA_QA_MODEL") or OLLAMA_MODEL
+AI_TIMEOUT_SECONDS = 90.0
 
 SYSTEM = (
     "You write short, warm daily readings in the Jyotish tradition for a Telegram bot. "
@@ -28,6 +32,12 @@ _client: httpx.AsyncClient | None = None
 
 def enabled() -> bool:
     return bool(OLLAMA_URL)
+
+
+def rewording_enabled() -> bool:
+    """Rewording /today facts is its own switch: it replaces the plain-words section, so it stays off even
+    when the model is on for sorting and AI answers, unless OLLAMA_NARRATE=1."""
+    return enabled() and os.environ.get("OLLAMA_NARRATE") == "1"
 
 
 def template(facts: list[str]) -> str:
@@ -48,14 +58,21 @@ async def close() -> None:
         _client = None
 
 
-async def complete(system: str, prompt: str, client: httpx.AsyncClient | None = None) -> str | None:
+async def complete(
+    system: str,
+    prompt: str,
+    client: httpx.AsyncClient | None = None,
+    model: str | None = None,
+    timeout: float | None = None,
+) -> str | None:
     """The model's reply, or None when the model is off, slow, failing or silent."""
     if not enabled():
         return None
     try:
         r = await (client or _get_client()).post(
             f"{OLLAMA_URL.rstrip('/')}/api/generate",
-            json={"model": OLLAMA_MODEL, "system": system, "prompt": prompt, "stream": False},
+            json={"model": model or OLLAMA_MODEL, "system": system, "prompt": prompt, "stream": False},
+            **({} if timeout is None else {"timeout": timeout}),
         )
         r.raise_for_status()
         return r.json().get("response", "").strip() or None

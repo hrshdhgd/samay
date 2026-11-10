@@ -38,6 +38,7 @@ from ..models import BirthInput, NeedsDisambiguation, ResolvedBirth
 from ..render import prompts
 from ..render.chart_image import STYLES, render_chart_png
 from ..render.text import (
+    render_ai,
     render_answer,
     render_brief,
     render_chart,
@@ -162,7 +163,7 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     now = _now()
     if kind == "today":
         report = await asyncio.to_thread(service.today_report, resolved, now)
-        reading = await narrate.narrate(today_facts(report)) if narrate.enabled() else None
+        reading = await narrate.narrate(today_facts(report)) if narrate.rewording_enabled() else None
         extras = (await _rahu_line(ctx, chat_id, now),)
         text = render_today(report, reading, technical=False, extras=extras)
     else:
@@ -213,7 +214,13 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
     answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, question)
     if answer.topic is not None and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
-    await _say(update, render_answer(answer, birth_known=birth is not None), answer_markup(answer, False))
+    ai = narrate.enabled()
+    sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
+    await _say(update, sourced, answer_markup(answer, False))
+    if ai:
+        # A second message, so the sourced answer is never delayed by the (slower) model.
+        reply = await qa.ai_answer(question, answer)
+        await _say(update, render_ai(reply) if reply else prompts.AI_UNAVAILABLE, MENU)
 
 
 async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None:

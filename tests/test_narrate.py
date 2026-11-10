@@ -43,3 +43,27 @@ async def test_uses_the_model_reply_and_sends_only_the_facts(on):
 )
 async def test_any_failure_falls_back_to_the_template(on, handler):
     assert await narrate.narrate(FACTS, _client(handler)) == narrate.template(FACTS)
+
+
+async def test_complete_uses_the_model_and_timeout_it_is_given(on):
+    seen = {}
+
+    def handler(request):
+        seen["body"] = request.read().decode()
+        seen["timeout"] = request.extensions["timeout"]
+        return httpx.Response(200, json={"response": "ok"})
+
+    assert await narrate.complete("s", "p", _client(handler), model="big-model", timeout=5.0) == "ok"
+    assert '"model":"big-model"' in seen["body"].replace(" ", "") and seen["timeout"]["read"] == 5.0
+    await narrate.complete("s", "p", _client(handler))
+    assert "llama3.2:3b" in seen["body"]
+
+
+def test_rewording_needs_its_own_switch(monkeypatch):
+    monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
+    monkeypatch.delenv("OLLAMA_NARRATE", raising=False)
+    assert narrate.enabled() and not narrate.rewording_enabled()
+    monkeypatch.setenv("OLLAMA_NARRATE", "1")
+    assert narrate.rewording_enabled()
+    monkeypatch.setattr(narrate, "OLLAMA_URL", "")
+    assert not narrate.rewording_enabled()
