@@ -44,8 +44,13 @@ uv run samay bot
 ```
 Long polling, so no public port. Only chats listed in `ALLOWED_CHAT_IDS` get answers (the bot
 refuses to start with an empty list). Relatives use a button menu and a guided conversation; the
-slash commands `/birth /chart /dasha /today /forget` also work. Birth details are stored in
-plaintext in the SQLite file until the encryption sub-project, so do not deploy before that.
+slash commands `/birth /chart /dasha /today /forget` also work.
+
+**Encryption at rest.** Birth details, in-progress conversations and the living city are encrypted in
+the database (Fernet, authenticated). The key is never in the database: on a server set
+`SAMAY_DB_KEY` (make one with `uv run samay keygen`); for local development a private key file is
+created at `data/samay.key`. **Back the key up separately**: without it the data cannot be read.
+`uv run samay backup --out FILE` copies the database; the copy stays encrypted and needs the same key.
 
 ### Questions
 Relatives can type a question or tap **❓ Ask a question**. Answers are built only from checked

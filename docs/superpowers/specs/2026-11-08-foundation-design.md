@@ -280,9 +280,9 @@ Free Q&A is the app's headline feature. It is English-only and grounded:
 
 ## Known risks
 
-- Plaintext birth data in `users` and `drafts` until sub-project 8. Acceptable while local;
-  sub-project 8 is a hard gate before deploy.
-- No backup/export of the store until sub-project 8.
+- Birth data, drafts and the living city are encrypted at rest (done 2026-11-10; see README). The key
+  must be backed up separately. `samay backup` and `Store.rekey` exist. The chat id, profile name and
+  morning-message hour stay in the clear by design.
 - Monthly Dependabot may cause churn; switch to quarterly if it does.
 - Re-resolution applies data corrections automatically, but readings already given are not
   migrated or annotated; version stamps make them reproducible.
