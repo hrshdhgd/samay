@@ -112,11 +112,12 @@ def load_entries(directory: Path = ENTRIES_DIR) -> tuple[Entry, ...]:
     return tuple(entries)
 
 
-def answers_for(topic: str, systems: frozenset[str] = frozenset(), directory: Path = ENTRIES_DIR) -> list[Entry]:
+def answers_for(topic: str, systems: frozenset[str] = frozenset(), directory: Path | None = None) -> list[Entry]:
     """Entries that may be shown for a topic: checked ones only, most thoroughly checked first.
     An entry tied to a calculation system is only returned when that system is in `systems`
     (the systems the user's chart was computed with), so it never explains a different system."""
     allowed = {ANY_SYSTEM, *systems}
+    directory = directory or ENTRIES_DIR  # looked up now, not when the module loads, so it can be swapped
     found = [e for e in load_entries(directory) if e.topic == topic and e.servable and e.system in allowed]
     # Most thoroughly checked first, then in the order the source gives them (file order).
     return sorted(found, key=lambda e: -LEVELS.index(e.verification.level))
