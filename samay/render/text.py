@@ -219,12 +219,59 @@ def render_answer(answer, sanskrit: bool = False, birth_known: bool = True) -> s
     if not answer.entries:
         blocks.append(prompts.NO_SOURCE)
     blocks += list(answer.notes)
+    if answer.reading is not None:
+        blocks.append(render_reading(answer.reading, answer.shares))
     if answer.facts:
         blocks.append("From your chart:\n" + "\n".join(answer.facts))
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
     blocks.append(DISCLAIMER)
     return "\n\n".join(blocks)
+
+
+STRENGTH_WORDS = {
+    "exaltation": "its exaltation sign (where the text counts it strongest)",
+    "moolatrikona": "its moolatrikona sign",
+    "own": "its own sign",
+    "friendly": "a friend's sign",
+    "neutral": "a neutral planet's sign",
+    "inimical": "an enemy's sign",
+    "depression": "its depression sign (where the text counts it weakest)",
+}
+
+
+def _share_phrase(label: str, share: str | None) -> str:
+    if share is None:
+        return f"it gives no share of the {label} effects here"
+    if share == "not at all":
+        return f"the {label} effects do not come to pass"
+    if share == "fully":
+        return f"the {label} effects come to pass in full"
+    return f"{share} of the {label} effects come to pass"
+
+
+def render_reading(r, shares) -> str:
+    """Chapter XX on one planet in one house: the quoted lines, then the text's own strength rule."""
+    name = r.planet.title()
+    lines = [f"What Brihat Jataka chapter 20 says about {name} in your {ordinal(r.house)} house:"]
+    for e in r.effects:
+        borrowed = f" (the text gives {name} here the same effects as {e.borrowed_from.title()})" if e.borrowed_from else ""
+        lines.append(f"“{e.text}”{borrowed}")
+        if e.variant:
+            lines.append(e.variant)
+    where = f"Your {name} is in {SIGNS[r.sign]}, {STRENGTH_WORDS[r.strength]}"
+    if r.astangata:
+        where += ", and close enough to the Sun to be obscured (astangata)"
+    lines.append(where + ".")
+    kinds = {e.kind for e in r.effects}
+    if not shares.get("good") and not shares.get("bad"):
+        lines.append("Stanza 20.11, which says how much of these effects apply, gives no share for a neutral sign.")
+    else:
+        parts = [_share_phrase(label, shares.get(label)) for label in ("good", "bad")
+                 if kinds & {label, "mixed"}]
+        lines.append("By the text's own rule (20.11), " + "; ".join(parts) + ".")
+    lines += [f"— {r.citation} ({r.level})", prompts.READING_FRAME]
+    return "\n".join(lines)
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:

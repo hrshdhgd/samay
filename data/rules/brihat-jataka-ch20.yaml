@@ -1,0 +1,108 @@
+# Brihat Jataka chapter XX ("On the Planets in the Bhavas") and the strength rules it depends on.
+# Source: N. Chidambaram Iyer (tr.), The Brihat Jataka of Varaha Mihira, Madras 1885, public domain
+# (archive.org b2488442x). Effect texts are QUOTED from that translation, with obvious scan errors
+# corrected; every correction is listed in research/notes/brihat-jataka-ch20.md.
+# Nothing in this file is shown to anyone until `verification` is filled in by a person.
+
+verification: {level: unchecked}
+
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+
+strength:
+  # I.13: exaltation signs of the Sun, Moon, Mars, Mercury, Jupiter, Venus, Saturn; depression is the 7th sign.
+  exaltation: {sun: aries, moon: taurus, mars: capricorn, mercury: virgo, jupiter: cancer, venus: pisces, saturn: libra}
+  # I.14: Moolatrikona signs (the text gives signs only, no degree ranges).
+  moolatrikona: {sun: leo, moon: taurus, mars: aries, mercury: virgo, jupiter: sagittarius, venus: libra, saturn: aquarius}
+  # II.16-17 (Satyacharya's scheme, as stated by Varahamihira). Anyone not listed is the third kind.
+  friends:  {sun: [moon, mars, jupiter], moon: [sun, mercury], mars: [sun, moon, jupiter], mercury: [sun, venus],
+             jupiter: [sun, moon, mars], venus: [mercury, saturn], saturn: [venus, mercury]}
+  neutrals: {sun: [mercury], moon: [mars, jupiter, venus, saturn], mars: [venus, saturn],
+             mercury: [mars, jupiter, saturn], jupiter: [saturn], venus: [mars, jupiter], saturn: [jupiter]}
+  # Translator's note (f) to chapter VII: degrees from the Sun within which a planet is Astangata (obscured).
+  # JUPITER: the scan reads "31"; 11 is assumed. CHECK AGAINST THE PRINTED PAGE (p. 62) before use.
+  astangata_degrees: {moon: 12, mars: 17, mercury: 14, jupiter: 11, venus: 10, saturn: 15}
+  astangata_degrees_retrograde: {mercury: 12, venus: 8}
+  # XX.11: share of the GOOD effects that come to pass. Neutral signs are not mentioned in stanza 11.
+  good_share: {exaltation: "fully", moolatrikona: "three-quarters", own: "one half", friendly: "one quarter",
+               inimical: "less than one quarter", depression: "not at all", astangata: "not at all"}
+  # Translator's note to XX.11: share of the BAD effects that come to pass.
+  bad_share: {depression: "fully", astangata: "fully", inimical: "three-quarters", friendly: "one half",
+              own: "one quarter", moolatrikona: "less than one quarter", exaltation: "not at all"}
+
+# XX.1-9. `when_lagna`: applies only when the lagna is one of these signs (more specific rows win).
+# `same_as`: the text gives this planet the same effects as another planet in that house.
+# `kind`: good, bad or mixed, as judged when writing this file (part of what the checker confirms).
+effects:
+  - {planet: sun, house: 1, verse: 1, kind: bad, text: "the person will be fond of fight, slow at work, without sight and without mercy"}
+  - {planet: sun, house: 1, verse: 1, when_lagna: [aries], kind: mixed, text: "the person will be rich and afflicted with diseases of the eye"}
+  - {planet: sun, house: 1, verse: 1, when_lagna: [leo], kind: bad, text: "he will be blind at night"}
+  - {planet: sun, house: 1, verse: 1, when_lagna: [libra], kind: bad, text: "the person will be blind and poor"}
+  - {planet: sun, house: 1, verse: 1, when_lagna: [cancer], kind: bad, text: "he will have a mote in his eye"}
+  - {planet: sun, house: 2, verse: 1, kind: mixed, text: "the person will be greatly rich, will have his wealth carried away by the king and will suffer from diseases in the face"}
+  - {planet: sun, house: 3, verse: 2, kind: good, text: "the person will be intelligent and powerful"}
+  - {planet: sun, house: 4, verse: 2, kind: bad, text: "the person will be afflicted with grief and mental sufferings"}
+  - {planet: sun, house: 5, verse: 2, kind: bad, text: "he will have no sons and will be poor"}
+  - {planet: sun, house: 6, verse: 2, kind: mixed, text: "the person will be powerful and be subjugated by his enemy",
+     variant: "According to another reading, the person's enemies will meet with ruin; according to Satyacharya, such a person will be free from enemies, diseases and grief (translator's note)."}
+  - {planet: sun, house: 7, verse: 3, kind: bad, text: "the person will suffer disgrace at the hands of women"}
+  - {planet: sun, house: 8, verse: 3, kind: bad, text: "the person will have very few sons and will become blind"}
+  - {planet: sun, house: 9, verse: 3, kind: good, text: "the person will have sons, wealth and comfort",
+     variant: "According to another reading, such a person will have neither sons nor wealth (translator's note)."}
+  - {planet: sun, house: 10, verse: 3, kind: good, text: "the person will live in comfort and will be powerful"}
+  - {planet: sun, house: 11, verse: 3, kind: good, text: "the person will be very rich"}
+  - {planet: sun, house: 12, verse: 3, kind: bad, text: "he will become an apostate"}
+
+  - {planet: moon, house: 1, verse: 4, kind: bad, text: "such person will become dumb or mad or an idiot or blind or deaf; he will do mean deeds or will become a slave"}
+  - {planet: moon, house: 1, verse: 4, when_lagna: [cancer], kind: good, text: "the person will be rich"}
+  - {planet: moon, house: 1, verse: 4, when_lagna: [aries], kind: good, text: "the person will have many sons"}
+  - {planet: moon, house: 1, verse: 4, when_lagna: [taurus], kind: good, text: "the person will be wealthy"}
+  - {planet: moon, house: 2, verse: 4, kind: good, text: "the person will be a man of a large family"}
+  - {planet: moon, house: 3, verse: 4, kind: bad, text: "he will delight in torturing animals"}
+  - {planet: moon, house: 4, verse: 4, kind: good, text: "he will be in the full enjoyment of what the houses signify (the translator explains: he will be happy, will have kinsmen and houses, and will be learned)"}
+  - {planet: moon, house: 5, verse: 4, kind: good, text: "he will be in the full enjoyment of what the houses signify (the translator explains: he will possess intelligence, sons and the like)"}
+  - {planet: moon, house: 6, verse: 4, kind: bad, text: "the person will be of soft body, will have a dull appetite, will be sparing in sexual union, will be cruel and will be slow at work"}
+  - {planet: moon, house: 7, verse: 5, kind: bad, text: "the person will be jealous of the prosperity of other men and will be lustful"}
+  - {planet: moon, house: 8, verse: 5, kind: bad, text: "the person will be fickle-minded and will be afflicted with diseases"}
+  - {planet: moon, house: 9, verse: 5, kind: good, text: "the person will be liked by all and will have sons, kinsmen and wealth"}
+  - {planet: moon, house: 10, verse: 5, kind: good, text: "he will be successful in all places, will be virtuous, wealthy, intelligent and valorous"}
+  - {planet: moon, house: 11, verse: 5, kind: good, text: "the person will be famous and will gain wealth and the like"}
+  - {planet: moon, house: 12, verse: 5, kind: bad, text: "the person will be wicked and of defective limbs"}
+
+  - {planet: mars, house: 1, verse: 6, kind: bad, text: "such person will possess a wounded body"}
+  - {planet: mars, house: 2, verse: 6, kind: bad, text: "the person will eat low meals"}
+  - {planet: mars, house: 9, verse: 6, kind: bad, text: "the person will be a sinner"}
+  - {planet: mars, houses: [3, 4, 5, 6, 7, 8, 10, 11, 12], verse: 6, same_as: sun}
+
+  - {planet: mercury, house: 1, verse: 6, kind: good, text: "such person will be learned"}
+  - {planet: mercury, house: 2, verse: 6, kind: good, text: "the person will be wealthy"}
+  - {planet: mercury, house: 3, verse: 6, kind: bad, text: "the person will be wicked"}
+  - {planet: mercury, house: 4, verse: 6, kind: good, text: "the person will be learned"}
+  - {planet: mercury, house: 5, verse: 6, kind: good, text: "he will be a minister under a king"}
+  - {planet: mercury, house: 6, verse: 6, kind: good, text: "he will have no enemies"}
+  - {planet: mercury, house: 7, verse: 6, kind: good, text: "he will possess a knowledge of law"}
+  - {planet: mercury, house: 8, verse: 6, kind: good, text: "the person will be renowned for his virtues"}
+  - {planet: mercury, houses: [9, 10, 11, 12], verse: 6, same_as: sun}
+
+  - {planet: jupiter, house: 1, verse: 7, kind: good, text: "such person will be learned"}
+  - {planet: jupiter, house: 2, verse: 7, kind: good, text: "he will be of good speech"}
+  - {planet: jupiter, house: 3, verse: 7, kind: bad, text: "he will be a niggard"}
+  - {planet: jupiter, house: 4, verse: 7, kind: good, text: "he will live in comfort"}
+  - {planet: jupiter, house: 5, verse: 7, kind: good, text: "he will be intelligent"}
+  - {planet: jupiter, house: 6, verse: 7, kind: good, text: "he will have no enemies"}
+  - {planet: jupiter, house: 7, verse: 7, kind: good, text: "he will possess qualities superior to those of his father"}
+  - {planet: jupiter, house: 8, verse: 7, kind: bad, text: "he will do deeds unsuited to his rank in life"}
+  - {planet: jupiter, house: 9, verse: 7, kind: good, text: "he will be a devotee"}
+  - {planet: jupiter, house: 10, verse: 7, kind: good, text: "he will be possessed of wealth"}
+  - {planet: jupiter, house: 11, verse: 7, kind: good, text: "he will be full of gain"}
+  - {planet: jupiter, house: 12, verse: 7, kind: bad, text: "he will do fearful deeds"}
+
+  - {planet: venus, house: 1, verse: 8, kind: good, text: "such person will be skilled in acts of love and will live in great comfort"}
+  - {planet: venus, house: 7, verse: 8, kind: mixed, text: "the person will be fond of quarrels and of sexual union"}
+  - {planet: venus, house: 5, verse: 8, kind: good, text: "the person will live in comfort"}
+  - {planet: venus, houses: [2, 3, 4, 6, 8, 9, 10, 11, 12], verse: 8, same_as: jupiter}
+  - {planet: venus, sign: pisces, verse: 8, kind: good, text: "if Venus occupy sign Pisces at the time of birth the person will become rich"}
+
+  - {planet: saturn, house: 1, verse: 9, kind: bad, text: "such person will be poor, will be afflicted with diseases and sexual passion, will be dirty, will suffer much from diseases while young, and will be of indistinct speech"}
+  - {planet: saturn, house: 1, verse: 9, when_lagna: [libra, sagittarius, capricorn, aquarius, pisces], kind: good,
+     text: "the person will be as happy as a king, will rule over a village or a town, will be learned and will possess fine limbs"}
+  - {planet: saturn, houses: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], verse: 9, same_as: sun}

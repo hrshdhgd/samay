@@ -47,6 +47,10 @@ NO_TOPIC = (
     "I don't predict events.\n\n"
     "Try asking about a planet or a dasha, for example: “What does Saturn stand for?”"
 )
+READING_FRAME = (
+    "This is what a 6th-century text says. It is not a forecast, and many of its lines will not "
+    "fit a modern life."
+)
 NO_SOURCE = (
     "I don't have a checked source for this yet, so I won't guess. "
     "I have noted the topic so it can be researched."

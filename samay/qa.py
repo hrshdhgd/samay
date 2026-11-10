@@ -15,6 +15,7 @@ from pathlib import Path
 
 from . import narrate, service
 from .engine import entries as entry_store
+from .engine import house_effects
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
 from .engine.vedic import DASHA_YEARS, RASHIS, SIGNS, house_from, sign_index
@@ -62,6 +63,8 @@ class Answer:
     facts: tuple[str, ...]  # computed from the person's own chart
     notes: tuple[str, ...] = ()  # general astronomical notes, not about this person
     name_line: str | None = None  # "Shani is the Sanskrit and Hindi name for Saturn." when asked by that name
+    reading: house_effects.Reading | None = None  # chapter XX on this planet in this person's house
+    shares: dict | None = None  # how much of the good and bad effects the text says apply
 
 
 def sort_question(text: str) -> str | None:
@@ -190,4 +193,11 @@ def answer_topic(
     notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") else ()  # astronomy, always useful
     alias = name_used(question, subject) if subject in GRAHAS else None
     name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject.title()}." if alias else None
-    return Answer(topic, tuple(found), tuple(facts), notes, name_line)
+    reading = shares = None
+    if kind == "planet" and birth is not None:
+        reading = house_effects.reading(service.natal_report(birth).chart, subject)
+        if reading is not None and reading.effects:
+            shares = house_effects.shares(house_effects.load_rules(), reading)
+        else:
+            reading = None
+    return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares)
