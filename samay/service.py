@@ -10,7 +10,7 @@ from datetime import datetime
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
-from .engine import daylight, ephemeris, geo, timestd
+from .engine import daylight, entries, ephemeris, geo, house_effects, timestd
 from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
 from .engine.geo import Place
@@ -192,4 +192,10 @@ def warm() -> VersionStamp:
     geo.find_places("Pune")
     timestd.load_standards()
     _rules(load_profile().schools)
+    # Sourced answers and chapter XX: a missing data folder must stop start-up, not silently empty the answers.
+    for folder in (entries.ENTRIES_DIR, house_effects.RULES_PATH.parent):
+        if not folder.is_dir():
+            raise FileNotFoundError(f"required data folder is missing: {folder}")
+    entries.load_entries()
+    house_effects.load_rules()
     return data_info()

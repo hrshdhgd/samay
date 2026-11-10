@@ -75,6 +75,15 @@ def test_today_report_uses_injected_now():
 
 
 @needs_kernel
+def test_warm_refuses_to_start_without_the_sourced_data(tmp_path, monkeypatch):
+    from samay.engine import entries
+
+    monkeypatch.setattr(entries, "ENTRIES_DIR", tmp_path / "missing")
+    with pytest.raises(FileNotFoundError, match="required data folder"):
+        service.warm()
+
+
+@needs_kernel
 def test_warm_returns_stamp():
     assert service.warm().profile_id == "parashari-lahiri"
 

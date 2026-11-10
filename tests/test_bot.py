@@ -261,6 +261,22 @@ async def test_help_is_silent_for_strangers(ctx):
     msg.reply_text.assert_not_awaited()
 
 
+def test_a_rejected_token_exits_cleanly_without_printing_it(monkeypatch, no_token_or_env_file, capsys):
+    from unittest.mock import MagicMock
+
+    from telegram.error import InvalidToken
+
+    monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
+    monkeypatch.setenv("TELEGRAM_TOKEN", "123:SECRETTOKEN")
+    fake = MagicMock()
+    fake.run_polling.side_effect = InvalidToken("The token `123:SECRETTOKEN` was rejected by the server.")
+    monkeypatch.setattr(bot, "build_application", lambda *a: fake)
+    with pytest.raises(SystemExit) as exit_info:
+        bot.main()
+    assert "rejected the bot token" in str(exit_info.value) and "SECRETTOKEN" not in str(exit_info.value)
+    assert exit_info.value.__cause__ is None and "SECRETTOKEN" not in capsys.readouterr().err
+
+
 def test_start_up_keeps_retrying_when_telegram_is_unreachable(monkeypatch, no_token_or_env_file):
     from unittest.mock import MagicMock
 

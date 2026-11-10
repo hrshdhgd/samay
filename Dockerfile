@@ -17,6 +17,9 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 # JPL DE440s (1849-2150). The hash is the same one scripts/fetch-ephemeris.sh checks.
+# Create /app/data first: ADD would otherwise create it with the file's mode (644), which the
+# non-root runtime user cannot enter.
+RUN mkdir -p /app/data && chmod 755 /app/data
 ADD --checksum=sha256:c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2 --chmod=644 \
     https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp /app/data/de440s.bsp
 
@@ -24,11 +27,14 @@ COPY samay ./samay
 COPY rules ./rules
 COPY data/profiles ./data/profiles
 COPY data/time_standards ./data/time_standards
+COPY data/entries ./data/entries
+COPY data/rules ./data/rules
 # Built once by scripts/build_gazetteer.py; nothing is downloaded or built on the server.
 COPY data/gazetteer.sqlite data/gazetteer.lock ./data/
 COPY scripts/build_gazetteer.py ./scripts/build_gazetteer.py
 RUN uv sync --frozen --no-dev \
-    && python scripts/build_gazetteer.py --verify
+    && python scripts/build_gazetteer.py --verify \
+    && chmod -R a+rX /app/data /app/rules /app/samay /app/scripts
 
 ARG GIT_SHA=dev
 ENV GIT_SHA=$GIT_SHA

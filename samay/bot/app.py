@@ -21,7 +21,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     Update,
 )
-from telegram.error import BadRequest
+from telegram.error import BadRequest, InvalidToken
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -504,4 +504,8 @@ def main() -> None:
     log.info("samay starting (long polling, %d allowed chat(s))", len(allowed))
     # bootstrap_retries=-1: keep retrying the first connection instead of exiting if Telegram is
     # briefly unreachable.
-    app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY], bootstrap_retries=-1)
+    try:
+        app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY], bootstrap_retries=-1)
+    except InvalidToken:
+        # The library's own message includes the token, so do not let it reach the logs.
+        raise SystemExit("Telegram rejected the bot token: check TELEGRAM_TOKEN") from None
