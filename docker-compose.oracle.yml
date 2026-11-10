@@ -1,0 +1,11 @@
+# Oracle server overrides, used together with docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.oracle.yml up -d --build
+# The server also runs stockbro, so samay stays small and quiet (see mem_limit and cpus in the base file).
+services:
+  samay:
+    container_name: samay-bot
+    # The default bridge, like stockbro: the host's Ollama is then reachable at 172.17.0.1:11434.
+    network_mode: bridge
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
