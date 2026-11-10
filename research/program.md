@@ -21,8 +21,11 @@ review does not count.
 
 ## Loop (one entry)
 1. Pick the top topic from `uv run samay research-queue` that has no checked entry.
-2. Find the verse in a **public-domain** source; record the edition and page in `research/notes/`.
-3. Paraphrase it in our own words. Do not copy a translation that is still in copyright.
+2. Find the passage in an **openly available** source (decided by the owner, 2026-11-10: this is a private
+   family app, so anything freely readable online is usable); record the edition, page and URL in
+   `research/notes/`.
+3. Paraphrase it in our own words. Quote **verbatim only from public-domain works** (the repository is public on
+   GitHub). Verbatim text from a book still in copyright goes in `research/sources/` (git-ignored), never in git.
 4. Compare the paraphrase with the public-domain English translation. Set `translation-checked`
    only if they agree, recording who checked, when, and against what.
 5. Add the Devanagari verse only if its text is compared with a second copy; set `text_checked`.

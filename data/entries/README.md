@@ -21,6 +21,9 @@ user until its `verification.level` is `translation-checked` or `sanskrit-checke
     against: "<public-domain translation compared with>"   # required for translation-checked
 ```
 
-Sources: public domain only. The English translation of the Brihat Jataka by N. Chidambaram Iyer
+Sources: anything openly available (owner's decision, 2026-11-10: private family use). Verbatim quotes only
+from public-domain works, because the repository is public; otherwise paraphrase.
+
+Public-domain note: The English translation of the Brihat Jataka by N. Chidambaram Iyer
 (1885) appears to be public domain (confirm on the Wellcome Collection or HathiTrust record when
 writing each entry). Do not copy text from translations that are still in copyright.

@@ -163,13 +163,18 @@ def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
         entry_store.load_entries.cache_clear()
 
 
-def test_house_question_returns_only_checked_house_entries():
-    from samay.engine.entries import load_entries
+def test_house_question_returns_the_checked_house_entries():
+    a = qa.answer_topic("house:4", None, NOW)
+    assert [e.id for e in a.entries] == ["bj-1-15-house-4", "bj-1-15-note-house-4"]
+    assert "signifies relations" in a.entries[0].english and "Graha (dwelling place)" in a.entries[0].english
+    assert "translator, N. Chidambaram Iyer" in a.entries[1].english  # the note says whose words it is
+    assert all(e.verification.checked_by == "h2" for e in a.entries)
 
-    load_entries.cache_clear()
-    drafts = [e for e in load_entries() if e.topic == "house:4"]
-    assert drafts and all(not e.servable for e in drafts)  # unchecked until h2 checks them
-    assert qa.answer_topic("house:4", None, NOW).entries == ()
+
+def test_every_house_has_both_entries():
+    for n in range(1, 13):
+        assert [e.id for e in qa.answer_topic(f"house:{n}", None, NOW).entries] == [
+            f"bj-1-15-house-{n}", f"bj-1-15-note-house-{n}"]
 
 
 @needs_kernel

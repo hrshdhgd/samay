@@ -6,6 +6,10 @@ each rule citing its source.
 
 > Traditional interpretation, for reflection and fun. Not a guarantee of events.
 
+## Quick commands
+Every common task is a [`just`](https://github.com/casey/just) recipe: run `just` to list them.
+`just setup`, `just test`, `just bot`, `just chart 1990-08-15 14:30 Pune`, `just deploy-plan`.
+
 ## Development
 ```bash
 uv sync

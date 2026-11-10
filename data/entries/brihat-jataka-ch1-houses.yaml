@@ -1,5 +1,5 @@
 # Brihat Jataka I.15-16: what each house stands for. Written from N. Chidambaram Iyer's English
-# translation (Madras 1885, public domain; archive.org b2488442x, pp. 11-12). Paraphrased; UNCHECKED.
+# translation (Madras 1885, public domain; archive.org b2488442x, pp. 11-12). Paraphrased. Checked by h2, 2026-11-10.
 # The 'translator's note' entries come from Iyer's notes to stanza 15, not from Varahamihira, and say so.
 
 - id: bj-1-15-house-1
@@ -9,7 +9,8 @@
     Varahamihira says the 1st house from the rising sign (the lagna, or rising sign, itself) signifies the body, and gives it the
     technical name Kalpa (power).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-1
   topic: house:1
@@ -17,7 +18,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 1st house covers body, fame and limbs.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-2
   topic: house:2
@@ -26,7 +28,8 @@
     Varahamihira says the 2nd house from the rising sign signifies family, and gives it the
     technical name Sva (wealth).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-2
   topic: house:2
@@ -34,7 +37,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 2nd house covers family, wealth, eyes, speech and truthfulness.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-3
   topic: house:3
@@ -43,7 +47,8 @@
     Varahamihira says the 3rd house from the rising sign signifies brothers, and gives it the
     technical name Vikrama (prowess).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-3
   topic: house:3
@@ -51,7 +56,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 3rd house covers brothers, bravery and meals.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-4
   topic: house:4
@@ -60,7 +66,8 @@
     Varahamihira says the 4th house from the rising sign signifies relations, and gives it the
     technical name Graha (dwelling place).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-4
   topic: house:4
@@ -68,7 +75,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 4th house covers relations, education, mother, cows, dwelling place, carriage and comfort.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-5
   topic: house:5
@@ -77,7 +85,8 @@
     Varahamihira says the 5th house from the rising sign signifies sons, and gives it the
     technical name Pratibha (intelligence).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-5
   topic: house:5
@@ -85,7 +94,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 5th house covers sons, intelligence and previous karma.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-6
   topic: house:6
@@ -94,7 +104,8 @@
     Varahamihira says the 6th house from the rising sign signifies enemies, and gives it the
     technical name Kshata (wound).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-6
   topic: house:6
@@ -102,7 +113,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 6th house covers enemies, kinsmen and diseases.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-7
   topic: house:7
@@ -111,7 +123,8 @@
     Varahamihira says the 7th house from the rising sign signifies wife, and gives it the
     technical name Manmatha (desire).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-7
   topic: house:7
@@ -119,7 +132,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 7th house covers wife, generosity and respect.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-8
   topic: house:8
@@ -128,7 +142,8 @@
     Varahamihira says the 8th house from the rising sign signifies death, and gives it the
     technical name Randhra.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-8
   topic: house:8
@@ -136,7 +151,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 8th house covers death and the length of life.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-9
   topic: house:9
@@ -145,7 +161,8 @@
     Varahamihira says the 9th house from the rising sign signifies deeds of virtue, and gives it the
     technical name Guru (father or preceptor).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-9
   topic: house:9
@@ -153,7 +170,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 9th house covers deeds of virtue, father and medicine.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-10
   topic: house:10
@@ -162,7 +180,8 @@
     Varahamihira says the 10th house from the rising sign signifies occupation, and gives it the
     technical name Mana (respectability).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-10
   topic: house:10
@@ -170,7 +189,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 10th house covers occupation, knowledge and clothes.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-11
   topic: house:11
@@ -179,7 +199,8 @@
     Varahamihira says the 11th house from the rising sign signifies gain, and gives it the
     technical name Bhava (acquisition).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-11
   topic: house:11
@@ -187,7 +208,8 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 11th house covers gain and earnings.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-house-12
   topic: house:12
@@ -196,7 +218,8 @@
     Varahamihira says the 12th house from the rising sign signifies loss, and gives it the
     technical name Vyaya (loss).
   citation: {text: Brihat Jataka, chapter: 1, verse: "15-16", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
 
 - id: bj-1-15-note-house-12
   topic: house:12
@@ -204,4 +227,5 @@
   english: >-
     The translator, N. Chidambaram Iyer, adds in his notes that the 12th house covers loss, bad deeds and travel.
   citation: {text: Brihat Jataka, chapter: 1, verse: "15, translator's note", edition: "tr. N. Chidambaram Iyer, Madras 1885"}
-  verification: {level: unchecked}
+  verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-10,
+                 against: "tr. N. Chidambaram Iyer, Madras 1885 (public domain), ch. I st. 15-16, pp. 11-12"}
