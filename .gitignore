@@ -12,3 +12,7 @@ data/gazetteer.sqlite.part
 
 # downloaded source texts (public domain, but large and re-fetchable; cite, do not commit)
 research/sources/
+
+# database encryption key (never commit)
+data/*.key
+*.key

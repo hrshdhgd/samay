@@ -14,6 +14,7 @@ dependencies = [
     "rapidfuzz>=3.14.6",
     "indic-transliteration>=2.3.82",
     "pillow>=13.0.0",
+    "cryptography>=50.0.2",
 ]
 
 [project.scripts]

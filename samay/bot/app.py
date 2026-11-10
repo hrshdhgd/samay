@@ -496,7 +496,11 @@ def main() -> None:
     token = os.environ.get("TELEGRAM_TOKEN") or os.environ.get("SAMAY_TELEGRAM_BOT_TOKEN", "")
     if not token:
         raise SystemExit("Set TELEGRAM_TOKEN (or SAMAY_TELEGRAM_BOT_TOKEN) to the token from @BotFather")
-    app = build_application(token, allowed, Store())
+    try:
+        store = Store()
+    except SamayError as e:  # a missing or wrong database key
+        raise SystemExit(f"cannot open the database: {e}") from None
+    app = build_application(token, allowed, store)
     log.info("samay starting (long polling, %d allowed chat(s))", len(allowed))
     # bootstrap_retries=-1: keep retrying the first connection instead of exiting if Telegram is
     # briefly unreachable.

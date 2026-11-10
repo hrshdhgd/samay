@@ -122,6 +122,27 @@ def research_queue(limit: int) -> None:
 
 
 @cli.command()
+def keygen() -> None:
+    """Print a new database key. Put it in the server's .env as SAMAY_DB_KEY and keep a copy safe."""
+    from .crypto import generate_key
+
+    click.echo(generate_key())
+
+
+@cli.command()
+@click.option("--out", required=True, type=click.Path(dir_okay=False), help="Where to write the backup.")
+def backup(out: str) -> None:
+    """Copy the database (personal data stays encrypted). The key is not included: keep it safe too."""
+    from .store import Store
+
+    try:
+        click.echo(f"saved {Store().backup(out)}")
+    except (SamayError, FileExistsError) as e:
+        click.echo(f"error: {e}", err=True)
+        sys.exit(EXIT_ERROR)
+
+
+@cli.command()
 def bot() -> None:
     """Run the Telegram bot (long polling). Reads TELEGRAM_TOKEN, ALLOWED_CHAT_IDS and .env."""
     from .bot.app import main

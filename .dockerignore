@@ -12,3 +12,4 @@ data/geonames-src
 data/de440s.bsp
 data/*.db
 *.db
+*.key
