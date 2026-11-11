@@ -184,9 +184,11 @@ async def route_with_model(text: str, client=None, previous: str | None = None, 
     prompt = (f"Keys:\n{keys}\nnone\n\nPeople: {roster}\nCurrently talking about: {active or 'me'}\n"
               f"Previous topic: {previous or 'none'}\n\nMessage: {text[:MAX_QUESTION_CHARS]}\nAnswer:")
     names = {n for n, _ in people}
-    route = _parse_route(await narrate.complete(MODEL_SYSTEM, prompt, client), names)
-    if route is None and narrate.AI_MODEL != narrate.OLLAMA_MODEL:
-        # the small model's reply was unusable (or it failed): ask the larger one once before the plain rules
+    reply = await narrate.complete(MODEL_SYSTEM, prompt, client)
+    route = _parse_route(reply, names)
+    if route is None and reply and narrate.AI_MODEL != narrate.OLLAMA_MODEL:
+        # The small model answered but not usably: ask the larger one once. A silent reply (timeout, model down) is
+        # not retried: the larger model is slower, and the whole bot waits for this call.
         route = _parse_route(await narrate.complete(MODEL_SYSTEM, prompt, client, model=narrate.AI_MODEL), names)
     return route if route is not None else Route(sort_question(text))
 

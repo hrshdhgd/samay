@@ -469,6 +469,6 @@ async def test_no_retry_when_both_models_are_the_same_and_rules_decide_if_both_f
     assert (await qa.route_with_model("what is shani", client)).topic == "planet:saturn"
     assert asked == ["same"]
     monkeypatch.setattr(narrate, "AI_MODEL", "large")
-    client, asked = _models_client({})
+    client, asked = _models_client({})  # a silent small model (timeout, down) is not retried on the slower one
     assert (await qa.route_with_model("what is shani", client)).topic == "planet:saturn"
-    assert asked == ["same", "large"]
+    assert asked == ["same"]

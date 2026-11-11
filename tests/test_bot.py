@@ -952,3 +952,16 @@ async def test_no_typing_is_shown_when_the_model_is_off(ctx, clock):
     update.effective_chat = _chat_with_actions()
     await bot.on_text(update, ctx)
     update.effective_chat.send_action.assert_not_awaited()
+
+
+async def test_a_tap_too_old_to_acknowledge_is_still_handled_but_other_errors_are_not(ctx, store):
+    from telegram.error import BadRequest
+
+    _save_pune(store)
+    update, _ = tap(ALLOWED, "img:north:0")
+    update.callback_query.answer.side_effect = BadRequest("Query is too old and response timeout expired")
+    await bot.on_button(update, ctx)  # the tap waited behind a slow model call: the button still works
+    update.callback_query.edit_message_media.assert_awaited()
+    update.callback_query.answer.side_effect = BadRequest("Chat not found")
+    with pytest.raises(BadRequest):
+        await bot.on_button(update, ctx)

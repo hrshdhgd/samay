@@ -726,7 +726,12 @@ async def _redraw_chart(update: Update, ctx, chat_id: int, choice: str) -> None:
 @guarded
 async def on_button(update: Update, ctx) -> None:
     query = update.callback_query
-    await query.answer()
+    try:
+        await query.answer()
+    except BadRequest as e:
+        # A tap that waited behind a slow model call is too old to acknowledge; the button still works.
+        if "too old" not in str(e).lower():
+            raise
     chat_id, data = update.effective_chat.id, query.data or ""
     if data.startswith(QA_PREFIX):
         await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX):])
