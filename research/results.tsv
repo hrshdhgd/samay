@@ -12,3 +12,4 @@ ded93c0	dasha:* + concept:dasha (10)	unchecked	keep	paraphrased from Phaladeepik
 4b93756	rules:brihat-jataka-ch20	translation-checked	keep	checked by h2 against Iyer 1885 ch. XX; Jupiter astangata 11 and Sun-6th wording confirmed from page images; no rows hidden
 19627dd	verses on 29 Brihat Jataka entries	verse text	keep	sanskritdocuments.org text vs GRETIL 94-97%; labelled unproofread; II.4-11 not mapped; Jupiter sukha/health and I.16 cittottha/Manmatha differences noted
 da8f0aa	house:1..10 method entries (11)	unchecked	keep	phaladeepika ch.5,10,12,16 paraphrased: methods and marriage timing only; severe outcome lists left out; awaiting h2 check
+50c26f5	nakshatra syllables (108)	data	keep	desiutils vs hindumirror agree on 108/108; alternates kept; YAML No->False bug found and guarded; not wired into the bot
