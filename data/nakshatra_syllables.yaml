@@ -1,0 +1,171 @@
+# Birth-star naming syllables (the Avakahada chakra): the first sound of a name for the pada the Moon was in at birth.
+# 27 nakshatras x 4 padas = 108. Compared pada by pada between two independent sites on 2026-11-10 (they agree on
+# all 108): desiutils.in/astrology/birth-star-calculator (Roman and Devanagari) and hindumirror.com/
+# nakshatra-starting-letters-for-baby-names/. Both are modern pages that cite the panchanga tradition (Swar Siddhanta
+# tables), not a classical verse. `also` lists readings the second site says are in current use alongside the first
+# (Shravana is the clearest case: Khi Khu Khe Kho in one panchanga tradition, Ju Je Jo Gha in another).
+# Every syllable is quoted: bare No, Yes, On and Off would be read by YAML as true or false.
+# See research/notes/gaps-research.md.
+
+- nakshatra: Ashwini
+  padas:
+    - {syllable: "Chu", devanagari: "चु"}
+    - {syllable: "Che", devanagari: "चे"}
+    - {syllable: "Cho", devanagari: "चो"}
+    - {syllable: "La", devanagari: "ला"}
+- nakshatra: Bharani
+  padas:
+    - {syllable: "Li", devanagari: "ली"}
+    - {syllable: "Lu", devanagari: "लू"}
+    - {syllable: "Le", devanagari: "ले"}
+    - {syllable: "Lo", devanagari: "लो"}
+- nakshatra: Krittika
+  padas:
+    - {syllable: "A", devanagari: "अ"}
+    - {syllable: "I", devanagari: "ई"}
+    - {syllable: "U", devanagari: "उ"}
+    - {syllable: "E", devanagari: "ए"}
+- nakshatra: Rohini
+  padas:
+    - {syllable: "O", devanagari: "ओ"}
+    - {syllable: "Va", devanagari: "वा", also: ["Ba"]}
+    - {syllable: "Vi", devanagari: "वी", also: ["Bi"]}
+    - {syllable: "Vu", devanagari: "वु", also: ["Bu"]}
+- nakshatra: Mrigashira
+  padas:
+    - {syllable: "Ve", devanagari: "वे", also: ["Be"]}
+    - {syllable: "Vo", devanagari: "वो", also: ["Bo"]}
+    - {syllable: "Ka", devanagari: "का"}
+    - {syllable: "Ki", devanagari: "की"}
+- nakshatra: Ardra
+  padas:
+    - {syllable: "Ku", devanagari: "कु"}
+    - {syllable: "Gha", devanagari: "घ"}
+    - {syllable: "Nga", devanagari: "ङ"}
+    - {syllable: "Chha", devanagari: "छ"}
+- nakshatra: Punarvasu
+  padas:
+    - {syllable: "Ke", devanagari: "के"}
+    - {syllable: "Ko", devanagari: "को"}
+    - {syllable: "Ha", devanagari: "हा"}
+    - {syllable: "Hi", devanagari: "ही"}
+- nakshatra: Pushya
+  padas:
+    - {syllable: "Hu", devanagari: "हु"}
+    - {syllable: "He", devanagari: "हे"}
+    - {syllable: "Ho", devanagari: "हो"}
+    - {syllable: "Da", devanagari: "डा"}
+- nakshatra: Ashlesha
+  padas:
+    - {syllable: "Di", devanagari: "डी"}
+    - {syllable: "Du", devanagari: "डू"}
+    - {syllable: "De", devanagari: "डे"}
+    - {syllable: "Do", devanagari: "डो"}
+- nakshatra: Magha
+  padas:
+    - {syllable: "Ma", devanagari: "मा"}
+    - {syllable: "Mi", devanagari: "मी"}
+    - {syllable: "Mu", devanagari: "मू"}
+    - {syllable: "Me", devanagari: "मे"}
+- nakshatra: Purva Phalguni
+  padas:
+    - {syllable: "Mo", devanagari: "मो"}
+    - {syllable: "Ta", devanagari: "टा"}
+    - {syllable: "Ti", devanagari: "टी"}
+    - {syllable: "Tu", devanagari: "टू"}
+- nakshatra: Uttara Phalguni
+  padas:
+    - {syllable: "Te", devanagari: "टे"}
+    - {syllable: "To", devanagari: "टो"}
+    - {syllable: "Pa", devanagari: "पा"}
+    - {syllable: "Pi", devanagari: "पी"}
+- nakshatra: Hasta
+  padas:
+    - {syllable: "Pu", devanagari: "पू"}
+    - {syllable: "Sha", devanagari: "ष"}
+    - {syllable: "Na", devanagari: "ण"}
+    - {syllable: "Tha", devanagari: "ठ"}
+- nakshatra: Chitra
+  padas:
+    - {syllable: "Pe", devanagari: "पे"}
+    - {syllable: "Po", devanagari: "पो"}
+    - {syllable: "Ra", devanagari: "रा"}
+    - {syllable: "Ri", devanagari: "री"}
+- nakshatra: Swati
+  padas:
+    - {syllable: "Ru", devanagari: "रू"}
+    - {syllable: "Re", devanagari: "रे"}
+    - {syllable: "Ro", devanagari: "रो"}
+    - {syllable: "Ta", devanagari: "ता"}
+- nakshatra: Vishakha
+  padas:
+    - {syllable: "Ti", devanagari: "ती"}
+    - {syllable: "Tu", devanagari: "तू"}
+    - {syllable: "Te", devanagari: "ते"}
+    - {syllable: "To", devanagari: "तो"}
+- nakshatra: Anuradha
+  padas:
+    - {syllable: "Na", devanagari: "ना"}
+    - {syllable: "Ni", devanagari: "नी"}
+    - {syllable: "Nu", devanagari: "नू"}
+    - {syllable: "Ne", devanagari: "ने"}
+- nakshatra: Jyeshtha
+  padas:
+    - {syllable: "No", devanagari: "नो"}
+    - {syllable: "Ya", devanagari: "या"}
+    - {syllable: "Yi", devanagari: "यी"}
+    - {syllable: "Yu", devanagari: "यू"}
+- nakshatra: Mula
+  padas:
+    - {syllable: "Ye", devanagari: "ये"}
+    - {syllable: "Yo", devanagari: "यो"}
+    - {syllable: "Bha", devanagari: "भा"}
+    - {syllable: "Bhi", devanagari: "भी"}
+- nakshatra: Purva Ashadha
+  padas:
+    - {syllable: "Bhu", devanagari: "भू"}
+    - {syllable: "Dha", devanagari: "धा"}
+    - {syllable: "Pha", devanagari: "फा"}
+    - {syllable: "Dha", devanagari: "ढ"}
+- nakshatra: Uttara Ashadha
+  padas:
+    - {syllable: "Bhe", devanagari: "भे"}
+    - {syllable: "Bho", devanagari: "भो"}
+    - {syllable: "Ja", devanagari: "जा"}
+    - {syllable: "Ji", devanagari: "जी"}
+- nakshatra: Shravana
+  padas:
+    - {syllable: "Khi", devanagari: "खी", also: ["Ju"]}
+    - {syllable: "Khu", devanagari: "खू", also: ["Je"]}
+    - {syllable: "Khe", devanagari: "खे", also: ["Jo"]}
+    - {syllable: "Kho", devanagari: "खो", also: ["Gha"]}
+- nakshatra: Dhanishta
+  padas:
+    - {syllable: "Ga", devanagari: "गा"}
+    - {syllable: "Gi", devanagari: "गी"}
+    - {syllable: "Gu", devanagari: "गु"}
+    - {syllable: "Ge", devanagari: "गे"}
+- nakshatra: Shatabhisha
+  padas:
+    - {syllable: "Go", devanagari: "गो"}
+    - {syllable: "Sa", devanagari: "सा"}
+    - {syllable: "Si", devanagari: "सी"}
+    - {syllable: "Su", devanagari: "सू"}
+- nakshatra: Purva Bhadrapada
+  padas:
+    - {syllable: "Se", devanagari: "से"}
+    - {syllable: "So", devanagari: "सो"}
+    - {syllable: "Da", devanagari: "दा"}
+    - {syllable: "Di", devanagari: "दी"}
+- nakshatra: Uttara Bhadrapada
+  padas:
+    - {syllable: "Du", devanagari: "दू"}
+    - {syllable: "Tha", devanagari: "थ"}
+    - {syllable: "Jha", devanagari: "झ"}
+    - {syllable: "Yna", devanagari: "ञ", also: ["Na", "Tra"]}
+- nakshatra: Revati
+  padas:
+    - {syllable: "De", devanagari: "दे"}
+    - {syllable: "Do", devanagari: "दो"}
+    - {syllable: "Cha", devanagari: "च"}
+    - {syllable: "Chi", devanagari: "ची"}
