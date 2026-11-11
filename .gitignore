@@ -16,3 +16,4 @@ research/sources/
 # database encryption key (never commit)
 data/*.key
 *.key
+.DS_Store

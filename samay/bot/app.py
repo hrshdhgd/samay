@@ -9,6 +9,7 @@ import asyncio
 import functools
 import logging
 import os
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -82,6 +83,38 @@ def _keyboard(reply: flow.Reply) -> InlineKeyboardMarkup | None:
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton(b.label, callback_data=b.data) for b in row] for row in reply.buttons]
     )
+
+
+DEBOUNCE_SECONDS = 3.0
+RECENT_KEY = "recent"
+
+
+def _monotonic() -> float:
+    return time.monotonic()
+
+
+def debounced(handler):
+    """Answer a message once when the same text arrives again within DEBOUNCE_SECONDS in the same chat: a
+    double tap, or a Telegram client that sent it twice. A handler that another handler calls for the same
+    update (the menu buttons call the command handlers) still runs, because the update id is the same."""
+
+    @functools.wraps(handler)
+    async def wrapper(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+        message, chat = update.effective_message, update.effective_chat
+        text = getattr(message, "text", None)
+        if text and chat is not None:
+            recent = ctx.application.bot_data.setdefault(RECENT_KEY, {})
+            now, uid = _monotonic(), getattr(update, "update_id", id(update))
+            for stale in [k for k, (t, _) in recent.items() if now - t > DEBOUNCE_SECONDS]:
+                del recent[stale]
+            seen = recent.get((chat.id, text))
+            if seen is not None and seen[1] != uid:
+                log.info("ignored a repeated message chat=%s", chat.id)
+                return None
+            recent.setdefault((chat.id, text), (now, uid))
+        return await handler(update, ctx)
+
+    return wrapper
 
 
 def chart_markup(style: str, degrees: bool) -> InlineKeyboardMarkup:
@@ -176,16 +209,19 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
 
 
 @guarded
+@debounced
 async def cmd_start(update: Update, ctx) -> None:
     await _say(update, prompts.WELCOME, MENU)
 
 
 @guarded
+@debounced
 async def cmd_help(update: Update, ctx) -> None:
     await _say(update, prompts.help_text(), MENU)
 
 
 @guarded
+@debounced
 async def cmd_birth(update: Update, ctx) -> None:
     await _begin(update, ctx, update.effective_chat.id)
 
@@ -241,6 +277,7 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
 
 
 @guarded
+@debounced
 async def cmd_ask(update: Update, ctx) -> None:
     question = " ".join(ctx.args or ())
     if not question:
@@ -250,6 +287,7 @@ async def cmd_ask(update: Update, ctx) -> None:
 
 
 @guarded
+@debounced
 async def cmd_home(update: Update, ctx) -> None:
     await _send_flow(update, ctx, update.effective_chat.id, flow.begin_home())
 
@@ -271,6 +309,7 @@ def _brief_status(home: Home, place) -> str:
 
 
 @guarded
+@debounced
 async def cmd_brief(update: Update, ctx) -> None:
     chat_id = update.effective_chat.id
     home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
@@ -330,6 +369,7 @@ async def _brief_job(ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 @guarded
+@debounced
 async def cmd_forget(update: Update, ctx) -> None:
     markup = InlineKeyboardMarkup([[
         InlineKeyboardButton(prompts.BTN_YES_DELETE, callback_data=FORGET_YES),
@@ -340,6 +380,7 @@ async def cmd_forget(update: Update, ctx) -> None:
 
 def _command(kind: str):
     @guarded
+    @debounced
     async def handler(update: Update, ctx) -> None:
         await _show(update, ctx, update.effective_chat.id, kind)
 
@@ -347,6 +388,7 @@ def _command(kind: str):
 
 
 @guarded
+@debounced
 async def on_text(update: Update, ctx) -> None:
     chat_id, text = update.effective_chat.id, update.effective_message.text or ""
     store = _store(ctx)

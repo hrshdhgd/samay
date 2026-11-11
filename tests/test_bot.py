@@ -1,4 +1,5 @@
 """Bot adapter: allowlist, wiring, persistence and logging. Handlers are driven with stub updates."""
+import itertools
 import logging
 import os
 import sqlite3
@@ -30,10 +31,13 @@ def ctx(store):
     return SimpleNamespace(application=application, error=None, args=[])
 
 
+_update_ids = itertools.count(1)
+
+
 def message(chat_id: int, text: str):
     msg = SimpleNamespace(text=text, reply_text=AsyncMock(), reply_photo=AsyncMock())
-    return SimpleNamespace(effective_chat=SimpleNamespace(id=chat_id), effective_message=msg,
-                           callback_query=None), msg
+    return SimpleNamespace(update_id=next(_update_ids), effective_chat=SimpleNamespace(id=chat_id),
+                           effective_message=msg, callback_query=None), msg
 
 
 def tap(chat_id: int, data: str):
@@ -733,3 +737,74 @@ async def test_the_model_does_not_replace_the_plain_today_unless_rewording_is_sw
     text = last_reply(msg)
     assert "Your birth Moon sign is" in text and "Technical details" in text
     assert not any(c["system"] == narrate.SYSTEM for c in ai_on["calls"])
+
+
+# --- a repeated message is answered once ----------------------------------------------------------------
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    now = {"t": 1000.0}
+    monkeypatch.setattr(bot, "_monotonic", lambda: now["t"])
+    return now
+
+
+async def test_start_sent_twice_is_answered_once(ctx, clock, caplog):
+    first, msg1 = message(ALLOWED, "/start")
+    second, msg2 = message(ALLOWED, "/start")  # a second, separate message, as a client double-send would be
+    with caplog.at_level(logging.INFO, logger="samay"):
+        await bot.cmd_start(first, ctx)
+        clock["t"] += 0.4
+        await bot.cmd_start(second, ctx)
+    assert msg1.reply_text.await_count == 1 and msg2.reply_text.await_count == 0
+    assert "ignored a repeated message" in caplog.text and "/start" not in caplog.text  # no message text logged
+
+
+async def test_the_same_command_works_again_after_the_window(ctx, clock):
+    for _ in range(2):
+        update, msg = message(ALLOWED, "/help")
+        await bot.cmd_help(update, ctx)
+        assert msg.reply_text.await_count == 1
+        clock["t"] += bot.DEBOUNCE_SECONDS + 0.1
+
+
+async def test_different_text_or_a_different_chat_is_never_suppressed(ctx, clock):
+    ctx.application.bot_data[bot.ALLOWED_KEY] = frozenset({ALLOWED, 222})
+    for chat, text, handler in ((ALLOWED, "/start", bot.cmd_start), (ALLOWED, "/help", bot.cmd_help),
+                                (222, "/start", bot.cmd_start)):
+        update, msg = message(chat, text)
+        await handler(update, ctx)
+        assert msg.reply_text.await_count == 1, (chat, text)
+
+
+async def test_a_menu_button_that_calls_a_command_handler_is_not_mistaken_for_a_repeat(ctx, store, clock):
+    update, msg = message(ALLOWED, prompts.MENU_FORGET)  # on_text -> cmd_forget, for the same update
+    await bot.on_text(update, ctx)
+    assert last_reply(msg) == prompts.FORGET_ASK
+    again, msg2 = message(ALLOWED, prompts.MENU_FORGET)  # a double tap on the same button
+    await bot.on_text(again, ctx)
+    msg2.reply_text.assert_not_awaited()
+
+
+async def test_a_double_tapped_question_is_answered_once(ctx, clock):
+    for expected in (1, 0):
+        update, msg = message(ALLOWED, "what does shani stand for")
+        await bot.on_text(update, ctx)
+        assert msg.reply_text.await_count == expected
+
+
+async def test_strangers_are_not_remembered_so_they_cannot_block_the_owner(ctx, clock):
+    stranger, _ = message(STRANGER, "/start")
+    await bot.cmd_start(stranger, ctx)
+    owner, msg = message(ALLOWED, "/start")
+    await bot.cmd_start(owner, ctx)
+    assert msg.reply_text.await_count == 1
+    assert (STRANGER, "/start") not in ctx.application.bot_data.get(bot.RECENT_KEY, {})
+
+
+async def test_old_entries_are_forgotten_so_the_memory_stays_small(ctx, clock):
+    for i in range(50):
+        update, _ = message(ALLOWED, f"/ask question {i}")
+        await bot.on_text(update, ctx)
+        clock["t"] += bot.DEBOUNCE_SECONDS + 0.1
+    assert len(ctx.application.bot_data[bot.RECENT_KEY]) <= 1
