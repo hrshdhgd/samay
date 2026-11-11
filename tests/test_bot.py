@@ -965,3 +965,25 @@ async def test_a_tap_too_old_to_acknowledge_is_still_handled_but_other_errors_ar
     update.callback_query.answer.side_effect = BadRequest("Chat not found")
     with pytest.raises(BadRequest):
         await bot.on_button(update, ctx)
+
+
+async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(ctx, store, monkeypatch):
+    import asyncio
+
+    _save_pune(store)
+    release = asyncio.Event()
+
+    async def slow(update, ctx_):
+        await release.wait()
+
+    slow_handler = bot.guarded(slow)
+    msg_update, _ = message(ALLOWED, "hello")
+    first = asyncio.create_task(slow_handler(msg_update, ctx))
+    second = asyncio.create_task(slow_handler(message(ALLOWED, "again")[0], ctx))
+    await asyncio.sleep(0)
+    tap_update, _ = tap(ALLOWED, "img:north:0")
+    await asyncio.wait_for(bot.on_button(tap_update, ctx), timeout=5)  # not blocked by the two waiting messages
+    tap_update.callback_query.edit_message_media.assert_awaited()
+    assert not second.done()  # messages in one chat stay in order
+    release.set()
+    await asyncio.gather(first, second)

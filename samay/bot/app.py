@@ -7,10 +7,12 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import contextvars
 import functools
 import logging
 import os
 import time
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -55,7 +57,7 @@ from ..subject import SELF, Subject
 from . import flow
 
 log = logging.getLogger("samay")
-STORE_KEY, ALLOWED_KEY = "store", "allowed"
+STORE_KEY, ALLOWED_KEY, LOCKS_KEY = "store", "allowed", "chat_locks"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
 QA_PREFIX = "qa:"  # qa:<sa|en|full>:<topic>
 QA_VIEWS = {"sa": "sanskrit", "en": "compact", "full": "full"}
@@ -161,6 +163,9 @@ def chart_markup(style: str, degrees: bool) -> InlineKeyboardMarkup:
     ]])
 
 
+_LOCK_HELD: contextvars.ContextVar[frozenset] = contextvars.ContextVar("chat_lock_held", default=frozenset())
+
+
 def guarded(handler):
     """Ignore, silently, anyone who is not on the allowlist."""
 
@@ -169,7 +174,18 @@ def guarded(handler):
         chat = update.effective_chat
         if chat is None or chat.id not in ctx.application.bot_data[ALLOWED_KEY]:
             return None
-        return await handler(update, ctx)
+        if update.callback_query is not None:  # a tap never waits behind a slow model call
+            return await handler(update, ctx)
+        # Updates run concurrently, but a chat's messages and commands still go one at a time, in order.
+        if chat.id in _LOCK_HELD.get():  # a handler that calls another guarded handler already holds the lock
+            return await handler(update, ctx)
+        locks = ctx.application.bot_data.setdefault(LOCKS_KEY, {})
+        async with locks.setdefault(chat.id, asyncio.Lock()):
+            token = _LOCK_HELD.set(_LOCK_HELD.get() | {chat.id})
+            try:
+                return await handler(update, ctx)
+            finally:
+                _LOCK_HELD.reset(token)
 
     return wrapper
 
@@ -431,7 +447,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
                 people=[(p.name, p.relation) for p in people], active=current.name if current else None)
     else:
         named = narrative.match_person(question, people)
-        route = qa.Route(qa.sort_question(question), named.name if named else None)
+        route = replace(qa.rule_route(question), person=named.name if named else None)
     if route.add and allow_intake:
         await _start_intake(update, ctx, chat_id, question)
         return
@@ -805,6 +821,7 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
         .pool_timeout(NETWORK_TIMEOUT)
         .get_updates_connect_timeout(NETWORK_TIMEOUT)
         .get_updates_read_timeout(NETWORK_TIMEOUT)
+        .concurrent_updates(True)
         .post_init(_post_init)
         .post_shutdown(_post_shutdown)
         .build()

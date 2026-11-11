@@ -102,6 +102,19 @@ class Answer:
     who: Subject = SELF  # whose chart this answer is about
 
 
+_MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
+_BIRTH_DATE = re.compile(
+    rf"\b\d{{1,2}}[-/.]\d{{1,2}}[-/.]\d{{4}}\b|\b\d{{4}}-\d{{2}}-\d{{2}}\b"
+    rf"|\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:of\s+)?{_MONTHS},?\s+\d{{4}}\b"
+    rf"|\b{_MONTHS}\s+\d{{1,2}}(?:st|nd|rd|th)?,?\s+\d{{4}}\b", re.IGNORECASE)
+_BIRTH_WORDS = re.compile(r"\b(?:born|birth|birthday|dob)\b", re.IGNORECASE)
+
+
+def describes_birth(text: str) -> bool:
+    """A plain rule for when the model cannot help: the message gives a full date and says 'born' or 'birth'."""
+    return bool(_BIRTH_DATE.search(text) and _BIRTH_WORDS.search(text))
+
+
 def sort_question(text: str) -> str | None:
     """Rule-based sorter: a planet name (English or Sanskrit) and whether the question is about a
     dasha. Returns a key from TOPICS, or None."""
@@ -190,7 +203,14 @@ async def route_with_model(text: str, client=None, previous: str | None = None, 
         # The small model answered but not usably: ask the larger one once. A silent reply (timeout, model down) is
         # not retried: the larger model is slower, and the whole bot waits for this call.
         route = _parse_route(await narrate.complete(MODEL_SYSTEM, prompt, client, model=narrate.AI_MODEL), names)
-    return route if route is not None else Route(sort_question(text))
+    return route if route is not None else rule_route(text)
+
+
+def rule_route(text: str) -> Route:
+    """The plain-rule route, used when the model is off, silent or unusable."""
+    if describes_birth(text):
+        return Route(None, None, True)
+    return Route(sort_question(text))
 
 
 async def sort_with_model(text: str, client=None, previous: str | None = None) -> str | None:

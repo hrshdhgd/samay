@@ -472,3 +472,26 @@ async def test_no_retry_when_both_models_are_the_same_and_rules_decide_if_both_f
     client, asked = _models_client({})  # a silent small model (timeout, down) is not retried on the slower one
     assert (await qa.route_with_model("what is shani", client)).topic == "planet:saturn"
     assert asked == ["same"]
+
+
+@pytest.mark.parametrize("text", [
+    "I have a person born 14th Aug 1989 at noon in Mumbai India - when will they get married?",
+    "my son was born on 02/11/2018 at 9pm in Mumbai",
+    "Maya, birth date 2015-03-14, Pune",
+    "born August 14, 1989 in Mumbai",
+])
+def test_a_message_giving_a_birth_date_is_a_request_to_add_a_person(text):
+    assert qa.describes_birth(text)
+    assert qa.rule_route(text) == qa.Route(None, None, True)
+
+
+@pytest.mark.parametrize("text", [
+    "when will I get married?", "what happens in August 1989?", "I was born in Pune", "the 7th house in 2026",
+])
+def test_a_date_or_a_birth_word_alone_is_not_enough(text):
+    assert not qa.describes_birth(text)
+
+
+async def test_a_silent_model_still_recognises_a_message_that_describes_someone(model_on):
+    route = await qa.route_with_model("born 14th Aug 1989 at noon in Mumbai, when will they marry?", _client(""))
+    assert route.add
