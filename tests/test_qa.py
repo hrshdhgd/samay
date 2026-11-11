@@ -431,3 +431,44 @@ async def test_the_router_prompt_describes_the_life_areas_and_warns_against_forc
 def test_the_ai_sees_the_planets_readings_for_a_life_area():
     a = qa.Answer("life:marriage", (), (), more_readings=())
     assert "Question: q" in qa._ai_prompt("q", a)
+
+
+def _models_client(replies):
+    """A client answering per model name; records which models were asked, in order."""
+    asked = []
+
+    def handler(request):
+        import json
+        model = json.loads(request.read())["model"]
+        asked.append(model)
+        return httpx.Response(200, json={"response": replies.get(model, "")})
+
+    return httpx.AsyncClient(transport=httpx.MockTransport(handler)), asked
+
+
+async def test_an_unusable_small_model_route_is_retried_once_on_the_larger_model(model_on, monkeypatch):
+    monkeypatch.setattr(narrate, "OLLAMA_MODEL", "small")
+    monkeypatch.setattr(narrate, "AI_MODEL", "large")
+    client, asked = _models_client({"small": "Saturn is a planet of discipline", "large": "planet:saturn"})
+    assert (await qa.route_with_model("the ringed one?", client)).topic == "planet:saturn"
+    assert asked == ["small", "large"]
+
+
+async def test_a_usable_small_model_route_never_calls_the_larger_model(model_on, monkeypatch):
+    monkeypatch.setattr(narrate, "OLLAMA_MODEL", "small")
+    monkeypatch.setattr(narrate, "AI_MODEL", "large")
+    client, asked = _models_client({"small": "none", "large": "planet:saturn"})
+    assert (await qa.route_with_model("hello", client)).topic is None
+    assert asked == ["small"]
+
+
+async def test_no_retry_when_both_models_are_the_same_and_rules_decide_if_both_fail(model_on, monkeypatch):
+    monkeypatch.setattr(narrate, "OLLAMA_MODEL", "same")
+    monkeypatch.setattr(narrate, "AI_MODEL", "same")
+    client, asked = _models_client({"same": "gibberish"})
+    assert (await qa.route_with_model("what is shani", client)).topic == "planet:saturn"
+    assert asked == ["same"]
+    monkeypatch.setattr(narrate, "AI_MODEL", "large")
+    client, asked = _models_client({})
+    assert (await qa.route_with_model("what is shani", client)).topic == "planet:saturn"
+    assert asked == ["same", "large"]
