@@ -38,6 +38,8 @@ PLANET_NAMES = {
 _ALIAS = {alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases}
 DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
 PERSONAL_WORDS = ("my", "mine", "me", "i", "am", "current", "running", "now", "own")
+# Offline fallback only (the model reads the message when it is on): a few single words, no question patterns.
+FUTURE_WORDS = ("future", "forecast", "horoscope", "destiny", "fortune")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 LAGNA_WORDS = ("lagna", "ascendant", "rising")
 ORDINAL_WORDS = {
@@ -47,7 +49,7 @@ ORDINAL_WORDS = {
 _HOUSE_NUMBER = re.compile(r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b")
 TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
-    + ["dasha:current", "concept:kalapurusha", "concept:dasha"]
+    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -76,6 +78,8 @@ def sort_question(text: str) -> str | None:
         return "concept:kalapurusha"
     planets = [_ALIAS[w] for w in words if w in _ALIAS]
     about_dasha = any(w in DASHA_WORDS for w in words)
+    if not planets and any(w in FUTURE_WORDS for w in words):
+        return "future:overview"
     house = _house_asked(text.casefold(), words)
     if house and not planets:
         return f"house:{house}"
@@ -86,18 +90,30 @@ def sort_question(text: str) -> str | None:
     return None
 
 
+TOPIC_HELP = {
+    "planet:<planet>": "what a planet stands for: sun, moon, mars, mercury, jupiter, venus, saturn, rahu or ketu "
+                       "(also by a Sanskrit name such as shani, guru or shukra)",
+    "dasha:<planet>": "the dasha (life chapter) of that planet",
+    "dasha:current": "the person's own current dasha",
+    "concept:dasha": "what a dasha is, in general",
+    "house:<1-12>": "what a house means; the lagna or ascendant is house:1",
+    "concept:kalapurusha": "the cosmic person (Kalapurusha)",
+    "future:overview": "the person's future, luck or what to expect: any horoscope-style question about their own life",
+}
 MODEL_SYSTEM = (
-    "You sort questions about Vedic astrology into one topic key. Reply with exactly one key from "
-    "the list and nothing else. Reply 'none' if no key fits, including any request for a "
-    "prediction."
+    "You route messages sent to a Jyotish chat bot. Reply with exactly one topic key and nothing else, or 'none' "
+    "for greetings, thanks, small talk or anything that fits no topic. A short follow-up such as 'and Jupiter?' "
+    "or 'what about the next one?' is about the same kind of topic as the previous one. Topics:\n"
+    + "\n".join(f"- {key}: {what}" for key, what in TOPIC_HELP.items())
 )
 
 
-async def sort_with_model(text: str, client=None) -> str | None:
-    """Local-model sorter for messier wording. Its reply is used only if it is a known key;
-    otherwise, or if the model is off or fails, the rule-based sorter decides."""
+async def sort_with_model(text: str, client=None, previous: str | None = None) -> str | None:
+    """Local-model router. It reads the message (and the previous topic, for follow-ups) and picks a known key or
+    'none'. Its reply is used only if it is a known key; if the model is off or fails, a few plain rules decide."""
     keys = "\n".join(sorted(TOPICS))
-    reply = await narrate.complete(MODEL_SYSTEM, f"Keys:\n{keys}\nnone\n\nQuestion: {text}\nKey:", client)
+    prompt = f"Keys:\n{keys}\nnone\n\nPrevious topic: {previous or 'none'}\n\nMessage: {text[:MAX_QUESTION_CHARS]}\nKey:"
+    reply = await narrate.complete(MODEL_SYSTEM, prompt, client)
     if reply:
         key = reply.strip().split()[0].strip("`'\".,").casefold() if reply.strip() else ""
         if key in TOPICS:
@@ -170,6 +186,38 @@ def resolve_topic(topic: str | None, birth: ResolvedBirth | None, now: datetime)
     return topic
 
 
+def _transit_facts(report) -> list[str]:
+    """Where the slow planets are now, counted from the person's birth Moon sign. Positions only."""
+    out = []
+    for planet, house in report.transit_houses:
+        sign = sign_index(report.sky.planets[planet].longitude)
+        out.append(f"{planet.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), the {_ordinal(house)} sign from your Moon sign.")
+    return out
+
+
+def _future_answer(birth: ResolvedBirth | None, now: datetime, entries_dir: Path | None) -> Answer:
+    """A reading of the period of life the person is in: the running dasha and what the checked text lists for it,
+    where that planet sits in their chart (Brihat Jataka chapter 20), and where Jupiter and Saturn are now.
+    It never says that a particular event will happen."""
+    if birth is None:
+        return Answer("future:overview", (), ())
+    report = service.today_report(birth, now)
+    facts = _transit_facts(report)
+    if report.current_dasha is None:
+        return Answer("future:overview", (), tuple(facts))
+    maha, antar = report.current_dasha
+    lord = maha.lord
+    chart = service.natal_report(birth).chart
+    entries = entry_store.answers_for(f"dasha:{lord}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
+    own = [*_dasha_facts(lord, birth, now),
+           f"Inside it you are in the {antar.lord.title()} sub-chapter until {antar.end:%d %b %Y}.",
+           *_planet_facts(lord, birth)]
+    reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
+    shares = house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
+    return Answer("future:overview", tuple(entries), tuple(own + facts), (), None,
+                  reading if shares else None, shares)
+
+
 def answer_topic(
     topic: str | None,
     birth: ResolvedBirth | None,
@@ -181,6 +229,8 @@ def answer_topic(
     topic = resolve_topic(topic, birth, now)
     if topic is None or topic not in TOPICS:
         return Answer(None, (), ())
+    if topic == "future:overview":
+        return _future_answer(birth, now, entries_dir)
     found = entry_store.answers_for(topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     kind, _, subject = topic.partition(":")
     facts: list[str] = []
@@ -205,10 +255,15 @@ def answer_topic(
 
 
 AI_SYSTEM = (
-    "You answer questions about Vedic astrology (Jyotish) for a family app. "
-    "Answer in plain English in at most 120 words, as plain text with no markdown. "
+    "You are samay, a warm, friendly guide to Vedic astrology (Jyotish) in a family chat, and you talk naturally. "
+    "For greetings or small talk reply briefly and kindly, and mention that you can explain planets, houses and "
+    "dashas and read the current period of life. "
+    "Answer in plain English in at most 150 words, as plain text with no markdown. "
     "Be honest that Jyotish is a traditional belief system and not science. "
-    "Do not predict specific events in anyone's life, and do not give medical, legal or financial advice. "
+    "If asked about the future, give a warm, thoughtful reading of the themes and tendencies of the current "
+    "period, using the facts supplied, the way a thoughtful astrologer would, and keep it hopeful and grounded. "
+    "Never state that a specific event will or will not happen, never give dates for events, and do not give "
+    "medical, legal or financial advice. "
     "Verified facts may be supplied; never contradict them. Everything else you say is your own general "
     "knowledge, so if you are unsure, say so."
 )
@@ -216,20 +271,26 @@ MAX_QUESTION_CHARS = 500
 MAX_AI_CHARS = 1200
 
 
-def _ai_prompt(question: str, answer: Answer) -> str:
+def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     verified = [e.english for e in answer.entries] + list(answer.facts) + list(answer.notes)
+    if answer.reading is not None:
+        r = answer.reading
+        verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
+                        + "; ".join(e.text for e in r.effects))
     parts = []
     if verified:
         parts.append("Verified facts:\n" + "\n".join(f"- {f}" for f in verified))
+    if history:
+        parts.append("Recent conversation:\n" + "\n".join(f"Person: {q}\nYou: {r}" for q, r in history))
     parts.append(f"Question: {question[:MAX_QUESTION_CHARS]}")
     return "\n\n".join(parts)
 
 
-async def ai_answer(question: str, answer: Answer, client=None) -> str | None:
+async def ai_answer(question: str, answer: Answer, client=None, history=()) -> str | None:
     """The model's own answer to the question, shown apart from the sourced one and labelled as the AI's.
     It is given the checked entries and chart facts as verified context. None if the model is off or fails."""
     reply = await narrate.complete(
-        AI_SYSTEM, _ai_prompt(question, answer), client,
+        AI_SYSTEM, _ai_prompt(question, answer, history), client,
         model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS,
     )
     if not reply:

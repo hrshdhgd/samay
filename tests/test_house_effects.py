@@ -149,12 +149,15 @@ def test_answer_shows_the_quote_the_strength_rule_and_the_frame(checked, monkeyp
     monkeypatch.setattr(hx, "RULES_PATH", checked)
     monkeypatch.setattr(hx.reading, "__defaults__", (checked,))
     birth = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))  # Saturn, Sagittarius, 2nd house
-    text = render_answer(qa.answer_topic("planet:saturn", birth, datetime(2026, 11, 9, tzinfo=UTC)))
-    assert "What Brihat Jataka chapter 20 says about Saturn in your 2nd house:" in text
-    assert "will have his wealth carried away by the king" in text and "same effects as Sun" in text
-    assert "Your Saturn is in Sagittarius, a neutral planet's sign." in text
-    assert "gives no share for a neutral sign" in text
-    assert "It is not a forecast" in text
+    answer = qa.answer_topic("planet:saturn", birth, datetime(2026, 11, 9, tzinfo=UTC))
+    compact = render_answer(answer)
+    assert "Saturn in your 2nd house (Sagittarius, a neutral sign):" in compact
+    assert "will have his wealth carried away by the king" in compact and "the same as Sun here" in compact
+    assert "gives no share for a neutral sign" in compact and "An old text's view, not a forecast." in compact
+    full = render_answer(answer, "full")
+    assert "What Brihat Jataka chapter 20 says about Saturn in your 2nd house:" in full
+    assert "same effects as Sun" in full and "Your Saturn is in Sagittarius, a neutral planet's sign." in full
+    assert "It is not a forecast" in full
 
 
 def test_obscured_planet_gets_the_astangata_shares(checked):

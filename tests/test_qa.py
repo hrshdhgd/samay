@@ -47,7 +47,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 33
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 34
 
 
 def _client(reply):
@@ -205,8 +205,9 @@ def test_planet_answer_with_a_birth_adds_the_entries_for_its_house(tmp_path):
 
 
 def test_the_ai_is_told_the_guardrails():
-    for phrase in ("not science", "Do not predict specific events", "medical, legal or financial advice",
-                   "never contradict them", "no markdown", "at most 120 words"):
+    for phrase in ("not science", "medical, legal or financial advice",
+                   "never contradict them", "no markdown", "at most 150 words",
+                   "Never state that a specific event will or will not happen", "talk naturally"):
         assert phrase in qa.AI_SYSTEM, phrase
 
 
@@ -278,7 +279,7 @@ def test_a_dasha_answer_with_sourced_entries_carries_the_not_a_forecast_frame(tm
     entry_store.load_entries.cache_clear()
     try:
         text = render_answer(qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path), birth_known=False)
-        assert "listed effects" in text and prompts.DASHA_FRAME in text and "It is not a forecast." in text
+        assert "listed effects" in text and prompts.DASHA_FRAME in text and "not a forecast" in text
         assert text.index("listed effects") < text.index(prompts.DASHA_FRAME)
         other = render_answer(qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path), birth_known=False)
         assert prompts.DASHA_FRAME not in other  # the frame belongs to dasha answers only
@@ -297,3 +298,77 @@ def test_an_entry_for_a_different_dasha_system_never_answers_a_vimshottari_quest
         assert qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path).entries == ()
     finally:
         entry_store.load_entries.cache_clear()
+
+
+# --- the model reads the message; the rules are only a fallback -------------------------------------------
+
+
+@pytest.mark.parametrize("text", ["What is my future", "tell me my horoscope"])
+def test_offline_fallback_knows_a_few_single_words_for_the_future(text):
+    assert qa.sort_question(text) == "future:overview"
+
+
+def test_the_fallback_does_not_pattern_match_whole_questions():
+    for text in ("Will I get married this year?", "am I going to travel next year", "what will happen to me"):
+        assert qa.sort_question(text) is None
+
+
+async def test_the_model_routes_any_wording_to_a_known_topic(model_on):
+    for wording in ("will I ever get that promotion?", "anything good coming for me?", "my luck lately?"):
+        assert await qa.sort_with_model(wording, _client("future:overview")) == "future:overview"
+
+
+async def test_the_router_prompt_lists_the_topics_and_the_previous_one(model_on):
+    seen = {}
+
+    def handler(request):
+        seen["body"] = request.read().decode()
+        return httpx.Response(200, json={"response": "none"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    assert await qa.sort_with_model("hello there", client, previous="planet:saturn") is None
+    body = seen["body"]
+    assert "Previous topic: planet:saturn" in body and "future:overview" in body and "small talk" in body
+    assert "follow-up" in body and "dasha:<planet>" in body
+
+
+async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_facts(model_on, monkeypatch):
+    captured = {}
+
+    async def fake(system, prompt, client=None, model=None, timeout=None):
+        captured["prompt"] = prompt
+        return "ok"
+
+    monkeypatch.setattr(narrate, "complete", fake)
+    answer = qa.answer_topic("planet:moon", None, NOW)
+    await qa.ai_answer("and the sun?", answer, history=[("what is the moon?", "The Moon is the mind.")])
+    prompt = captured["prompt"]
+    assert prompt.index("Verified facts:") < prompt.index("Recent conversation:") < prompt.index("Question: and the sun?")
+    assert "Person: what is the moon?\nYou: The Moon is the mind." in prompt
+
+
+@needs_kernel
+def test_the_future_reading_is_built_from_the_running_dasha_the_chart_and_the_transits():
+    from samay.render.text import render_answer
+
+    a = qa.answer_topic("future:overview", _birth(), NOW)
+    assert a.topic == "future:overview" and [e.id for e in a.entries] == ["ph-19-22-jupiter"]  # Jupiter's chapter runs
+    assert a.reading is not None and a.reading.planet == "jupiter"
+    facts = " ".join(a.facts)
+    assert "Venus sub-chapter until 02 Sep 2027" in facts and "Saturn is in Pisces (Meena), the 11th sign" in facts
+    text = render_answer(a)
+    assert text.startswith("🔮 Your current period of life")
+    assert "Sources: Phaladeepika 19.22; Brihat Jataka 20." in text and "not a forecast" in text
+    assert qa.answer_topic("future:overview", None, NOW).entries == ()
+    assert render_answer(qa.answer_topic("future:overview", None, NOW), birth_known=False).startswith("To look at your future")
+
+
+def test_the_answer_shows_one_lead_entry_and_one_source_line_unless_more_is_asked_for():
+    from samay.render.text import render_answer
+
+    answer = qa.answer_topic("planet:venus", None, NOW)
+    compact, full = render_answer(answer, birth_known=False), render_answer(answer, "full", birth_known=False)
+    assert compact.count("Varahamihira") == 1 and compact.count("Source:") == 1 and "(translation-checked)" not in compact
+    assert full.count("• Varahamihira") >= 4 and "tr. N. Chidambaram Iyer" in full and "· checked" in full
+    sanskrit = render_answer(answer, "sanskrit", birth_known=False)
+    assert "मदनो" in sanskrit and sanskrit.count("ⓘ Verse text") == 1 and "Varahamihira" not in sanskrit

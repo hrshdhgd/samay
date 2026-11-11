@@ -65,6 +65,15 @@ Relatives can type a question or tap **❓ Ask a question**. The reply has up to
    it is not from a checked source and may be wrong. The model is told to avoid predicting events and giving
    medical, legal or financial advice, and is given the verified facts as context.
 
+**Conversation.** With the model on, the bot reads each message with the model, so any wording works (the code does
+not pattern-match questions): it picks a topic, answers a follow-up such as "and Jupiter?" using the previous topic,
+and replies to small talk with just the labelled AI message. Plain answers are short by default (one lead statement,
+your chart facts and one "Source" line) with a **➕ More** button for the rest and **📜 Show Sanskrit** where a verse
+exists. "What is my future?" gets a reading of the period of life you are in: your running dasha and what the checked
+text lists for it, where that planet sits in your chart, and where Jupiter and Saturn are now; the AI adds its own words
+in a separate message. To make follow-ups work, the last 4 turns per chat are kept **in memory only** for 15 minutes
+(never on disk, never logged, cleared by "Forget me" and by a restart).
+
 Questions without a sourced answer say so, and only their topic key (never the words) is counted for
 `uv run samay research-queue`. The question text is not stored or logged. How entries are researched and
 checked: `research/program.md`

@@ -528,8 +528,8 @@ async def test_question_about_a_planet_quotes_the_checked_entry_and_adds_chart_f
     await bot.on_text(update, ctx)
     text = last_reply(msg)
     assert "Varahamihira describes Saturn as the sorrow of the cosmic person (Kalapurusha)." in text
-    assert "— Brihat Jataka 2.1 (translation-checked)" in text
-    assert "From your chart:\nIn your birth chart, Saturn is in Sagittarius (Dhanu), the 2nd house" in text
+    assert "Sources: Brihat Jataka 2.1, 20.1, 20.11 · checked" in text and "(translation-checked)" not in text
+    assert "In your birth chart, Saturn is in Sagittarius (Dhanu), the 2nd house" in text
     assert store.top_misses() == []  # answered, so nothing to research
 
 
@@ -575,7 +575,7 @@ async def test_rahu_question_gets_its_sourced_names_and_the_astronomy_note(ctx, 
     update, msg = message(ALLOWED, "what is rahu")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert "Moon's ascending node" in text and "— Brihat Jataka 2.3 (translation-checked)" in text
+    assert "Moon's ascending node" in text and "Source: Brihat Jataka 2.3 · checked" in text
     assert "Moon's path crosses the Sun's path" in text and prompts.NO_SOURCE not in text
     assert store.top_misses() == []
 
@@ -589,13 +589,14 @@ async def test_answer_has_no_sanskrit_button_without_a_checked_verse(ctx):
 async def test_planet_answers_offer_the_sanskrit_view_and_label_the_typed_text(ctx):
     update, msg = message(ALLOWED, "what is venus")
     await bot.on_text(update, ctx)
-    assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+    assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {
+        prompts.BTN_MORE: "qa:full:planet:venus", prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
     update, msg = tap(ALLOWED, "qa:sa:planet:venus")
     update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(update, ctx)
     text = update.callback_query.edit_message_text.await_args.args[0]
     assert "मदनो" in text and "madano" in text  # verse 2.1: Venus is desire (madana)
-    assert text.count(prompts.VERSE_UNPROOFREAD) == 2  # one for each verse shown (2.1 and 2.3)
+    assert text.count(prompts.VERSE_UNPROOFREAD) == 1  # one note under all the verses shown (2.1 and 2.3)
     assert "Varahamihira describes Venus as the desire" not in text  # the English is swapped out, not added to
 
 
@@ -670,7 +671,7 @@ async def test_sourced_answer_comes_first_then_the_ai_in_its_own_labelled_messag
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     first, second = _texts(msg)
-    assert "— Brihat Jataka 2.1 (translation-checked)" in first and "AI says" not in first
+    assert "Source: Brihat Jataka 2.1 · checked" in first and "AI says" not in first
     assert second == f"🤖 AI says: “Saturn is linked with discipline and patience in Jyotish.”\n\n{prompts.AI_CAVEAT}"
     call = next(c for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM)
     assert "Verified facts:" in call["prompt"] and "sorrow of the cosmic person" in call["prompt"]
@@ -681,8 +682,8 @@ async def test_the_ai_answers_what_the_sources_cannot(ctx, store, ai_on):
     ai_on["sort"], ai_on["ai"] = "none", "A nakshatra is one of 27 divisions of the Moon's path."
     update, msg = message(ALLOWED, "what is a nakshatra?")
     await bot.on_text(update, ctx)
-    first, second = _texts(msg)
-    assert first == prompts.NO_TOPIC_AI and second.startswith("🤖 AI says: “A nakshatra is one of 27")
+    (only,) = _texts(msg)  # nothing to source, so just the model, labelled as the AI's
+    assert only.startswith("🤖 AI says: “A nakshatra is one of 27") and prompts.AI_CAVEAT in only
     assert store.top_misses() == []  # nothing was sorted into a topic, so nothing is counted
 
 
@@ -808,3 +809,88 @@ async def test_old_entries_are_forgotten_so_the_memory_stays_small(ctx, clock):
         await bot.on_text(update, ctx)
         clock["t"] += bot.DEBOUNCE_SECONDS + 0.1
     assert len(ctx.application.bot_data[bot.RECENT_KEY]) <= 1
+
+
+# --- conversation: follow-ups, small talk, and what is (not) remembered -----------------------------------
+
+
+def _router_prompts(cfg):
+    return [c["prompt"] for c in cfg["calls"] if c["system"] == qa.MODEL_SYSTEM]
+
+
+async def test_a_follow_up_is_routed_with_the_previous_topic_and_the_ai_sees_the_exchange(ctx, ai_on, clock):
+    update, _ = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    clock["t"] += 10
+    ai_on["sort"] = "planet:jupiter"
+    update, msg = message(ALLOWED, "and the other big one?")  # no keyword for the code to match
+    await bot.on_text(update, ctx)
+    assert "Previous topic: planet:saturn" in _router_prompts(ai_on)[1]
+    prompt = [c["prompt"] for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM][1]
+    assert "Person: What does Shani stand for?\nYou: Saturn is linked with discipline" in prompt
+    assert "Jupiter" in _texts(msg)[0]
+
+
+async def test_small_talk_gets_only_the_models_reply_and_is_not_counted_as_a_miss(ctx, store, ai_on, clock):
+    ai_on["sort"], ai_on["ai"] = "none", "Namaste! Ask me about a planet, a house or your current period."
+    update, msg = message(ALLOWED, "hello, how are you?")
+    await bot.on_text(update, ctx)
+    (only,) = _texts(msg)
+    assert only.startswith("🤖 AI says: “Namaste!") and store.top_misses() == []
+
+
+async def test_small_talk_when_the_model_is_down_gets_the_plain_decline(ctx, ai_on, clock):
+    ai_on["sort"], ai_on["ai"] = "none", None
+    update, msg = message(ALLOWED, "hello")
+    await bot.on_text(update, ctx)
+    assert _texts(msg) == [prompts.NO_TOPIC]
+
+
+async def test_the_conversation_is_remembered_for_a_few_turns_then_forgotten(ctx, ai_on, clock):
+    for i in range(6):
+        update, _ = message(ALLOWED, f"question number {i}")
+        await bot.on_text(update, ctx)
+        clock["t"] += 10
+    assert len(bot._recent_turns(ctx, ALLOWED)) == bot.CHAT_TURNS
+    clock["t"] += bot.CHAT_TTL_SECONDS + 1
+    assert bot._recent_turns(ctx, ALLOWED) == []
+
+
+async def test_forgetting_me_clears_the_remembered_conversation(ctx, store, ai_on, clock):
+    update, _ = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    assert bot._recent_turns(ctx, ALLOWED)
+    update, _ = tap(ALLOWED, bot.FORGET_YES)
+    await bot.on_button(update, ctx)
+    assert bot._recent_turns(ctx, ALLOWED) == []
+
+
+async def test_the_conversation_exists_only_in_memory(ctx, store, ai_on, clock, caplog):
+    update, _ = message(ALLOWED, "my cousin Raju asked about shani")
+    with caplog.at_level(logging.DEBUG):
+        await bot.on_text(update, ctx)
+    with sqlite3.connect(store.path) as c:
+        assert "Raju" not in "\n".join(c.iterdump())
+    assert "Raju" not in caplog.text and bot._recent_turns(ctx, ALLOWED)
+
+
+async def test_without_the_model_nothing_is_remembered(ctx, clock):
+    update, _ = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    assert bot._recent_turns(ctx, ALLOWED) == []
+
+
+async def test_more_and_less_buttons_switch_the_answer_in_place(ctx):
+    update, _ = tap(ALLOWED, "qa:full:planet:venus")
+    update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(update, ctx)
+    edit = update.callback_query.edit_message_text.await_args
+    assert edit.args[0].count("• Varahamihira") >= 4 and "tr. N. Chidambaram Iyer" in edit.args[0]
+    assert buttons_of(edit.kwargs["reply_markup"]) == {
+        prompts.BTN_LESS: "qa:en:planet:venus", prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+    update, _ = tap(ALLOWED, "qa:en:planet:venus")
+    update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(update, ctx)
+    compact = update.callback_query.edit_message_text.await_args
+    assert compact.args[0].count("Varahamihira") == 1
+    assert prompts.BTN_MORE in buttons_of(compact.kwargs["reply_markup"])

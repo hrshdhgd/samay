@@ -40,7 +40,7 @@ BRIEF_STATUS_OFF = "Your morning message is off."
 BRIEF_NEED_HOME = "First, I need to know where you live now, so I can send the right time.\n\n"
 ASK_QUESTION = (
     "What would you like to know? Ask about a planet, a house or a dasha, for example:\n"
-    "• What does Saturn stand for?\n• What does the 4th house mean?\n• What is my current dasha?"
+    "• What does Saturn stand for?\n• What does the 4th house mean?\n• What is my future?"
 )
 NO_TOPIC = (
     "I can only answer from classical texts that have been checked, and from your own chart. "
@@ -63,9 +63,16 @@ VERSE_UNPROOFREAD = (
 BTN_SANSKRIT = "📜 Show Sanskrit"
 BTN_ENGLISH = "🔤 English"
 DASHA_FRAME = (
-    "This is what an old text lists in general for this chapter of life. Its modern translator stresses that how much "
-    "of it applies depends on how strong and well placed the planet is in the chart. It is not a forecast."
+    "An old text's general list, not a forecast. How much applies depends on how strong and well placed the planet "
+    "is in the chart."
 )
+READING_FRAME_SHORT = "An old text's view, not a forecast."
+FUTURE_TITLE = "🔮 Your current period of life"
+NEED_BIRTH_FOR_FUTURE = (
+    "To look at your future I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+)
+BTN_MORE = "➕ More"
+BTN_LESS = "➖ Less"
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."

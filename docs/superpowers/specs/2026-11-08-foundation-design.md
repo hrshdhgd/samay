@@ -276,6 +276,18 @@ sorter and the answer can use different models (`OLLAMA_QA_MODEL`); rewording `/
 separate, off-by-default switch (`OLLAMA_NARRATE`). A model failure shows a short notice and keeps
 the sourced answer.
 
+### Conversational chat (decided 2026-11-10)
+
+The owner asked for conversational chat and for the system not to hard-code the questions it expects. With the model
+on, the model is the first reader of every message: it routes to a known topic key (with a description of each topic and
+the previous topic, so follow-ups work) or to "none" for small talk, and its reply is accepted only if it is a known key.
+The code keeps only a few single-word rules as an offline fallback (planet and house names, a handful of future words), no
+question phrases. Small talk and out-of-topic messages get just the labelled "AI says:" message. The last four turns per
+chat are kept in memory only, for 15 minutes, never written to disk or logs, and cleared by /forget and by restart.
+"What is my future?" is a topic (`future:overview`): a reading assembled from the running dasha (checked entry), the
+dasha lord's chapter 20 line, and current transit positions, never a claim that an event will happen. Answers are compact
+by default (one lead entry, chart facts, one source line) with More / Less and Show Sanskrit buttons.
+
 ### Verse display and sources (decided 2026-11-09)
 
 - **Display:** answers show the English paraphrase first, with a **Show Sanskrit** button that swaps

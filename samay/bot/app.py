@@ -54,7 +54,11 @@ from . import flow
 log = logging.getLogger("samay")
 STORE_KEY, ALLOWED_KEY = "store", "allowed"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
-QA_PREFIX = "qa:"  # qa:<sa|en>:<topic>
+QA_PREFIX = "qa:"  # qa:<sa|en|full>:<topic>
+QA_VIEWS = {"sa": "sanskrit", "en": "compact", "full": "full"}
+CHAT_KEY = "chats"  # in memory only: a few recent turns per chat, so follow-ups make sense
+CHAT_TURNS = 4
+CHAT_TTL_SECONDS = 15 * 60
 BRIEF_PREFIX = "brief:"  # brief:<hour> or brief:off
 BRIEF_HOURS = (6, 7, 8, 9)
 BRIEF_CHECK_SECONDS = 300
@@ -234,42 +238,77 @@ async def _resolved_birth(ctx, chat_id: int) -> ResolvedBirth | None:
     return resolved if isinstance(resolved, ResolvedBirth) else None
 
 
-def answer_markup(answer: qa.Answer, sanskrit: bool) -> InlineKeyboardMarkup | ReplyKeyboardMarkup:
-    """A Sanskrit/English switch when an entry in the answer has a checked verse; else the menu."""
-    if not any(e.shows_verse for e in answer.entries):
-        return MENU
-    label, mode = (prompts.BTN_ENGLISH, "en") if sanskrit else (prompts.BTN_SANSKRIT, "sa")
-    return InlineKeyboardMarkup([[InlineKeyboardButton(label, callback_data=f"{QA_PREFIX}{mode}:{answer.topic}")]])
+def answer_markup(answer: qa.Answer, view: str = "compact") -> InlineKeyboardMarkup | ReplyKeyboardMarkup:
+    """Buttons under a sourced answer: more or less detail, and the Sanskrit view when a checked verse exists.
+    With nothing to switch between, the normal menu."""
+    if view == "sanskrit":
+        row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en:{answer.topic}")]
+    else:
+        row = []
+        if view == "full":
+            row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en:{answer.topic}"))
+        elif len(answer.entries) > 1:
+            row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full:{answer.topic}"))
+        if any(e.shows_verse for e in answer.entries):
+            row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa:{answer.topic}"))
+    return InlineKeyboardMarkup([row]) if row else MENU
+
+
+def _recent_turns(ctx, chat_id: int) -> list[tuple[float, str | None, str, str]]:
+    """(time, topic, question, reply) for this chat's last few turns, if recent. Never written to disk or logged."""
+    now = _monotonic()
+    turns = ctx.application.bot_data.get(CHAT_KEY, {}).get(chat_id, [])
+    return [t for t in turns if now - t[0] <= CHAT_TTL_SECONDS]
+
+
+def _remember_turn(ctx, chat_id: int, topic: str | None, question: str, reply: str) -> None:
+    chats = ctx.application.bot_data.setdefault(CHAT_KEY, {})
+    chats[chat_id] = [*_recent_turns(ctx, chat_id), (_monotonic(), topic, question[:200], reply[:400])][-CHAT_TURNS:]
 
 
 async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> None:
-    """Sort the question into a topic, answer from checked entries and chart facts, and count the
-    topic (never the words) when there is no sourced answer."""
-    topic = await qa.sort_with_model(question) if narrate.enabled() else qa.sort_question(question)
+    """Understand the message, answer from checked entries and chart facts, and, when the local model is on, follow
+    with its own labelled answer. Small talk gets only the model's reply. Only a topic key is counted when nothing
+    sourced exists; the words are kept in memory for a few turns so follow-ups work, and nowhere else."""
+    ai = narrate.enabled()
+    turns = _recent_turns(ctx, chat_id)
+    history = [(q, r) for _, _, q, r in turns]
+    if ai:
+        topic = await qa.sort_with_model(question, previous=turns[-1][1] if turns else None)
+    else:
+        topic = qa.sort_question(question)
     birth = await _resolved_birth(ctx, chat_id)
     answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, question)
-    if answer.topic is not None and not answer.entries:
+    if answer.topic not in (None, "future:overview") and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
-    ai = narrate.enabled()
+    if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
+        reply = await qa.ai_answer(question, answer, history=history)
+        if reply:
+            _remember_turn(ctx, chat_id, None, question, reply)
+            await _say(update, render_ai(reply), MENU)
+        else:
+            await _say(update, prompts.NO_TOPIC, MENU)
+        return
     sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
-    await _say(update, sourced, answer_markup(answer, False))
+    await _say(update, sourced, answer_markup(answer))
     if ai:
         # A second message, so the sourced answer is never delayed by the (slower) model.
-        reply = await qa.ai_answer(question, answer)
+        reply = await qa.ai_answer(question, answer, history=history)
+        if reply:
+            _remember_turn(ctx, chat_id, answer.topic, question, reply)
         await _say(update, render_ai(reply) if reply else prompts.AI_UNAVAILABLE, MENU)
 
 
 async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None:
     mode, _, topic = choice.partition(":")
-    if mode not in ("sa", "en") or topic not in qa.TOPICS:
+    if mode not in QA_VIEWS or topic not in qa.TOPICS:
         return
     birth = await _resolved_birth(ctx, chat_id)
     answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now())
-    sanskrit = mode == "sa"
+    view = QA_VIEWS[mode]
     try:
         await update.callback_query.edit_message_text(
-            render_answer(answer, sanskrit, birth_known=birth is not None),
-            reply_markup=answer_markup(answer, sanskrit),
+            render_answer(answer, view, birth_known=birth is not None), reply_markup=answer_markup(answer, view)
         )
     except BadRequest as e:
         if "not modified" not in str(e).lower():
@@ -452,6 +491,7 @@ async def on_button(update: Update, ctx) -> None:
     if data in (FORGET_YES, FORGET_NO):
         if data == FORGET_YES:
             await asyncio.to_thread(_store(ctx).forget, chat_id)
+            ctx.application.bot_data.get(CHAT_KEY, {}).pop(chat_id, None)  # and what was remembered in memory
         await _say(update, prompts.FORGOTTEN if data == FORGET_YES else prompts.KEPT, MENU)
         return
     stored = await asyncio.to_thread(_store(ctx).get_draft, chat_id)

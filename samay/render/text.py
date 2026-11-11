@@ -1,6 +1,7 @@
 """Reports -> plain text for Telegram and the CLI. All user-facing wording lives in render/."""
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
 
 from ..engine.daylight import RahuKaala
@@ -207,29 +208,85 @@ def render_brief(
     return "\n".join(lines)
 
 
-def render_answer(answer, sanskrit: bool = False, birth_known: bool = True, ai_follows: bool = False) -> str:
-    """A grounded answer: checked entries word for word with their citations, then the person's own
-    chart facts. `sanskrit` shows each entry's checked verse in place of the English, where it has one."""
+def _ref(e) -> tuple[int, int, str]:
+    """(chapter, first verse, label) for sorting and showing a citation such as '2.4–5' or '1.15 (note)'."""
+    c = e.citation
+    verse = str(c["verse"])
+    head = verse.split(",")[0].strip()
+    first = int(re.match(r"\d+", head).group())
+    note = " (note)" if "note" in verse else ""
+    return int(c["chapter"]), first, f"{c['chapter']}.{head.replace('-', '–')}{note}"
+
+
+def sources_line(entries, reading=None, full: bool = False) -> str | None:
+    """One line naming every source an answer used, in place of a citation after each entry."""
+    groups: dict[str, set[tuple[int, int, str]]] = {}
+    editions: dict[str, str] = {}
+    for e in entries:
+        groups.setdefault(e.citation["text"], set()).add(_ref(e))
+        editions.setdefault(e.citation["text"], e.citation.get("edition", ""))
+    levels = {e.verification.level for e in entries}
+    if reading is not None:
+        refs = groups.setdefault("Brihat Jataka", set())
+        refs.update((20, v, f"20.{v}") for v in {x.verse for x in reading.effects} | {11})
+        levels.add(reading.level)
+    if not groups:
+        return None
+    parts = []
+    for text, refs in groups.items():
+        edition = f" ({editions[text]})" if full and editions.get(text) else ""
+        parts.append(f"{text}{edition} " + ", ".join(label for _, _, label in sorted(refs)))
+    status = "checked, some by a Sanskrit reader" if "sanskrit-checked" in levels else "checked"
+    label = "Sources" if sum(len(r) for r in groups.values()) > 1 else "Source"
+    return f"{label}: {'; '.join(parts)} · {status}"
+
+
+def _render_verses(answer) -> str:
+    """The Sanskrit view: each checked verse once, then one note that nobody fluent has proofread it."""
+    verses, seen, unproofread = [], set(), False
+    for e in answer.entries:
+        if e.shows_verse and e.verse.devanagari not in seen:
+            seen.add(e.verse.devanagari)
+            unproofread = unproofread or not e.verse.proofread
+            verses.append(f"{e.verse.devanagari}\n{e.verse.roman}\n({e.citation['text']} {_ref(e)[2]})")
+    if not verses:
+        return prompts.NO_SOURCE
+    return "\n\n".join([*verses, *([prompts.VERSE_UNPROOFREAD] if unproofread else [])])
+
+
+def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_follows: bool = False) -> str:
+    """A grounded answer. `view`: "compact" (the lead entry, the person's chart facts, one source line), "full"
+    (every entry) or "sanskrit" (the checked verses)."""
     if answer.topic is None:
         return prompts.NO_TOPIC_AI if ai_follows else prompts.NO_TOPIC
-    blocks: list[str] = [answer.name_line] if answer.name_line else []
-    for e in answer.entries:
-        if sanskrit and e.shows_verse:
-            note = "" if e.verse.proofread else f"\n{prompts.VERSE_UNPROOFREAD}"
-            blocks.append(f"{e.verse.devanagari}\n{e.verse.roman}\n— {e.citation_text()}{note}")
-        else:
-            blocks.append(f"{e.english}\n— {e.citation_text()}")
-    if any(e.topic.startswith("dasha:") for e in answer.entries):
+    if answer.topic == "future:overview" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_FUTURE
+    if view == "sanskrit":
+        return _render_verses(answer)
+    full = view == "full"
+    blocks: list[str] = [prompts.FUTURE_TITLE] if answer.topic == "future:overview" else []
+    if answer.name_line:
+        blocks.append(answer.name_line)
+    shown = answer.entries if full else answer.entries[:1]
+    if len(shown) > 1:
+        blocks.append("\n".join(f"• {e.english}" for e in shown))
+    elif shown:
+        blocks.append(shown[0].english)
+    if any(e.topic.startswith("dasha:") for e in shown):
         blocks.append(prompts.DASHA_FRAME)
-    if not answer.entries:
+    if not answer.entries and answer.topic != "future:overview":
         blocks.append(prompts.NO_SOURCE_AI if ai_follows else prompts.NO_SOURCE)
     blocks += list(answer.notes)
     if answer.reading is not None:
-        blocks.append(render_reading(answer.reading, answer.shares))
+        blocks.append(render_reading(answer.reading, answer.shares, full=full))
     if answer.facts:
-        blocks.append("From your chart:\n" + "\n".join(answer.facts))
+        facts = "\n".join(answer.facts)
+        blocks.append(f"From your chart:\n{facts}" if full else facts)
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
+    source = sources_line(shown, answer.reading, full)
+    if source:
+        blocks.append(source)
     blocks.append(DISCLAIMER)
     return "\n\n".join(blocks)
 
@@ -243,6 +300,11 @@ STRENGTH_WORDS = {
     "inimical": "an enemy's sign",
     "depression": "its depression sign (where the text counts it weakest)",
 }
+STRENGTH_SHORT = {
+    "exaltation": "its exaltation sign", "moolatrikona": "its moolatrikona sign", "own": "its own sign",
+    "friendly": "a friend's sign", "neutral": "a neutral sign", "inimical": "an enemy's sign",
+    "depression": "its depression sign",
+}
 
 
 def _share_phrase(label: str, share: str | None) -> str:
@@ -255,9 +317,26 @@ def _share_phrase(label: str, share: str | None) -> str:
     return f"{share} of the {label} effects come to pass"
 
 
-def render_reading(r, shares) -> str:
+def _rule_sentence(r, shares) -> str:
+    """The text's own rule (20.11) on how much of the quoted effects applies, in one sentence."""
+    if not shares.get("good") and not shares.get("bad"):
+        return "The text's rule on how much applies gives no share for a neutral sign."
+    kinds = {e.kind for e in r.effects}
+    parts = [_share_phrase(label, shares.get(label)) for label in ("good", "bad") if kinds & {label, "mixed"}]
+    return "By the text's own rule, " + "; ".join(parts) + "."
+
+
+def render_reading(r, shares, full: bool = True) -> str:
     """Chapter XX on one planet in one house: the quoted lines, then the text's own strength rule."""
     name = r.planet.title()
+    if not full:
+        obscured = "; close to the Sun, so obscured" if r.astangata else ""
+        lines = [f"{name} in your {ordinal(r.house)} house ({SIGNS[r.sign]}, {STRENGTH_SHORT[r.strength]}{obscured}):"]
+        for e in r.effects:
+            same = f" (the text gives {name} the same as {e.borrowed_from.title()} here)" if e.borrowed_from else ""
+            lines.append(f"“{e.text}”{same}")
+        lines.append(f"{_rule_sentence(r, shares)} {prompts.READING_FRAME_SHORT}")
+        return "\n".join(lines)
     lines = [f"What Brihat Jataka chapter 20 says about {name} in your {ordinal(r.house)} house:"]
     for e in r.effects:
         borrowed = f" (the text gives {name} here the same effects as {e.borrowed_from.title()})" if e.borrowed_from else ""
@@ -267,15 +346,7 @@ def render_reading(r, shares) -> str:
     where = f"Your {name} is in {SIGNS[r.sign]}, {STRENGTH_WORDS[r.strength]}"
     if r.astangata:
         where += ", and close enough to the Sun to be obscured (astangata)"
-    lines.append(where + ".")
-    kinds = {e.kind for e in r.effects}
-    if not shares.get("good") and not shares.get("bad"):
-        lines.append("Stanza 20.11, which says how much of these effects apply, gives no share for a neutral sign.")
-    else:
-        parts = [_share_phrase(label, shares.get(label)) for label in ("good", "bad")
-                 if kinds & {label, "mixed"}]
-        lines.append("By the text's own rule (20.11), " + "; ".join(parts) + ".")
-    lines += [f"— {r.citation} ({r.level})", prompts.READING_FRAME]
+    lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
     return "\n".join(lines)
 
 
