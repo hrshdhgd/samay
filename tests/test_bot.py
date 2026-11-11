@@ -1,3 +1,5 @@
+import asyncio
+
 """Bot adapter: allowlist, wiring, persistence and logging. Handlers are driven with stub updates."""
 import itertools
 import logging
@@ -547,8 +549,8 @@ async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_t
     assert "marriage" not in dump and "son's" not in dump and "current dasha mean" not in dump
 
 
-async def test_prediction_questions_are_declined_and_not_recorded(ctx, store):
-    update, msg = message(ALLOWED, "Will I get married this year?")
+async def test_a_question_about_the_future_with_no_topic_is_declined_and_not_recorded(ctx, store):
+    update, msg = message(ALLOWED, "will I win the lottery")
     await bot.on_text(update, ctx)
     assert last_reply(msg) == prompts.NO_TOPIC and store.top_misses() == []
 
@@ -894,3 +896,59 @@ async def test_more_and_less_buttons_switch_the_answer_in_place(ctx):
     compact = update.callback_query.edit_message_text.await_args
     assert compact.args[0].count("Varahamihira") == 1
     assert prompts.BTN_MORE in buttons_of(compact.kwargs["reply_markup"])
+
+
+# --- "typing..." while the bot works ---------------------------------------------------------------------
+
+
+def _chat_with_actions(chat_id=ALLOWED):
+    return SimpleNamespace(id=chat_id, send_action=AsyncMock())
+
+
+async def test_typing_is_shown_while_the_block_runs_and_stops_afterwards(monkeypatch):
+    monkeypatch.setattr(bot, "TYPING_REFRESH_SECONDS", 0.01)
+    chat = _chat_with_actions()
+    update = SimpleNamespace(effective_chat=chat)
+    async with bot.typing(update):
+        await asyncio.sleep(0.05)
+    calls_while_running = chat.send_action.await_count
+    assert calls_while_running >= 2 and chat.send_action.await_args.args[0] == bot.ChatAction.TYPING
+    await asyncio.sleep(0.05)
+    assert chat.send_action.await_count == calls_while_running  # cancelled when the block ended
+
+
+async def test_a_failing_typing_hint_never_breaks_the_reply(monkeypatch):
+    monkeypatch.setattr(bot, "TYPING_REFRESH_SECONDS", 0.01)
+    chat = _chat_with_actions()
+    chat.send_action.side_effect = RuntimeError("network")
+    async with bot.typing(SimpleNamespace(effective_chat=chat)):
+        await asyncio.sleep(0.03)  # no exception escapes
+
+
+async def test_typing_does_nothing_when_the_chat_cannot_show_it():
+    async with bot.typing(SimpleNamespace(effective_chat=SimpleNamespace(id=1))):
+        pass
+
+
+async def test_the_chat_shows_typing_while_the_model_thinks(ctx, ai_on, clock, monkeypatch):
+    monkeypatch.setattr(bot, "TYPING_REFRESH_SECONDS", 0.01)
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    update.effective_chat = _chat_with_actions()
+    real = ai_on["calls"]
+
+    async def slow(system, prompt, client=None, model=None, timeout=None):
+        real.append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
+        await asyncio.sleep(0.05)
+        return "planet:saturn" if system == qa.MODEL_SYSTEM else "A slow answer."
+
+    monkeypatch.setattr(narrate, "complete", slow)
+    await bot.on_text(update, ctx)
+    assert update.effective_chat.send_action.await_count >= 2
+    assert _texts(msg)[-1].startswith("🤖 AI says: “A slow answer.”")
+
+
+async def test_no_typing_is_shown_when_the_model_is_off(ctx, clock):
+    update, _ = message(ALLOWED, "What does Shani stand for?")
+    update.effective_chat = _chat_with_actions()
+    await bot.on_text(update, ctx)
+    update.effective_chat.send_action.assert_not_awaited()

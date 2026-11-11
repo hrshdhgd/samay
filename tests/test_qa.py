@@ -21,7 +21,11 @@ NOW = datetime(2026, 11, 9, tzinfo=UTC)
         ("When does my Venus dasha end?", "dasha:venus"),
         ("what is my current mahadasha", "dasha:current"),
         ("Which period am I in?", "dasha:current"),
-        ("Will I get married this year?", None),
+        ("Will I get married this year?", "life:marriage"),  # a single keyword; the model reads the whole message
+        ("what is the wedding season", "life:marriage"),
+        ("how is my career", "life:career"),
+        ("what does my current dasha mean for my son's marriage", "dasha:current"),  # a dasha word wins
+        ("what does saturn mean for marriage", "planet:saturn"),  # a planet named wins
         ("namaste", None),
         ("", None),
         ("Mars and Venus together?", "planet:mars"),  # the first planet named
@@ -47,7 +51,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 34
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 42
 
 
 def _client(reply):
@@ -309,7 +313,7 @@ def test_offline_fallback_knows_a_few_single_words_for_the_future(text):
 
 
 def test_the_fallback_does_not_pattern_match_whole_questions():
-    for text in ("Will I get married this year?", "am I going to travel next year", "what will happen to me"):
+    for text in ("am I going to travel next year", "what will happen to me", "will I win the lottery"):
         assert qa.sort_question(text) is None
 
 
@@ -372,3 +376,55 @@ def test_the_answer_shows_one_lead_entry_and_one_source_line_unless_more_is_aske
     assert full.count("• Varahamihira") >= 4 and "tr. N. Chidambaram Iyer" in full and "· checked" in full
     sanskrit = render_answer(answer, "sanskrit", birth_known=False)
     assert "मदनो" in sanskrit and sanskrit.count("ⓘ Verse text") == 1 and "Varahamihira" not in sanskrit
+
+
+# --- life areas: marriage, career and the rest, read through the houses the text assigns -------------------
+
+
+def test_every_life_area_points_at_houses_that_have_checked_entries():
+    for area, (houses, label) in qa.LIFE_AREAS.items():
+        answer = qa.answer_topic(f"life:{area}", None, NOW)
+        assert {e.topic for e in answer.entries} == {f"house:{h}" for h in houses}, area
+        assert label and answer.facts == ()
+
+
+def test_marriage_is_the_seventh_house_and_says_what_the_text_gives_it():
+    from samay.render.text import render_answer
+
+    text = render_answer(qa.answer_topic("life:marriage", None, NOW), birth_known=False)
+    assert text.startswith("On marriage and partnership: Brihat Jataka reads this from the 7th house of the chart.")
+    assert "signifies wife" in text and "Manmatha (desire)" in text
+    assert "cannot say whether or when anything will happen" in text
+
+
+@needs_kernel
+def test_marriage_with_a_birth_shows_the_house_its_sign_its_planets_and_their_readings():
+    from samay.render.text import render_answer
+
+    a = qa.answer_topic("life:marriage", _birth(), NOW)  # Pune 1990: Scorpio lagna, so the 7th house is Taurus (the Moon)
+    assert a.facts == ("Your 7th house is in Taurus (Vrishabha), with Moon in it.",)
+    assert [r.planet for r, _ in a.more_readings] == ["moon"]
+    text = render_answer(a)
+    assert "Moon in your 7th house" in text and "Sources:" in text
+
+
+def test_the_model_can_route_a_marriage_question_to_its_area(model_on):
+    import asyncio
+
+    assert asyncio.run(qa.sort_with_model("will my marriage work out?", _client("life:marriage"))) == "life:marriage"
+
+
+async def test_the_router_prompt_describes_the_life_areas_and_warns_against_forcing_a_topic(model_on):
+    seen = {}
+
+    def handler(request):
+        seen["body"] = request.read().decode()
+        return httpx.Response(200, json={"response": "none"})
+
+    await qa.sort_with_model("what about marriage?", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    assert "life:<area>" in seen["body"] and "marriage" in seen["body"] and "a wrong topic is worse than" in seen["body"]
+
+
+def test_the_ai_sees_the_planets_readings_for_a_life_area():
+    a = qa.Answer("life:marriage", (), (), more_readings=())
+    assert "Question: q" in qa._ai_prompt("q", a)

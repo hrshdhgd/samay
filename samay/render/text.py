@@ -18,6 +18,7 @@ from ..engine.vedic import (
     sign_index,
 )
 from ..models import NatalReport, NeedsDisambiguation, TodayReport
+from ..qa import LIFE_AREAS
 from . import prompts
 
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
@@ -265,6 +266,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return _render_verses(answer)
     full = view == "full"
     blocks: list[str] = [prompts.FUTURE_TITLE] if answer.topic == "future:overview" else []
+    if answer.topic.startswith("life:"):
+        houses, label = LIFE_AREAS[answer.topic.split(":")[1]]
+        which = " and ".join(ordinal(h) for h in houses)
+        blocks.append(f"On {label}: Brihat Jataka reads this from the {which} house of the chart.\n{prompts.LIFE_FRAME}")
     if answer.name_line:
         blocks.append(answer.name_line)
     shown = answer.entries if full else answer.entries[:1]
@@ -279,12 +284,14 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     blocks += list(answer.notes)
     if answer.reading is not None:
         blocks.append(render_reading(answer.reading, answer.shares, full=full))
+    for reading, shares in answer.more_readings:
+        blocks.append(render_reading(reading, shares, full=full))
     if answer.facts:
         facts = "\n".join(answer.facts)
         blocks.append(f"From your chart:\n{facts}" if full else facts)
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
-    source = sources_line(shown, answer.reading, full)
+    source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full)
     if source:
         blocks.append(source)
     blocks.append(DISCLAIMER)

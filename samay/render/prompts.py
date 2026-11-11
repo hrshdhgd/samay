@@ -73,6 +73,10 @@ NEED_BIRTH_FOR_FUTURE = (
 )
 BTN_MORE = "➕ More"
 BTN_LESS = "➖ Less"
+LIFE_FRAME = (
+    "This shows what the text associates with this area and what sits there in your chart. It cannot say whether or "
+    "when anything will happen."
+)
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."

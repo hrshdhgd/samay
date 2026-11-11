@@ -6,6 +6,7 @@ chat ids and error types only, never birth details.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import functools
 import logging
 import os
@@ -22,6 +23,7 @@ from telegram import (
     ReplyKeyboardMarkup,
     Update,
 )
+from telegram.constants import ChatAction
 from telegram.error import BadRequest, InvalidToken
 from telegram.ext import (
     Application,
@@ -90,6 +92,7 @@ def _keyboard(reply: flow.Reply) -> InlineKeyboardMarkup | None:
 
 
 DEBOUNCE_SECONDS = 3.0
+TYPING_REFRESH_SECONDS = 4.0  # Telegram shows "typing…" for about 5 seconds, so it is renewed until the work is done
 RECENT_KEY = "recent"
 
 
@@ -119,6 +122,30 @@ def debounced(handler):
         return await handler(update, ctx)
 
     return wrapper
+
+
+@contextlib.asynccontextmanager
+async def typing(update: Update, action: str = ChatAction.TYPING):
+    """Show "typing…" (or another chat action) in the chat for as long as the block runs, so a slow answer does not
+    look like a dead bot. Failing to send the indicator never stops the answer."""
+    chat = update.effective_chat
+    send = getattr(chat, "send_action", None)
+
+    async def keep_showing() -> None:
+        while True:
+            try:
+                await send(action)
+            except Exception as e:  # noqa: BLE001 - a cosmetic hint must never break the reply
+                log.debug("chat action not sent: %s", type(e).__name__)
+            await asyncio.sleep(TYPING_REFRESH_SECONDS)
+
+    task = asyncio.create_task(keep_showing()) if send is not None else None
+    try:
+        yield
+    finally:
+        if task is not None:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
 
 def chart_markup(style: str, degrees: bool) -> InlineKeyboardMarkup:
@@ -206,7 +233,8 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     else:
         natal = await asyncio.to_thread(service.natal_report, resolved)
         if kind == "chart":
-            picture = await asyncio.to_thread(render_chart_png, natal, "south", False)
+            async with typing(update, ChatAction.UPLOAD_PHOTO):
+                picture = await asyncio.to_thread(render_chart_png, natal, "south", False)
             await update.effective_message.reply_photo(photo=picture, reply_markup=chart_markup("south", False))
         text = render_dasha(natal, now, technical=False) if kind == "dasha" else render_chart(natal, technical=False)
     await _say(update, text, MENU)
@@ -274,7 +302,8 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
     turns = _recent_turns(ctx, chat_id)
     history = [(q, r) for _, _, q, r in turns]
     if ai:
-        topic = await qa.sort_with_model(question, previous=turns[-1][1] if turns else None)
+        async with typing(update):
+            topic = await qa.sort_with_model(question, previous=turns[-1][1] if turns else None)
     else:
         topic = qa.sort_question(question)
     birth = await _resolved_birth(ctx, chat_id)
@@ -282,7 +311,8 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
     if answer.topic not in (None, "future:overview") and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
-        reply = await qa.ai_answer(question, answer, history=history)
+        async with typing(update):
+            reply = await qa.ai_answer(question, answer, history=history)
         if reply:
             _remember_turn(ctx, chat_id, None, question, reply)
             await _say(update, render_ai(reply), MENU)
@@ -293,7 +323,8 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
     await _say(update, sourced, answer_markup(answer))
     if ai:
         # A second message, so the sourced answer is never delayed by the (slower) model.
-        reply = await qa.ai_answer(question, answer, history=history)
+        async with typing(update):
+            reply = await qa.ai_answer(question, answer, history=history)
         if reply:
             _remember_turn(ctx, chat_id, answer.topic, question, reply)
         await _say(update, render_ai(reply) if reply else prompts.AI_UNAVAILABLE, MENU)

@@ -47,7 +47,27 @@ ORDINAL_WORDS = {
     "ninth": 9, "tenth": 10, "eleventh": 11, "twelfth": 12,
 }
 _HOUSE_NUMBER = re.compile(r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b")
+# Life areas people ask about, and the house(s) Brihat Jataka I.15-16 (and Iyer's note) assign to each. A question about
+# marriage is answered from what the text says the 7th house stands for, plus what sits in that house in the chart.
+LIFE_AREAS = {
+    "marriage": ((7,), "marriage and partnership"),
+    "career": ((10,), "work and career"),
+    "children": ((5,), "children"),
+    "wealth": ((2, 11), "money and gains"),
+    "home": ((4,), "home and family comforts"),
+    "siblings": ((3,), "brothers and sisters"),
+    "father": ((9,), "father and teachers"),
+    "health": ((1, 6), "health"),
+}
+# Offline fallback only: single words, no question patterns (the model reads the message when it is on).
+LIFE_WORDS = {
+    "marriage": "marriage", "marry": "marriage", "married": "marriage", "wedding": "marriage", "spouse": "marriage",
+    "wife": "marriage", "husband": "marriage", "career": "career", "job": "career", "profession": "career",
+    "children": "children", "child": "children", "kids": "children", "son": "children", "daughter": "children",
+    "money": "wealth", "wealth": "wealth", "finances": "wealth", "health": "health", "illness": "health",
+}
 TOPICS = frozenset(
+    [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview"]
 )
@@ -68,6 +88,7 @@ class Answer:
     name_line: str | None = None  # "Shani is the Sanskrit and Hindi name for Saturn." when asked by that name
     reading: house_effects.Reading | None = None  # chapter XX on this planet in this person's house
     shares: dict | None = None  # how much of the good and bad effects the text says apply
+    more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
 
 
 def sort_question(text: str) -> str | None:
@@ -80,6 +101,9 @@ def sort_question(text: str) -> str | None:
     about_dasha = any(w in DASHA_WORDS for w in words)
     if not planets and any(w in FUTURE_WORDS for w in words):
         return "future:overview"
+    area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
+    if area and not planets and not about_dasha:
+        return f"life:{area}"
     house = _house_asked(text.casefold(), words)
     if house and not planets:
         return f"house:{house}"
@@ -98,11 +122,13 @@ TOPIC_HELP = {
     "concept:dasha": "what a dasha is, in general",
     "house:<1-12>": "what a house means; the lagna or ascendant is house:1",
     "concept:kalapurusha": "the cosmic person (Kalapurusha)",
+    "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "future:overview": "the person's future, luck or what to expect: any horoscope-style question about their own life",
 }
 MODEL_SYSTEM = (
     "You route messages sent to a Jyotish chat bot. Reply with exactly one topic key and nothing else, or 'none' "
-    "for greetings, thanks, small talk or anything that fits no topic. A short follow-up such as 'and Jupiter?' "
+    "for greetings, thanks, small talk or anything that fits no topic. Pick a topic only if the message is really "
+    "about it; a wrong topic is worse than 'none'. A short follow-up such as 'and Jupiter?' "
     "or 'what about the next one?' is about the same kind of topic as the previous one. Topics:\n"
     + "\n".join(f"- {key}: {what}" for key, what in TOPIC_HELP.items())
 )
@@ -218,6 +244,30 @@ def _future_answer(birth: ResolvedBirth | None, now: datetime, entries_dir: Path
                   reading if shares else None, shares)
 
 
+def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | None) -> Answer:
+    """A life area (marriage, career, ...) read through the house(s) the text assigns to it: what that house stands for,
+    and, with a birth, which sign it is in and what planets sit there, each with its chapter 20 reading."""
+    houses = LIFE_AREAS[area][0]
+    folder = entries_dir or entry_store.ENTRIES_DIR
+    found = [e for h in houses for e in entry_store.answers_for(f"house:{h}", SYSTEMS, folder)]
+    facts: list[str] = []
+    readings: list[tuple] = []
+    if birth is not None:
+        chart = service.natal_report(birth).chart
+        lagna = sign_index(chart.ascendant)
+        rules = house_effects.load_rules()
+        for h in houses:
+            sign = (lagna + h - 1) % 12
+            tenants = [g for g in GRAHAS if sign_index(chart.planets[g].longitude) == sign]
+            who = ", ".join(g.title() for g in tenants) if tenants else "no planets"
+            facts.append(f"Your {_ordinal(h)} house is in {SIGNS[sign]} ({RASHIS[sign]}), with {who} in it.")
+            for g in tenants:
+                r = house_effects.reading(chart, g)
+                if r is not None and r.effects:
+                    readings.append((r, house_effects.shares(rules, r)))
+    return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings))
+
+
 def answer_topic(
     topic: str | None,
     birth: ResolvedBirth | None,
@@ -231,8 +281,10 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir)
-    found = entry_store.answers_for(topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     kind, _, subject = topic.partition(":")
+    if kind == "life":
+        return _life_answer(subject, birth, entries_dir)
+    found = entry_store.answers_for(topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     facts: list[str] = []
     if birth is not None and subject in GRAHAS:
         facts = _planet_facts(subject, birth) if kind == "planet" else _dasha_facts(subject, birth, now)
@@ -275,6 +327,9 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     verified = [e.english for e in answer.entries] + list(answer.facts) + list(answer.notes)
     if answer.reading is not None:
         r = answer.reading
+        verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
+                        + "; ".join(e.text for e in r.effects))
+    for r, _ in answer.more_readings:
         verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
                         + "; ".join(e.text for e in r.effects))
     parts = []
