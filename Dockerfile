@@ -29,6 +29,7 @@ COPY data/profiles ./data/profiles
 COPY data/time_standards ./data/time_standards
 COPY data/entries ./data/entries
 COPY data/rules ./data/rules
+COPY data/nakshatra_syllables.yaml ./data/nakshatra_syllables.yaml
 # Built once by scripts/build_gazetteer.py; nothing is downloaded or built on the server.
 COPY data/gazetteer.sqlite data/gazetteer.lock ./data/
 COPY scripts/build_gazetteer.py ./scripts/build_gazetteer.py
