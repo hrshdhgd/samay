@@ -1,0 +1,122 @@
+# Mantreswara's Phaladeepika (Dr G. S. Kapoor's English translation, a modern in-copyright translation, so every
+# entry is PARAPHRASED, not quoted): how the text judges and TIMES areas of life, tied to the same house topics as the
+# Brihat Jataka entries. Only the method is used (which house, planet or lord to examine, and which dasha the text
+# links to an event). The long lists of harsh outcomes in chapters 10 and 16 are deliberately not turned into entries;
+# the notes at research/notes/phaladeepika-life.md say what was left out and why. UNCHECKED until h2 checks them.
+
+- id: ph-10-13-marriage-timing
+  topic: house:7
+  system: any
+  english: >-
+    On the timing of marriage, Mantreswara's Phaladeepika says it is likely to take place during the dasha of a
+    planet that sits in the 7th house, one that aspects the 7th house, or the lord of the 7th house. It can also
+    happen when the lord of the lagna passes through the sign that is the 7th house.
+  citation: {text: Phaladeepika, chapter: 10, verse: "13", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), p. 113"}
+  verification: {level: unchecked}
+
+- id: ph-10-14-marriage-timing-2
+  topic: house:7
+  system: any
+  english: >-
+    A second rule for the timing of marriage in the same text: compare the ruler of the sign holding the 7th lord and
+    the ruler of the navamsa it occupies, with Venus and the Moon. Marriage is likely in the dasha of whichever of these
+    is strongest, when Jupiter moves through a sign trine to the sign or navamsa of the 7th lord.
+  citation: {text: Phaladeepika, chapter: 10, verse: "14", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 113-114"}
+  verification: {level: unchecked}
+
+- id: ph-10-1-marriage-houses
+  topic: house:7
+  system: any
+  english: >-
+    For marriage and married life, Mantreswara's Phaladeepika looks at the 7th house, its lord and Venus, and also at the
+    5th house for children. It says these flourish when they are associated with or aspected by benefic planets, and
+    suffer when malefic planets afflict them.
+  citation: {text: Phaladeepika, chapter: 10, verse: "1, 4, 6", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 111-112"}
+  verification: {level: unchecked}
+
+- id: ph-10-6-marriage-good
+  topic: house:7
+  system: any
+  english: >-
+    The same chapter says a strong benefic lord of the 7th house gives a spouse of good character who bears children,
+    and that benefic planets in the 7th house give good results unless they also rule the 6th, 8th or 12th house.
+  citation: {text: Phaladeepika, chapter: 10, verse: "6", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), p. 112"}
+  verification: {level: unchecked}
+
+- id: ph-5-1-livelihood
+  topic: house:10
+  system: any
+  english: >-
+    For livelihood, Mantreswara's Phaladeepika looks at the 10th house. The strongest planet in the 10th from the lagna or
+    the Moon shows the source of income, and the profession follows the ruler of the navamsa in which the 10th lord sits.
+    The translator notes that in modern times the same planet can be read more widely: a strong Moon in the 10th, for
+    example, can point to milk, pearls, silk, silver or dealings with foreign lands.
+  citation: {text: Phaladeepika, chapter: 5, verse: "1", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 51-52"}
+  verification: {level: unchecked}
+
+- id: ph-5-2-livelihood-sun
+  topic: house:10
+  system: any
+  english: >-
+    The text links a 10th lord in the Sun's navamsa to livelihood through fruit trees, mantras, medicines, wool, working
+    with metals, or service to a king or respected person; in the Moon's navamsa to water products and pearls,
+    farming and cattle, pilgrimage, drapery or service to a woman; in Mercury's to writing, scripture, clerical work,
+    astrology or priesthood; in Jupiter's to temples, teaching, scripture, righteous work or government favour;
+    in Venus's to music, dance, cattle, silver, scents, ornaments and fine cloth; and in Saturn's to hard physical
+    labour, roots and fruits, and service under others.
+  citation: {text: Phaladeepika, chapter: 5, verse: "2-8", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 52-53"}
+  verification: {level: unchecked}
+
+- id: ph-16-1-lagna
+  topic: house:1
+  system: any
+  english: >-
+    For the 1st house and the person's overall life, Mantreswara's Phaladeepika examines the lord of the lagna. It says
+    a lord of the lagna that is strong, in a good house (a kendra or trikona), and in its own or exalted sign points to
+    health, standing and a happy family, while a weak one placed in a difficult house points to hardship. A lord of
+    the lagna in a movable sign is tied to moving about, in a fixed sign to staying in one place, and in a dual sign to
+    a mix of both.
+  citation: {text: Phaladeepika, chapter: 16, verse: "2-4", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 155-156"}
+  verification: {level: unchecked}
+
+- id: ph-16-5-second-house
+  topic: house:2
+  system: any
+  english: >-
+    For the 2nd house (family, wealth and speech), the text examines its lord and the planets linked to it: the lord of
+    the 2nd joined with the Sun is tied to wealth used generously, with Jupiter to learning in the scriptures, with
+    Mercury to economics, with the Moon to skill in the arts, and with Venus to the pleasures of love, among others.
+  citation: {text: Phaladeepika, chapter: 16, verse: "5-6", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), p. 156"}
+  verification: {level: unchecked}
+
+- id: ph-16-7-third-house
+  topic: house:3
+  system: any
+  english: >-
+    For the 3rd house (brothers and courage), the text examines the lord of the 3rd house and its significator, Mars. A
+    strong 3rd lord joined with benefics, with a strong Mars in a good house, is tied to the well-being of brothers; weak
+    ones in difficult houses to trouble with brothers.
+  citation: {text: Phaladeepika, chapter: 16, verse: "7-8", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), pp. 156-157"}
+  verification: {level: unchecked}
+
+- id: ph-16-10-fourth-house
+  topic: house:4
+  system: any
+  english: >-
+    For the 4th house (the mother and home), the text examines the lord of the 4th and the Moon. Strong ones, joined or
+    aspected by benefics, point to the mother's well-being and happiness; weak ones in difficult houses, hemmed in by
+    malefics, to trouble. The same method is applied to the father, brothers and children, using each one's house,
+    significator, lord and link to the lagna.
+  citation: {text: Phaladeepika, chapter: 16, verse: "10, 12", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), p. 157"}
+  verification: {level: unchecked}
+
+- id: ph-12-1-children-houses
+  topic: house:5
+  system: any
+  english: >-
+    For children, Mantreswara's Phaladeepika looks at the 5th house from the lagna and from the Moon, the lord of the 5th,
+    and Jupiter, the planet of children. It says children are assured when Jupiter and the 5th lords are well placed, with
+    the 5th house aspected by a benefic or by a planet ruling a good house (not the 6th, 8th or 12th), or when the lord of
+    the lagna and the lord of the 5th are joined or aspect each other kindly.
+  citation: {text: Phaladeepika, chapter: 12, verse: "1", edition: "tr. Dr G. S. Kapoor (panchanga.lv PDF), p. 121"}
+  verification: {level: unchecked}
