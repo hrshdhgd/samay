@@ -19,6 +19,7 @@ from ..engine.vedic import (
 )
 from ..models import NatalReport, NeedsDisambiguation, TodayReport
 from ..qa import LIFE_AREAS
+from ..subject import SELF
 from . import prompts
 
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
@@ -265,11 +266,14 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
-    blocks: list[str] = [prompts.FUTURE_TITLE] if answer.topic == "future:overview" else []
+    who = answer.who
+    blocks: list[str] = [who.heading] if who.heading else []
+    if answer.topic == "future:overview":
+        blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
     if answer.topic.startswith("life:"):
         houses, label = LIFE_AREAS[answer.topic.split(":")[1]]
         which = " and ".join(ordinal(h) for h in houses)
-        blocks.append(f"On {label}: Brihat Jataka reads this from the {which} house of the chart.\n{prompts.LIFE_FRAME}")
+        blocks.append(f"On {label}: Brihat Jataka reads this from the {which} house of the chart.\n{prompts.LIFE_FRAME.format(your=who.your)}")
     if answer.name_line:
         blocks.append(answer.name_line)
     shown = answer.entries if full else answer.entries[:1]
@@ -283,12 +287,12 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.NO_SOURCE_AI if ai_follows else prompts.NO_SOURCE)
     blocks += list(answer.notes)
     if answer.reading is not None:
-        blocks.append(render_reading(answer.reading, answer.shares, full=full))
+        blocks.append(render_reading(answer.reading, answer.shares, full=full, who=who))
     for reading, shares in answer.more_readings:
-        blocks.append(render_reading(reading, shares, full=full))
+        blocks.append(render_reading(reading, shares, full=full, who=who))
     if answer.facts:
         facts = "\n".join(answer.facts)
-        blocks.append(f"From your chart:\n{facts}" if full else facts)
+        blocks.append(f"From {who.your} chart:\n{facts}" if full else facts)
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
     source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full)
@@ -333,24 +337,24 @@ def _rule_sentence(r, shares) -> str:
     return "By the text's own rule, " + "; ".join(parts) + "."
 
 
-def render_reading(r, shares, full: bool = True) -> str:
+def render_reading(r, shares, full: bool = True, who=SELF) -> str:
     """Chapter XX on one planet in one house: the quoted lines, then the text's own strength rule."""
     name = r.planet.title()
     if not full:
         obscured = "; close to the Sun, so obscured" if r.astangata else ""
-        lines = [f"{name} in your {ordinal(r.house)} house ({SIGNS[r.sign]}, {STRENGTH_SHORT[r.strength]}{obscured}):"]
+        lines = [f"{name} in {who.your} {ordinal(r.house)} house ({SIGNS[r.sign]}, {STRENGTH_SHORT[r.strength]}{obscured}):"]
         for e in r.effects:
             same = f" (the text gives {name} the same as {e.borrowed_from.title()} here)" if e.borrowed_from else ""
             lines.append(f"“{e.text}”{same}")
         lines.append(f"{_rule_sentence(r, shares)} {prompts.READING_FRAME_SHORT}")
         return "\n".join(lines)
-    lines = [f"What Brihat Jataka chapter 20 says about {name} in your {ordinal(r.house)} house:"]
+    lines = [f"What Brihat Jataka chapter 20 says about {name} in {who.your} {ordinal(r.house)} house:"]
     for e in r.effects:
         borrowed = f" (the text gives {name} here the same effects as {e.borrowed_from.title()})" if e.borrowed_from else ""
         lines.append(f"“{e.text}”{borrowed}")
         if e.variant:
             lines.append(e.variant)
-    where = f"Your {name} is in {SIGNS[r.sign]}, {STRENGTH_WORDS[r.strength]}"
+    where = f"{who.Your} {name} is in {SIGNS[r.sign]}, {STRENGTH_WORDS[r.strength]}"
     if r.astangata:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]

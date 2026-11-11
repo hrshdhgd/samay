@@ -36,3 +36,7 @@ class UnsupportedLatitude(SamayError):
 
 class GazetteerMissing(SamayError):
     pass
+
+
+class TooManyPeople(SamayError):
+    pass

@@ -67,14 +67,14 @@ DASHA_FRAME = (
     "is in the chart."
 )
 READING_FRAME_SHORT = "An old text's view, not a forecast."
-FUTURE_TITLE = "🔮 Your current period of life"
+FUTURE_TITLE = "🔮 {Your} current period of life"
 NEED_BIRTH_FOR_FUTURE = (
     "To look at your future I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 )
 BTN_MORE = "➕ More"
 BTN_LESS = "➖ Less"
 LIFE_FRAME = (
-    "This shows what the text associates with this area and what sits there in your chart. It cannot say whether or "
+    "This shows what the text associates with this area and what sits there in {your} chart. It cannot say whether or "
     "when anything will happen."
 )
 NO_TOPIC_AI = "I have no checked source for this."

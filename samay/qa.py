@@ -20,6 +20,7 @@ from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
 from .engine.vedic import DASHA_YEARS, RASHIS, SIGNS, house_from, sign_index
 from .models import ResolvedBirth
+from .subject import SELF, Subject
 
 # Calculation systems samay computes; entries tied to any other system are never used.
 SYSTEMS = frozenset({"vimshottari"})
@@ -98,6 +99,7 @@ class Answer:
     reading: house_effects.Reading | None = None  # chapter XX on this planet in this person's house
     shares: dict | None = None  # how much of the good and bad effects the text says apply
     more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
+    who: Subject = SELF  # whose chart this answer is about
 
 
 def sort_question(text: str) -> str | None:
@@ -183,28 +185,28 @@ def name_used(question: str, planet: str) -> str | None:
     return None
 
 
-def _planet_facts(planet: str, birth: ResolvedBirth) -> list[str]:
+def _planet_facts(planet: str, birth: ResolvedBirth, who: Subject = SELF) -> list[str]:
     chart = service.natal_report(birth).chart
     p = chart.planets[planet]
     sign = sign_index(p.longitude)
     house = house_from(sign_index(chart.ascendant), sign)
     line = (
-        f"In your birth chart, {planet.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), "
-        f"the {_ordinal(house)} house from your lagna (rising sign)"
+        f"In {who.your} birth chart, {planet.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), "
+        f"the {_ordinal(house)} house from {who.your} lagna (rising sign)"
     )
     if p.retrograde and planet not in ("rahu", "ketu"):
         line += ", and was moving backwards (retrograde)"
     return [line + "."]
 
 
-def _dasha_facts(planet: str, birth: ResolvedBirth, now: datetime) -> list[str]:
+def _dasha_facts(planet: str, birth: ResolvedBirth, now: datetime, who: Subject = SELF) -> list[str]:
     for period in service.natal_report(birth).dashas:
         if period.lord == planet:
-            status = "you are in it now" if period.contains(now) else (
+            status = f"{who.you_are} in it now" if period.contains(now) else (
                 "it is still ahead" if period.start > now else "it has ended")
-            start = "your birth" if period.start < birth.utc else f"{period.start:%b %Y}"
+            start = f"{who.your} birth" if period.start < birth.utc else f"{period.start:%b %Y}"
             span = f"{start} – {period.end:%b %Y}"
-            return [f"Your {planet.title()} chapter (dasha) lasts {DASHA_YEARS[planet]} years: {span}; {status}."]
+            return [f"{who.Your} {planet.title()} chapter (dasha) lasts {DASHA_YEARS[planet]} years: {span}; {status}."]
     return [f"A {planet.title()} chapter (dasha) does not fall within your 120-year cycle."]
 
 
@@ -221,39 +223,41 @@ def resolve_topic(topic: str | None, birth: ResolvedBirth | None, now: datetime)
     return topic
 
 
-def _transit_facts(report) -> list[str]:
+def _transit_facts(report, who: Subject = SELF) -> list[str]:
     """Where the slow planets are now, counted from the person's birth Moon sign. Positions only."""
     out = []
     for planet, house in report.transit_houses:
         sign = sign_index(report.sky.planets[planet].longitude)
-        out.append(f"{planet.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), the {_ordinal(house)} sign from your Moon sign.")
+        out.append(f"{planet.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), the {_ordinal(house)} sign from {who.your} Moon sign.")
     return out
 
 
-def _future_answer(birth: ResolvedBirth | None, now: datetime, entries_dir: Path | None) -> Answer:
+def _future_answer(
+    birth: ResolvedBirth | None, now: datetime, entries_dir: Path | None, subject: Subject = SELF
+) -> Answer:
     """A reading of the period of life the person is in: the running dasha and what the checked text lists for it,
     where that planet sits in their chart (Brihat Jataka chapter 20), and where Jupiter and Saturn are now.
     It never says that a particular event will happen."""
     if birth is None:
-        return Answer("future:overview", (), ())
+        return Answer("future:overview", (), (), who=subject)
     report = service.today_report(birth, now)
-    facts = _transit_facts(report)
+    facts = _transit_facts(report, subject)
     if report.current_dasha is None:
-        return Answer("future:overview", (), tuple(facts))
+        return Answer("future:overview", (), tuple(facts), who=subject)
     maha, antar = report.current_dasha
     lord = maha.lord
     chart = service.natal_report(birth).chart
     entries = entry_store.answers_for(f"dasha:{lord}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
-    own = [*_dasha_facts(lord, birth, now),
-           f"Inside it you are in the {antar.lord.title()} sub-chapter until {antar.end:%d %b %Y}.",
-           *_planet_facts(lord, birth)]
+    own = [*_dasha_facts(lord, birth, now, subject),
+           f"Inside it {subject.you_are} in the {antar.lord.title()} sub-chapter until {antar.end:%d %b %Y}.",
+           *_planet_facts(lord, birth, subject)]
     reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
     shares = house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
     return Answer("future:overview", tuple(entries), tuple(own + facts), (), None,
-                  reading if shares else None, shares)
+                  reading if shares else None, shares, who=subject)
 
 
-def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | None) -> Answer:
+def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | None, subject: Subject = SELF) -> Answer:
     """A life area (marriage, career, ...) read through the house(s) the text assigns to it: what that house stands for,
     and, with a birth, which sign it is in and what planets sit there, each with its chapter 20 reading."""
     houses = LIFE_AREAS[area][0]
@@ -268,13 +272,13 @@ def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | Non
         for h in houses:
             sign = (lagna + h - 1) % 12
             tenants = [g for g in GRAHAS if sign_index(chart.planets[g].longitude) == sign]
-            who = ", ".join(g.title() for g in tenants) if tenants else "no planets"
-            facts.append(f"Your {_ordinal(h)} house is in {SIGNS[sign]} ({RASHIS[sign]}), with {who} in it.")
+            inside = ", ".join(g.title() for g in tenants) if tenants else "no planets"
+            facts.append(f"{subject.Your} {_ordinal(h)} house is in {SIGNS[sign]} ({RASHIS[sign]}), with {inside} in it.")
             for g in tenants:
                 r = house_effects.reading(chart, g)
                 if r is not None and r.effects:
                     readings.append((r, house_effects.shares(rules, r)))
-    return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings))
+    return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings), who=subject)
 
 
 def answer_topic(
@@ -283,36 +287,38 @@ def answer_topic(
     now: datetime,
     entries_dir: Path | None = None,
     question: str = "",
+    subject: Subject = SELF,
 ) -> Answer:
     """The answer for a sorted topic: checked entries for it, plus the person's own chart facts."""
     topic = resolve_topic(topic, birth, now)
     if topic is None or topic not in TOPICS:
         return Answer(None, (), ())
     if topic == "future:overview":
-        return _future_answer(birth, now, entries_dir)
-    kind, _, subject = topic.partition(":")
+        return _future_answer(birth, now, entries_dir, subject)
+    kind, _, subject_key = topic.partition(":")
     if kind == "life":
-        return _life_answer(subject, birth, entries_dir)
+        return _life_answer(subject_key, birth, entries_dir, subject)
     found = entry_store.answers_for(topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     facts: list[str] = []
-    if birth is not None and subject in GRAHAS:
-        facts = _planet_facts(subject, birth) if kind == "planet" else _dasha_facts(subject, birth, now)
-    if kind == "planet" and birth is not None and subject in GRAHAS:
-        # What the house this planet sits in stands for, so "Saturn in your 4th house" is explained.
+    if birth is not None and subject_key in GRAHAS:
+        facts = (_planet_facts(subject_key, birth, subject) if kind == "planet"
+                 else _dasha_facts(subject_key, birth, now, subject))
+    if kind == "planet" and birth is not None and subject_key in GRAHAS:
+        # What the house this planet sits in stands for, so "Saturn in the 4th house" is explained.
         chart = service.natal_report(birth).chart
-        house = house_from(sign_index(chart.ascendant), sign_index(chart.planets[subject].longitude))
+        house = house_from(sign_index(chart.ascendant), sign_index(chart.planets[subject_key].longitude))
         found = [*found, *entry_store.answers_for(f"house:{house}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)]
-    notes = (RAHU_KETU_FACT,) if subject in ("rahu", "ketu") else ()  # astronomy, always useful
-    alias = name_used(question, subject) if subject in GRAHAS else None
-    name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject.title()}." if alias else None
+    notes = (RAHU_KETU_FACT,) if subject_key in ("rahu", "ketu") else ()  # astronomy, always useful
+    alias = name_used(question, subject_key) if subject_key in GRAHAS else None
+    name_line = f"{alias.title()} is the Sanskrit and Hindi name for {subject_key.title()}." if alias else None
     reading = shares = None
     if kind == "planet" and birth is not None:
-        reading = house_effects.reading(service.natal_report(birth).chart, subject)
+        reading = house_effects.reading(service.natal_report(birth).chart, subject_key)
         if reading is not None and reading.effects:
             shares = house_effects.shares(house_effects.load_rules(), reading)
         else:
             reading = None
-    return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares)
+    return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares, who=subject)
 
 
 AI_SYSTEM = (

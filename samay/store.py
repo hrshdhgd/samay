@@ -17,10 +17,19 @@ from pathlib import Path
 
 from . import crypto
 from .engine.entries import is_topic
+from .engine.errors import TooManyPeople
 from .engine.paths import DATA_DIR
 from .models import BirthInput
 
 DRAFT_TTL_SECONDS = 30 * 60
+
+
+@dataclass(frozen=True)
+class Person:
+    id: int
+    name: str
+    relation: str | None
+    birth: BirthInput
 
 
 @dataclass(frozen=True)
@@ -58,6 +67,16 @@ MIGRATIONS = [
     """
     CREATE TABLE keycheck (id INTEGER PRIMARY KEY CHECK (id = 1), token TEXT NOT NULL);
     """,
+    # People a user asks about (children, a spouse, parents). Personal data, so every field is sealed.
+    """
+    CREATE TABLE people (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, chat_id INTEGER NOT NULL,
+        name TEXT NOT NULL, relation TEXT,
+        date_text TEXT NOT NULL, time_text TEXT NOT NULL, place_text TEXT NOT NULL,
+        place_choice TEXT, fold TEXT, approx_for TEXT, profile TEXT NOT NULL, created_at INTEGER NOT NULL
+    );
+    CREATE INDEX people_chat ON people (chat_id);
+    """,
 ]
 
 # Columns holding personal data, per table (all encrypted).
@@ -65,8 +84,10 @@ SEALED = {
     "users": ("date_text", "time_text", "place_text", "place_choice", "fold", "approx_for"),
     "drafts": ("data",),
     "homes": ("place_text", "place_id"),
+    "people": ("name", "relation", "date_text", "time_text", "place_text", "place_choice", "fold", "approx_for"),
 }
-KEY_ROW = {"users": "chat_id", "drafts": "chat_id", "homes": "chat_id"}
+KEY_ROW = {"users": "chat_id", "drafts": "chat_id", "homes": "chat_id", "people": "id"}
+MAX_PEOPLE = 12  # per chat
 CHECK_VALUE = "samay"
 
 
@@ -225,6 +246,46 @@ class Store:
             c.execute("UPDATE keycheck SET token = ? WHERE id = 1", (new.encrypt(CHECK_VALUE),))
         self._cipher = new
 
+    def _person(self, r: sqlite3.Row) -> Person:
+        fold = self._open(r["fold"])
+        birth = BirthInput(self._open(r["date_text"]), self._open(r["time_text"]), self._open(r["place_text"]),
+                           self._open(r["place_choice"]), None if fold is None else int(fold), r["profile"],
+                           self._open(r["approx_for"]))
+        return Person(r["id"], self._open(r["name"]), self._open(r["relation"]), birth)
+
+    def list_people(self, chat_id: int) -> list[Person]:
+        with self._conn() as c:
+            rows = c.execute("SELECT * FROM people WHERE chat_id = ? ORDER BY id", (chat_id,)).fetchall()
+        return [self._person(r) for r in rows]
+
+    def get_person(self, chat_id: int, person_id: int) -> Person | None:
+        """A person, only if they belong to this chat: one chat can never read another chat's people."""
+        with self._conn() as c:
+            r = c.execute("SELECT * FROM people WHERE id = ? AND chat_id = ?", (person_id, chat_id)).fetchone()
+        return self._person(r) if r else None
+
+    def save_person(self, chat_id: int, name: str, relation: str | None, b: BirthInput, now: float | None = None) -> int:
+        """Save someone, or update them if the chat already has a person of that name (case-insensitive)."""
+        same = next((p for p in self.list_people(chat_id) if p.name.casefold() == name.casefold()), None)
+        values = (*map(self._seal, (name, relation, b.date_text, b.time_text, b.place_text, b.place_choice, b.fold)),
+                  self._seal(b.approx_for), b.profile)
+        with self._conn() as c:
+            if same is not None:
+                c.execute("UPDATE people SET name=?, relation=?, date_text=?, time_text=?, place_text=?, place_choice=?, "
+                          "fold=?, approx_for=?, profile=? WHERE id = ? AND chat_id = ?", (*values, same.id, chat_id))
+                return same.id
+            if len(self.list_people(chat_id)) >= MAX_PEOPLE:
+                raise TooManyPeople(f"I can keep up to {MAX_PEOPLE} people; please delete one first")
+            return c.execute(
+                "INSERT INTO people (chat_id, name, relation, date_text, time_text, place_text, place_choice, fold, "
+                "approx_for, profile, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (chat_id, *values, int(now if now is not None else time.time())),
+            ).lastrowid
+
+    def delete_person(self, chat_id: int, person_id: int) -> bool:
+        with self._conn() as c:
+            return c.execute("DELETE FROM people WHERE id = ? AND chat_id = ?", (person_id, chat_id)).rowcount > 0
+
     def backup(self, out: str | os.PathLike) -> Path:
         """A consistent copy of the database. It holds only encrypted personal data, but the key is
         not in it: keep the key safe separately, because without it the copy cannot be read."""
@@ -244,5 +305,5 @@ class Store:
     def forget(self, chat_id: int) -> None:
         """Remove everything stored about a chat."""
         with self._conn() as c:
-            for table in ("users", "drafts", "homes"):
+            for table in ("users", "drafts", "homes", "people"):
                 c.execute(f"DELETE FROM {table} WHERE chat_id = ?", (chat_id,))
