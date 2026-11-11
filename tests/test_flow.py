@@ -83,7 +83,7 @@ def test_repeated_clock_time_asks_which_one():
 def test_time_that_never_happened_returns_to_the_time_question():
     o = say(flow.begin(), "14-03-2021", "2:30 am", "New York City")
     assert o.draft.step == "time" and o.reply.text.startswith(prompts.NONEXISTENT)
-    o = say(o, "3:30 am", "New York City")
+    o = say(o, "3:30 am")  # the place was already chosen, so it is not asked again
     assert o.done is not None
 
 

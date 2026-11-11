@@ -134,30 +134,62 @@ TOPIC_HELP = {
     "house:<1-12>": "what a house means; the lagna or ascendant is house:1",
     "concept:kalapurusha": "the cosmic person (Kalapurusha)",
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
+    "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "future:overview": "the person's future, luck or what to expect: any horoscope-style question about their own life",
 }
 MODEL_SYSTEM = (
     "You route messages sent to a Jyotish chat bot. Reply with exactly one topic key and nothing else, or 'none' "
-    "for greetings, thanks, small talk or anything that fits no topic. Pick a topic only if the message is really "
+    "for greetings, thanks, small talk or anything that fits no topic. You may add ' | ' and whom the message is "
+    "about: the exact name of one of the listed People, or 'me' for the person writing; leave that part out when "
+    "it is about the same person as before. A message about a child, spouse or parent whose name is not in the "
+    "list is people:add only if it gives their birth details. Pick a topic only if the message is really "
     "about it; a wrong topic is worse than 'none'. A short follow-up such as 'and Jupiter?' "
     "or 'what about the next one?' is about the same kind of topic as the previous one. Topics:\n"
     + "\n".join(f"- {key}: {what}" for key, what in TOPIC_HELP.items())
 )
 
 
-async def sort_with_model(text: str, client=None, previous: str | None = None) -> str | None:
-    """Local-model router. It reads the message (and the previous topic, for follow-ups) and picks a known key or
-    'none'. Its reply is used only if it is a known key; if the model is off or fails, a few plain rules decide."""
+@dataclass(frozen=True)
+class Route:
+    topic: str | None  # a key from TOPICS, or None
+    person: str | None = None  # a person's name, "me", or None when the message is about whoever it was about before
+    add: bool = False  # the message describes someone to add
+
+
+def _parse_route(reply: str | None, names: set[str]) -> Route | None:
+    """The model's reply as a Route, accepting only known topic keys and listed names; None if it is not usable."""
+    if not reply or not reply.strip():
+        return None
+    left, _, right = reply.strip().splitlines()[0].partition("|")
+    key = left.strip().split()[0].strip("`'\".,").casefold() if left.strip() else ""
+    name = right.strip().strip("`'\".,")
+    person = None
+    if name:
+        person = "me" if name.casefold() == "me" else next((n for n in names if n.casefold() == name.casefold()), None)
+    if key == "people:add":
+        return Route(None, None, True)
+    if key in TOPICS:
+        return Route(key, person)
+    if key == "none":
+        return Route(None)
+    return None
+
+
+async def route_with_model(text: str, client=None, previous: str | None = None, people=(), active: str | None = None) -> Route:
+    """Local-model router. It reads the message with the people the user has told us about, the person we are talking
+    about now and the previous topic, so follow-ups and "and Arjun?" work. Its reply is used only if it is a known
+    topic key and a listed name; if the model is off or fails, a few plain single-word rules decide the topic."""
     keys = "\n".join(sorted(TOPICS))
-    prompt = f"Keys:\n{keys}\nnone\n\nPrevious topic: {previous or 'none'}\n\nMessage: {text[:MAX_QUESTION_CHARS]}\nKey:"
-    reply = await narrate.complete(MODEL_SYSTEM, prompt, client)
-    if reply:
-        key = reply.strip().split()[0].strip("`'\".,").casefold() if reply.strip() else ""
-        if key in TOPICS:
-            return key
-        if key == "none":
-            return None
-    return sort_question(text)
+    roster = "; ".join(["me (the person writing)", *(f"{n} ({r})" if r else n for n, r in people)])
+    prompt = (f"Keys:\n{keys}\nnone\n\nPeople: {roster}\nCurrently talking about: {active or 'me'}\n"
+              f"Previous topic: {previous or 'none'}\n\nMessage: {text[:MAX_QUESTION_CHARS]}\nAnswer:")
+    route = _parse_route(await narrate.complete(MODEL_SYSTEM, prompt, client), {n for n, _ in people})
+    return route if route is not None else Route(sort_question(text))
+
+
+async def sort_with_model(text: str, client=None, previous: str | None = None) -> str | None:
+    """The topic only (see route_with_model); kept for callers that do not deal with people."""
+    return (await route_with_model(text, client, previous)).topic
 
 
 def _house_asked(text: str, words: list[str]) -> int | None:
@@ -331,6 +363,7 @@ AI_SYSTEM = (
     "period, using the facts supplied, the way a thoughtful astrologer would, and keep it hopeful and grounded. "
     "Never state that a specific event will or will not happen, never give dates for events, and do not give "
     "medical, legal or financial advice. "
+    "The facts may be about someone other than the writer, such as their child: refer to that person by name. "
     "Verified facts may be supplied; never contradict them. Everything else you say is your own general "
     "knowledge, so if you are unsure, say so."
 )
@@ -348,6 +381,12 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
                         + "; ".join(e.text for e in r.effects))
     parts = []
+    if not answer.who.is_self:
+        relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
+        parts.append(f"The question is about {answer.who.name}{relation}.")
+        if answer.who.minor:
+            parts.append("They are a child. Keep the reading gentle and about learning, character and growth; do not "
+                         "mention marriage, wealth or career as expectations.")
     if verified:
         parts.append("Verified facts:\n" + "\n".join(f"- {f}" for f in verified))
     if history:

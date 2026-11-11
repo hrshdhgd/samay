@@ -24,6 +24,45 @@ NONEXISTENT = (
     "Please tell me the time again."
 )
 SAVED = "Thank you. I have your birth details saved. Here is your chart:"
+
+# ---- asking about someone else (a child, a spouse, a parent) ----
+ASK_NARRATE = (
+    "Tell me about them in your own words: their name, and the date, time and place of birth. "
+    "You can describe more than one person in the same message."
+)
+NARRATE_FAILED = "I couldn't make that out, so let's do it step by step."
+ASK_NAME = "What is their name? A first name is enough."
+ASK_RELATION = "How are they related to you?"
+BTN_REL_SKIP = "Skip"
+ASK_DATE_FOR = "When was {name} born?\nPlease type the date, for example 15-08-2012"
+ASK_TIME_FOR = "At what time was {name} born?\nFor example 6:30 am, or 18:30"
+ASK_PLACE_FOR = "In which town or village was {name} born?\nYou can add the country, for example Pune, India"
+PICK_PLACE_FOR = "I found more than one place. Which one was {name} born in?"
+CONFIRM_PERSON = "Here is what I understood:\n\n👤 {name}{rel}\nBorn {date}, {time}\n📍 {place}{more}\n\nIs that right?"
+CONFIRM_MORE = "\n\nAfter this I'll check the details for {names}."
+BTN_SAVE_PERSON = "💾 Yes, save {name}"
+BTN_KEEP_PERSON = "Yes, just for now"
+BTN_FIX = "✏️ Fix something"
+BTN_GUIDED = "Step by step instead"
+PERSON_NEXT = "Thank you, that's {name} done."
+PERSON_DONE = "Thank you. We are now talking about {name}."
+PEOPLE_TITLE = "People I can talk about"
+PEOPLE_EMPTY = "I don't know anyone else yet. Tap “➕ Add someone” and tell me about them."
+PEOPLE_NOW = "Right now we are talking about {name}."
+PEOPLE_NOW_SELF = "Right now we are talking about you."
+BTN_ADD_PERSON = "➕ Add someone"
+BTN_ABOUT_ME = "👤 Me"
+BTN_DELETE_PERSON = "🗑 Delete {name}"
+BTN_REALLY_DELETE = "Yes, delete {name}"
+ASK_DELETE_PERSON = "Delete {name} and their birth details?"
+PERSON_DELETED = "Done. {name} has been deleted."
+PERSON_UNRESOLVED = "I couldn't work out {name}'s chart from the details I have. Please open /people, delete them and add them again."
+PEOPLE_SAVED_LIST = "Saved: {names}. You can find them under /people."
+PERSON_GONE = "I can't find that person any more."
+PERSON_SAVED_NOTE = "Saved. You can find {name} under /people."
+PEOPLE_FULL = "I can keep up to {limit} people. Please delete one first."
+SWITCHED = "👤 Now talking about {name}."
+SWITCHED_SELF = "👤 Now talking about you."
 ASK_HOME = (
     "Which town or city do you live in now?\n"
     "I use it to work out sunrise and sunset for today's Rahu Kaala. For example: Maplewood, Minnesota"
@@ -77,6 +116,7 @@ LIFE_FRAME = (
     "This shows what the text associates with this area and what sits there in {your} chart. It cannot say whether or "
     "when anything will happen."
 )
+MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."
@@ -106,7 +146,8 @@ MENU_HOME = "📍 Where I live"
 MENU_BRIEF = "🌅 Morning message"
 MENU_FORGET = "🗑 Forget me"
 MENU_ASK = "❓ Ask a question"
-MENU_ROWS = ((MENU_ASK,), (MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_HOME, MENU_BRIEF), (MENU_FORGET,))
+MENU_PEOPLE = "👥 People"
+MENU_ROWS = ((MENU_ASK, MENU_PEOPLE), (MENU_CHART, MENU_DASHA), (MENU_TODAY, MENU_CHANGE), (MENU_HOME, MENU_BRIEF), (MENU_FORGET,))
 
 WELCOME = (
     NAMASTE + "\n\nUse the buttons at the bottom of the screen. "
@@ -117,6 +158,7 @@ WELCOME = (
 # from this, in this order. Every command the bot registers must have an entry (tested).
 COMMANDS = {
     "ask": "Ask about a planet, a house or a dasha",
+    "people": "Add or choose someone to ask about",
     "chart": "Your birth chart (kundali)",
     "dasha": "Your life chapters (dasha periods)",
     "today": "Today's sky and what is running now",
@@ -127,7 +169,7 @@ COMMANDS = {
     "forget": "Delete everything I know about you",
     "start": "Say namaste and show the menu",
 }
-HELP_ORDER = ("ask", "chart", "dasha", "today", "brief", "home", "birth", "forget")
+HELP_ORDER = ("ask", "people", "chart", "dasha", "today", "brief", "home", "birth", "forget")
 
 
 def help_text() -> str:

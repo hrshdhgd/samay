@@ -268,6 +268,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     full = view == "full"
     who = answer.who
     blocks: list[str] = [who.heading] if who.heading else []
+    if who.minor:
+        blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
     if answer.topic.startswith("life:"):

@@ -288,6 +288,17 @@ chat are kept in memory only, for 15 minutes, never written to disk or logs, and
 dasha lord's chapter 20 line, and current transit positions, never a claim that an event will happen. Answers are compact
 by default (one lead entry, chart facts, one source line) with More / Less and Show Sanskrit buttons.
 
+### Asking about other people (decided 2026-11-11)
+
+Parents ask about several children, so "for someone else" is a first-class feature, not a one-off. The first design
+(answer and keep nothing) was dropped. Now: one narrative message can describe several people; the model proposes
+(name, relation, date, time, place, the question, whom it is about) and the code validates every field before use. The
+person confirms each one and chooses to save (encrypted, per chat, 12 at most) or keep "just for now" (memory only).
+The question that came with the story is answered for each person. The router is given the people and the current one,
+so follow-ups and switches work; only listed names are accepted. Answers name the person; under-18s get a note that the
+texts describe adult life. Charts, `/dasha` and `/today` still show the user's own; people are reached through questions
+and `/people`.
+
 ### Verse display and sources (decided 2026-11-09)
 
 - **Display:** answers show the English paraphrase first, with a **Show Sanskrit** button that swaps

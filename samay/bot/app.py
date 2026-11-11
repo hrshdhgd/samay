@@ -34,9 +34,9 @@ from telegram.ext import (
     filters,
 )
 
-from .. import narrate, qa, service
+from .. import narrate, narrative, qa, service
 from ..engine import geo
-from ..engine.errors import SamayError
+from ..engine.errors import SamayError, TooManyPeople
 from ..models import BirthInput, NeedsDisambiguation, ResolvedBirth
 from ..render import prompts
 from ..render.chart_image import STYLES, render_chart_png
@@ -50,7 +50,8 @@ from ..render.text import (
     render_today,
     today_facts,
 )
-from ..store import Home, Store
+from ..store import MAX_PEOPLE, Home, Person, Store
+from ..subject import SELF, Subject
 from . import flow
 
 log = logging.getLogger("samay")
@@ -60,6 +61,8 @@ QA_PREFIX = "qa:"  # qa:<sa|en|full>:<topic>
 QA_VIEWS = {"sa": "sanskrit", "en": "compact", "full": "full"}
 CHAT_KEY = "chats"  # in memory only: a few recent turns per chat, so follow-ups make sense
 CHAT_TURNS = 4
+SESSION_KEY = "sessions"  # in memory only: whom the chat is about, people not saved, who was just added
+PEOPLE_PREFIX = "ppl:"  # ppl:<add|me|use:ID|del:ID|delyes:ID|delno:ID>
 CHAT_TTL_SECONDS = 15 * 60
 BRIEF_PREFIX = "brief:"  # brief:<hour> or brief:off
 BRIEF_HOURS = (6, 7, 8, 9)
@@ -182,6 +185,11 @@ async def _say(update: Update, text: str, markup=None) -> None:
 
 async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefix: str = "") -> None:
     store = _store(ctx)
+    note = ""
+    if out.person is not None:
+        saved = await _record_person(ctx, chat_id, out.person)
+        if out.person.save and not saved:
+            note = "\n\n" + prompts.PEOPLE_FULL.format(limit=MAX_PEOPLE)
     if out.draft is not None:
         await asyncio.to_thread(store.save_draft, chat_id, out.draft.to_dict())
     if out.home is not None:
@@ -198,7 +206,17 @@ async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefi
         await _say(update, out.reply.text, MENU)
         await _show(update, ctx, chat_id, "chart")
         return
-    await _say(update, prefix + out.reply.text, _keyboard(out.reply))
+    if out.person is not None and out.draft is None:  # the last of the people just described is confirmed
+        await asyncio.to_thread(store.delete_draft, chat_id)
+        names = [name for _, name, kept in _session(ctx, chat_id)["intake"] if kept]
+        saved_line = "\n" + prompts.PEOPLE_SAVED_LIST.format(names=", ".join(names)) if names else ""
+        await _say(update, out.reply.text + saved_line + note, MENU)
+        if out.then is not None:
+            await _answer_intake(update, ctx, chat_id, *out.then)
+        else:
+            _session(ctx, chat_id)["intake"] = []
+        return
+    await _say(update, prefix + out.reply.text + note, _keyboard(out.reply))
 
 
 async def _begin(update: Update, ctx, chat_id: int, prefix: str = "") -> None:
@@ -266,19 +284,98 @@ async def _resolved_birth(ctx, chat_id: int) -> ResolvedBirth | None:
     return resolved if isinstance(resolved, ResolvedBirth) else None
 
 
-def answer_markup(answer: qa.Answer, view: str = "compact") -> InlineKeyboardMarkup | ReplyKeyboardMarkup:
-    """Buttons under a sourced answer: more or less detail, and the Sanskrit view when a checked verse exists.
-    With nothing to switch between, the normal menu."""
+def _session(ctx, chat_id: int) -> dict:
+    """In-memory state for one chat: whom we are talking about (None is the user), people not saved, and who was just
+    added. Never written to disk or logged; it expires with the conversation memory."""
+    sessions = ctx.application.bot_data.setdefault(SESSION_KEY, {})
+    now = _monotonic()
+    state = sessions.get(chat_id)
+    if state is None or now - state["touched"] > CHAT_TTL_SECONDS:
+        state = sessions[chat_id] = {"active": None, "guests": {}, "intake": [], "next_guest": -1, "touched": now}
+    state["touched"] = now
+    return state
+
+
+async def _people(ctx, chat_id: int) -> list[Person]:
+    """Saved people first, then the ones added just for now (those have negative ids)."""
+    saved = await asyncio.to_thread(_store(ctx).list_people, chat_id)
+    return [*saved, *_session(ctx, chat_id)["guests"].values()]
+
+
+async def _person_by_id(ctx, chat_id: int, pid: int) -> Person | None:
+    if pid < 0:
+        return _session(ctx, chat_id)["guests"].get(pid)
+    return await asyncio.to_thread(_store(ctx).get_person, chat_id, pid)
+
+
+async def _record_person(ctx, chat_id: int, result: flow.PersonResult) -> bool:
+    """A confirmed person becomes the one we are talking about. They are saved (encrypted) if the user chose that,
+    otherwise, or when there is no room left, kept in memory only. True if they were saved."""
+    state = _session(ctx, chat_id)
+    pid, saved = None, False
+    if result.save:
+        try:
+            pid = await asyncio.to_thread(_store(ctx).save_person, chat_id, result.name, result.relation or None,
+                                          result.birth)
+            saved = True
+        except TooManyPeople:
+            pid = None
+    if pid is None:
+        for gid in [g for g, who in state["guests"].items() if who.name.casefold() == result.name.casefold()]:
+            del state["guests"][gid]
+        pid, state["next_guest"] = state["next_guest"], state["next_guest"] - 1
+        state["guests"][pid] = Person(pid, result.name, result.relation or None, result.birth)
+    state["active"] = pid
+    state["intake"].append((pid, result.name, saved))
+    return saved
+
+
+async def _subject_and_birth(ctx, chat_id: int, pid: int | None) -> tuple[Subject, ResolvedBirth | None]:
+    """Whom an answer is about and their resolved birth: the user (pid None), or a person. A person who has been
+    deleted since sends us back to the user."""
+    if pid is not None:
+        person = await _person_by_id(ctx, chat_id, pid)
+        if person is not None:
+            resolved = await asyncio.to_thread(service.resolve_birth, person.birth)
+            if not isinstance(resolved, ResolvedBirth):
+                return Subject(person.name, person.relation or None), None
+            minor = (_now() - resolved.utc).days < 18 * 365.25
+            return Subject(person.name, person.relation or None, minor), resolved
+        _session(ctx, chat_id)["active"] = None
+    return SELF, await _resolved_birth(ctx, chat_id)
+
+
+def _switch(state: dict, name: str | None, people: list[Person]) -> bool:
+    """Make the router's choice of person the active one. True if the person changed."""
+    if name is None:
+        return False
+    if name == "me":
+        changed, state["active"] = state["active"] is not None, None
+        return changed
+    person = next((p for p in reversed(people) if p.name.casefold() == name.casefold()), None)
+    if person is None or person.id == state["active"]:
+        return False
+    state["active"] = person.id
+    return True
+
+
+def answer_markup(
+    answer: qa.Answer, view: str = "compact", pid: int | None = None
+) -> InlineKeyboardMarkup | ReplyKeyboardMarkup:
+    """Buttons under a sourced answer: more or less detail, and the Sanskrit view when a checked verse exists. With
+    nothing to switch between, the normal menu. `pid` ties the buttons to the person the answer was about, so a tap
+    later still shows that person's answer even if the conversation has moved on."""
+    tag = "" if pid is None else f"@{pid}"
     if view == "sanskrit":
-        row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en:{answer.topic}")]
+        row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}")]
     else:
         row = []
         if view == "full":
-            row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en:{answer.topic}"))
+            row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
         elif len(answer.entries) > 1:
-            row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full:{answer.topic}"))
+            row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
-            row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa:{answer.topic}"))
+            row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))
     return InlineKeyboardMarkup([row]) if row else MENU
 
 
@@ -294,20 +391,60 @@ def _remember_turn(ctx, chat_id: int, topic: str | None, question: str, reply: s
     chats[chat_id] = [*_recent_turns(ctx, chat_id), (_monotonic(), topic, question[:200], reply[:400])][-CHAT_TURNS:]
 
 
-async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> None:
-    """Understand the message, answer from checked entries and chart facts, and, when the local model is on, follow
-    with its own labelled answer. Small talk gets only the model's reply. Only a topic key is counted when nothing
-    sourced exists; the words are kept in memory for a few turns so follow-ups work, and nowhere else."""
+async def _start_intake(update: Update, ctx, chat_id: int, text: str) -> None:
+    """A message that describes people: the model reads it, then each person is checked and confirmed."""
+    async with typing(update):
+        extracted = await narrative.extract_people(text)
+    _session(ctx, chat_id)["intake"] = []
+    if extracted is None:  # the model could not read it: ask step by step instead
+        await _send_flow(update, ctx, chat_id, flow.begin_person(narrate=False), prompts.NARRATE_FAILED + "\n\n")
+        return
+    await _send_flow(update, ctx, chat_id, flow.from_extraction(extracted))
+
+
+async def _answer_intake(update: Update, ctx, chat_id: int, question: str, about: str) -> None:
+    """The question that came with the details: answered for the person it names, or for each person just added."""
+    state = _session(ctx, chat_id)
+    added = [(pid, name) for pid, name, _ in state["intake"]]
+    state["intake"] = []
+    named = next((pid for pid, name in added if about and name.casefold() == about.casefold()), None)
+    for pid in [named] if named is not None else [pid for pid, _ in added]:
+        state["active"] = pid
+        await _answer_question(update, ctx, chat_id, question, allow_intake=False)
+
+
+async def _answer_question(update: Update, ctx, chat_id: int, question: str, allow_intake: bool = True) -> None:
+    """Understand the message: whom it is about, and what is asked. Answer from checked entries and that person's chart
+    facts and, when the local model is on, follow with its own labelled answer. A message that describes someone starts
+    the intake instead. Only a topic key is counted when nothing sourced exists; the words are kept in memory for a few
+    turns so follow-ups work, and nowhere else."""
     ai = narrate.enabled()
+    state = _session(ctx, chat_id)
+    people = await _people(ctx, chat_id)
     turns = _recent_turns(ctx, chat_id)
     history = [(q, r) for _, _, q, r in turns]
+    current = next((p for p in people if p.id == state["active"]), None)
     if ai:
         async with typing(update):
-            topic = await qa.sort_with_model(question, previous=turns[-1][1] if turns else None)
+            route = await qa.route_with_model(
+                question, previous=turns[-1][1] if turns else None,
+                people=[(p.name, p.relation) for p in people], active=current.name if current else None)
     else:
-        topic = qa.sort_question(question)
-    birth = await _resolved_birth(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, question)
+        named = narrative.match_person(question, people)
+        route = qa.Route(qa.sort_question(question), named.name if named else None)
+    if route.add and allow_intake:
+        await _start_intake(update, ctx, chat_id, question)
+        return
+    changed = _switch(state, route.person, people)
+    pid = state["active"]
+    subject, birth = await _subject_and_birth(ctx, chat_id, pid)
+    pid = state["active"]  # a deleted person sends us back to the user
+    if not subject.is_self and birth is None:
+        await _say(update, prompts.PERSON_UNRESOLVED.format(name=subject.name), MENU)
+        return
+    if changed and subject.is_self:
+        await _say(update, prompts.SWITCHED_SELF, MENU)
+    answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject)
     if answer.topic not in (None, "future:overview") and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
@@ -320,7 +457,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
             await _say(update, prompts.NO_TOPIC, MENU)
         return
     sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
-    await _say(update, sourced, answer_markup(answer))
+    await _say(update, sourced, answer_markup(answer, pid=pid))
     if ai:
         # A second message, so the sourced answer is never delayed by the (slower) model.
         async with typing(update):
@@ -331,15 +468,25 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str) -> 
 
 
 async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None:
-    mode, _, topic = choice.partition(":")
+    head, _, topic = choice.partition(":")
+    mode, _, pid_text = head.partition("@")
     if mode not in QA_VIEWS or topic not in qa.TOPICS:
         return
-    birth = await _resolved_birth(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now())
+    pid = None
+    if pid_text:
+        try:
+            pid = int(pid_text)
+        except ValueError:
+            return
+        if await _person_by_id(ctx, chat_id, pid) is None:
+            await _say(update, prompts.PERSON_GONE, MENU)
+            return
+    subject, birth = await _subject_and_birth(ctx, chat_id, pid)
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject)
     view = QA_VIEWS[mode]
     try:
         await update.callback_query.edit_message_text(
-            render_answer(answer, view, birth_known=birth is not None), reply_markup=answer_markup(answer, view)
+            render_answer(answer, view, birth_known=birth is not None), reply_markup=answer_markup(answer, view, pid)
         )
     except BadRequest as e:
         if "not modified" not in str(e).lower():
@@ -354,6 +501,70 @@ async def cmd_ask(update: Update, ctx) -> None:
         await _say(update, prompts.ASK_QUESTION, MENU)
         return
     await _answer_question(update, ctx, update.effective_chat.id, question)
+
+
+def _people_markup(people: list[Person], active: int | None) -> InlineKeyboardMarkup:
+    rows = []
+    for p in people:
+        label = ("✅ " if p.id == active else "") + p.name + (f" ({p.relation})" if p.relation else "")
+        label += "" if p.id > 0 else " · not saved"
+        rows.append([InlineKeyboardButton(label, callback_data=f"{PEOPLE_PREFIX}use:{p.id}"),
+                     InlineKeyboardButton("🗑", callback_data=f"{PEOPLE_PREFIX}del:{p.id}")])
+    rows.append([
+        InlineKeyboardButton(("✅ " if active is None else "") + prompts.BTN_ABOUT_ME, callback_data=f"{PEOPLE_PREFIX}me"),
+        InlineKeyboardButton(prompts.BTN_ADD_PERSON, callback_data=f"{PEOPLE_PREFIX}add"),
+    ])
+    return InlineKeyboardMarkup(rows)
+
+
+@guarded
+@debounced
+async def cmd_people(update: Update, ctx) -> None:
+    chat_id = update.effective_chat.id
+    people = await _people(ctx, chat_id)
+    head = prompts.PEOPLE_TITLE + ("" if people else "\n\n" + prompts.PEOPLE_EMPTY)
+    await _say(update, head, _people_markup(people, _session(ctx, chat_id)["active"]))
+
+
+async def _people_button(update: Update, ctx, chat_id: int, data: str) -> None:
+    action, _, arg = data.partition(":")
+    state = _session(ctx, chat_id)
+    if action == "add":
+        await _send_flow(update, ctx, chat_id, flow.begin_person(narrate.enabled()))
+        return
+    if action == "me":
+        state["active"] = None
+        await _say(update, prompts.SWITCHED_SELF, MENU)
+        return
+    try:
+        pid = int(arg)
+    except ValueError:
+        return
+    person = await _person_by_id(ctx, chat_id, pid)
+    if action not in ("use", "del", "delyes", "delno"):
+        return
+    if person is None:
+        await _say(update, prompts.PERSON_GONE, MENU)
+        return
+    if action == "use":
+        state["active"] = pid
+        await _say(update, prompts.SWITCHED.format(name=person.name), MENU)
+    elif action == "del":
+        markup = InlineKeyboardMarkup([[
+            InlineKeyboardButton(prompts.BTN_REALLY_DELETE.format(name=person.name), callback_data=f"{PEOPLE_PREFIX}delyes:{pid}"),
+            InlineKeyboardButton(prompts.BTN_NO, callback_data=f"{PEOPLE_PREFIX}delno:{pid}"),
+        ]])
+        await _say(update, prompts.ASK_DELETE_PERSON.format(name=person.name), markup)
+    elif action == "delyes":
+        if pid < 0:
+            state["guests"].pop(pid, None)
+        else:
+            await asyncio.to_thread(_store(ctx).delete_person, chat_id, pid)
+        if state["active"] == pid:
+            state["active"] = None
+        await _say(update, prompts.PERSON_DELETED.format(name=person.name), MENU)
+    else:
+        await _say(update, prompts.KEPT, MENU)
 
 
 @guarded
@@ -470,6 +681,7 @@ async def on_text(update: Update, ctx) -> None:
         prompts.MENU_CHANGE: lambda: _begin(update, ctx, chat_id),
         prompts.MENU_HOME: lambda: cmd_home(update, ctx),
         prompts.MENU_ASK: lambda: _say(update, prompts.ASK_QUESTION, MENU),
+        prompts.MENU_PEOPLE: lambda: cmd_people(update, ctx),
         prompts.MENU_BRIEF: lambda: cmd_brief(update, ctx),
         prompts.MENU_FORGET: lambda: cmd_forget(update, ctx),
     }
@@ -480,7 +692,13 @@ async def on_text(update: Update, ctx) -> None:
     if stored is None:
         await _answer_question(update, ctx, chat_id, text)
         return
-    out = await asyncio.to_thread(flow.on_text, flow.Draft.from_dict(stored), text)
+    draft = flow.Draft.from_dict(stored)
+    if draft.step == "narrate" and narrate.enabled():  # a story about someone: the model reads it
+        async with typing(update):
+            extracted = await narrative.extract_people(text)
+        out = flow.from_extraction(extracted, draft.profile) if extracted else flow.narrative_failed(draft)
+    else:
+        out = await asyncio.to_thread(flow.on_text, draft, text)
     await _send_flow(update, ctx, chat_id, out)
 
 
@@ -513,6 +731,9 @@ async def on_button(update: Update, ctx) -> None:
     if data.startswith(QA_PREFIX):
         await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX):])
         return
+    if data.startswith(PEOPLE_PREFIX):
+        await _people_button(update, ctx, chat_id, data[len(PEOPLE_PREFIX):])
+        return
     if data.startswith(BRIEF_PREFIX):
         await _set_brief(update, ctx, chat_id, data[len(BRIEF_PREFIX):])
         return
@@ -523,6 +744,7 @@ async def on_button(update: Update, ctx) -> None:
         if data == FORGET_YES:
             await asyncio.to_thread(_store(ctx).forget, chat_id)
             ctx.application.bot_data.get(CHAT_KEY, {}).pop(chat_id, None)  # and what was remembered in memory
+            ctx.application.bot_data.get(SESSION_KEY, {}).pop(chat_id, None)  # including people not saved
         await _say(update, prompts.FORGOTTEN if data == FORGET_YES else prompts.KEPT, MENU)
         return
     stored = await asyncio.to_thread(_store(ctx).get_draft, chat_id)
@@ -584,7 +806,7 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
     )
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
     for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
-                     ("home", cmd_home), ("brief", cmd_brief), ("ask", cmd_ask),
+                     ("home", cmd_home), ("brief", cmd_brief), ("ask", cmd_ask), ("people", cmd_people),
                      ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
         app.add_handler(CommandHandler(name, fn))
     app.add_handler(CallbackQueryHandler(on_button))

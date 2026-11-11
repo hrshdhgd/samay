@@ -74,6 +74,22 @@ text lists for it, where that planet sits in your chart, and where Jupiter and S
 in a separate message. To make follow-ups work, the last 4 turns per chat are kept **in memory only** for 15 minutes
 (never on disk, never logged, cleared by "Forget me" and by a restart).
 
+**Asking about other people** (children, a spouse, parents). Send one message describing them, in your own words:
+"My daughter Maya was born on 14 March 2015 at 6:30 in the morning in Pune, and my son Arjun on 2 November 2018 at 9
+in the evening in Mumbai. What will their future be like?" The model reads it; the code then validates every field (a
+year the model produced must appear in your message, dates and times must parse, places are looked up) and asks only for
+what is missing. You confirm each person ("Yes, save Maya", "Yes, just for now", "Fix something"), and your question is
+answered for each of them in their own name. `/people` (or the 👥 People button) lists everyone, switches whom you are
+talking about, adds someone, or deletes one. In conversation, "and Arjun?" or "what about Maya's marriage?" switches
+person; the model chooses only from the names it was given. Answers say whom they are about ("👤 Maya (daughter)",
+"Maya's 7th house"). For anyone under 18 they add a note that the texts describe adult life, and the AI is told to keep
+it gentle. Without the model, adding someone is step by step, and a saved person's first name in your message switches
+to them.
+
+*Privacy for people.* Saved people are stored encrypted like your own details (every field sealed, up to 12 per chat) and
+are removed by "Forget me" or one at a time from `/people`. People you add "just for now", and the conversation, live in
+memory only for 15 minutes. A chat can never read another chat's people. Nothing about them is written to the logs.
+
 Questions without a sourced answer say so, and only their topic key (never the words) is counted for
 `uv run samay research-queue`. The question text is not stored or logged. How entries are researched and
 checked: `research/program.md`

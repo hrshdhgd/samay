@@ -53,3 +53,11 @@ def test_a_planet_and_a_life_area_answer_use_the_persons_name_too():
 def test_default_subject_leaves_the_answer_exactly_as_before():
     answer = qa.answer_topic("planet:venus", None, NOW)
     assert answer.who is SELF and render_answer(answer, birth_known=False).startswith("Varahamihira describes Venus")
+
+
+def test_a_minor_subject_adds_the_note_to_the_answer_and_an_adult_does_not():
+    child = qa.answer_topic("planet:venus", None, NOW, subject=Subject("Maya", "daughter", minor=True))
+    text = render_answer(child, birth_known=True)
+    assert text.splitlines()[:3] == ["👤 Maya (daughter)", "", "ⓘ The classical texts describe adult life, so for a child this is only a general reading."]
+    assert "ⓘ The classical texts" not in render_answer(qa.answer_topic("planet:venus", None, NOW, subject=Subject("Raj")))
+    assert "ⓘ The classical texts" not in render_answer(qa.answer_topic("planet:venus", None, NOW))
