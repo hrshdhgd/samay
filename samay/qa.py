@@ -54,10 +54,16 @@ LIFE_AREAS = {
     "career": ((10,), "work and career"),
     "children": ((5,), "children"),
     "wealth": ((2, 11), "money and gains"),
-    "home": ((4,), "home and family comforts"),
+    "home": ((4,), "home, property and vehicles"),
     "siblings": ((3,), "brothers and sisters"),
     "father": ((9,), "father and teachers"),
     "health": ((1, 6), "health"),
+    "education": ((4, 5), "education and intelligence"),
+    "travel": ((12,), "travel"),
+    "enemies": ((6,), "enemies and disputes"),
+    "dharma": ((5, 9), "merit and past karma"),
+    "mother": ((4,), "mother"),
+    "family": ((2,), "family and speech"),
 }
 # Offline fallback only: single words, no question patterns (the model reads the message when it is on).
 LIFE_WORDS = {
@@ -65,6 +71,9 @@ LIFE_WORDS = {
     "wife": "marriage", "husband": "marriage", "career": "career", "job": "career", "profession": "career",
     "children": "children", "child": "children", "kids": "children", "son": "children", "daughter": "children",
     "money": "wealth", "wealth": "wealth", "finances": "wealth", "health": "health", "illness": "health",
+    "property": "home", "vehicle": "home", "car": "home", "education": "education", "study": "education",
+    "studies": "education", "exam": "education", "abroad": "travel", "travel": "travel", "enemies": "enemies",
+    "enemy": "enemies", "court": "enemies", "mother": "mother", "family": "family", "karma": "dharma",
 }
 TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +

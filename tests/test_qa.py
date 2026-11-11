@@ -24,6 +24,9 @@ NOW = datetime(2026, 11, 9, tzinfo=UTC)
         ("Will I get married this year?", "life:marriage"),  # a single keyword; the model reads the whole message
         ("what is the wedding season", "life:marriage"),
         ("how is my career", "life:career"),
+        ("will I go abroad", "life:travel"),
+        ("buying property", "life:home"),
+        ("my studies", "life:education"),
         ("what does my current dasha mean for my son's marriage", "dasha:current"),  # a dasha word wins
         ("what does saturn mean for marriage", "planet:saturn"),  # a planet named wins
         ("namaste", None),
@@ -51,7 +54,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 42
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 48
 
 
 def _client(reply):
@@ -313,7 +316,7 @@ def test_offline_fallback_knows_a_few_single_words_for_the_future(text):
 
 
 def test_the_fallback_does_not_pattern_match_whole_questions():
-    for text in ("am I going to travel next year", "what will happen to me", "will I win the lottery"):
+    for text in ("am I going to be lucky next year", "what will happen to me", "will I win the lottery"):
         assert qa.sort_question(text) is None
 
 
