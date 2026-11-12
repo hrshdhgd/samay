@@ -987,3 +987,20 @@ async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(ctx
     assert not second.done()  # messages in one chat stay in order
     release.set()
     await asyncio.gather(first, second)
+
+
+@needs_kernel
+async def test_a_question_about_the_week_ahead_gets_the_outlook_with_more_and_is_not_a_miss(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
+    _save_pune(store)
+    update, msg = message(ALLOWED, "What does my upcoming week look like")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert "🔮 Your week ahead" in text and "🌙 Moon" in text
+    assert [b.text for b in last_buttons(msg)] == [prompts.BTN_MORE]
+    assert store.top_misses() == []
+    tap_update, _ = tap(ALLOWED, last_buttons(msg)[0].callback_data)
+    tap_update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(tap_update, ctx)
+    shown = tap_update.callback_query.edit_message_text.await_args.args[0]
+    assert "🔮 Your week ahead" in shown

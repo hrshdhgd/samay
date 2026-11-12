@@ -1,0 +1,162 @@
+# Phaladeepika chapter 26 ("Effects of transits of the various planets and constellations"), verses 1-24: the results
+# of each planet's transit (gochara) through the twelve houses counted from the natal Moon sign.
+# Source: Mantreswara's Phala Deepika, English translation by Dr. G. S. Kapoor (in copyright), openly available at
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, pages 246-251 (PDF pages 245-250).
+# The repository is public, so every result is PARAPHRASED in our own words, never quoted. What was used and what was
+# left out is in research/notes/phaladeepika-ch26-gochara.md.
+#
+# UNCHECKED: nothing in `effects` is shown by the bot until a person compares each row with the pages above and sets
+# level: translation-checked with checked_by and checked_on. Set `hidden: true` on a row to keep it from the family bot.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "246-251"
+
+# Verse 2: the houses (from the Moon sign) in which each planet's transit gives good results.
+# Ketu: the author gives no results for Ketu; the translator only guesses they match Rahu's, so Ketu has none here.
+favourable:
+  sun: [3, 6, 10, 11]
+  moon: [1, 3, 6, 7, 10, 11]
+  mars: [3, 6, 11]
+  mercury: [2, 4, 6, 8, 10, 11]
+  jupiter: [2, 5, 7, 9, 11]
+  venus: [1, 2, 3, 4, 5, 8, 9, 11, 12]
+  saturn: [3, 6, 11]
+  rahu: [3, 6, 10, 11]
+
+# Verses 3-7: vedha (obstruction). A good transit in house H gives its good result only if no other planet is in the
+# vedha house at the same time. `exempt`: the planet whose presence there does not obstruct (the text's exceptions).
+# Venus (verse 8) is left out: the verse lists 7 houses against 9 vedha places, so the pairs cannot be read reliably.
+# Rahu and Ketu: the text gives no vedha. Which planets can obstruct: the seven planets, Sun to Saturn (our reading
+# of "any of the planets"; the checker may change this).
+vedha:
+  sun: {pairs: {11: 5, 3: 9, 10: 4, 6: 12}, exempt: [saturn], verse: 3}
+  moon: {pairs: {1: 5, 3: 9, 6: 12, 7: 2, 10: 4, 11: 8}, exempt: [mercury], verse: 4}
+  mars: {pairs: {3: 12, 6: 9, 11: 5}, exempt: [], verse: 5}
+  saturn: {pairs: {3: 12, 6: 9, 11: 5}, exempt: [sun], verse: 5}
+  # Verse 6 lists six good houses (2, 4, 6, 8, 10, 11) but five vedha places (5, 3, 9, 8, 12); the 8th's is missing
+  # from the translation, so the 8th has no vedha here rather than a guessed one.
+  mercury: {pairs: {2: 5, 4: 3, 6: 9, 10: 8, 11: 12}, exempt: [moon], verse: 6}
+  jupiter: {pairs: {2: 12, 11: 8, 9: 10, 5: 4, 7: 3}, exempt: [], verse: 7}
+
+# Verses 9-24: the result of each planet's transit through each house from the Moon sign, paraphrased.
+effects:
+  sun:
+    verse: "9-11"
+    houses:
+      1: "tiring journeys, fatigue and illness"
+      2: "loss of money, unhappiness, stubbornness, and being cheated by others"
+      3: "a new position, gain of money, happiness, good health and the defeat of enemies"
+      4: "illness, and obstacles to pleasures"
+      5: "mental distress, poor health and humiliation"
+      6: "good health, the defeat of enemies, and an end to sorrows and worries"
+      7: "tiring journeys, stomach and bowel troubles, and humiliation"
+      8: "fear, illness, quarrels, the displeasure of those in power, and suffering from heat"
+      9: "danger, humiliation, separation from people close to you, and low spirits"
+      10: "success in a large and important undertaking"
+      11: "a new position, honour, money and good health"
+      12: "sorrow, loss of money, quarrels with friends, and fever"
+  moon:
+    verse: "12"
+    houses:
+      1: "the rise of good fortune"
+      2: "loss of money"
+      3: "success"
+      4: "fear"
+      5: "sorrow"
+      6: "good health"
+      7: "happiness"
+      8: "unhappy and troublesome events"
+      9: "illness"
+      10: "ambitions fulfilled"
+      11: "joy"
+      12: "expenses"
+  mars:
+    verse: "13-16"
+    houses:
+      1: "low spirits, separation from relatives, and illness from blood, bile and heat"
+      2: "fear, harsh words, and loss of money"
+      3: "success in all undertakings, and gold or jewellery and the happiness it brings"
+      4: "loss of position, stomach trouble, and sorrow through relatives"
+      5: "fever, needless desires, worry over a son, and quarrels with relatives"
+      6: "an end to disputes and enemies, good health, victory, gain of money, and success in all undertakings"
+      7: "misunderstandings with the wife, eye trouble, and stomach complaints"
+      8: "fever, anaemia, and loss of money and honour"
+      9: "humiliation over money, weakness that makes walking hard, and a wasting of the body"
+      10: "misconduct, failed efforts and exhaustion"
+      11: "gain of money, good health, and more land or property"
+      12: "loss of money, and illness from too much heat"
+  mercury:
+    verse: "17"
+    houses:
+      1: "loss of money"
+      2: "gain of money"
+      3: "fear of enemies"
+      4: "money coming in"
+      5: "quarrels with wife and children"
+      6: "success"
+      7: "misunderstandings"
+      8: "gain of money, and the birth of children"
+      9: "obstacles that ruin undertakings"
+      10: "happiness all round"
+      11: "growing prosperity"
+      12: "fear of humiliation"
+  jupiter:
+    verse: "18-20"
+    houses:
+      1: "leaving one's home town, heavy spending, and ill will towards others"
+      2: "gain of money, happiness at home, and influence over others"
+      3: "loss of position, separation from friends, obstacles in business, and illness"
+      4: "sorrow through relatives, humiliation, and danger from animals"
+      5: "the birth of children, the company of noble people, and favour from those in power"
+      6: "trouble from enemies and cousins, and illness"
+      7: "a journey for an auspicious purpose, happiness with the wife, and children"
+      8: "tiring journeys, bad luck, misery, and loss of money"
+      9: "prosperity all round"
+      10: "danger to property, position and children"
+      11: "the birth of children, a new position, and honour"
+      12: "grief, and fear over property"
+  venus:
+    verse: "21"
+    houses:
+      1: "every kind of enjoyment"
+      2: "gain of money"
+      3: "prosperity"
+      4: "more happiness and more friends"
+      5: "the birth of children"
+      6: "accidents"
+      7: "trouble for the wife"
+      8: "gain of money"
+      9: "happiness"
+      10: "quarrels"
+      11: "safety"
+      12: "gain of money"
+  saturn:
+    verse: "22-23"
+    houses:
+      1: "illness, and performing funeral rites"
+      2: "loss of money and children"
+      3: "a position or job, and gain of money and servants"
+      4: "loss of wife, relatives and money"
+      5: "shrinking money, loss of children, and a confused mind"
+      6: "happiness all round"
+      7: "suffering for the wife, and danger on journeys"
+      8: "loss of children, cattle, friends and money, and illness"
+      9: "loss of money, obstacles to good deeds, the death of an elder like a father, and lasting sorrow"
+      10: "wrongdoing, loss of honour, and illness"
+      11: "every kind of happiness, gain of money, and rare honour"
+      12: "business that brings no gain, loss of money through enemies, and illness for wife and son"
+  rahu:
+    verse: "24"
+    houses:
+      1: "illness or death"
+      2: "loss of money"
+      3: "happiness"
+      4: "sorrow"
+      5: "financial loss"
+      6: "happiness"
+      7: "loss of money"
+      8: "danger to life"
+      9: "loss of money"
+      10: "gain of money"
+      11: "happiness"
+      12: "expenses"

@@ -6,22 +6,23 @@ import importlib.metadata
 import os
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
-from .engine import daylight, entries, ephemeris, geo, house_effects, timestd
+from .engine import daylight, entries, ephemeris, geo, gochara, house_effects, timestd
 from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
 from .engine.geo import Place
 from .engine.paths import EPHEMERIS_PATH, TIME_STANDARDS_DIR
 from .engine.profiles import DEFAULT_PROFILE, load_profile
 from .engine.rules import fired, load_rules, rules_hash
-from .engine.vedic import current_dasha, house_from, sign_index, vimshottari
+from .engine.vedic import antardashas, current_dasha, house_from, sign_index, vimshottari
 from .models import (
     BirthInput,
     NatalReport,
     NeedsDisambiguation,
+    OutlookReport,
     Provenance,
     ResolvedBirth,
     TodayReport,
@@ -176,6 +177,43 @@ def today_report(birth: ResolvedBirth, now: datetime) -> TodayReport:
     )
     dasha = current_dasha(natal.chart.planets["moon"].longitude, birth.utc, now, profile.dasha_year_days)
     return TodayReport(natal=natal, sky=sky, now=now, current_dasha=dasha, transit_houses=transits)
+
+
+# span -> (length, sampling step, planets shown, whether to check vedha). The Moon changes sign every ~2.5 days, so it
+# is shown only for a week or a fortnight; over a year or more only the slow planets mark the time.
+_FAST = ("moon", "sun", "mercury", "venus", "mars", "jupiter", "saturn", "rahu", "ketu")
+OUTLOOK_SPANS = {
+    "week": (timedelta(days=7), timedelta(hours=1), _FAST, True),
+    "fortnight": (timedelta(days=14), timedelta(hours=1), _FAST, True),
+    "month": (timedelta(days=30), timedelta(hours=3), _FAST[1:], True),
+    "year": (timedelta(days=365), timedelta(days=1), ("jupiter", "saturn", "rahu", "ketu"), False),
+    "years": (timedelta(days=5 * 365 + 1), timedelta(days=1), ("jupiter", "saturn", "rahu", "ketu"), False),
+}
+
+
+def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | None = None) -> OutlookReport:
+    """The planets' transits over the period ahead, from the natal Moon sign, read by Phaladeepika chapter 26."""
+    length, step, planets, check_vedha = OUTLOOK_SPANS[span]
+    natal = natal_report(birth)
+    profile = load_profile(birth.profile)
+    start = now.astimezone(UTC)
+    end = start + length
+    times = [start + step * k for k in range(int(length / step) + 1)]
+    track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
+    moon_lon = natal.chart.planets["moon"].longitude
+    moon_sign = sign_index(moon_lon)
+    rules = gochara.load_rules()
+    found = gochara.stays(times, track, moon_sign, planets, rules, check_vedha)
+    changes = []
+    for maha in natal.dashas:
+        if maha.end <= start or maha.start >= end:
+            continue
+        changes += [(maha.lord, a) for a in antardashas(maha) if start < a.start < end]
+    return OutlookReport(
+        natal=natal, span=span, start=start, end=end, tz=tz or birth.place.tz, moon_sign=moon_sign,
+        stays=tuple(found), dasha_at_start=current_dasha(moon_lon, birth.utc, start, profile.dasha_year_days),
+        dasha_changes=tuple(changes), rules_level=rules.level, rules_edition=rules.edition, rules_pages=rules.pages,
+    )
 
 
 def rahu_kaala_for(place: Place, now: datetime) -> RahuKaala | None:

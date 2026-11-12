@@ -19,7 +19,7 @@ from .engine import house_effects
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
 from .engine.vedic import DASHA_YEARS, RASHIS, SIGNS, house_from, sign_index
-from .models import ResolvedBirth
+from .models import OutlookReport, ResolvedBirth
 from .subject import SELF, Subject
 
 # Calculation systems samay computes; entries tied to any other system are never used.
@@ -41,6 +41,10 @@ DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
 PERSONAL_WORDS = ("my", "mine", "me", "i", "am", "current", "running", "now", "own")
 # Offline fallback only (the model reads the message when it is on): a few single words, no question patterns.
 FUTURE_WORDS = ("future", "forecast", "horoscope", "destiny", "fortune")
+# Offline fallback only: the period a question asks about ("my week", "this year", "the next few years").
+SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "month": "month", "year": "year",
+              "years": "years", "decade": "years"}
+OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 LAGNA_WORDS = ("lagna", "ascendant", "rising")
 ORDINAL_WORDS = {
@@ -79,7 +83,7 @@ LIFE_WORDS = {
 TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
-    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview"]
+    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -100,6 +104,7 @@ class Answer:
     shares: dict | None = None  # how much of the good and bad effects the text says apply
     more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
     who: Subject = SELF  # whose chart this answer is about
+    outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
 
 
 _MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
@@ -123,9 +128,12 @@ def sort_question(text: str) -> str | None:
         return "concept:kalapurusha"
     planets = [_ALIAS[w] for w in words if w in _ALIAS]
     about_dasha = any(w in DASHA_WORDS for w in words)
+    area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
+    span = next((SPAN_WORDS[w] for w in words if w in SPAN_WORDS), None)
+    if span and not planets and not area and not about_dasha:
+        return f"future:{span}"
     if not planets and any(w in FUTURE_WORDS for w in words):
         return "future:overview"
-    area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
     if area and not planets and not about_dasha:
         return f"life:{area}"
     house = _house_asked(text.casefold(), words)
@@ -148,7 +156,12 @@ TOPIC_HELP = {
     "concept:kalapurusha": "the cosmic person (Kalapurusha)",
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
-    "future:overview": "the person's future, luck or what to expect: any horoscope-style question about their own life",
+    "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
+    "future:week": "the coming week or the next few days (what the week looks like, this weekend)",
+    "future:fortnight": "the next two weeks",
+    "future:month": "the coming month or the next few weeks",
+    "future:year": "the coming year, this year or the next twelve months",
+    "future:years": "the next few years, the long term, or the coming decade",
 }
 MODEL_SYSTEM = (
     "You route messages sent to a Jyotish chat bot. Reply with exactly one topic key and nothing else, or 'none' "
@@ -346,6 +359,7 @@ def answer_topic(
     entries_dir: Path | None = None,
     question: str = "",
     subject: Subject = SELF,
+    tz: str | None = None,
 ) -> Answer:
     """The answer for a sorted topic: checked entries for it, plus the person's own chart facts."""
     topic = resolve_topic(topic, birth, now)
@@ -353,6 +367,9 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic in OUTLOOK_TOPICS:
+        report = service.outlook_report(birth, now, topic.split(":")[1], tz) if birth is not None else None
+        return Answer(topic, (), (), outlook=report, who=subject)
     kind, _, subject_key = topic.partition(":")
     if kind == "life":
         return _life_answer(subject_key, birth, entries_dir, subject)
@@ -406,6 +423,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     for r, _ in answer.more_readings:
         verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
                         + "; ".join(e.text for e in r.effects))
+    if answer.outlook is not None:
+        verified += outlook_facts(answer.outlook, answer.who)
     parts = []
     if not answer.who.is_self:
         relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
@@ -433,3 +452,27 @@ async def ai_answer(question: str, answer: Answer, client=None, history=()) -> s
     if len(reply) > MAX_AI_CHARS:
         reply = reply[:MAX_AI_CHARS].rsplit(" ", 1)[0].rstrip() + "…"
     return reply
+
+
+def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
+    """The period's transits as plain sentences for the AI (the bot shows its own layout of the same facts)."""
+    out = [(f"The period is {report.start:%d %b %Y} to {report.end:%d %b %Y}. Transits are counted from "
+            f"{who.your} Moon sign, {SIGNS[report.moon_sign]}, as Phaladeepika chapter 26 teaches.")]
+    if report.dasha_at_start:
+        maha, antar = report.dasha_at_start
+        out.append(f"Running at the start: the {maha.lord.title()} chapter (mahadasha), {antar.lord.title()} "
+                   f"sub-chapter until {antar.end:%d %b %Y}.")
+    out += [f"From {a.start:%d %b %Y}: the {a.lord.title()} sub-chapter of the {lord.title()} chapter."
+            for lord, a in report.dasha_changes]
+    for s in report.stays:
+        when = ("all through the period" if s.start is None and s.end is None
+                else f"until {s.end:%d %b %Y}" if s.start is None
+                else f"from {s.start:%d %b %Y}" if s.end is None
+                else f"{s.start:%d %b %Y} to {s.end:%d %b %Y}")
+        line = f"{s.planet.title()} in the {_ordinal(s.house)} house from the Moon sign, {when}"
+        if s.effect:
+            line += f": the text gives {s.effect} ({'a good house' if s.favourable else 'a hard house'} for it)"
+            if s.blocked_by:
+                line += f", but {', '.join(g.title() for g in s.blocked_by)} obstruct it (vedha)"
+        out.append(line + ".")
+    return out

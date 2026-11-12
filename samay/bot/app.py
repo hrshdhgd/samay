@@ -239,6 +239,13 @@ async def _begin(update: Update, ctx, chat_id: int, prefix: str = "") -> None:
     await _send_flow(update, ctx, chat_id, flow.begin(), prefix)
 
 
+async def _home_tz(ctx, chat_id: int) -> str | None:
+    """The timezone of where the person lives now, for dates in a reading; None when they have not said."""
+    home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
+    place = geo.get_place(home.place_id) if home is not None else None
+    return place.tz if place is not None else None
+
+
 async def _rahu_line(ctx, chat_id: int, now: datetime) -> str:
     """Today's Rahu Kaala for the city the person lives in, or a nudge to say where that is."""
     home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
@@ -388,7 +395,7 @@ def answer_markup(
         row = []
         if view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1:
+        elif len(answer.entries) > 1 or answer.outlook is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
             row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))
@@ -460,8 +467,9 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
         return
     if changed and subject.is_self:
         await _say(update, prompts.SWITCHED_SELF, MENU)
-    answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject)
-    if answer.topic not in (None, "future:overview") and not answer.entries:
+    tz = await _home_tz(ctx, chat_id)
+    answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
+    if answer.topic is not None and not answer.topic.startswith("future:") and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
         async with typing(update):
@@ -498,7 +506,8 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
             await _say(update, prompts.PERSON_GONE, MENU)
             return
     subject, birth = await _subject_and_birth(ctx, chat_id, pid)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject)
+    tz = await _home_tz(ctx, chat_id)
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
     view = QA_VIEWS[mode]
     try:
         await update.callback_query.edit_message_text(

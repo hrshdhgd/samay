@@ -148,6 +148,24 @@ def _tropical_longitudes(t, node_fn) -> dict[str, float]:
     return out
 
 
+def sidereal_track(
+    times: list[datetime], ayanamsa: str = "lahiri_mean", node: str = "mean"
+) -> dict[str, list[float]]:
+    """Sidereal longitude of every graha at each of many moments (UTC-aware, from 1972), in one vectorised pass.
+    Used for transits over weeks to years; a chart for one moment is compute_chart."""
+    if not times:
+        return {g: [] for g in GRAHAS}
+    if any(t.tzinfo is None for t in times):
+        raise ValueError("times must be timezone-aware")
+    utc = [t.astimezone(UTC) for t in times]
+    if not (max(UTC_LEAP_SECONDS_FROM, EPHEMERIS_START) <= min(utc) and max(utc) <= EPHEMERIS_END):
+        raise OutOfEphemerisRange(f"{min(utc):%Y-%m-%d}..{max(utc):%Y-%m-%d} is outside the supported range")
+    t = _timescale().from_datetimes(utc)
+    ayan = AYANAMSAS[ayanamsa](t.tt)
+    tropical = _tropical_longitudes(t, NODES[node])
+    return {g: [float(x) for x in (tropical[g] - ayan) % 360.0] for g in GRAHAS}
+
+
 def compute_chart(
     utc: datetime,
     latitude: float,

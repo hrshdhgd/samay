@@ -116,6 +116,15 @@ LIFE_FRAME = (
     "This shows what the text associates with this area and what sits there in {your} chart. It cannot say whether or "
     "when anything will happen."
 )
+OUTLOOK_KEY = "Houses are counted from the Moon sign. ✓ marks a house the text counts as good for that planet."
+OUTLOOK_FRAME = "What an old text says about these transits, not a forecast."
+OUTLOOK_NOT_APPLIED = (
+    "The text adds refinements this reading does not apply yet: aspects from good and bad planets, each planet's "
+    "strength in the sign, the part of the sign where it acts, and ashtakavarga points. Ketu has no results in the text."
+)
+OUTLOOK_UNCHECKED = (
+    "The text's results for these transits are waiting for a check, so for now I show only where the planets are."
+)
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from ..engine.daylight import RahuKaala
+from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
 from ..engine.vedic import (
     DASHA_YEARS,
@@ -17,8 +19,8 @@ from ..engine.vedic import (
     nakshatra,
     sign_index,
 )
-from ..models import NatalReport, NeedsDisambiguation, TodayReport
-from ..qa import LIFE_AREAS
+from ..models import NatalReport, NeedsDisambiguation, OutlookReport, TodayReport
+from ..qa import LIFE_AREAS, OUTLOOK_TOPICS
 from ..subject import SELF
 from . import prompts
 
@@ -261,7 +263,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     (every entry) or "sanskrit" (the checked verses)."""
     if answer.topic is None:
         return prompts.NO_TOPIC_AI if ai_follows else prompts.NO_TOPIC
-    if answer.topic == "future:overview" and not birth_known:
+    if answer.topic.startswith("future:") and not birth_known:
         return prompts.NEED_BIRTH_FOR_FUTURE
     if view == "sanskrit":
         return _render_verses(answer)
@@ -272,6 +274,11 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic in OUTLOOK_TOPICS:
+        if answer.outlook is not None:
+            blocks.append(render_outlook(answer.outlook, full=full, who=who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic.startswith("life:"):
         houses, label = LIFE_AREAS[answer.topic.split(":")[1]]
         which = " and ".join(ordinal(h) for h in houses)
@@ -373,3 +380,80 @@ def render_options(d: NeedsDisambiguation) -> list[str]:
     if d.kind == "place":
         return [p.label for p in d.options]
     return [f"{'first' if i == 0 else 'second'} occurrence ({u:%H:%M} UTC)" for i, u in enumerate(d.options)]
+
+
+PLANET_ICONS = {"sun": "☀️", "moon": "🌙", "mars": "♂️", "mercury": "☿", "jupiter": "♃", "venus": "♀️", "saturn": "♄",
+                "rahu": "☊", "ketu": "☋"}
+OUTLOOK_TITLES = {"week": "{Your} week ahead", "fortnight": "{Your} next two weeks", "month": "{Your} month ahead",
+                  "year": "{Your} year ahead", "years": "{Your} next five years"}
+
+
+def _day(moment: datetime) -> str:
+    return f"{moment.day} {moment:%b %Y}"
+
+
+def _stamp(moment: datetime, tz: ZoneInfo, span: str) -> str:
+    local = moment.astimezone(tz)
+    if span in ("week", "fortnight"):
+        return f"{local:%a} {local.day} {local:%b} {clock12(local).replace(':00', '')}"
+    return f"{local.day} {local:%b}" if span == "month" else f"{local:%b %Y}"
+
+
+def _stay_line(s, report: OutlookReport, tz: ZoneInfo, checked: bool, full: bool, chained: bool, repeat: bool) -> str:
+    """One stay. As a bullet: 'Thu 12 Nov 3 am – Sat 14 Nov 4 pm · 1st ✓: the rise of good fortune'. Chained after
+    the planet's name ('9th ✓ until Mar 2027: ...; then 10th: ...'), each part starts where the last one ended.
+    `repeat`: the planet was in this house earlier in the period (it turned back), so its result is not repeated."""
+    span = report.span
+    house = f"{ordinal(s.house)}{' ✓' if checked and s.favourable else ''}"
+    if chained:
+        line = house + (f" until {_stamp(s.end, tz, span)}" if s.end is not None else "")
+    else:
+        since = "now" if s.start is None else _stamp(s.start, tz, span)
+        until = "end" if s.end is None else _stamp(s.end, tz, span)
+        line = f"{since} – {until} · {house}"
+    if s.effect and not repeat:
+        line += f": {s.effect}"
+    if checked and s.blocked_by:
+        line += f" ⛔ blocked by {' and '.join(g.title() for g in s.blocked_by)} in the {ordinal(s.vedha_house)} (vedha)"
+    elif checked and full and s.vedha_house and s.effect and not repeat:
+        line += f" (unless a planet is in the {ordinal(s.vedha_house)}: vedha)"
+    return line
+
+
+def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
+    """The period ahead: the running dasha and any sub-chapter that begins, then each planet's houses from the Moon
+    sign with Phaladeepika chapter 26's result for it. Without a checked rules file, positions only."""
+    tz = ZoneInfo(report.tz)
+    checked = report.rules_level in SERVABLE_LEVELS
+    start, end = report.start.astimezone(tz), report.end.astimezone(tz)
+    lines = [f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}",
+             f"Counted from {who.your} Moon sign, {SIGNS[report.moon_sign]} ({RASHIS[report.moon_sign]})."]
+    if report.dasha_at_start:
+        maha, antar = report.dasha_at_start
+        lines.append(f"⏳ {maha.lord.title()} chapter, {antar.lord.title()} sub-chapter until {_day(antar.end)}.")
+    lines += [f"⏳ From {_day(a.start)}: {a.lord.title()} sub-chapter of the "
+              f"{lord.title()} chapter." for lord, a in report.dasha_changes]
+    body = []
+    by_planet: dict[str, list] = {}
+    for s in report.stays:
+        by_planet.setdefault(s.planet, []).append(s)
+    for planet, stays in by_planet.items():
+        name = f"{PLANET_ICONS[planet]} {planet.title()}"
+        repeats = [any(t.house == s.house for t in stays[:i]) for i, s in enumerate(stays)]
+        if planet == "moon" or (full and len(stays) > 1):
+            body.append(name + "\n" + "\n".join(f"• {_stay_line(s, report, tz, checked, full, False, r)}"
+                                                for s, r in zip(stays, repeats, strict=True)))
+        else:
+            body.append(f"{name}: " + "; then ".join(_stay_line(s, report, tz, checked, full, True, r)
+                                                     for s, r in zip(stays, repeats, strict=True)))
+    blocks = ["\n".join(lines), "\n".join(body)]
+    if checked:
+        blocks.append(prompts.OUTLOOK_KEY)
+        if full:
+            blocks.append(prompts.OUTLOOK_NOT_APPLIED)
+        verses = sorted({s.verse for s in report.stays if s.verse}, key=lambda v: int(v.split("-")[0]))
+        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika 26.2–8, " + ", ".join(f"26.{v.replace('-', '–')}" for v in verses)
+                      + (f" ({report.rules_edition}, pp. {report.rules_pages})" if full else "") + " · checked")
+    else:
+        blocks.append(prompts.OUTLOOK_UNCHECKED)
+    return "\n\n".join(blocks)

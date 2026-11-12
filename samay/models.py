@@ -8,6 +8,7 @@ from typing import Literal
 
 from .engine.ephemeris import Chart
 from .engine.geo import Place
+from .engine.gochara import Stay
 from .engine.profiles import DEFAULT_PROFILE
 from .engine.rules import Rule
 from .engine.vedic import Period
@@ -91,3 +92,21 @@ class TodayReport:
     now: datetime
     current_dasha: tuple[Period, Period] | None
     transit_houses: tuple[tuple[str, int], ...]
+
+
+@dataclass(frozen=True)
+class OutlookReport:
+    """A period ahead (a week to several years): where the planets go, counted from the natal Moon sign, with the
+    text's transit results (Phaladeepika ch. 26), and the dasha sub-chapters that begin inside the period."""
+    natal: NatalReport
+    span: str  # week, fortnight, month, year or years
+    start: datetime  # UTC
+    end: datetime  # UTC
+    tz: str  # the timezone dates are shown in
+    moon_sign: int
+    stays: tuple[Stay, ...]
+    dasha_at_start: tuple[Period, Period] | None
+    dasha_changes: tuple[tuple[str, Period], ...]  # (mahadasha lord, antardasha) for each sub-chapter that begins
+    rules_level: str
+    rules_edition: str
+    rules_pages: str
