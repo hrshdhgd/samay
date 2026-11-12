@@ -1,0 +1,130 @@
+# Ashtakavarga: the benefic points each planet gets in each sign, from the positions of the seven planets and the lagna.
+# Phaladeepika chapter 23 verses 3-9 (the tables), 11 (what the number of points means), 20 (the 28 rule); cross-checked
+# against Brihat Jataka chapter IX (Iyer 1885, public domain). Tables are lists of numbers (facts, not prose).
+# Notes, the cross-check and every difference between the two texts: research/notes/ashtakavarga.md.
+#
+# UNCHECKED: nothing from this file is shown until a person compares it with the sources and sets
+# level: translation-checked with checked_by and checked_on.
+verification: {level: unchecked}
+edition: "Phala Deepika tr. G. S. Kapoor (Ranjan Publications), Brihat Jataka tr. N. Chidambaram Iyer (Madras 1885)"
+pages: "Phaladeepika 220-231 (PDF 219-230); Brihat Jataka ch. IX pp. 92-95"
+
+# How to read it: tables.<planet>.<from> lists the houses, counted from where <from> stands at birth (1 = its own sign),
+# in which <planet> gets a benefic point. <from> is one of the seven planets or the lagna. Rahu and Ketu have none.
+#
+# Which reading is used: Phaladeepika's lists AS PRINTED, because they alone reproduce that chapter's own worked example
+# (the twelve sign totals 19 26 33 28 27 24 29 40 24 25 26 36, which add to 337). Where the printed lists are truncated or
+# garbled in the translation the list is completed from Brihat Jataka (marked `gap_filled_from_brihat_jataka`), and the
+# completed lists still reproduce the example. Brihat Jataka differs from Phaladeepika in five lists (`variants`); in four
+# of them only Phaladeepika's reading reproduces the example, and the fifth (the Moon's points from the Sun) the example
+# cannot decide, so Phaladeepika's is used there too.
+
+tables:
+  sun:
+    sun: [1, 2, 4, 7, 8, 9, 10, 11]
+    moon: [3, 6, 10, 11]
+    mars: [1, 2, 4, 7, 8, 9, 10, 11]
+    mercury: [3, 5, 6, 9, 10, 11, 12]
+    jupiter: [5, 6, 9, 11]
+    venus: [6, 7, 12]
+    saturn: [1, 2, 4, 7, 8, 9, 10, 11]
+    lagna: [3, 4, 6, 10, 11, 12]
+  moon:
+    sun: [3, 6, 7, 8, 10, 11]
+    moon: [1, 3, 6, 7, 10, 11]
+    mars: [2, 3, 5, 6, 9, 10, 11]
+    mercury: [1, 3, 4, 5, 7, 8, 10, 11]
+    jupiter: [1, 2, 4, 7, 8, 10, 11]
+    venus: [3, 4, 5, 7, 9, 10, 11]
+    saturn: [3, 5, 6, 11]
+    lagna: [3, 6, 10, 11]
+  mars:
+    sun: [3, 5, 6, 10, 11]
+    moon: [3, 6, 11]
+    mars: [1, 2, 4, 7, 8, 10, 11]
+    mercury: [3, 5, 6, 11]
+    jupiter: [6, 8, 11, 12]
+    venus: [6, 8, 11, 12]
+    saturn: [1, 4, 7, 8, 9, 10, 11]
+    lagna: [1, 3, 6, 10, 11]
+  mercury:
+    sun: [5, 6, 9, 11, 12]
+    moon: [2, 4, 6, 8, 10, 11]
+    mars: [1, 2, 4, 7, 8, 9, 10, 11]
+    mercury: [1, 3, 5, 6, 7, 10, 11, 12]
+    jupiter: [6, 8, 11, 12]
+    venus: [1, 2, 3, 4, 5, 8, 9, 11]
+    saturn: [1, 2, 4, 7, 8, 9, 10, 11]
+    lagna: [1, 2, 4, 6, 8, 10, 11]
+  jupiter:
+    sun: [1, 2, 3, 4, 7, 8, 9, 10, 11]
+    moon: [2, 5, 7, 9, 11]
+    mars: [1, 2, 4, 7, 8, 10, 11]
+    mercury: [1, 2, 4, 5, 6, 9, 10, 11]
+    jupiter: [1, 2, 4, 5, 6, 9, 10, 11]
+    venus: [2, 5, 6, 9, 10, 11]
+    saturn: [3, 5, 6, 12]
+    lagna: [1, 2, 4, 5, 6, 7, 9, 10, 11]
+  venus:
+    sun: [8, 11, 12]
+    moon: [1, 2, 3, 4, 5, 8, 9, 11, 12]
+    mars: [3, 4, 6, 9, 11, 12]
+    mercury: [3, 5, 6, 9, 11]
+    jupiter: [5, 8, 9, 10, 11]
+    venus: [1, 2, 3, 4, 5, 8, 9, 10, 11]
+    saturn: [3, 4, 5, 8, 9, 10, 11]
+    lagna: [1, 2, 3, 4, 5, 8, 9, 11]
+  saturn:
+    sun: [1, 2, 4, 7, 8, 10, 11]
+    moon: [3, 6, 11]
+    mars: [3, 5, 6, 10, 11, 12]
+    mercury: [6, 8, 9, 10, 11, 12]
+    jupiter: [5, 6, 11, 12]
+    venus: [6, 11, 12]
+    saturn: [3, 5, 6, 11]
+    lagna: [1, 3, 4, 6, 10, 11]
+
+# What each planet's total must be, and how many points each source gives it (Phaladeepika's own counts, verses 3-9).
+# The loader refuses a table that does not add up.
+expected:
+  sun: {total: 48, counts: [8, 4, 8, 7, 4, 3, 8, 6]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  moon: {total: 49, counts: [6, 6, 7, 8, 7, 7, 4, 4]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  mars: {total: 39, counts: [5, 3, 7, 4, 4, 4, 7, 5]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  mercury: {total: 54, counts: [5, 6, 8, 8, 4, 8, 8, 7]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  jupiter: {total: 56, counts: [9, 5, 7, 8, 8, 6, 4, 9]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  venus: {total: 52, counts: [3, 9, 6, 5, 5, 9, 7, 8]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+  saturn: {total: 39, counts: [7, 3, 6, 6, 4, 3, 4, 6]}  # from sun, moon, mars, mercury, jupiter, venus, saturn, lagna
+
+gap_filled_from_brihat_jataka:  # lists where the Phaladeepika translation drops items and its own count shows it
+  - {planet: sun, from: mercury, note: "Phaladeepika prints 6-9-10-11-12 (5) but counts 7; Brihat Jataka gives 3-5-6-9-10-11-12"}
+  - {planet: moon, from: mercury, note: "Phaladeepika prints 3-4-5-7-8-10-11 (7) but counts 8; Brihat Jataka adds the 1st"}
+  - {planet: venus, from: lagna, note: "Phaladeepika prints -2-3-4-5-8-9-11 (first digit lost) and counts 8; Brihat Jataka gives 1-2-3-4-5-8-9-11"}
+gap_filled_from_phaladeepika:  # lists where the Brihat Jataka OCR is garbled
+  - {planet: mercury, from: mercury, note: "Brihat Jataka's scan is unreadable at one number; Phaladeepika gives 1-3-5-6-7-10-11-12 (8)"}
+  - {planet: venus, from: moon, note: "Brihat Jataka's scan runs 1-2-3-4-5-11-12 and drops 8 and 9; Phaladeepika gives 1-2-3-4-5-8-9-11-12 (9)"}
+variants:  # where the two texts differ; Phaladeepika's reading is the one in `tables`
+  - {planet: moon, from: sun, phaladeepika: [3, 6, 7, 8, 10, 11], brihat_jataka: [3, 5, 7, 8, 10, 11], note: "the worked example cannot tell these apart"}
+  - {planet: moon, from: jupiter, phaladeepika: [1, 2, 4, 7, 8, 10, 11], brihat_jataka: [1, 4, 7, 8, 10, 11, 12], note: "the example needs Phaladeepika's"}
+  - {planet: mars, from: jupiter, phaladeepika: [6, 8, 11, 12], brihat_jataka: [6, 10, 11, 12], note: "the example needs Phaladeepika's; its list is the same as Venus's"}
+  - {planet: jupiter, from: jupiter, phaladeepika: [1, 2, 4, 5, 6, 9, 10, 11], brihat_jataka: [1, 2, 3, 4, 7, 8, 10, 11], note: "the example needs Phaladeepika's; its list is the same as Mercury's"}
+  - {planet: venus, from: mars, phaladeepika: [3, 4, 6, 9, 11, 12], brihat_jataka: [3, 5, 6, 9, 11, 12], note: "the example needs Phaladeepika's"}
+
+# Verse 11: what the planet brings when it passes a sign with this many of its own points. 0 is from the translation of
+# the same verse ("loss of life"). The text gives nothing for 8.
+points_meaning:
+  verse: "23.11"
+  0: "the native may lose his life"
+  1: "destruction or loss"
+  2: "expense"
+  3: "fear"
+  4: "the desired aim is accomplished"
+  5: "gaining a beautiful wife"
+  6: "gaining wealth or property"
+  7: "gaining a kingdom or a high government position"
+
+# Verse 20: add the seven planets' points in each sign (the Sarvashtakavarga, 337 in all).
+sarva:
+  verse: "23.20"
+  threshold: 28
+  above: "auspicious"
+  below: "danger or sorrow, more the further below 28"

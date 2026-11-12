@@ -114,3 +114,6 @@ class OutlookReport:
     antardasha_edition: str = ""
     antardasha_pages: str = ""
     antardasha_checked: bool = False
+    ashtaka_checked: bool = False  # the points on each stay are shown only once the ashtakavarga tables are checked
+    ashtaka_meaning: tuple[tuple[int, str], ...] = ()  # (points, what the text says), Phaladeepika 23.11
+    ashtaka_variants: int = 0  # lists where Brihat Jataka differs from the tables used

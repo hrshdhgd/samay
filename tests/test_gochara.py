@@ -426,3 +426,122 @@ def test_rahu_and_ketu_get_a_reading_here_though_brihat_jataka_has_none(monkeypa
     answer = qa.answer_topic("planet:rahu", _birth(), NOW)
     assert answer.reading is None and answer.second and answer.second[0].verse == "25-27"
     assert "Phaladeepika 8.25–27" in render_answer(answer)
+
+
+# --- Ashtakavarga: points per sign, and what the number means (Phaladeepika 23) -------------------------------------------
+from samay.engine import ashtakavarga
+
+AV = ashtakavarga.load_rules()
+AV_CHECKED = dataclasses.replace(AV, level="translation-checked", checked_by="test")
+# Phaladeepika's worked example (ch. 23 verse 20): the Sun and Venus in Scorpio and Jupiter in Virgo are stated; the other
+# four positions were found by search (the book does not print them) as the only chart that gives its twelve totals.
+EXAMPLE = {"sun": 7, "venus": 7, "jupiter": 5, "moon": 0, "mars": 4, "mercury": 8, "saturn": 1, "lagna": 8}
+BOOK_TOTALS = [19, 26, 33, 28, 27, 24, 29, 40, 24, 25, 26, 36]
+
+
+def test_each_planets_table_adds_up_to_the_texts_total():
+    totals = {p: sum(len(h) for h in row.values()) for p, row in AV.tables.items()}
+    assert totals == {"sun": 48, "moon": 49, "mars": 39, "mercury": 54, "jupiter": 56, "venus": 52, "saturn": 39}
+    assert sum(totals.values()) == 337
+
+
+def test_the_books_worked_example_is_reproduced():
+    points = ashtakavarga.bhinna(AV, EXAMPLE)
+    total = ashtakavarga.sarva(points)
+    assert sorted(total) == sorted(BOOK_TOTALS) and sum(total) == 337
+    assert points["sun"][1] == 7 and points["jupiter"][5] == 7  # the Sun's Taurus and Jupiter's Virgo, as the chapter says
+
+
+def test_points_depend_on_the_chart_not_on_the_totals():
+    shifted = {k: (v + 1) % 12 for k, v in EXAMPLE.items()}  # every position one sign on: the same pattern, one sign later
+    a, b = ashtakavarga.sarva(ashtakavarga.bhinna(AV, EXAMPLE)), ashtakavarga.sarva(ashtakavarga.bhinna(AV, shifted))
+    assert b == a[-1:] + a[:-1]
+
+
+def test_the_differences_between_the_two_texts_are_recorded():
+    assert len(AV.variants) == 5 and {(v["planet"], v["from"]) for v in AV.variants} >= {("moon", "jupiter"), ("venus", "mars")}
+    assert AV.level == "unchecked" and not AV.servable and AV.threshold == 28
+    assert AV.meaning[1] == "destruction or loss" and AV.meaning[7].startswith("gaining a kingdom")
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["tables"]["sun"]["moon"].pop(),  # one point short of the text's count
+    lambda r: r["tables"]["sun"]["moon"].__setitem__(0, 13),
+    lambda r: r["tables"]["sun"].pop("lagna"),
+    lambda r: r["tables"].pop("saturn"),
+    lambda r: r["tables"]["moon"].__setitem__("sun", [6, 3, 7, 8, 10, 11]),  # not sorted
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_table_that_does_not_add_up_is_refused(tmp_path, change):
+    raw = yaml.safe_load(ashtakavarga.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ashtakavarga.load_rules(path)
+
+
+@pytest.mark.parametrize(("question", "topic"), [
+    ("show my ashtakavarga", "chart:ashtakavarga"), ("how many bindus do I have", "chart:ashtakavarga"),
+    ("what is sarvashtakavarga", "chart:ashtakavarga"),
+])
+def test_ashtakavarga_questions_are_routed(question, topic):
+    assert qa.sort_question(question) == topic and topic in qa.MODEL_SYSTEM
+
+
+def test_without_a_birth_the_ashtakavarga_asks_for_one():
+    answer = qa.answer_topic("chart:ashtakavarga", None, NOW)
+    assert answer.ashtaka is None and render_answer(answer, birth_known=False) == prompts.NEED_BIRTH_FOR_CHART
+
+
+@needs_kernel
+def test_unchecked_tables_show_no_numbers():
+    text = render_answer(qa.answer_topic("chart:ashtakavarga", _birth(), NOW))
+    assert prompts.ASHTAKA_UNCHECKED in text and "house ·" not in text
+    outlook = render_answer(qa.answer_topic("future:year", _birth(), NOW))
+    assert " pts" not in outlook
+
+
+@needs_kernel
+def test_checked_tables_show_the_sign_totals_by_house_and_the_28_rule(monkeypatch):
+    monkeypatch.setattr(ashtakavarga, "load_rules", lambda path=None: AV_CHECKED)
+    answer = qa.answer_topic("chart:ashtakavarga", _birth(), NOW)
+    assert sum(answer.ashtaka.sarva) == 337
+    text = render_answer(answer)
+    lagna = answer.ashtaka.lagna
+    assert f"1st house · {ashtakavarga_sign(lagna)}" in text and "more than 28 points" in text and "✓" in text
+    assert "Source: Phaladeepika 23.3–9, 23.20 · checked" in text
+    full = render_answer(answer, "full")
+    assert "Brihat Jataka's differ in 5 of the 56 lists" in full and "Sun " in full
+    assert "ashtakavarga points per house" in qa._ai_prompt("which signs are strong?", answer)
+
+
+def ashtakavarga_sign(index: int) -> str:
+    from samay.engine.vedic import RASHIS, SIGNS
+    return f"{SIGNS[index]} ({RASHIS[index]})"
+
+
+@needs_kernel
+def test_outlook_stays_carry_the_planets_own_points_once_checked(monkeypatch):
+    monkeypatch.setattr(ashtakavarga, "load_rules", lambda path=None: AV_CHECKED)
+    report = qa.answer_topic("future:year", _birth(), NOW).outlook
+    assert report.ashtaka_checked and report.ashtaka_variants == 5
+    assert all(s.points is not None for s in report.stays if s.planet not in ("rahu", "ketu"))
+    assert all(s.points is None for s in report.stays if s.planet in ("rahu", "ketu"))
+    assert all(0 <= s.points <= 8 for s in report.stays if s.points is not None)
+    compact, full = render_answer(qa.answer_topic("future:year", _birth(), NOW)), render_answer(
+        qa.answer_topic("future:year", _birth(), NOW), "full")
+    assert " pts)" in compact and "23.11" in compact and "Brihat Jataka's tables differ" not in compact
+    assert "pts: " in full and "Brihat Jataka's tables differ from them in 5 of the 56 lists" in full
+
+
+@needs_kernel
+def test_a_points_question_is_not_a_missed_topic_and_its_view_fits_a_message(monkeypatch):
+    monkeypatch.setattr(ashtakavarga, "load_rules", lambda path=None: AV_CHECKED)
+    monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    for topic in (*qa.OUTLOOK_TOPICS, "chart:ashtakavarga"):
+        answer = qa.answer_topic(topic, _birth(), NOW)
+        for view in ("compact", "full"):
+            assert len(render_answer(answer, view)) < 4096, (topic, view)
+    assert "chart:".startswith(qa.COMPUTED_PREFIXES) and "future:".startswith(qa.COMPUTED_PREFIXES)

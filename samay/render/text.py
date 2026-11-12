@@ -268,6 +268,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NO_TOPIC_AI if ai_follows else prompts.NO_TOPIC
     if answer.topic.startswith("future:") and not birth_known:
         return prompts.NEED_BIRTH_FOR_FUTURE
+    if answer.topic == "chart:ashtakavarga" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_CHART
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -277,6 +279,11 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:ashtakavarga":
+        if answer.ashtaka is not None:
+            blocks.append(render_ashtaka(answer.ashtaka, full=full, who=who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic in OUTLOOK_TOPICS:
         if answer.outlook is not None:
             blocks.append(render_outlook(answer.outlook, full=full, who=who))
@@ -376,6 +383,29 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
     return "\n".join(lines)
 
 
+def render_ashtaka(view, full: bool = False, who=SELF) -> str:
+    """The sign totals, by house from the lagna, with the text's 28 rule; per-planet points in the full view."""
+    title = f"🔢 {who.Your} ashtakavarga (benefic points per sign)"
+    if not view.checked:
+        return f"{title}\n\n{prompts.ASHTAKA_UNCHECKED}"
+    lines = [title, ""]
+    for h in range(1, 13):
+        sign = (view.lagna + h - 1) % 12
+        n = view.sarva[sign]
+        row = f"{ordinal(h)} house · {SIGNS[sign]} ({RASHIS[sign]}): {n}{' ✓' if n > view.threshold else ''}"
+        if full:
+            row += "  [" + ", ".join(f"{p.title()} {view.bhinna[p][sign]}" for p in view.bhinna) + "]"
+        lines.append(row)
+    rule = (f"The text (Phaladeepika {view.verse}) says a transit through a sign with more than {view.threshold} points "
+            f"is {view.above}; with fewer, it brings {view.below}.")
+    lines += ["", f"Together {sum(view.sarva)} points. {prompts.ASHTAKA_KEY}", rule]
+    if full:
+        lines.append(f"Counted with Phaladeepika's tables; Brihat Jataka's differ in {view.variants} of the 56 lists "
+                     f"({view.edition}; {view.pages}).")
+    lines.append(f"Source: Phaladeepika 23.3–9, {view.verse} · checked")
+    return "\n".join(lines)
+
+
 def render_second(v, who=SELF) -> str:
     """Phaladeepika chapter 8 on one planet in one house: the paraphrased results, a rising-sign line where the text has one."""
     lines = [f"What Phaladeepika chapter 8 says about {v.planet.title()} in {who.your} {ordinal(v.house)} house:"]
@@ -420,6 +450,9 @@ def _stay_line(s, report: OutlookReport, tz: ZoneInfo, checked: bool, full: bool
     `repeat`: the planet was in this house earlier in the period (it turned back), so its result is not repeated."""
     span = report.span
     house = f"{ordinal(s.house)}{' ✓' if checked and s.favourable else ''}"
+    if report.ashtaka_checked and s.points is not None:
+        meaning = dict(report.ashtaka_meaning).get(s.points) if full else None
+        house += f" ({s.points} pts{f': {meaning}' if meaning else ''})"
     if chained:
         line = house + (f" until {_stamp(s.end, tz, span)}" if s.end is not None else "")
     else:
@@ -483,6 +516,10 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
         editions.append(f"pp. {report.antardasha_pages}")
     else:
         blocks.append(prompts.OUTLOOK_DASHA_UNCHECKED)
+    if report.ashtaka_checked and any(s.points is not None for s in report.stays):
+        refs += ["23.3–9", "23.11"]
+        if full:
+            blocks.append(prompts.OUTLOOK_ASHTAKA_NOTE.format(n=report.ashtaka_variants))
     if refs:
         edition = f" ({report.rules_edition}; {', '.join(editions)})" if full else ""
         blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)}{edition} · checked")

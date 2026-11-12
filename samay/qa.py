@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
-from .engine import antardasha, house_effects, planet_houses
+from .engine import antardasha, ashtakavarga, house_effects, planet_houses
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
@@ -45,6 +45,9 @@ FUTURE_WORDS = ("future", "forecast", "horoscope", "destiny", "fortune")
 SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "month": "month", "year": "year",
               "years": "years", "decade": "years"}
 OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
+ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
+# Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
+COMPUTED_PREFIXES = ("future:", "chart:")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 LAGNA_WORDS = ("lagna", "ascendant", "rising")
 ORDINAL_WORDS = {
@@ -83,7 +86,7 @@ LIFE_WORDS = {
 TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
-    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS]
+    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -103,6 +106,22 @@ class SecondVoice:
 
 
 @dataclass(frozen=True)
+class AshtakaView:
+    """The person's ashtakavarga: points per sign (Aries first), per planet and added up."""
+    sarva: tuple[int, ...]
+    bhinna: dict
+    lagna: int
+    checked: bool  # the numbers are shown only once a person has checked the tables
+    threshold: int
+    above: str
+    below: str
+    verse: str
+    edition: str
+    pages: str
+    variants: int
+
+
+@dataclass(frozen=True)
 class Answer:
     topic: str | None  # None: the question is outside what samay can answer from sources
     entries: tuple[Entry, ...]
@@ -115,6 +134,7 @@ class Answer:
     who: Subject = SELF  # whose chart this answer is about
     outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
+    ashtaka: AshtakaView | None = None  # chart:ashtakavarga
 
 
 _MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
@@ -138,6 +158,8 @@ def sort_question(text: str) -> str | None:
         return "concept:kalapurusha"
     planets = [_ALIAS[w] for w in words if w in _ALIAS]
     about_dasha = any(w in DASHA_WORDS for w in words)
+    if any(w in ASHTAKA_WORDS for w in words):
+        return "chart:ashtakavarga"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
     span = next((SPAN_WORDS[w] for w in words if w in SPAN_WORDS), None)
     if span and not planets and not area and not about_dasha:
@@ -166,6 +188,7 @@ TOPIC_HELP = {
     "concept:kalapurusha": "the cosmic person (Kalapurusha)",
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
+    "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
     "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
     "future:week": "the coming week or the next few days (what the week looks like, this weekend)",
     "future:fortnight": "the next two weeks",
@@ -313,6 +336,16 @@ def _transit_facts(report, who: Subject = SELF) -> list[str]:
     return out
 
 
+def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
+    if birth is None:
+        return None
+    rules = ashtakavarga.load_rules()
+    points = ashtakavarga.bhinna(rules, ashtakavarga.positions(service.natal_report(birth).chart))
+    where = ashtakavarga.positions(service.natal_report(birth).chart)
+    return AshtakaView(tuple(ashtakavarga.sarva(points)), points, where["lagna"], rules.servable, rules.threshold,
+                       rules.above, rules.below, rules.sarva_verse, rules.edition, rules.pages, len(rules.variants))
+
+
 def _second_voice(chart, planet: str) -> SecondVoice | None:
     """What Phaladeepika chapter 8 says for this planet in the house it holds in the chart, once checked."""
     lagna = sign_index(chart.ascendant)
@@ -399,6 +432,8 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic == "chart:ashtakavarga":
+        return Answer(topic, (), (), ashtaka=_ashtaka_view(birth), who=subject)
     if topic in OUTLOOK_TOPICS:
         report = service.outlook_report(birth, now, topic.split(":")[1], tz) if birth is not None else None
         return Answer(topic, (), (), outlook=report, who=subject)
@@ -461,6 +496,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
                  for v in answer.second]
     if answer.outlook is not None:
         verified += outlook_facts(answer.outlook, answer.who)
+    if answer.ashtaka is not None and answer.ashtaka.checked:
+        verified += ashtaka_facts(answer.ashtaka, answer.who)
     parts = []
     if not answer.who.is_self:
         relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
@@ -514,3 +551,12 @@ def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
                 line += f", but {', '.join(g.title() for g in s.blocked_by)} obstruct it (vedha)"
         out.append(line + ".")
     return out
+
+
+def ashtaka_facts(view: AshtakaView, who: Subject = SELF) -> list[str]:
+    """The sign totals as sentences for the AI."""
+    by_house = [(h, SIGNS[(view.lagna + h - 1) % 12], view.sarva[(view.lagna + h - 1) % 12]) for h in range(1, 13)]
+    line = "; ".join(f"{_ordinal(h)} house {sign}: {n}" for h, sign, n in by_house)
+    head = (f"{who.Your} ashtakavarga points per house (Phaladeepika {view.verse}; more than {view.threshold} is "
+            f"{view.above}; fewer: {view.below})")
+    return [f"{head}: {line}."]

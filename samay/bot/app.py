@@ -395,7 +395,7 @@ def answer_markup(
         row = []
         if view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1 or answer.outlook is not None:
+        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
             row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))
@@ -469,7 +469,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
         await _say(update, prompts.SWITCHED_SELF, MENU)
     tz = await _home_tz(ctx, chat_id)
     answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
-    if answer.topic is not None and not answer.topic.startswith("future:") and not answer.entries:
+    if answer.topic is not None and not answer.topic.startswith(qa.COMPUTED_PREFIXES) and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
         async with typing(update):

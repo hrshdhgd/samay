@@ -6,7 +6,7 @@ obstructs a good result (vedha). Effects are returned only once the rules file h
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -112,11 +112,12 @@ class Stay:
     verse: str | None = None
     vedha_house: int | None = None  # the house that obstructs this good result, when the text names one
     blocked_by: tuple[str, ...] = ()  # planets in the vedha house at the middle of the stay (within the period)
+    points: int | None = None  # the planet's own ashtakavarga points in this sign (Sun to Saturn only)
 
 
 def stays(
     times: list[datetime], track: dict[str, list[float]], moon_sign: int, planets: tuple[str, ...],
-    rules: GocharaRules | None = None, check_vedha: bool = True,
+    rules: GocharaRules | None = None, check_vedha: bool = True, points: dict[str, list[int]] | None = None,
 ) -> list[Stay]:
     """Each planet's stays in signs over the sampled moments, in time order per planet, with the text's reading."""
     out = []
@@ -130,7 +131,10 @@ def stays(
             sign = signs[begin]
             house = house_from(moon_sign, sign)
             stay = Stay(planet, sign, house, times[begin] if begin > 0 else None, times[i] if i < n else None)
-            out.append(_read(stay, rules, track, moon_sign, (begin + i - 1) // 2, check_vedha))
+            stay = _read(stay, rules, track, moon_sign, (begin + i - 1) // 2, check_vedha)
+            if points and planet in points:
+                stay = replace(stay, points=points[planet][sign])
+            out.append(stay)
             begin = i
     return out
 

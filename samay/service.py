@@ -10,7 +10,17 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
-from .engine import antardasha, daylight, entries, ephemeris, geo, gochara, house_effects, timestd
+from .engine import (
+    antardasha,
+    ashtakavarga,
+    daylight,
+    entries,
+    ephemeris,
+    geo,
+    gochara,
+    house_effects,
+    timestd,
+)
 from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
 from .engine.geo import Place
@@ -203,7 +213,9 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
     moon_lon = natal.chart.planets["moon"].longitude
     moon_sign = sign_index(moon_lon)
     rules = gochara.load_rules()
-    found = gochara.stays(times, track, moon_sign, planets, rules, check_vedha)
+    ashtaka = ashtakavarga.load_rules()
+    points = ashtakavarga.bhinna(ashtaka, ashtakavarga.positions(natal.chart))
+    found = gochara.stays(times, track, moon_sign, planets, rules, check_vedha, points)
     changes = []
     for maha in natal.dashas:
         if maha.end <= start or maha.start >= end:
@@ -219,6 +231,8 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
         stays=tuple(found), dasha_at_start=at_start,
         dasha_changes=tuple(changes), rules_level=rules.level, rules_edition=rules.edition, rules_pages=rules.pages,
         antardasha=results, antardasha_edition=sub.edition, antardasha_pages=sub.pages, antardasha_checked=sub.servable,
+        ashtaka_checked=ashtaka.servable, ashtaka_meaning=tuple(sorted(ashtaka.meaning.items())) if ashtaka.servable else (),
+        ashtaka_variants=len(ashtaka.variants),
     )
 
 
