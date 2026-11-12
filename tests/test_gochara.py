@@ -726,3 +726,83 @@ def test_yogas_and_descriptions_are_gated_separately_and_fit_one_message(monkeyp
         for view in ("compact", "full"):
             assert len(render_answer(answer, view)) < 4096, (born, view)
         assert "Brihat Jataka XIII" in qa._ai_prompt("what am I like?", answer)
+
+
+# --- Phaladeepika 20: the dasha through the houses its lord rules ------------------------------------------------------------
+from samay.engine import lordship
+
+LR = lordship.load_rules()
+LR_CHECKED = dataclasses.replace(LR, level="translation-checked", checked_by="test")
+
+
+def _chart(lagna: int, **where):
+    """A made-up chart: lagna sign, and named planets at (sign, retrograde, degree-in-sign). Others sit in the 4th from lagna."""
+    names = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+    planets = {}
+    for n in names:
+        sign, retro, deg = where.get(n, ((lagna + 3) % 12, False, 15.0))
+        planets[n] = SimpleNamespace(longitude=sign * 30 + deg, retrograde=retro)
+    return SimpleNamespace(planets=planets, ascendant=lagna * 30 + 15.0)
+
+
+def test_all_twelve_houses_have_a_strong_and_a_weak_result_with_the_texts_verses():
+    assert set(LR.houses) == set(range(1, 13)) and LR.level == "unchecked" and not LR.servable
+    assert [LR.houses[h]["strong"][0] for h in range(1, 13)] == list(range(2, 14))
+    assert [LR.houses[h]["weak"][0] for h in range(1, 13)] == [15, 15, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20]
+
+
+def test_unchecked_judges_nothing():
+    assert lordship.judge(LR, _chart(0), "mars") is None
+
+
+def test_houses_ruled_come_from_the_lagna_and_the_nodes_rule_none():
+    aries = 0
+    mars = lordship.judge(LR_CHECKED, _chart(aries), "mars")
+    assert mars.owned == (1, 8)  # Mars rules Aries and Scorpio: the 1st and 8th for an Aries lagna
+    assert lordship.judge(LR_CHECKED, _chart(aries), "rahu") is None and lordship.judge(LR_CHECKED, _chart(aries), "ketu") is None
+    sun = lordship.judge(LR_CHECKED, _chart(aries), "sun")
+    assert sun.owned == (5,)  # Leo
+
+
+def test_a_planet_in_its_own_sign_or_retrograde_and_not_in_a_dusthana_leans_strong():
+    aries, leo = 0, 4
+    own = lordship.judge(LR_CHECKED, _chart(aries, sun=(leo, False, 15.0)), "sun")
+    assert own.leaning == "strong" and own.good == ("in its own sign",) and own.adverse == ()
+    retro = lordship.judge(LR_CHECKED, _chart(aries, mars=(1, True, 15.0)), "mars")  # Taurus: a neutral sign, the 2nd house
+    assert retro.leaning == "strong" and retro.good == ("retrograde",)
+    assert [(h, k, v) for h, k, v, _ in own.rows] == [(5, "strong", 6)]
+
+
+def test_each_adverse_condition_of_verse_14_makes_it_lean_weak():
+    aries = 0
+    in_6th = lordship.judge(LR_CHECKED, _chart(aries, sun=(5, False, 15.0)), "sun")        # Virgo = 6th from Aries
+    assert in_6th.adverse == ("in the 6th house",) and in_6th.leaning == "weak"
+    debil = lordship.judge(LR_CHECKED, _chart(aries, sun=(6, False, 15.0)), "sun")         # Libra: the Sun's depression
+    assert "in its sign of debilitation" in debil.adverse and debil.leaning == "weak"
+    enemy = lordship.judge(LR_CHECKED, _chart(aries, jupiter=(1, False, 15.0)), "jupiter")  # Taurus: an enemy's sign for Jupiter
+    assert "in an inimical sign" in enemy.adverse
+    combust = lordship.judge(LR_CHECKED, _chart(aries, sun=(1, False, 10.0), mercury=(1, False, 12.0)), "mercury")
+    assert "eclipsed by the Sun's rays" in combust.adverse
+
+
+def test_adverse_beats_good_and_a_chart_with_neither_gets_both_readings():
+    aries = 0
+    mixed = lordship.judge(LR_CHECKED, _chart(aries, mars=(7, False, 15.0)), "mars")  # own sign, but the 8th house
+    assert mixed.good == ("in its own sign",) and mixed.adverse == ("in the 8th house",) and mixed.leaning == "weak"
+    plain = lordship.judge(LR_CHECKED, _chart(aries, mercury=(0, False, 15.0)), "mercury")  # Aries: neutral for Mercury, the 1st house
+    assert plain.leaning == "undecided" and {k for _, k, _, _ in plain.rows} == {"strong", "weak"}
+    assert len(plain.rows) == 4  # Mercury rules the 3rd and 6th: two readings each
+
+
+@needs_kernel
+def test_the_running_dasha_answer_adds_lordship_once_checked_and_the_ai_sees_it(monkeypatch):
+    assert qa.answer_topic("future:overview", _birth(), NOW).lordship == ()
+    monkeypatch.setattr(lordship, "load_rules", lambda path=None: LR_CHECKED)
+    answer = qa.answer_topic("future:overview", _birth(), NOW)  # Rahu chapter, Saturn sub-chapter: only Saturn rules houses
+    assert [v.planet for v in answer.lordship] == ["saturn"]
+    text = render_answer(answer)
+    assert "What Phaladeepika chapter 20 says of the Saturn dasha" in text and "Phaladeepika" in text.splitlines()[-3]
+    assert "Phaladeepika 20, the dasha of Saturn" in qa._ai_prompt("how is my life now?", answer)
+    jupiter = qa.answer_topic("dasha:jupiter", _birth(), NOW)
+    assert [v.planet for v in jupiter.lordship] == ["jupiter"]
+    assert qa.answer_topic("dasha:rahu", _birth(), NOW).lordship == ()

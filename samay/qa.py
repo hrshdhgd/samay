@@ -14,7 +14,15 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
-from .engine import antardasha, ashtakavarga, chandra_yogas, house_effects, moon_nature, planet_houses
+from .engine import (
+    antardasha,
+    ashtakavarga,
+    chandra_yogas,
+    house_effects,
+    lordship,
+    moon_nature,
+    planet_houses,
+)
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
@@ -156,6 +164,7 @@ class Answer:
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
     ashtaka: AshtakaView | None = None  # chart:ashtakavarga
     moon: MoonView | None = None  # chart:moon
+    lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
 _MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
@@ -382,6 +391,12 @@ def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
                        rules.above, rules.below, rules.sarva_verse, rules.edition, rules.pages, len(rules.variants))
 
 
+def _lordship(chart, *planets: str) -> tuple[lordship.Verdict, ...]:
+    rules = lordship.load_rules()
+    found = (lordship.judge(rules, chart, p) for p in dict.fromkeys(planets))
+    return tuple(v for v in found if v is not None)
+
+
 def _second_voice(chart, planet: str) -> SecondVoice | None:
     """What Phaladeepika chapter 8 says for this planet in the house it holds in the chart, once checked."""
     lagna = sign_index(chart.ascendant)
@@ -422,7 +437,7 @@ def _future_answer(
     reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
     shares = house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
     return Answer("future:overview", tuple(entries), tuple(own + facts), (), None,
-                  reading if shares else None, shares, who=subject)
+                  reading if shares else None, shares, who=subject, lordship=_lordship(chart, lord, antar.lord))
 
 
 def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | None, subject: Subject = SELF) -> Answer:
@@ -499,8 +514,9 @@ def answer_topic(
         else:
             reading = None
     voice = _second_voice(service.natal_report(birth).chart, subject_key) if kind == "planet" and birth is not None else None
+    houses = _lordship(service.natal_report(birth).chart, subject_key) if kind == "dasha" and birth is not None else ()
     return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares, who=subject,
-                  second=(voice,) if voice else ())
+                  second=(voice,) if voice else (), lordship=houses)
 
 
 AI_SYSTEM = (
@@ -536,6 +552,7 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += outlook_facts(answer.outlook, answer.who)
     if answer.ashtaka is not None and answer.ashtaka.checked:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
+    verified += [lordship_fact(v) for v in answer.lordship]
     if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
@@ -608,3 +625,11 @@ def moon_facts(view: MoonView, who: Subject = SELF) -> list[str]:
             f"Brihat Jataka XVII on {who.your} Moon in {SIGNS[view.sign]}: a person born with it {view.sign_text.text}",
             f"Brihat Jataka XVI on {who.your} Moon in {view.nakshatra.name}: a person born with it {view.nakshatra.text}",
             f"Brihat Jataka says: {view.conditions['sign'][1]}"]
+
+
+def lordship_fact(v: lordship.Verdict) -> str:
+    """One planet's lordship reading as a sentence for the AI."""
+    return (f"Phaladeepika 20, the dasha of {v.planet.title()}, which rules the " + " and ".join(_ordinal(h) for h in v.owned)
+            + f" house and stands in the {_ordinal(v.house)}: " + "; ".join(
+                f"for the {_ordinal(h)} house, {'when strong' if k == 'strong' else 'when weak' if k == 'weak' else k}: {t}"
+                for h, k, _, t in v.rows) + ".")

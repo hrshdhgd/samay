@@ -1,0 +1,47 @@
+# Phaladeepika chapter 20 ("Effects of dasas of the lords of houses"), verses 2-20 and the condition in verse 14: what the dasha of
+# a planet brings through the house(s) it rules, when it is strong and when it is weak. Source: Mantreswara's Phala Deepika, tr. Dr. G. S.
+# Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 182-185
+# (PDF pages 181-184). Every result is PARAPHRASED. Notes and omissions: research/notes/phaladeepika-ch20-lordship.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets level:
+# translation-checked with checked_by and checked_on. Owner's decision 2026-11-12: nothing is hidden for being unpleasant.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "182-185"
+
+# Verse 14. The text says the good results (verses 2-13) come "only when the lord of the house is auspiciously disposed (not in the
+# 6th, 8th or 12th), is in his own sign or his sign of exaltation, or is retrograde", and the adverse ones when he is "inauspiciously
+# disposed, in an inimical sign, in his sign of debilitation, or eclipsed by the Sun's rays" (verses 15-20 then give the weak results).
+# The text joins the good conditions with "or" after one "only when"; the bot computes each condition and shows them, and when the
+# chart has neither a good nor an adverse one it shows both readings and says the text does not decide.
+condition:
+  verse: 14
+  good: "the lord is not in the 6th, 8th or 12th, and is in his own sign or his sign of exaltation, or is retrograde"
+  weak: "the lord is in the 6th, 8th or 12th, or in an inimical sign, or in his sign of debilitation, or eclipsed by the Sun's rays"
+
+# The result of the dasha of the lord of each house. `strong` is verses 2-13 (the house and its lord strong), `weak` is verses 15-20.
+houses:
+  1:  {strong: {verse: 2,  text: "a position of eminence in the world and a happy life, a sturdy healthy body and a lustrous face, with prosperity growing as the Moon's digits in the bright half of the month"},
+       weak:   {verse: 15, text: "imprisonment, living in hiding, fear, disease and mental anguish, taking part in funeral rites, and loss of position"}}
+  2:  {strong: {verse: 3,  text: "gaining a family and good daughters, good food, and money earned through lectures and eloquent speech that the audience admires"},
+       weak:   {verse: 15, text: "behaving stupidly before an audience, not keeping his word or his family, writing objectionable letters, eye trouble, a harsh tongue, heavy spending and the king's displeasure"}}
+  3:  {strong: {verse: 4,  text: "full help from brothers, good news, a chance to show courage and valour, becoming an army commander, honour, and the people's support and popularity"},
+       weak:   {verse: 16, text: "loss of brothers and sisters, adverse criticism of his work, harassment by secret enemies, reverses, humiliation and a lost pride"}}
+  4:  {strong: {verse: 5,  text: "good for relatives, success in farming, a happy marriage, a vehicle, farmland, houses and wealth, and a higher status"},
+       weak:   {verse: 16, text: "distress for the mother, relatives and friends, and danger of losing the house, farmland and cattle, and danger from water"}}
+  5:  {strong: {verse: 6,  text: "the birth of a son, happy ties with relatives, becoming a king's minister, honours, virtuous deeds praised by the people, and delicious food shared with others"},
+       weak:   {verse: 17, text: "the loss of a son, a disturbed mind, being deceived, aimless wandering, stomach disorders, the king's wrath and physical weakness"}}
+  6:  {strong: {verse: 7,  text: "overcoming enemies by valour, freedom from disease, generosity, power, and enjoying wealth, splendour and prosperity"},
+       weak:   {verse: 17, text: "danger from thieves, poverty, being overpowered by others, disease, shabby treatment or undesirable acts, serving others, humiliation, loss of reputation and bodily injuries"}}
+  7:  {strong: {verse: 8,  text: "new clothes and ornaments, a happy life with the wife, greater vigour, auspicious functions such as a wedding in the house, and pleasure trips"},
+       weak:   {verse: 18, text: "distress for the son-in-law, separation from the wife, something untoward through the opposite sex, affairs with wicked women, venereal disease and aimless wandering"}}
+  8:  {strong: {verse: 9,  text: "clearing all debts, progress in work, an end to all disputes, and gaining buffaloes, goats and other cattle and servants"},
+       weak:   {verse: 18, text: "great sorrow, loss of intelligence, intense desire, jealousy, fainting fits, poverty, fruitless wandering, loss of reputation, sickness and humiliation; even life may end during such a dasha"}}
+  9:  {strong: {verse: 10, text: "continuous prosperity, happiness and wealth with wife, sons, grandchildren and relatives, meritorious deeds, royal favour, and respect for Brahmins and gods"},
+       weak:   {verse: 19, text: "trouble for wife and children, suffering through the wrath of a deity once worshipped, undesirable acts, the death of an elder brother and of the father, and poverty"}}
+  10: {strong: {verse: 11, text: "success in every venture and a happy life, name and fame, a good reputation, and virtuous acts for which he receives humiliation"},
+       weak:   {verse: 19, text: "failure in all undertakings, wicked acts, living away from home and suffering for it, untoward events and loss of honour"}}
+  11: {strong: {verse: 12, text: "continuous growth in prosperity, meetings with close relatives, the comfort of many servants, domestic happiness and great prosperity"},
+       weak:   {verse: 20, text: "trouble for the elder brother, a sickly son, misery, deception and ear disease"}}
+  12: {strong: {verse: 13, text: "lavish spending on good causes, meritorious acts that free him from the evil of past sins, and royal honours"},
+       weak:   {verse: 20, text: "many diseases, dishonour and slavery, and all his wealth vanishing like the Moon in the dark half of the month"}}

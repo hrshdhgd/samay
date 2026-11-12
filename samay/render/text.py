@@ -222,7 +222,7 @@ def _ref(e) -> tuple[int, int, str]:
     return int(c["chapter"]), first, f"{c['chapter']}.{head.replace('-', '–')}{note}"
 
 
-def sources_line(entries, reading=None, full: bool = False, second=()) -> str | None:
+def sources_line(entries, reading=None, full: bool = False, second=(), lordship=()) -> str | None:
     """One line naming every source an answer used, in place of a citation after each entry."""
     groups: dict[str, set[tuple[int, int, str]]] = {}
     editions: dict[str, str] = {}
@@ -237,6 +237,9 @@ def sources_line(entries, reading=None, full: bool = False, second=()) -> str | 
     for v in second:
         first = int(v.verse.split("-")[0])
         groups.setdefault("Phaladeepika", set()).add((8, first, f"8.{v.verse.replace('-', '–')}"))
+    for v in lordship:
+        for _, _, verse, _ in v.rows:
+            groups.setdefault("Phaladeepika", set()).add((20, verse, f"20.{verse}"))
     if not groups:
         return None
     parts = []
@@ -318,13 +321,15 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(render_reading(reading, shares, full=full, who=who))
     for voice in answer.second:
         blocks.append(render_second(voice, who))
+    for verdict in answer.lordship:
+        blocks.append(render_lordship(verdict, who, full))
     if answer.facts:
         facts = "\n".join(answer.facts)
         blocks.append(f"From {who.your} chart:\n{facts}" if full else facts)
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
     source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full,
-                          answer.second)
+                          answer.second, answer.lordship)
     if source:
         blocks.append(source)
     blocks.append(DISCLAIMER)
@@ -445,6 +450,27 @@ def render_ashtaka(view, full: bool = False, who=SELF) -> str:
         lines.append(f"Counted with Phaladeepika's tables; Brihat Jataka's differ in {view.variants} of the 56 lists "
                      f"({view.edition}; {view.pages}).")
     lines.append(f"Source: Phaladeepika 23.3–9, {view.verse} · checked")
+    return "\n".join(lines)
+
+
+def render_lordship(v, who=SELF, full: bool = False) -> str:
+    """Phaladeepika chapter 20 for one planet: the houses it rules in this chart, how it stands by verse 14, and the text's result."""
+    rules = " and ".join(ordinal(h) for h in v.owned)
+    head = (f"What Phaladeepika chapter 20 says of the {v.planet.title()} dasha, as the lord of {who.your} {rules} house "
+            f"({v.planet.title()} stands in the {ordinal(v.house)}):")
+    lines = [head]
+    notes = []
+    if v.adverse:
+        notes.append("the text counts against it: " + ", ".join(v.adverse))
+    if v.good:
+        notes.append("the text counts for it: " + ", ".join(v.good))
+    if notes:
+        lines.append("; ".join(notes).capitalize() + ".")
+    if v.leaning == "undecided":
+        lines.append(prompts.LORDSHIP_UNDECIDED)
+    for h, kind, _, text in v.rows:
+        tag = {"strong": "if strong", "weak": "if weak", "both": ""}[kind] if v.leaning == "undecided" else ""
+        lines.append(f"• {ordinal(h)} house{f' ({tag})' if tag else ''}: {text[0].upper()}{text[1:]}.")
     return "\n".join(lines)
 
 
