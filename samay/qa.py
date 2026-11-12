@@ -19,6 +19,7 @@ from .engine import (
     ashtakavarga,
     chandra_yogas,
     conjunctions,
+    health,
     house_effects,
     house_timing,
     lordship,
@@ -63,6 +64,7 @@ WHEN_PREFIX = "when:"
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
 CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
 YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
+HEALTH_WORDS = ("disease", "diseases", "ailment", "ailments", "sickness", "sick")
 MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
 # Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
 COMPUTED_PREFIXES = ("future:", "chart:")
@@ -106,7 +108,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -194,6 +196,8 @@ class Answer:
     yogas: YogasView | None = None  # chart:yogas
     timing: house_timing.Timing | None = None  # when:<area>
     timing_checked: bool = False
+    health: health.Health | None = None  # chart:health
+    health_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -224,6 +228,8 @@ def sort_question(text: str) -> str | None:
         return "chart:conjunctions"
     if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:yogas"
+    if not planets and any(w in HEALTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:health"
     if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
@@ -258,6 +264,7 @@ TOPIC_HELP = {
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
+    "chart:health": "which diseases or troubles the chart points to, by the planets in the 6th, 8th and 12th houses and the lord of the 6th (an old text's list, not medical advice)",
     "chart:yogas": "the person's yogas: the named planetary combinations in their chart (Nabhasa, raja, Mahapurusha, Lakshmi and the rest)",
     "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
@@ -541,6 +548,10 @@ def answer_topic(
         area = topic[len(WHEN_PREFIX):]
         report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
+    if topic == "chart:health":
+        hrules = health.load_rules()
+        found = health.find(hrules, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), health=found, health_checked=hrules.servable, who=subject)
     if topic == "chart:yogas":
         return Answer(topic, (), (), yogas=_yogas_view(birth), who=subject)
     if topic == "chart:conjunctions":
@@ -620,6 +631,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     verified += conjunction_facts(answer.together or (), answer.who)
     if answer.timing is not None:
         verified += timing_facts(answer.timing, answer.who)
+    if answer.health is not None:
+        verified += health_facts(answer.health, answer.who)
     if answer.yogas is not None:
         verified += yoga_facts(answer.yogas, answer.who)
     if answer.moon is not None and answer.moon.aspects is not None:
@@ -742,4 +755,13 @@ def timing_facts(t, who: Subject = SELF) -> list[str]:
             continue
         spans = "; ".join(f"{a:%d %b %Y} to {b:%d %b %Y}" for a, b in r.windows[:6]) or "no stretch in this period"
         out.append(f"Phaladeepika {r.verse} (from the {r.ref}, house {r.house}): {r.text}. Holds on {r.days} of {r.total} days: {spans}.")
+    return out
+
+
+def health_facts(h, who: Subject = SELF) -> list[str]:
+    """The planets that are sources of disease and the combinations found, as sentences for the AI (an old text's list, not medical advice)."""
+    out = ["Phaladeepika 14 is an old text's list of what planets stand for in sickness. It is not a diagnosis and must not be presented as medical advice."]
+    for s in h.sources:
+        out.append(f"Phaladeepika {s.verse}: {s.planet.title()} ({'; '.join(s.why)}) stands for: {'; '.join(t for t, _ in s.items)}.")
+    out += [f"Phaladeepika {c.verse} ({c.detail}): {c.text}." for c in h.combinations]
     return out

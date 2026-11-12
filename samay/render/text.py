@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, house_timing
+from ..engine import conjunctions, health, house_timing
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -333,6 +333,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_YOGAS
     if answer.topic.startswith("when:") and not birth_known:
         return prompts.NEED_BIRTH_FOR_WHEN
+    if answer.topic == "chart:health" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_HEALTH
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -342,6 +344,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:health":
+        blocks.append(render_health(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic.startswith("when:"):
         blocks.append(render_timing(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -481,6 +487,38 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_health(answer, who=SELF, full: bool = False) -> str:
+    """The sources of disease in the chart by Phaladeepika 14.1, what each stands for, where they agree, and the specific combinations."""
+    title = f"🩺 What Phaladeepika's disease rules point to in {who.your} chart"
+    rules = health.load_rules()
+    if not answer.health_checked:
+        return f"{title}\n\n{prompts.HEALTH_UNCHECKED}\n\n{rules.caution}"
+    h = answer.health
+    if h is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_HEALTH}"
+    blocks = [title, rules.caution]
+    if not h.sources:
+        blocks.append(prompts.HEALTH_NONE)
+    else:
+        lines = [f"Sources of disease (14.1: {rules.sources_text.split(' A particular')[0].lower()}):"]
+        for s in h.sources:
+            items = [t for t, _ in s.items]
+            shown = items if full else items[:6]
+            more = f"; and {len(items) - len(shown)} more (tap More)" if len(shown) < len(items) else ""
+            lines.append(f"• {s.planet.title()} ({'; '.join(s.why)}), which stands for: {'; '.join(shown)}{more}.")
+        blocks.append("\n".join(lines))
+        if h.overlaps:
+            joined = "; ".join(f"{tag} ({', '.join(p.title() for p in ps)})" for tag, ps in h.overlaps)
+            blocks.append(f"Where two or more of these point to the same kind of trouble (the book says such a trouble may be predicted): {joined}.")
+    if h.combinations:
+        lines = ["The book's specific combinations found in the chart (14.10–11):"]
+        lines += [f"• {c.text[0].upper()}{c.text[1:]} ({c.detail})." for c in h.combinations]
+        blocks.append("\n".join(lines))
+    verses = sorted({s.verse for s in h.sources} | {c.verse for c in h.combinations} | {rules.sources_verse}, key=lambda v: int(v.split(".")[1]))
+    blocks.append("Source: Phaladeepika " + ", ".join(verses) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_timing(answer, who=SELF, full: bool = False) -> str:

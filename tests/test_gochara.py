@@ -1485,3 +1485,130 @@ def test_a_malformed_timing_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         house_timing.load_rules(path)
+
+
+# --- Phaladeepika 14: diseases (an old text's list, not medical advice) -----------------------------------------------------
+from samay.engine import health
+
+HL = health.load_rules()
+HL_CHECKED = dataclasses.replace(HL, level="translation-checked", checked_by="test")
+
+
+def _hl(lagna=0, **where):
+    """A made-up chart whose unnamed bodies sit in the 4th house, which no disease rule uses."""
+    calm = {b: (lagna + 3) % 12 for b in health.BODIES}
+    return health.find(HL_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))
+
+
+def _keys(h):
+    return {c.key for c in h.combinations}
+
+
+def test_the_health_file_has_all_nine_planets_and_the_14_combinations_and_waits_for_a_check():
+    assert set(HL.planets) == set(health.BODIES) and set(HL.combinations) == set(health.COMBINATIONS)
+    assert HL.level == "unchecked" and health.find(HL, _full_sky()) is None
+    assert "not medical advice" in HL.caution
+
+
+def test_sources_are_planets_in_the_6th_8th_12th_the_6th_lord_and_those_joined_to_it():
+    # Aries lagna: the 6th lord is Mercury. Jupiter in Virgo (the 6th) is a source; Venus joined with Mercury in Gemini is a source.
+    h = _hl(lagna=0, jupiter=5, mercury=2, venus=2)
+    why = {s.planet: s.why for s in h.sources}
+    assert "in the 6th house" in why["jupiter"] and "lord of the 6th" in why["mercury"]
+    assert why["venus"] == ("joined with the 6th lord Mercury",)
+    assert {s.planet for s in _hl(lagna=0, saturn=11).sources} >= {"saturn"}      # the 12th house
+    assert "sun" not in {s.planet for s in _hl(lagna=0, sun=9).sources}           # the 10th house: not a source
+
+
+def test_two_planets_that_name_the_same_trouble_are_reported_as_agreeing():
+    h = _hl(lagna=0, sun=5, mercury=2, mars=2)  # Sun in the 6th; the 6th lord Mercury; Mars joined: eye, fever, skin are in several lists
+    tags = dict(h.overlaps)
+    assert {"sun", "mercury"} <= set(tags["eye"]) and "fever" in tags
+
+
+def test_eye_disease_right_and_left():
+    assert "eye_right" in _keys(_hl(lagna=0, sun=1, saturn=1))                      # the Sun in the 2nd, Saturn with it
+    assert "eye_right" in _keys(_hl(lagna=0, moon=1, mars=7))                       # the Moon in the 2nd, Mars aspecting (the 7th sight)
+    assert "eye_left" in _keys(_hl(lagna=0, moon=11, mars=11))
+    assert "eye_right" not in _keys(_hl(lagna=0, sun=1))                            # no Mars or Saturn
+    assert "eye_left" not in _keys(_hl(lagna=0, sun=11))
+
+
+def test_the_ear_combination_needs_mars_or_saturn_on_the_3rd_the_11th_and_jupiter():
+    assert "ear" in _keys(_hl(lagna=0, mars=2, saturn=10, jupiter=4))              # Mars in the 3rd, Saturn in the 11th and aspecting Jupiter (7th sight)
+    assert "ear" not in _keys(_hl(lagna=0, mars=2))
+
+
+def test_stomach_ache_needs_mars_in_the_5th_with_the_6th_or_8th_lord():
+    # Aries lagna: the 6th lord is Mercury, the 8th lord Mars. Mars in the 5th (Leo) with Mercury.
+    assert "stomach" in _keys(_hl(lagna=0, mars=4, mercury=4))
+    assert "stomach" not in _keys(_hl(lagna=0, mars=4, mercury=2))   # Mars is the 8th lord itself for this lagna: it does not count as "with" itself
+    assert "stomach" in _keys(_hl(lagna=1, mars=5, venus=5))          # Taurus lagna: Mars rules the 7th and 12th; Venus rules the 1st and 6th
+
+
+def test_rectal_and_private_parts_disease_follow_the_lord_of_the_6th_or_8th_with_a_malefic():
+    # Aries lagna: Mercury rules the 6th, Mars the 8th. The 6th lord in the 7th (Libra) with a malefic: rectal.
+    assert "rectal" in _keys(_hl(lagna=0, mercury=6, saturn=6))
+    assert "rectal" not in _keys(_hl(lagna=0, mercury=6))
+    # Taurus lagna: Venus rules the 1st; Libra lagna: Venus rules the 1st... Venus is the 6th lord for a Libra... Scorpio lagna: Mars 1st, Venus 7th
+    # Pisces lagna: Venus rules the 3rd and 8th; the 8th lord in the 7th with a malefic: private parts.
+    assert "private_parts" in _keys(_hl(lagna=11, venus=5, saturn=5))
+
+
+def test_occupants_of_the_6th_or_8th_house():
+    sixth, eighth = 5, 7  # Virgo and Scorpio from an Aries lagna
+    assert "occupant_sun" in _keys(_hl(lagna=0, sun=sixth)) and "occupant_sun" in _keys(_hl(lagna=0, sun=eighth))
+    assert "occupant_mars_ketu" in _keys(_hl(lagna=0, ketu=sixth)) and "occupant_mars_ketu" in _keys(_hl(lagna=0, mars=eighth))
+    assert "occupant_venus" in _keys(_hl(lagna=0, venus=sixth)) and "occupant_jupiter" in _keys(_hl(lagna=0, jupiter=eighth))
+    assert "occupant_saturn" in _keys(_hl(lagna=0, saturn=sixth))
+    assert not (_keys(_hl(lagna=0, sun=3)) & {"occupant_sun"})
+
+
+def test_carbuncle_spleen_and_the_watery_waning_moon():
+    assert "rahu_mars" in _keys(_hl(lagna=0, rahu=5, mars=11))      # Rahu in the 6th; Mars in Pisces sees the 7th... Virgo? checked below
+    assert "saturn_moon" in _keys(_hl(lagna=0, saturn=5, moon=5))
+    waning = _hl(lagna=0, sun=0, moon=7, mars=7)                    # Moon in Scorpio (the 8th, watery) 210 degrees after the Sun, with Mars
+    assert "waning_moon_water" in _keys(waning)
+    assert "waning_moon_water" not in _keys(_hl(lagna=0, sun=0, moon=7))     # no malefic with her
+    assert "waning_moon_water" not in _keys(_hl(lagna=0, sun=5, moon=7, mars=7))   # the Moon only 60 degrees past the Sun: waxing
+
+
+@needs_kernel
+def test_the_health_answer_always_carries_the_caution_and_waits_for_the_check(monkeypatch):
+    born = service.resolve_birth(BirthInput("1952-08-15", "06:30", "Pune"))
+    waiting = render_answer(qa.answer_topic("chart:health", born, NOW))
+    assert prompts.HEALTH_UNCHECKED in waiting and "not medical advice" in waiting
+    monkeypatch.setattr(health, "load_rules", lambda path=None: HL_CHECKED)
+    answer = qa.answer_topic("chart:health", born, NOW)
+    text = render_answer(answer)
+    assert "not medical advice" in text and "Sources of disease (14.1" in text and "Source: Phaladeepika 14." in text
+    assert "must not be presented as medical advice" in qa._ai_prompt("what diseases?", answer)
+    assert qa.sort_question("what diseases might I have") == "chart:health"
+    assert render_answer(qa.answer_topic("chart:health", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_HEALTH
+    assert prompts.MINOR_NOTE in render_answer(qa.answer_topic("chart:health", born, NOW, subject=Subject("Maya", "daughter", minor=True)))
+
+
+@needs_kernel
+def test_the_health_view_fits_in_messages(monkeypatch):
+    from samay.render.text import split_message
+    monkeypatch.setattr(health, "load_rules", lambda path=None: HL_CHECKED)
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune"), ("2015-03-14", "06:30", "Pune")]:
+        answer = qa.answer_topic("chart:health", service.resolve_birth(BirthInput(*born)), NOW)
+        for view in ("compact", "full"):
+            assert all(len(p) <= 4096 for p in split_message(render_answer(answer, view)))
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["planets"].pop("ketu"),
+    lambda r: r["planets"]["sun"].update(items=[]),
+    lambda r: r["combinations"].pop("ear"),
+    lambda r: r["combinations"]["ear"].update(definition=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_health_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(health.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        health.load_rules(path)

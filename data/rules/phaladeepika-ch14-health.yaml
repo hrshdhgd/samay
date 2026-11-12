@@ -1,0 +1,210 @@
+# Phaladeepika chapter 14 ("Diseases, death, and past and future births"), verses 1-11: which planets are the sources of disease in a chart, the
+# troubles each planet stands for, and the book's specific combinations. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright),
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 137-140 (PDF pages 136-139). PARAPHRASED.
+# The conditions are coded in samay/engine/health.py. Notes and what was left out: research/notes/phaladeepika-ch14-health.md.
+#
+# This is an old text's list of what the planets stand for. It is not a diagnosis and not medical advice; the bot says so with every answer.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets level: translation-checked with
+# checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "137-140"
+
+caution: "This is an old text's list of what the planets stand for in sickness. It is not a diagnosis and not medical advice; for any health concern please see a doctor."
+
+# Verse 1: where the book looks for disease. "The particular disease may be predicted if the same happens to be indicated by two, three or more
+# independent planetary dispositions."
+sources:
+  verse: "14.1"
+  text: "Matters of disease are read from the planets in the 6th house, the planets in the 8th house, the planets in the 12th house, the lord of the 6th house, and the planets joined with the lord of the 6th. A particular disease may be predicted if it is indicated by two, three or more independent dispositions."
+
+# Verses 2-9: what each planet is the significator of. `tags` mark the troubles that overlap between planets (for the 'two or more' rule).
+planets:
+  sun:
+    verse: "14.2"
+    items:
+      - {text: "bile", tags: [bile]}
+      - {text: "high fever", tags: [fever]}
+      - {text: "burning in the body", tags: [heat]}
+      - {text: "epilepsy", tags: [nerves]}
+      - {text: "heart disease", tags: [heart]}
+      - {text: "eye trouble", tags: [eye]}
+      - {text: "stomach trouble", tags: [stomach]}
+      - {text: "skin disease", tags: [skin]}
+      - {text: "leucorrhoea", tags: [generative]}
+      - {text: "danger from enemies"}
+      - {text: "danger from wood, fire, weapon and poison", tags: [poison]}
+      - {text: "distress from wife and sons"}
+      - {text: "danger from thieves or four-footed animals"}
+      - {text: "danger from snakes"}
+      - {text: "danger from the king, the god Yama and the god Shiva"}
+  moon:
+    verse: "14.3"
+    items:
+      - {text: "too much sleep or sleeplessness"}
+      - {text: "laziness"}
+      - {text: "phlegm affliction", tags: [phlegm]}
+      - {text: "dysentery or diarrhoea", tags: [stomach]}
+      - {text: "carbuncle", tags: [skin]}
+      - {text: "typhoid fever", tags: [fever]}
+      - {text: "danger from horned or watery animals"}
+      - {text: "loss of appetite", tags: [stomach]}
+      - {text: "indigestion", tags: [stomach]}
+      - {text: "tastelessness"}
+      - {text: "trouble from women"}
+      - {text: "jaundice", tags: [jaundice]}
+      - {text: "impure blood", tags: [blood]}
+      - {text: "danger from water"}
+      - {text: "mental fatigue", tags: [mind]}
+      - {text: "fear from the Balagrahas, the goddess Durga, kinnaras, the god Yama, snakes and female yakshas"}
+  mars:
+    verse: "14.4"
+    items:
+      - {text: "excessive thirst"}
+      - {text: "irritation from bilious fever", tags: [bile, fever]}
+      - {text: "fear or danger from fire, poison or weapon", tags: [poison]}
+      - {text: "leprosy", tags: [skin]}
+      - {text: "eye troubles", tags: [eye]}
+      - {text: "appendicitis", tags: [stomach]}
+      - {text: "epilepsy", tags: [nerves]}
+      - {text: "injury to the marrow"}
+      - {text: "itching of the body", tags: [skin]}
+      - {text: "roughness of the body", tags: [skin]}
+      - {text: "bodily deformities"}
+      - {text: "fear from the king, fire and thieves"}
+      - {text: "quarrels with brothers, sons or enemies"}
+      - {text: "fighting with enemies"}
+      - {text: "diseases of the upper part of the body"}
+      - {text: "fear of evil spirits, gandharvas and frightful demons"}
+  mercury:
+    verse: "14.5"
+    items:
+      - {text: "mental confusion", tags: [mind]}
+      - {text: "harsh speech or trouble in the vocal organs", tags: [throat]}
+      - {text: "eye troubles", tags: [eye]}
+      - {text: "diseases of the throat", tags: [throat]}
+      - {text: "trouble in the nose"}
+      - {text: "fever from an imbalance of the three humours (wind, bile and phlegm)", tags: [fever, bile, phlegm]}
+      - {text: "ill effects of poisoning, such as food poisoning", tags: [poison]}
+      - {text: "skin diseases", tags: [skin]}
+      - {text: "jaundice", tags: [jaundice]}
+      - {text: "itching and bad dreams", tags: [skin]}
+      - {text: "fear from fire"}
+      - {text: "hard labour"}
+      - {text: "evil caused by gandharvas and the like"}
+  jupiter:
+    verse: "14.6"
+    items:
+      - {text: "appendicitis", tags: [stomach]}
+      - {text: "fever from intestinal infection", tags: [fever, stomach]}
+      - {text: "fainting"}
+      - {text: "diseases of the ear", tags: [ear]}
+      - {text: "troubles over temple matters"}
+      - {text: "distress from a Brahmin's curse"}
+      - {text: "troubles from hoarded wealth"}
+      - {text: "oppression by vidyadharas, yakshas, kinnaras, gods, serpents and the like"}
+      - {text: "punishment for disrespect to a teacher, the respected and the elderly, and for failing in one's duty to them (suffered in Jupiter's antardasha)"}
+  venus:
+    verse: "14.7"
+    items:
+      - {text: "a pale complexion from anaemia", tags: [blood]}
+      - {text: "eye troubles", tags: [eye]}
+      - {text: "urinary obstruction and diabetes", tags: [urinary]}
+      - {text: "diseases of the generative organs from an imbalance of phlegm and wind", tags: [generative, phlegm]}
+      - {text: "lack of vitality"}
+      - {text: "impotence", tags: [generative]}
+      - {text: "paleness, lack of lustre and weakness from too much sexual indulgence", tags: [generative]}
+      - {text: "rickets"}
+      - {text: "fear from witches, female ghosts and female deities"}
+      - {text: "a break in friendship with dear friends"}
+  saturn:
+    verse: "14.8"
+    items:
+      - {text: "diseases of wind and phlegm", tags: [phlegm]}
+      - {text: "pain in the legs or lameness", tags: [leg]}
+      - {text: "fatigue from too much labour"}
+      - {text: "mental aberration", tags: [mind]}
+      - {text: "stomach ache", tags: [stomach]}
+      - {text: "too much heat in the body", tags: [heat]}
+      - {text: "trouble from servants"}
+      - {text: "distress over wife and children"}
+      - {text: "injury to some part of the body"}
+      - {text: "mental anguish", tags: [mind]}
+      - {text: "oppression by goblins and the like"}
+      - {text: "injury from a blow of wood or stone"}
+      - {text: "misfortune"}
+  rahu:
+    verse: "14.9"
+    items:
+      - {text: "heart disease", tags: [heart]}
+      - {text: "burning", tags: [heat]}
+      - {text: "leprosy", tags: [skin]}
+      - {text: "aberration of mind", tags: [mind]}
+      - {text: "diseases from poisoning", tags: [poison]}
+      - {text: "pain in the legs or injury", tags: [leg]}
+      - {text: "distress from wife and children, or on their account"}
+      - {text: "trouble from goblins, serpents or enemies"}
+  ketu:
+    verse: "14.9"
+    items:
+      - {text: "trouble through dispute with Brahmins and Kshatriyas"}
+
+# Verses 10-11: the specific combinations. Each is coded in samay/engine/health.py; `definition` says it in words.
+combinations:
+  eye_right:
+    verse: "14.10"
+    definition: "The Sun in the 2nd house (from the lagna) joined with or aspected by Mars or Saturn; or the Moon in the 2nd, likewise (the translator's note: the right eye)."
+    text: "eye disease, in the right eye"
+  eye_left:
+    verse: "14.10"
+    definition: "The Sun or the Moon in the 12th house joined with or aspected by Mars or Saturn (the translator's note: the left eye)."
+    text: "eye disease, in the left eye"
+  ear:
+    verse: "14.10"
+    definition: "Mars or Saturn in, or aspecting, each of: the 3rd house, the 11th house, and Jupiter (Jupiter joined with or aspected by Mars or Saturn)."
+    text: "diseases of the ears"
+  stomach:
+    verse: "14.10"
+    definition: "Mars in the 5th house, joined with the lord of the 6th or the lord of the 8th."
+    text: "stomach ache"
+  rectal:
+    verse: "14.10"
+    definition: "The lord of the 6th or the 8th house in the 7th with a malefic (Sun, Mars, Saturn, Rahu, Ketu), or the lord of the 6th in the 8th with a malefic."
+    text: "rectal disease"
+  private_parts:
+    verse: "14.10"
+    definition: "As for rectal disease, when the planet concerned is Venus."
+    text: "disease of the private parts (venereal disease)"
+  occupant_sun:
+    verse: "14.11"
+    definition: "The Sun in the 6th or the 8th house."
+    text: "fear of fever"
+  occupant_mars_ketu:
+    verse: "14.11"
+    definition: "Mars or Ketu in the 6th or the 8th house."
+    text: "danger from injury or ulcer"
+  occupant_venus:
+    verse: "14.11"
+    definition: "Venus in the 6th or the 8th house."
+    text: "disease of the private parts"
+  occupant_jupiter:
+    verse: "14.11"
+    definition: "Jupiter in the 6th or the 8th house."
+    text: "consumption"
+  occupant_saturn:
+    verse: "14.11"
+    definition: "Saturn in the 6th or the 8th house."
+    text: "nervous diseases"
+  rahu_mars:
+    verse: "14.11"
+    definition: "Rahu in the 6th or the 8th house, aspected by Mars."
+    text: "carbuncle"
+  saturn_moon:
+    verse: "14.11"
+    definition: "Saturn together with the Moon in the 6th or the 8th house."
+    text: "enlargement of the spleen"
+  waning_moon_water:
+    verse: "14.11"
+    definition: "The waning Moon in the 6th or the 8th house, in a watery sign (Cancer, Scorpio, Pisces), joined with a malefic (Sun, Mars, Saturn, Rahu, Ketu)."
+    text: "watery diseases or consumption"
