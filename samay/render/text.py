@@ -391,22 +391,38 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
 
 
 def render_moon(view, full: bool = False, who=SELF) -> str:
-    """The Moon's sign and nakshatra and what Brihat Jataka says of a person born so, with the text's own condition."""
+    """The Moon's sign and nakshatra and what Brihat Jataka says of a person born so, the lunar yogas of chapter XIII,
+    and the text's own conditions. Each part appears only once its own rules file has been checked."""
     head = (f"🌙 {who.Your} Moon is in {SIGNS[view.sign]} ({RASHIS[view.sign]}), in the nakshatra "
             f"{NAKSHATRAS[view.nakshatra_index]}, pada {view.pada}.")
-    if not view.checked:
-        return f"{head}\n\n{prompts.MOON_UNCHECKED}"
-    lines = [head, "",
-             f"What Brihat Jataka says of a person born with the Moon in {SIGNS[view.sign]} (chapter 17.{view.sign_text.verse}):",
-             f"“{view.sign_text.text[0].upper()}{view.sign_text.text[1:]}”", "",
-             f"…and in {view.nakshatra.name} (chapter 16.{view.nakshatra.verse}):",
-             f"“{view.nakshatra.text[0].upper()}{view.nakshatra.text[1:]}”", "",
-             f"The text adds: {view.conditions['sign'][1]} {view.conditions['nakshatra'][1]}"]
-    if full:
-        lines.append(f"{view.conditions['sign_translators_note'][1]} (the translator's note)")
-        lines.append(f"({view.edition}, pp. {view.pages})")
-    lines.append(f"Source: Brihat Jataka 16.{view.nakshatra.verse}, 17.{view.sign_text.verse}, 17.13 · checked")
-    return "\n".join(lines)
+    blocks = [head]
+    refs = []
+    if view.checked:
+        blocks.append("\n".join([
+            f"What Brihat Jataka says of a person born with the Moon in {SIGNS[view.sign]} (chapter 17.{view.sign_text.verse}):",
+            f"“{view.sign_text.text[0].upper()}{view.sign_text.text[1:]}”", "",
+            f"…and in {view.nakshatra.name} (chapter 16.{view.nakshatra.verse}):",
+            f"“{view.nakshatra.text[0].upper()}{view.nakshatra.text[1:]}”"]))
+        cond = f"The text adds: {view.conditions['sign'][1]} {view.conditions['nakshatra'][1]}"
+        if full:
+            cond += f"\n{view.conditions['sign_translators_note'][1]} (the translator's note)"
+        blocks.append(cond)
+        refs += [f"16.{view.nakshatra.verse}", f"17.{view.sign_text.verse}", "17.13"]
+    else:
+        blocks.append(prompts.MOON_UNCHECKED)
+    if view.yogas_checked:
+        lines = [f"The Moon's yogas in {who.your} chart (Brihat Jataka chapter 13):"]
+        for f in view.yogas:
+            lines.append(f"• {f.name}" + (f" ({f.detail})" if f.detail else "") + f": “{f.text[0].upper()}{f.text[1:]}”")
+            lines += [f"  {note}" for note in f.extra if full or f.name.startswith("Kemadruma")]
+        blocks.append("\n".join(lines))
+        refs += sorted({f.verse for f in view.yogas}, key=lambda v: int(v.split(".")[1].split("–")[0]))
+    else:
+        blocks.append(prompts.MOON_YOGAS_UNCHECKED)
+    if refs:
+        editions = f" ({view.edition}, pp. {view.pages}; yogas pp. {view.yoga_pages})" if full else ""
+        blocks.append(f"Source: Brihat Jataka {', '.join(dict.fromkeys(refs))}{editions} · checked")
+    return "\n\n".join(blocks)
 
 
 def render_ashtaka(view, full: bool = False, who=SELF) -> str:

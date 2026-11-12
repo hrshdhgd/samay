@@ -142,6 +142,7 @@ MOON_UNCHECKED = (
     "I know where your Moon is, but the text's descriptions of it are waiting for a check against the book, so I don't "
     "show them yet."
 )
+MOON_YOGAS_UNCHECKED = "What the text says about the yogas the Moon makes is waiting for a check, so it is not shown yet."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

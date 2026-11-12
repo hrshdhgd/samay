@@ -1,0 +1,68 @@
+# Brihat Jataka chapter XIII ("On Chandra (Lunar) Yogas"), verses 1-3 and 5-9: the Moon's position from the Sun, Adhi yoga,
+# Sunapha, Anapha, Durudhura and Kemadruma, the effect of the "yoga planet", and benefics in the upachaya houses.
+# Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain (archive.org b2488442x),
+# pp. 135-142. QUOTED from the translation, scan errors corrected (research/notes/brihat-jataka-chandra-yogas.md).
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
+# level: translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "135-142"
+
+# Verse 1: the Moon's house counted from the Sun. The houses are the translator's note (a) to verse 1.
+moon_from_sun:
+  verse: "13.1"
+  text: "The conduct, wealth, knowledge, intelligence and skill of a person will be poor, moderate or excellent according as the Moon occupies the Kendra, the Panaphara or the Apoklima houses from the Sun."
+  poor: [1, 4, 7, 10]
+  moderate: [2, 5, 8, 11]
+  excellent: [3, 6, 9, 12]
+  # Left out: the second half of verse 1 (rich and comfortable if the Moon is in her own or an Atimitra navamsa and
+  # aspected by Jupiter by day or Venus by night), which needs aspects and the navamsa friendship.
+
+# Verse 2: benefics (the translator's note: Mercury, Jupiter and Venus) in the 6th, 7th or 8th from the Moon.
+adhi:
+  verse: "13.2"
+  planets: [mercury, jupiter, venus]
+  houses: [6, 7, 8]
+  text: "A person born in the yoga will become a general, a minister or a king and will be in the enjoyment of great pleasures and wealth with subdued enemies and long life and free from diseases and fear."
+  note: "The yoga is of 7 sorts according as the benefic planets occupy one or more of the three houses; the translator adds that its strength follows how strong Mercury, Jupiter and Venus are (Badarayana)."
+
+# Verse 3: "Excepting the Sun, if the other planets occupy the 2nd, the 12th, or both the 2nd and the 12th houses from the
+# Moon, the yoga is respectively known as Sunapha, Anapha or Durudhura; otherwise, the yoga is known as Kemadruma by
+# numerous writers." The translator's note: the other planets are the five from Mars to Saturn.
+planets: [mars, mercury, jupiter, venus, saturn]
+sunapha:
+  verse: "13.5"
+  text: "A person born in a Sunapha yoga will be possessed of self-acquired property, will be a king or will resemble a king, and will be a man of intelligence, wealth and renown."
+anapha:
+  verse: "13.5"
+  text: "A person born in an Anapha yoga will be a man of influence and authority, will be free from diseases, will have a control over his passions, will be of great renown, will be in the enjoyment of all manner of pleasures, will wear neat dress and will be free from grief."
+durudhura:
+  verse: "13.6"
+  text: "A person born in a Durudhura yoga will be in the enjoyment of all manner of pleasures, will be possessed of wealth and chariot, will be liberal in his gift and will have good servants."
+kemadruma:
+  verse: "13.6"
+  text: "A person born in a Kemadruma yoga, though he may belong to a king's family, will be dirty, afflicted with grief, will do deeds not suited to his rank in life, will be poor, will serve under others and will be wicked."
+  # Verse 3: "According to some (the translator names Garga and Parasara), if the Moon occupy the Kendra house from the
+  # ascendant or if the Moon be accompanied by a planet, the yoga ceases to be a Kemadruma yoga."
+  cancelled_by_some: "According to some (Garga and Parasara, the translator says), if the Moon occupies a kendra from the ascendant or is accompanied by a planet, the yoga ceases to be a Kemadruma yoga."
+
+# Verses 7-8: the effect of the planet that makes the yoga; with two or more such planets all their effects come to pass.
+yoga_planet:
+  verse: "13.7–8"
+  mars: "the person will be active, fond of fight, and wealthy, and will engage in deeds without thought."
+  mercury: "the person will be skilled in work, will be of good speech and learned in the arts (in music, dance, painting, &c.)."
+  jupiter: "a person will be wealthy and virtuous, will live for ever in comfort and will be respected by the king."
+  venus: "a person will be afflicted with sexual passion, will be very wealthy and in the enjoyment of all manner of pleasures."
+  saturn: "a person will enjoy the wealth, property and servants of others, will engage in various deeds and will be the chief of parties of men."
+  note: "If two or more planets be yoga planets the effects described for them all will come to pass."
+
+# Verse 9: benefics (Mercury, Jupiter, Venus) in the upachaya houses (3rd, 6th, 10th, 11th).
+upachaya:
+  verse: "13.9"
+  houses: [3, 6, 10, 11]
+  planets: [mercury, jupiter, venus]
+  from_lagna: {3: "a person will be very rich", 2: "a person will be moderately wealthy", 1: "he will possess small wealth (or poor, the translator adds)"}
+  from_moon: {3: "he will be moderately rich", 2: "he will be moderately wealthy", 1: "he will possess small wealth (or poor, the translator adds)"}
+  both: "If benefic planets occupy the Upachaya places both from the ascendant and from the Moon a person will be exceedingly rich (the translator's note)."
+  overrules: "Even if the person be born in other malefic Yogas the present yoga will take effect to their exclusion (the translator's example: a person born in a Kemadruma yoga becomes rich and not poor)."

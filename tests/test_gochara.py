@@ -627,3 +627,102 @@ def test_other_persons_moon_is_worded_for_them(monkeypatch):
     monkeypatch.setattr(moon_nature, "load_rules", lambda path=None: MN_CHECKED)
     text = render_answer(qa.answer_topic("chart:moon", _birth(), NOW, subject=Subject("Maya", "daughter", minor=True)))
     assert "Maya's Moon is in" in text and prompts.MINOR_NOTE in text
+
+
+# --- Brihat Jataka XIII: the lunar yogas -----------------------------------------------------------------------------------
+from types import SimpleNamespace
+
+from samay.engine import chandra_yogas
+
+CY = chandra_yogas.load_rules()
+CY_CHECKED = dataclasses.replace(CY, level="translation-checked", checked_by="test")
+
+
+def _sky(**signs):
+    """A made-up chart: each named body in the given sign (0-11, mid-sign). Unnamed bodies sit in the 4th sign from the
+    Moon, which makes no lunar yoga (not the 2nd, 6th, 7th, 8th or 12th from her); the lagna defaults to Aries."""
+    moon = signs.get("moon", 0)
+    names = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+    planets = {n: SimpleNamespace(longitude=signs.get(n, (moon + 3) % 12) * 30 + 15.0) for n in names}
+    return SimpleNamespace(planets=planets, ascendant=signs.get("lagna", 0) * 30 + 15.0)
+
+
+def _yogas(**signs):
+    return {f.name.split(" (")[0]: f for f in chandra_yogas.find(CY_CHECKED, _sky(**signs)).found}
+
+
+def test_unchecked_finds_nothing():
+    assert chandra_yogas.find(CY, _sky(moon=3)) == chandra_yogas.Yogas((), False)
+
+
+def test_the_moon_from_the_sun_is_graded_by_house():
+    grade = lambda moon: _yogas(sun=0, moon=moon)["The Moon from the Sun"].detail.rsplit(": ", 1)[1]
+    assert [grade(m) for m in (0, 3, 6, 9)] == ["poor"] * 4      # 1st, 4th, 7th, 10th: kendra
+    assert [grade(m) for m in (1, 4, 7, 10)] == ["moderate"] * 4  # 2nd, 5th, 8th, 11th: panaphara
+    assert [grade(m) for m in (2, 5, 8, 11)] == ["excellent"] * 4  # 3rd, 6th, 9th, 12th: apoklima
+
+
+def test_sunapha_anapha_durudhura_follow_the_2nd_and_12th_from_the_moon():
+    taurus, gemini, aries = 1, 2, 0
+    assert "Sunapha yoga" in _yogas(moon=taurus, mars=gemini)            # Mars in the 2nd
+    assert "Anapha yoga" in _yogas(moon=taurus, jupiter=aries)           # Jupiter in the 12th
+    both = _yogas(moon=taurus, mars=gemini, jupiter=aries)
+    assert "Durudhura yoga" in both and "Sunapha yoga" not in both and "Anapha yoga" not in both
+
+
+def test_the_sun_does_not_make_these_yogas_and_neither_do_the_nodes():
+    sky = _yogas(moon=1, sun=2, rahu=2, ketu=0)  # the Sun in the 2nd, Ketu in the 12th: neither counts
+    assert "Kemadruma yoga" in sky and not {"Sunapha yoga", "Anapha yoga", "Durudhura yoga"} & sky.keys()
+
+
+def test_kemadruma_carries_the_text_cancellation_and_the_charts_facts():
+    k = _yogas(moon=5, sun=5, lagna=5)["Kemadruma yoga"]  # Moon with the Sun (a planet with her) and in a kendra (the 1st)
+    assert "ceases to be a Kemadruma" in k.extra[0] and "in a kendra" in k.detail and "is with Sun" in k.detail
+    lonely = _yogas(moon=5, sun=9, lagna=0)["Kemadruma yoga"]  # Moon in the 6th from lagna, alone
+    assert "not in a kendra" in lonely.detail and "has no planet with her" in lonely.detail
+
+
+def test_the_yoga_planets_give_their_own_texts_and_two_of_them_add_the_note():
+    one = _yogas(moon=1, mars=2)
+    assert one["The yoga planet Mars"].text.startswith("the person will be active, fond of fight") and one["The yoga planet Mars"].extra == ()
+    two = _yogas(moon=1, mars=2, saturn=0)
+    assert {"The yoga planet Mars", "The yoga planet Saturn"} <= two.keys()
+    assert "for them all will come to pass" in two["The yoga planet Mars"].extra[0]
+    assert not any(k.startswith("The yoga planet") for k in _yogas(moon=1))  # Kemadruma has no yoga planet
+
+
+def test_adhi_yoga_needs_a_benefic_in_the_6th_7th_or_8th_from_the_moon():
+    # Moon in Aries; Mercury in Virgo (6th), Jupiter in Libra (7th), Venus in Scorpio (8th)
+    assert "Adhi yoga" in _yogas(moon=0, mercury=5, jupiter=6, venus=7)
+    assert "Adhi yoga" in _yogas(moon=0, venus=7)
+    assert "Adhi yoga" not in _yogas(moon=0, mars=6, saturn=7)  # malefics do not make it
+
+
+def test_benefics_in_the_upachaya_houses_are_counted_from_the_lagna_and_the_moon_and_overrule_a_poor_yoga():
+    # Lagna Aries, Moon Aries: the 3rd, 6th, 10th, 11th are Gemini, Virgo, Capricorn, Aquarius
+    sky = _yogas(lagna=0, moon=0, mercury=2, jupiter=5, venus=9)
+    u = sky["Benefics in the upachaya houses"]
+    assert "very rich" in u.text and "moderately rich" in u.text and u.detail.startswith("3 of")
+    assert "exceedingly rich" in u.extra[0] and "to their exclusion" in u.extra[1]
+    assert "Benefics in the upachaya houses" not in _yogas(lagna=0, moon=0)
+
+
+@needs_kernel
+def test_the_moon_answer_includes_the_yogas_only_once_their_file_is_checked(monkeypatch):
+    plain = render_answer(qa.answer_topic("chart:moon", _birth(), NOW))
+    assert prompts.MOON_YOGAS_UNCHECKED in plain and "yogas in your chart" not in plain
+    monkeypatch.setattr(chandra_yogas, "load_rules", lambda path=None: CY_CHECKED)
+    text = render_answer(qa.answer_topic("chart:moon", _birth(), NOW))
+    assert prompts.MOON_YOGAS_UNCHECKED not in text and "The Moon's yogas in your chart (Brihat Jataka chapter 13):" in text
+    assert "• The Moon from the Sun" in text and "Source: Brihat Jataka 13." in text and prompts.MOON_UNCHECKED in text
+
+
+@needs_kernel
+def test_yogas_and_descriptions_are_gated_separately_and_fit_one_message(monkeypatch):
+    monkeypatch.setattr(chandra_yogas, "load_rules", lambda path=None: CY_CHECKED)
+    monkeypatch.setattr(moon_nature, "load_rules", lambda path=None: MN_CHECKED)
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune"), ("1990-08-15", "14:30", "Pune")]:
+        answer = qa.answer_topic("chart:moon", service.resolve_birth(BirthInput(*born)), NOW)
+        for view in ("compact", "full"):
+            assert len(render_answer(answer, view)) < 4096, (born, view)
+        assert "Brihat Jataka XIII" in qa._ai_prompt("what am I like?", answer)

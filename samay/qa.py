@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
-from .engine import antardasha, ashtakavarga, house_effects, moon_nature, planet_houses
+from .engine import antardasha, ashtakavarga, chandra_yogas, house_effects, moon_nature, planet_houses
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
@@ -119,6 +119,10 @@ class MoonView:
     conditions: dict
     edition: str
     pages: str
+    yogas: tuple = ()  # chandra_yogas.Found, Brihat Jataka XIII, once its rules are checked
+    yogas_checked: bool = False
+    yoga_edition: str = ""
+    yoga_pages: str = ""
 
 
 @dataclass(frozen=True)
@@ -360,8 +364,12 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
     if birth is None:
         return None
     rules = moon_nature.load_rules()
-    sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(rules, service.natal_report(birth).chart.planets["moon"].longitude)
-    return MoonView(sign, sign_text, nak_text, pada, nak, rules.servable, rules.conditions, rules.edition, rules.pages)
+    chart = service.natal_report(birth).chart
+    sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(rules, chart.planets["moon"].longitude)
+    yoga_rules = chandra_yogas.load_rules()
+    yogas = chandra_yogas.find(yoga_rules, chart)
+    return MoonView(sign, sign_text, nak_text, pada, nak, rules.servable, rules.conditions, rules.edition, rules.pages,
+                    yogas.found, yogas.checked, yoga_rules.edition, yoga_rules.pages)
 
 
 def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
@@ -528,7 +536,7 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += outlook_facts(answer.outlook, answer.who)
     if answer.ashtaka is not None and answer.ashtaka.checked:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
-    if answer.moon is not None and answer.moon.checked:
+    if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
     if not answer.who.is_self:
@@ -596,6 +604,7 @@ def ashtaka_facts(view: AshtakaView, who: Subject = SELF) -> list[str]:
 
 def moon_facts(view: MoonView, who: Subject = SELF) -> list[str]:
     """The Moon's sign and nakshatra descriptions as sentences for the AI."""
-    return [f"Brihat Jataka XVII on {who.your} Moon in {SIGNS[view.sign]}: a person born with it {view.sign_text.text}",
+    return [f"Brihat Jataka XIII, {f.name}" + (f" ({f.detail})" if f.detail else "") + f": {f.text}" for f in view.yogas] + [
+            f"Brihat Jataka XVII on {who.your} Moon in {SIGNS[view.sign]}: a person born with it {view.sign_text.text}",
             f"Brihat Jataka XVI on {who.your} Moon in {view.nakshatra.name}: a person born with it {view.nakshatra.text}",
             f"Brihat Jataka says: {view.conditions['sign'][1]}"]
