@@ -351,3 +351,78 @@ def test_every_view_still_fits_in_one_message_with_both_rule_files_checked(monke
             answer = qa.answer_topic(topic, birth, NOW)
             for view in ("compact", "full"):
                 assert len(render_answer(answer, view)) < 4096, (born, topic, view)
+
+
+# --- Phaladeepika 8: planets in houses, a second voice -------------------------------------------------------------------
+from samay.engine import planet_houses
+
+PH = planet_houses.load_rules()
+PH_CHECKED = dataclasses.replace(PH, level="translation-checked", checked_by="test")
+
+
+def test_every_planet_has_every_house_and_the_verse_ranges_follow_the_text():
+    assert all((p, h) in PH.rows for p in planet_houses.PLANETS for h in range(1, 13))
+    assert PH.verses == {"sun": "1-4", "moon": "5-7", "mars": "8-10", "mercury": "11-13", "jupiter": "14-16",
+                         "venus": "17-19", "saturn": "20-24", "rahu": "25-27", "ketu": "28-33"}
+
+
+def test_unchecked_gives_nothing_and_checked_picks_rows_by_the_rising_sign():
+    assert PH.lookup("sun", 1, 0) is None
+    cancer, aries, scorpio = 3, 0, 7
+    rows, verse = PH_CHECKED.lookup("sun", 1, cancer)
+    assert verse == "1-4" and len(rows) == 2 and rows[1].text == "cataract in the eyes"
+    assert len(PH_CHECKED.lookup("sun", 1, scorpio)[0]) == 1  # only the general row
+    assert PH_CHECKED.lookup("sun", 1, aries)[0][1].text == "eye disease"
+
+
+def test_saturn_in_the_first_house_depends_on_the_sign_it_holds():
+    libra, pisces = 6, 11
+    (strong,), _ = PH_CHECKED.lookup("saturn", 1, libra)
+    (weak,), _ = PH_CHECKED.lookup("saturn", 1, pisces)
+    assert "equal to a king" in strong.text and "sorrow and misery" in weak.text
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["effects"].pop("ketu"),
+    lambda r: r["effects"]["sun"]["houses"].pop(5),
+    lambda r: r["effects"]["sun"]["houses"].update({2: ""}),
+    lambda r: r["effects"]["sun"]["houses"].update({1: [{"when_lagna": ["atlantis"], "text": "x"}]}),
+    lambda r: r["effects"].update(pluto={"verse": "1", "houses": {}}),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_planet_house_file_is_rejected(tmp_path, change):
+    raw = yaml.safe_load(planet_houses.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        planet_houses.load_rules(path)
+
+
+@needs_kernel
+def test_a_marriage_answer_adds_the_second_text_only_once_checked(monkeypatch):
+    moon_in_seventh = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    plain = qa.answer_topic("life:marriage", moon_in_seventh, NOW)
+    assert plain.second == () and "Phaladeepika chapter 8" not in render_answer(plain)
+    monkeypatch.setattr(planet_houses, "load_rules", lambda path=None: PH_CHECKED)
+    answer = qa.answer_topic("life:marriage", moon_in_seventh, NOW)
+    assert [(v.planet, v.house) for v in answer.second] == [("moon", 7)]
+    text = render_answer(answer)
+    assert "What Phaladeepika chapter 8 says about Moon in your 7th house:" in text
+    assert "Good-looking, and loved by a faithful and illustrious wife." in text
+    assert "Phaladeepika 8.5–7" in text and "Brihat Jataka" in text
+    assert "Phaladeepika, chapter 8, on Moon in house 7" in qa._ai_prompt("when will I marry?", answer)
+
+
+@needs_kernel
+def test_an_empty_seventh_house_adds_no_second_text(monkeypatch):
+    monkeypatch.setattr(planet_houses, "load_rules", lambda path=None: PH_CHECKED)
+    assert qa.answer_topic("life:marriage", _birth(), NOW).second == ()  # Aries, no planets in it
+
+
+@needs_kernel
+def test_rahu_and_ketu_get_a_reading_here_though_brihat_jataka_has_none(monkeypatch):
+    monkeypatch.setattr(planet_houses, "load_rules", lambda path=None: PH_CHECKED)
+    answer = qa.answer_topic("planet:rahu", _birth(), NOW)
+    assert answer.reading is None and answer.second and answer.second[0].verse == "25-27"
+    assert "Phaladeepika 8.25–27" in render_answer(answer)

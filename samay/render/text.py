@@ -222,7 +222,7 @@ def _ref(e) -> tuple[int, int, str]:
     return int(c["chapter"]), first, f"{c['chapter']}.{head.replace('-', '–')}{note}"
 
 
-def sources_line(entries, reading=None, full: bool = False) -> str | None:
+def sources_line(entries, reading=None, full: bool = False, second=()) -> str | None:
     """One line naming every source an answer used, in place of a citation after each entry."""
     groups: dict[str, set[tuple[int, int, str]]] = {}
     editions: dict[str, str] = {}
@@ -234,6 +234,9 @@ def sources_line(entries, reading=None, full: bool = False) -> str | None:
         refs = groups.setdefault("Brihat Jataka", set())
         refs.update((20, v, f"20.{v}") for v in {x.verse for x in reading.effects} | {11})
         levels.add(reading.level)
+    for v in second:
+        first = int(v.verse.split("-")[0])
+        groups.setdefault("Phaladeepika", set()).add((8, first, f"8.{v.verse.replace('-', '–')}"))
     if not groups:
         return None
     parts = []
@@ -299,12 +302,15 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(render_reading(answer.reading, answer.shares, full=full, who=who))
     for reading, shares in answer.more_readings:
         blocks.append(render_reading(reading, shares, full=full, who=who))
+    for voice in answer.second:
+        blocks.append(render_second(voice, who))
     if answer.facts:
         facts = "\n".join(answer.facts)
         blocks.append(f"From {who.your} chart:\n{facts}" if full else facts)
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
-    source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full)
+    source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full,
+                          answer.second)
     if source:
         blocks.append(source)
     blocks.append(DISCLAIMER)
@@ -367,6 +373,15 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
     if r.astangata:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
+    return "\n".join(lines)
+
+
+def render_second(v, who=SELF) -> str:
+    """Phaladeepika chapter 8 on one planet in one house: the paraphrased results, a rising-sign line where the text has one."""
+    lines = [f"What Phaladeepika chapter 8 says about {v.planet.title()} in {who.your} {ordinal(v.house)} house:"]
+    for r in v.rows:
+        prefix = f"With {' or '.join(SIGNS[i] for i in sorted(r.when_lagna))} rising: " if r.when_lagna else ""
+        lines.append(f"{prefix}{r.text[0].upper()}{r.text[1:]}.")
     return "\n".join(lines)
 
 

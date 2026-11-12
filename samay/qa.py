@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
-from .engine import antardasha, house_effects
+from .engine import antardasha, house_effects, planet_houses
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
@@ -94,6 +94,15 @@ RAHU_KETU_FACT = (
 
 
 @dataclass(frozen=True)
+class SecondVoice:
+    """Phaladeepika chapter 8 on one planet in one house of this chart (a second text beside Brihat Jataka XX)."""
+    planet: str
+    house: int
+    rows: tuple[planet_houses.Row, ...]
+    verse: str  # the text's verse range for the planet, e.g. "1-4"
+
+
+@dataclass(frozen=True)
 class Answer:
     topic: str | None  # None: the question is outside what samay can answer from sources
     entries: tuple[Entry, ...]
@@ -105,6 +114,7 @@ class Answer:
     more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
     who: Subject = SELF  # whose chart this answer is about
     outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
+    second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
 
 
 _MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
@@ -303,6 +313,14 @@ def _transit_facts(report, who: Subject = SELF) -> list[str]:
     return out
 
 
+def _second_voice(chart, planet: str) -> SecondVoice | None:
+    """What Phaladeepika chapter 8 says for this planet in the house it holds in the chart, once checked."""
+    lagna = sign_index(chart.ascendant)
+    house = house_from(lagna, sign_index(chart.planets[planet].longitude))
+    found = planet_houses.load_rules().lookup(planet, house, lagna)
+    return SecondVoice(planet, house, *found) if found else None
+
+
 def _antardasha_fact(maha: str, antar: str) -> list[str]:
     """What Phaladeepika 21 says for this sub-chapter, once its rules file has been checked."""
     found = antardasha.load_rules().result(maha, antar)
@@ -346,6 +364,7 @@ def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | Non
     found = [e for h in houses for e in entry_store.answers_for(f"house:{h}", SYSTEMS, folder)]
     facts: list[str] = []
     readings: list[tuple] = []
+    second: list[SecondVoice] = []
     if birth is not None:
         chart = service.natal_report(birth).chart
         lagna = sign_index(chart.ascendant)
@@ -359,7 +378,10 @@ def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | Non
                 r = house_effects.reading(chart, g)
                 if r is not None and r.effects:
                     readings.append((r, house_effects.shares(rules, r)))
-    return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings), who=subject)
+                if (voice := _second_voice(chart, g)) is not None:
+                    second.append(voice)
+    return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings), who=subject,
+                  second=tuple(second))
 
 
 def answer_topic(
@@ -403,7 +425,9 @@ def answer_topic(
             shares = house_effects.shares(house_effects.load_rules(), reading)
         else:
             reading = None
-    return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares, who=subject)
+    voice = _second_voice(service.natal_report(birth).chart, subject_key) if kind == "planet" and birth is not None else None
+    return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares, who=subject,
+                  second=(voice,) if voice else ())
 
 
 AI_SYSTEM = (
@@ -433,6 +457,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     for r, _ in answer.more_readings:
         verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
                         + "; ".join(e.text for e in r.effects))
+    verified += [f"Phaladeepika, chapter 8, on {v.planet.title()} in house {v.house}: " + "; ".join(r.text for r in v.rows)
+                 for v in answer.second]
     if answer.outlook is not None:
         verified += outlook_facts(answer.outlook, answer.who)
     parts = []

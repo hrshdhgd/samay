@@ -1,0 +1,162 @@
+# Phaladeepika chapter 8 ("Effects of planets in different houses"), verses 1-33: what each of the nine planets does in
+# each of the twelve houses counted from the lagna. A second voice next to Brihat Jataka chapter 20, and the only one for
+# Rahu and Ketu. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), openly available at
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 92-103
+# (PDF pages 91-102). The repository is public, so every result is PARAPHRASED, never quoted. Notes and omissions are in
+# research/notes/phaladeepika-ch8-planets-in-houses.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
+# level: translation-checked with checked_by and checked_on. Owner's decision 2026-11-12: nothing is hidden for being
+# unpleasant; a checker only confirms each row matches the text.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "92-103"
+
+# `verse` is the range the text gives each planet (it numbers verses per planet, not per house).
+# A house is one text, or a list of rows. A row may carry `when_lagna` (only for those rising signs) or `unless_lagna`
+# (for any other rising sign); a planet in the 1st house is in the lagna sign, so the lagna decides.
+# Left out: verses 34-35 (a result is full when the planet is the same number of degrees into its sign as the lagna
+# point is into the lagna sign), and all the translator's notes (not Mantreswara's).
+effects:
+  sun:
+    verse: "1-4"
+    houses:
+      1:
+        - text: "scanty hair, laziness, a hot temper, impetuousness, a tall build, soiled eyes and a lean thin body; cruel, impatient and brave"
+        - {when_lagna: [cancer], text: "cataract in the eyes"}
+        - {when_lagna: [aries], text: "eye disease"}
+        - {when_lagna: [leo], text: "night blindness"}
+        - {when_lagna: [libra], text: "no wealth and loss of children"}
+      2: "without learning, shameless, and stammering"
+      3: "powerful, brave, wealthy and generous, with hostile relations with kinsmen"
+      4: "without happiness, comfort, relatives, land, friends or a house; in government service, and squanders the ancestral property"
+      5: "short-tempered and lacking happiness, wealth and children; intelligent, and wanders in forest regions"
+      6: "becomes a king, earns renown and praiseworthy qualities, is wealthy and overcomes enemies"
+      7: "suffers the king's wrath, has a deformed body and no wife, and is humiliated by others"
+      8: "loses wealth and friends, is short-lived and has poor eyesight, and may be blind"
+      9: "may lose the father but not children or relatives, and respects gods and Brahmins"
+      10: "has sons, vehicles, praise for good conduct, intelligence, wealth, strength and fame; becomes a king"
+      11: "very wealthy and long-lived, a king with lasting happiness"
+      12: "hostile relations with the father, poor eyesight, and no wealth or children"
+  moon:
+    verse: "5-7"
+    houses:
+      1: "for a waxing Moon, a strong constitution, long life, power, fearlessness and wealth; a waning Moon gives the reverse"
+      2: "learned, sweet in speech and wealthy, but with a defective limb and sensual"
+      3: "has brothers; lustful, powerful and strong, but very miserly"
+      4: "happy, enjoys sensual pleasures, generous in gifts, has good friends, vehicles and a high reputation"
+      5: "walks gently, brilliant, has good sons, and becomes a king's minister"
+      6: "short-lived, stupid, stomach ailments and humiliation"
+      7: "good-looking, and loved by a faithful and illustrious wife"
+      8: "sickly and short-lived"
+      9: "wealthy, virtuous and blessed with children"
+      10: "victorious over enemies, successful in every venture, doing pious deeds and supporting good people"
+      11: "high-minded, long-lived and wealthy, with children and servants"
+      12: "indolent, humiliated and unhappy, with others hostile to him"
+  mars:
+    verse: "8-10"
+    houses:
+      1: "very cruel but brave, short-lived, with a bruised body"
+      2: "not good-looking, not clever in speech, without wealth, and serving low people"
+      3: "has good qualities, powerful, happy and brave, not subdued by others, but without happiness from brothers"
+      4: "without mother, friends, happiness, vehicles and land"
+      5: "no children and many disasters; a talebearer without enough intelligence"
+      6: "wealthy, generous, defeats enemies, splendid like a king, and very sensual"
+      7: "undesirable actions, diseases, and a wife who dies early"
+      8: "a diseased body, loss of wealth, a short life, and being reviled by others"
+      9: "hostility from others even when favoured by the king, loses the father early, and oppresses others"
+      10: "cruel by nature yet charitable and king-like, valiant, and praised even by great people"
+      11: "powerful, wealthy, brave, of good conduct and happy"
+      12: "a cruel talebearer without a wife, mean by nature, with eye diseases"
+  mercury:
+    verse: "11-13"
+    houses:
+      1: "learned in all the Shastras, soft-spoken and long-lived"
+      2: "earns a living by his intelligence, composes poems, speaks in a cultured way and gets sweet food"
+      3: "brave but of middling life, with good brothers and sisters, though he tires easily and is dejected"
+      4: "learned and witty, with friends, wealth and happiness"
+      5: "learned, happy and courageous, with children and skill in mantras"
+      6: "indolent and harsh in speech, overcomes enemies, and is immovable in arguments"
+      7: "learned and well dressed, with every kind of greatness and a wealthy wife"
+      8: "widely renowned and long-lived, supports his family, a lord and an army commander"
+      9: "learned, wealthy, religious and virtuous, well versed in everything and open in speech"
+      10: "learned, powerful, wise, happy and virtuous, true to his word, and successful in ventures from the start"
+      11: "long-lived, true to his word, very wealthy and happy, with servants"
+      12: "poor and helpless, indolent, cruel, uneducated and humiliated"
+  jupiter:
+    verse: "14-16"
+    houses:
+      1: "handsome and attractive, virtuous, long-lived, fearless and blessed with God's grace"
+      2: "learned and wealthy, with a beautiful face, eloquent, and enjoying fine food"
+      3: "sinful, wicked, miserly and humiliated, though one of his brothers gains honour and renown"
+      4: "happy, living with mother, friends, sons and servants, with plenty of grain"
+      5: "distress from children, but learned and a king's minister"
+      6: "destroys enemies, though lazy and humiliated; clever and skilled in mantras"
+      7: "a decent wife and children, handsome and more generous than his father"
+      8: "poor and helpless, earning a living through servants and doing mean acts, though long-lived"
+      9: "wealthy, with children, famous, eager for virtuous deeds and rites, and a king's minister"
+      10: "very wealthy, a king's favourite, with a high reputation and virtue"
+      11: "wealthy, long-lived and fearless, with few children but with vehicles"
+      12: "earns hostility and uses abusive language; childless, sinful, indolent and serving others"
+  venus:
+    verse: "17-19"
+    houses:
+      1: "a beautiful attractive body, happy and long-lived"
+      2: "a poet who enjoys riches of many kinds"
+      3: "miserly, unpopular, and without wealth, happiness and wife"
+      4: "good vehicles, a decent house, ornaments, clothes and scents"
+      5: "wealthy, as influential and renowned as a king, learned, and happy in his children"
+      6: "no enemies but no wealth, and illicit relations with several young women without happiness"
+      7: "a faithful and beautiful wife, though he may lose her; wealthy, with intrigues with bad women"
+      8: "wealthy, long-lived and a landlord"
+      9: "fortune through the king's favour, with wife, sons and friends"
+      10: "virtuous deeds, happiness from friends, great honour, a high reputation and high status"
+      11: "wealthy, with connections with other men's wives, and every kind of happiness"
+      12: "bed comforts with many women, rich and prosperous"
+  saturn:
+    verse: "20-24"
+    houses:
+      1:
+        - {when_lagna: [libra, capricorn, aquarius], text: "equal to a king, or the chief or mayor of a city"}
+        - {unless_lagna: [libra, capricorn, aquarius], text: "sorrow and misery from childhood, poverty, shabby living and inactivity"}
+      2: "an unattractive face, strays from righteousness and has no wealth, but later in life leaves his native place and gains wealth, vehicles and every enjoyment"
+      3: "very intelligent, wise and generous, lives with his wife, yet indolent and unhappy"
+      4: "without a house, respect or mother, sickly in childhood and unhappy"
+      5: "evil-minded and wicked, without learning, children, wealth and happiness, roaming aimlessly"
+      6: "a glutton, wealthy, defeats enemies and is arrogant"
+      7: "relations with women of questionable character, poverty, wandering and unhappiness"
+      8: "unclean, with piles, no wealth, cruel, hungry, and avoided by friends"
+      9: "without good fortune, wealth, children and father; irreligious and wicked"
+      10: "becomes a king or equal to a king, valiant, renowned, and engaged in farming"
+      11: "free of ill health, with lasting income and wealth"
+      12: "impudent, poor and childless, with a defective limb, stupid and defeated by enemies"
+  rahu:
+    verse: "25-27"
+    houses:
+      1: "short-lived, wealthy and strong, with diseases of the face and head"
+      2: "insincere, with words of double meaning, and diseases of the mouth or face; tender-hearted, gains wealth from the king, angry yet happy"
+      3: "proud, hostile to his siblings, wealthy, long-lived and strong-willed"
+      4: "short-lived and seldom happy"
+      5: "a nasal voice, childless, hard-hearted, with stomach pain"
+      6: "troubled by enemies and oppressed by malefic planets; wealthy and long-lived, with an ulcer in the anus"
+      7: "independent but unintelligent, wastes money on women, becomes a widower and impotent"
+      8: "miserable, with rheumatism, few children and impure acts"
+      9: "harsh in speech and unrighteous, yet becomes head of a clan, city or village"
+      10: "few children, works for others and does no rightful deeds, but is fearless and famous"
+      11: "wealthy and long-lived, with few children and an ear disease"
+      12: "wastes money, commits sinful deeds and suffers diseases like dropsy"
+  ketu:
+    verse: "28-33"
+    houses:
+      1: "ungrateful, unhappy and a talebearer, keeping unsociable company, with a deformed body, fallen from position and an outcaste"
+      2: "without learning, harsh in speech, with a sinister look, and dependent on others for food"
+      3: "long-lived, powerful and renowned, happy with his wife and eating good food, but without a brother"
+      4: "lives in another man's house, loses land, mother and happiness, and must leave his native land"
+      5: "without children, evil-minded and oppressed by evil spirits"
+      6: "magnanimous, full of the best qualities, firm, renowned, with high authority; defeats enemies and achieves what he wishes"
+      7: "humiliation, association with fallen women, separation from his wife, bowel diseases and loss of potency"
+      8: "separation from loved ones, quarrelsome and short-lived, injured by a weapon, and failing in all ventures"
+      9: "sinful and unrighteous, loses the father, unfortunate, poor, and defames others"
+      10: "obstacles to good acts, impure and wicked, but very bold and famous for valour"
+      11: "accumulates wealth, has good qualities, enjoys luxuries, and succeeds in all undertakings"
+      12: "secret sinful acts, wastes money on undesirable purposes, destroys his wealth and takes to forbidden conduct, with eye diseases"
