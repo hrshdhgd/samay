@@ -388,12 +388,15 @@ def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
     points = ashtakavarga.bhinna(rules, ashtakavarga.positions(service.natal_report(birth).chart))
     where = ashtakavarga.positions(service.natal_report(birth).chart)
     return AshtakaView(tuple(ashtakavarga.sarva(points)), points, where["lagna"], rules.servable, rules.threshold,
-                       rules.above, rules.below, rules.sarva_verse, rules.edition, rules.pages, len(rules.variants))
+                       rules.above, rules.below, rules.sarva_verse, rules.edition, rules.pages,
+                       sum(1 for v in rules.variants if "phaladeepika" in v))
 
 
-def _lordship(chart, *planets: str) -> tuple[lordship.Verdict, ...]:
+def _lordship(birth: ResolvedBirth, *planets: str) -> tuple[lordship.Verdict, ...]:
     rules = lordship.load_rules()
-    found = (lordship.judge(rules, chart, p) for p in dict.fromkeys(planets))
+    report = service.natal_report(birth)
+    first = report.dashas[0].lord  # the dasha the person is born in counts as the first
+    found = (lordship.judge(rules, report.chart, p, first) for p in dict.fromkeys(planets))
     return tuple(v for v in found if v is not None)
 
 
@@ -437,7 +440,7 @@ def _future_answer(
     reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
     shares = house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
     return Answer("future:overview", tuple(entries), tuple(own + facts), (), None,
-                  reading if shares else None, shares, who=subject, lordship=_lordship(chart, lord, antar.lord))
+                  reading if shares else None, shares, who=subject, lordship=_lordship(birth, lord, antar.lord))
 
 
 def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | None, subject: Subject = SELF) -> Answer:
@@ -514,7 +517,7 @@ def answer_topic(
         else:
             reading = None
     voice = _second_voice(service.natal_report(birth).chart, subject_key) if kind == "planet" and birth is not None else None
-    houses = _lordship(service.natal_report(birth).chart, subject_key) if kind == "dasha" and birth is not None else ()
+    houses = _lordship(birth, subject_key) if kind == "dasha" and birth is not None else ()
     return Answer(topic, tuple(found), tuple(facts), notes, name_line, reading, shares, who=subject,
                   second=(voice,) if voice else (), lordship=houses)
 
@@ -632,4 +635,5 @@ def lordship_fact(v: lordship.Verdict) -> str:
     return (f"Phaladeepika 20, the dasha of {v.planet.title()}, which rules the " + " and ".join(_ordinal(h) for h in v.owned)
             + f" house and stands in the {_ordinal(v.house)}: " + "; ".join(
                 f"for the {_ordinal(h)} house, {'when strong' if k == 'strong' else 'when weak' if k == 'weak' else k}: {t}"
-                for h, k, _, t in v.rows) + ".")
+                for h, k, _, t in v.rows) + "." + "".join(f" Parasara's view (20.41): {t}." for _, t in v.nature)
+            + "".join(f" Troublesome (20.24): {t}." for _, t in v.troublesome))

@@ -4,23 +4,21 @@
 printed pages 197-207 (PDF pages 196-206), verses 3-83. Read from the PDF pages directly. **File:**
 `data/rules/phaladeepika-ch21-antardasha.yaml`, **unchecked**. Every result is paraphrased.
 
-**Used:** the result of each antardasha (sub-chapter) inside each mahadasha: 79 of the 81 pairs. The bot shows the
+**Used:** the result of each antardasha (sub-chapter) inside each mahadasha: all 81 pairs. The bot shows the
 running pair and any pair that begins in the period (week to five years), and adds the running pair to the
 "current period of life" answer. Verse 1's order of sub-chapters (the lord's own first, then in dasha order) is what
 the engine already does (`vedic.antardashas`).
 
-## Left out, and why
+## Resolved by the cross-check (2026-11-12)
 
-- **Ketu dasa, Venus and Mercury sub-chapters (verses 67 and 74).** Verse 67's heading is cut off in the translation,
-  and verse 74 is labelled "Venus" where the standard order (Ketu, Venus, Sun, Moon, Mars, Rahu, Jupiter, Saturn,
-  Mercury) would put Mercury. Two verses, two sub-chapters, and no way to tell which is which: neither is used. With the
-  Sanskrit or another translation this can be settled. v67: quarrel with a pious man, misunderstanding with wife and
-  kinsmen, a daughter's birth, loss of reputation; v74: a good son, praise from an employer, land and wealth, harassment
-  by a chief of enemies, loss of cattle and farming.
+- **Ketu dasa, Venus and Mercury sub-chapters (verses 67 and 74)** are now used. Kapoor's translation cuts off verse 67's heading and
+  labels verse 74 "Venus"; a second edition (wisdomlib.org, *Phaladeepika*, Sanskrit with translation, Adh. XXI) names 67 as the
+  Venus bhukti and 74 as the Mercury bhukti in Ketu's dasa, and the contents agree. All 81 pairs are present.
+- **Verse 50** (Ketu in Saturn's dasa) fits the standard order of sub-chapters.
 - **Pratyantar (sub-sub) dasas:** the text applies the same results to them; the engine does not compute them yet.
-- **The translator's notes** (Kapoor's, not Mantreswara's): good results come when the planet is well placed in the
-  chart and bad ones when it is badly placed; Mars is "yogakarka" for Cancer and Leo lagnas. Not applied by the bot.
-  Verse 84 says to also weigh the person's status, work and appearance.
+- **The translator's notes** (Kapoor's, not Mantreswara's): good results come when the planet is well placed and bad ones when it is
+  badly placed; Mars is "yogakarka" for Cancer and Leo lagnas. Not applied. Verse 84 says to also weigh the person's status, work
+  and appearance.
 
 ## For the checker
 

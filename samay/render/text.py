@@ -24,6 +24,57 @@ from ..qa import LIFE_AREAS, OUTLOOK_TOPICS
 from ..subject import SELF
 from . import prompts
 
+TELEGRAM_LIMIT = 4096
+
+
+def split_message(text: str, limit: int = 4000) -> list[str]:
+    """The text as one or more messages, none longer than Telegram allows, cut at a blank line when possible, else at a
+    line, else at a space. Nothing is dropped or reworded."""
+    if len(text) <= limit:
+        return [text]
+    chunks: list[str] = []
+    current = ""
+    for para in text.split("\n\n"):
+        for piece in _pieces(para, limit):
+            joined = f"{current}\n\n{piece}" if current else piece
+            if len(joined) <= limit:
+                current = joined
+            else:
+                chunks.append(current)
+                current = piece
+    chunks.append(current)
+    return chunks
+
+
+def _pieces(para: str, limit: int) -> list[str]:
+    """A paragraph that fits as is, else its lines, else its words, each short enough."""
+    if len(para) <= limit:
+        return [para]
+    out, current = [], ""
+    for line in para.split("\n"):
+        for part in ([line] if len(line) <= limit else _words(line, limit)):
+            joined = f"{current}\n{part}" if current else part
+            if len(joined) <= limit:
+                current = joined
+            else:
+                out.append(current)
+                current = part
+    return [*out, current]
+
+
+def _words(line: str, limit: int) -> list[str]:
+    out, current = [], ""
+    for word in line.split(" "):
+        joined = f"{current} {word}" if current else word
+        if len(joined) <= limit:
+            current = joined
+        else:
+            if current:
+                out.append(current)
+            current = word[:limit]
+    return [*out, current]
+
+
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
 UNVALIDATED = "Not yet checked against reference software; treat positions as provisional."
 YOGA_SOURCES_PENDING = "ⓘ The book references for these yogas are still being checked."
@@ -238,7 +289,7 @@ def sources_line(entries, reading=None, full: bool = False, second=(), lordship=
         first = int(v.verse.split("-")[0])
         groups.setdefault("Phaladeepika", set()).add((8, first, f"8.{v.verse.replace('-', '–')}"))
     for v in lordship:
-        for _, _, verse, _ in v.rows:
+        for verse in [*(r[2] for r in v.rows), *(n[0] for n in v.nature), *(n[0] for n in v.troublesome)]:
             groups.setdefault("Phaladeepika", set()).add((20, verse, f"20.{verse}"))
     if not groups:
         return None
@@ -447,9 +498,9 @@ def render_ashtaka(view, full: bool = False, who=SELF) -> str:
             f"is {view.above}; with fewer, it brings {view.below}.")
     lines += ["", f"Together {sum(view.sarva)} points. {prompts.ASHTAKA_KEY}", rule]
     if full:
-        lines.append(f"Counted with Phaladeepika's tables; Brihat Jataka's differ in {view.variants} of the 56 lists "
-                     f"({view.edition}; {view.pages}).")
-    lines.append(f"Source: Phaladeepika 23.3–9, {view.verse} · checked")
+        lines.append(f"Counted with Brihat Jataka's tables (also the standard modern ones); Phaladeepika's English translation "
+                     f"prints different lists in {view.variants} of the 56 ({view.edition}; {view.pages}).")
+    lines.append(f"Source: Brihat Jataka 9.1–7; Phaladeepika {view.verse} · checked")
     return "\n".join(lines)
 
 
@@ -471,6 +522,12 @@ def render_lordship(v, who=SELF, full: bool = False) -> str:
     for h, kind, _, text in v.rows:
         tag = {"strong": "if strong", "weak": "if weak", "both": ""}[kind] if v.leaning == "undecided" else ""
         lines.append(f"• {ordinal(h)} house{f' ({tag})' if tag else ''}: {text[0].upper()}{text[1:]}.")
+    if v.nature:
+        lines.append(f"Parasara's view, as the text gives it (20.{v.nature[0][0]}):")
+        lines += [f"• {t[0].upper()}{t[1:]}." for _, t in v.nature]
+    if v.troublesome:
+        lines.append(f"Dashas the text says bring misery and trouble (20.{v.troublesome[0][0]}), and this one is among them:")
+        lines += [f"• {t[0].upper()}{t[1:]}." for _, t in v.troublesome]
     return "\n".join(lines)
 
 
@@ -585,10 +642,11 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
     else:
         blocks.append(prompts.OUTLOOK_DASHA_UNCHECKED)
     if report.ashtaka_checked and any(s.points is not None for s in report.stays):
-        refs += ["23.3–9", "23.11"]
+        refs += ["23.11"]
         if full:
             blocks.append(prompts.OUTLOOK_ASHTAKA_NOTE.format(n=report.ashtaka_variants))
     if refs:
         edition = f" ({report.rules_edition}; {', '.join(editions)})" if full else ""
-        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)}{edition} · checked")
+        more = "; Brihat Jataka 9.1–7" if report.ashtaka_checked and any(s.points is not None for s in report.stays) else ""
+        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)}{more}{edition} · checked")
     return "\n\n".join(blocks)

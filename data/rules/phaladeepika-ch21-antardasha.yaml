@@ -1,5 +1,5 @@
 # Phaladeepika chapter 21 ("Nature of antar dasas and pratyantar dasas"), verses 3-83: what each antardasha (sub-chapter)
-# brings in each mahadasha. 79 of the 81 combinations; the other two are left out because the translation is unclear.
+# brings in each mahadasha. all 81 combinations.
 # Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), openly available at
 # http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 197-207
 # (PDF pages 196-206). The repository is public, so every result is PARAPHRASED, never quoted. Notes and the omissions
@@ -15,12 +15,12 @@ pages: "197-207"
 # Verse 1 and the translator's notes (Kapoor, not Mantreswara): the good results show when the planet is well placed in
 # the chart and the bad ones when it is badly placed. Verse 84: judge the person's status, class, work and appearance too.
 
-# Not included, and why:
-#  - Ketu dasa, Venus sub-chapter and Mercury sub-chapter (verses 67 and 74): verse 67's heading is cut off in the
-#    translation, and verse 74 is labelled "Venus" where the standard order would put Mercury. We cannot tell which is
-#    which, so neither is used.
-#  - Verse 50 reads "antar dasa of Ketu in the dasa of Jupiter" but sits in the Saturn block; the order of the verses
-#    makes it Ketu in Saturn's dasa, which is what is used here. The checker should confirm.
+# Cross-checked 2026-11-12 against a second, Sanskrit-with-translation edition (wisdomlib.org, Phaladipika, Adh. XXI, 1950): its
+# sloka 67 is the Venus bhukti in Ketu's dasa ("Sukra's Bhukti in Ketu's Mahadasa") and its sloka 74 the Mercury bhukti ("Mercury's
+# Bhukti in Ketu's Mahadasa"). Kapoor's translation cuts off verse 67's heading and mislabels verse 74 as Venus; the contents of
+# both verses agree with the second edition, so they are used here under the correct planets.
+# Verse 50 reads "antar dasa of Ketu in the dasa of Jupiter" in Kapoor but sits in the Saturn block; the standard order of
+# sub-chapters (Saturn, Mercury, Ketu, Venus, Sun, Moon, Mars, Rahu, Jupiter) puts Ketu there, and that is what is used.
 #  - Verse 33 ends in a garbled phrase ("skilful Mercury"); verse 52 ends "loss of wealth and rains". Both are
 #    paraphrased up to the clear part.
 effects:
@@ -102,6 +102,8 @@ effects:
     rahu:    {verse: 71, text: "quarrels because of enemies, danger from the king, fire and thieves, harsh words from wicked people, and acts that harm others"}
     jupiter: {verse: 72, text: "the birth of a very good son, worship of gods, gaining wealth and land, gifts from many places and honour from the king"}
     saturn:  {verse: 73, text: "loss of servants, annoyance from or to others, quarrels with enemies, loss of a limb, and loss of position and wealth"}
+    venus:   {verse: 67, text: "quarrel with a pious man of learning, misunderstanding with wife and relatives, the birth of a daughter, loss of reputation, humiliation, and annoyance from others"}
+    mercury: {verse: 74, text: "the birth of a good son, praise from an employer, gaining land and wealth, harassment by a chief of enemies, and loss of cattle and farming"}
   venus:
     venus:   {verse: 75, text: "plentiful clothes, ornaments, vehicles and perfumes, enjoyment of bed comforts, gain of wealth and a splendid body"}
     sun:     {verse: 76, text: "diseases of the eye, stomach and cheeks, danger from the king, and trouble from elders of the family"}

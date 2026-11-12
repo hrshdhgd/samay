@@ -1004,3 +1004,13 @@ async def test_a_question_about_the_week_ahead_gets_the_outlook_with_more_and_is
     await bot.on_button(tap_update, ctx)
     shown = tap_update.callback_query.edit_message_text.await_args.args[0]
     assert "🔮 Your week ahead" in shown
+
+
+async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on_the_last(ctx):
+    update, msg = message(ALLOWED, "x")
+    long_text = "\n\n".join(f"block {i} " + "word " * 300 for i in range(8))
+    await bot._say(update, long_text, "BUTTONS")
+    sent = [c.args[0] for c in msg.reply_text.await_args_list]
+    assert len(sent) > 1 and all(len(s) <= 4096 for s in sent)
+    assert all("reply_markup" not in c.kwargs for c in msg.reply_text.await_args_list[:-1])
+    assert msg.reply_text.await_args_list[-1].kwargs["reply_markup"] == "BUTTONS"

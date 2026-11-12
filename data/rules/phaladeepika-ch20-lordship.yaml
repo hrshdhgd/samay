@@ -45,3 +45,28 @@ houses:
        weak:   {verse: 20, text: "trouble for the elder brother, a sickly son, misery, deception and ear disease"}}
   12: {strong: {verse: 13, text: "lavish spending on good causes, meritorious acts that free him from the evil of past sins, and royal honours"},
        weak:   {verse: 20, text: "many diseases, dishonour and slavery, and all his wealth vanishing like the Moon in the dark half of the month"}}
+
+# Verse 41 ("according to Parasara's opinion"): the nature of a planet's dasha by the houses it rules. Each statement is shown
+# when the chart meets its condition; where two statements meet (a lagna lord is both a kendra and a trikona lord) both are
+# shown and the bot does not choose. "Natural benefic" is not defined in this chapter; the bot takes Jupiter, Venus, Mercury and
+# the waxing Moon as benefic and the Sun, Mars, Saturn, Rahu, Ketu and the waning Moon as malefic (a reading for the checker).
+nature:
+  verse: 41
+  statements:
+    kendra_benefic:   {owns: [1, 4, 7, 10], who: benefic, text: "the dasha of a lord of a kendra (1st, 4th, 7th, 10th) is adverse if that planet is a natural benefic"}
+    kendra_malefic:   {owns: [1, 4, 7, 10], who: malefic, text: "the dasha of a lord of a kendra is favourable if that planet is a natural malefic"}
+    trikona:          {owns: [1, 5, 9], who: any, text: "the dasha of the lord of a trikona (1st, 5th, 9th) is favourable"}
+    evil_houses:      {owns: [3, 6, 11], who: any, text: "the lords of the 3rd, 6th and 11th always produce evil effects in their dashas, even if benefic"}
+    eighth_and_lagna: {owns_all: [1, 8], who: any, text: "the lord of the 8th house, if he is also the lord of the lagna, is auspicious and gives good effects in his dasha"}
+    sun_moon_eighth:  {owns: [8], only: [sun, moon], who: any, text: "the Sun and the Moon give only good effects even if they own the 8th house (they do not carry the stigma of being lords of the 8th)"}
+
+# Verse 24: dashas that bring misery and trouble. Counting is in the order of the mahadashas, the one the person is born in
+# being the first (the translator's note).
+troublesome:
+  verse: 24
+  by_order: {saturn: 4, jupiter: 6, mars: 5, rahu: 5}
+  by_order_text: "the dasha of {planet} when it is the {n}th in the order of main dashas from the one the person was born in"
+  last_degree_text: "the dasha of a planet placed in the last degree of a sign"
+  last_degree_from: 29.0
+  house_text: "the dashas of the lords of the 6th, 8th and 12th houses"
+  houses: [6, 8, 12]

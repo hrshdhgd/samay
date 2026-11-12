@@ -193,3 +193,29 @@ def test_chat_dasha_is_explained_with_lengths_dates_and_the_current_sub_chapters
 
 def test_cli_dasha_is_unchanged():
     assert render_dasha(_report(), datetime(2026, 11, 9, tzinfo=UTC)).startswith("Vimshottari mahadashas:")
+
+
+def test_a_short_text_is_one_message_and_a_long_one_is_split_without_losing_a_word():
+    from samay.render.text import split_message
+    assert split_message("hello") == ["hello"]
+    paragraphs = [f"paragraph {i} " + "word " * 120 for i in range(20)]
+    text = "\n\n".join(paragraphs)
+    parts = split_message(text, limit=1000)
+    assert len(parts) > 2 and all(len(p) <= 1000 for p in parts)
+    assert "\n\n".join(parts).split() == text.split()  # nothing dropped or reordered
+    assert all(p.startswith("paragraph") for p in parts)  # cut at paragraph boundaries here
+
+
+def test_a_paragraph_longer_than_the_limit_is_cut_at_lines_and_then_at_words():
+    from samay.render.text import split_message
+    lines = "\n".join(f"line {i} " + "x" * 80 for i in range(30))
+    parts = split_message(lines, limit=500)
+    assert all(len(p) <= 500 for p in parts) and "\n".join(parts).split() == lines.split()
+    one_long_line = "word " * 400
+    pieces = split_message(one_long_line, limit=300)
+    assert all(len(p) <= 300 for p in pieces) and " ".join(pieces).split() == one_long_line.split()
+
+
+def test_a_word_longer_than_the_limit_is_cut_hard_rather_than_looping():
+    from samay.render.text import split_message
+    assert all(len(p) <= 100 for p in split_message("y" * 250, limit=100))

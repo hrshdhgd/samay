@@ -23,20 +23,25 @@ favourable:
   saturn: [3, 6, 11]
   rahu: [3, 6, 10, 11]
 
-# Verses 3-7: vedha (obstruction). A good transit in house H gives its good result only if no other planet is in the
-# vedha house at the same time. `exempt`: the planet whose presence there does not obstruct (the text's exceptions).
-# Venus (verse 8) is left out: the verse lists 7 houses against 9 vedha places, so the pairs cannot be read reliably.
-# Rahu and Ketu: the text gives no vedha. Which planets can obstruct: the seven planets, Sun to Saturn (our reading
-# of "any of the planets"; the checker may change this).
+# Verses 3-8: vedha (obstruction). A good transit in house H gives its good result only if no other planet is in the vedha house at
+# the same time. `exempt`: the planet whose presence there does not obstruct (the text's exceptions). Which planets can obstruct:
+# the seven planets, Sun to Saturn (our reading of "any of the planets"; the checker may change this).
+# Cross-checked 2026-11-12 against astroveda.wikidot.com's Rasi Gochara Vedha table and two other pages: every pair below agrees
+# with it. The two pairs the Kapoor translation lost are filled from that table, and fit the translation's own lists:
+#  - Venus (verse 8): the translation prints nine vedha places "8th, 7th, 1st, 10th, 9th, 5th, 11th, 6th, 3rd" against only seven
+#    good houses (it dropped the 1st and 9th from the first list); verse 2 gives nine good houses (1, 2, 3, 4, 5, 8, 9, 11, 12),
+#    and the nine vedha places fit them in order: 1->8, 2->7, 3->1, 4->10, 5->9, 8->5, 9->11, 11->6, 12->3.
+#  - Mercury (verse 6): six good houses (2, 4, 6, 8, 10, 11) against five printed vedha places; the 8th's, the 1st, is the one
+#    missing, and the printed ones fall at 5, 3, 9, 8, 12 for 2, 4, 6, 10, 11 as before.
+# Rahu and Ketu: the text gives no vedha.
 vedha:
   sun: {pairs: {11: 5, 3: 9, 10: 4, 6: 12}, exempt: [saturn], verse: 3}
   moon: {pairs: {1: 5, 3: 9, 6: 12, 7: 2, 10: 4, 11: 8}, exempt: [mercury], verse: 4}
   mars: {pairs: {3: 12, 6: 9, 11: 5}, exempt: [], verse: 5}
   saturn: {pairs: {3: 12, 6: 9, 11: 5}, exempt: [sun], verse: 5}
-  # Verse 6 lists six good houses (2, 4, 6, 8, 10, 11) but five vedha places (5, 3, 9, 8, 12); the 8th's is missing
-  # from the translation, so the 8th has no vedha here rather than a guessed one.
-  mercury: {pairs: {2: 5, 4: 3, 6: 9, 10: 8, 11: 12}, exempt: [moon], verse: 6}
+  mercury: {pairs: {2: 5, 4: 3, 6: 9, 8: 1, 10: 8, 11: 12}, exempt: [moon], verse: 6}
   jupiter: {pairs: {2: 12, 11: 8, 9: 10, 5: 4, 7: 3}, exempt: [], verse: 7}
+  venus: {pairs: {1: 8, 2: 7, 3: 1, 4: 10, 5: 9, 8: 5, 9: 11, 11: 6, 12: 3}, exempt: [], verse: 8}
 
 # Verses 9-24: the result of each planet's transit through each house from the Moon sign, paraphrased.
 effects:

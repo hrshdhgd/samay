@@ -21,8 +21,9 @@ in copyright and the repository is public).
 
 - **Ketu:** the author gives no results; the translator only guesses they are Rahu's. Ketu's position is shown, with
   no result.
-- **Venus's vedha (verse 8):** it lists 7 good houses against 9 vedha places, so the pairs cannot be read reliably.
-- **Mercury's vedha for the 8th (verse 6):** six good houses, five vedha places; the 8th's is missing.
+- **Venus's vedha (verse 8) and Mercury's vedha for the 8th (verse 6)** were first left out because the translation's lists did not
+  line up. Cross-checked on 2026-11-12 against astroveda.wikidot.com's Rasi Gochara Vedha table: Venus 1->8, 2->7, 3->1, 4->10, 5->9,
+  8->5, 9->11, 11->6, 12->3, Mercury 8->1. They fit the translation's own lists in order and are now used (see `cross-verification.md`).
 - **Which planets can obstruct:** "any of the planets"; we take the seven planets, Sun to Saturn, not Rahu and Ketu.
   The checker may change this.
 - **Verse 30 (the part of a sign where each planet acts), verses 31-32 (strength, aspects), verse 41 (ashtakavarga

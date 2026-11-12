@@ -50,6 +50,7 @@ from ..render.text import (
     render_dasha,
     render_rahu_kaala,
     render_today,
+    split_message,
     today_facts,
 )
 from ..store import MAX_PEOPLE, Home, Person, Store
@@ -196,7 +197,10 @@ def _store(ctx) -> Store:
 
 async def _say(update: Update, text: str, markup=None) -> None:
     message = update.effective_message
-    await message.reply_text(text, reply_markup=markup)
+    chunks = split_message(text)  # Telegram refuses a message over 4096 characters; buttons go on the last part
+    for part in chunks[:-1]:
+        await message.reply_text(part)
+    await message.reply_text(chunks[-1], reply_markup=markup)
 
 
 async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefix: str = "") -> None:
@@ -510,9 +514,10 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
     answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
     view = QA_VIEWS[mode]
     try:
-        await update.callback_query.edit_message_text(
-            render_answer(answer, view, birth_known=birth is not None), reply_markup=answer_markup(answer, view, pid)
-        )
+        first, *rest = split_message(render_answer(answer, view, birth_known=birth is not None))
+        await update.callback_query.edit_message_text(first, reply_markup=answer_markup(answer, view, pid))
+        for part in rest:  # a long view continues in new messages under the edited one
+            await update.effective_message.reply_text(part)
     except BadRequest as e:
         if "not modified" not in str(e).lower():
             raise

@@ -232,7 +232,7 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
         dasha_changes=tuple(changes), rules_level=rules.level, rules_edition=rules.edition, rules_pages=rules.pages,
         antardasha=results, antardasha_edition=sub.edition, antardasha_pages=sub.pages, antardasha_checked=sub.servable,
         ashtaka_checked=ashtaka.servable, ashtaka_meaning=tuple(sorted(ashtaka.meaning.items())) if ashtaka.servable else (),
-        ashtaka_variants=len(ashtaka.variants),
+        ashtaka_variants=sum(1 for v in ashtaka.variants if "phaladeepika" in v),
     )
 
 

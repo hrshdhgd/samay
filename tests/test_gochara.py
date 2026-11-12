@@ -36,11 +36,11 @@ def test_the_good_houses_are_verse_2s():
     assert RULES.favourable["venus"] == {1, 2, 3, 4, 5, 8, 9, 11, 12}
 
 
-def test_vedha_follows_verses_3_to_7_and_leaves_out_what_the_text_does_not_say_clearly():
+def test_vedha_follows_verses_3_to_8_and_is_cross_checked_against_a_second_table():
     assert RULES.vedha["jupiter"].pairs == {2: 12, 11: 8, 9: 10, 5: 4, 7: 3}
     assert RULES.vedha["sun"].exempt == {"saturn"} and RULES.vedha["moon"].exempt == {"mercury"}
-    assert 8 not in RULES.vedha["mercury"].pairs  # the translation drops it
-    assert "venus" not in RULES.vedha  # verse 8's lists do not line up
+    assert RULES.vedha["mercury"].pairs == {2: 5, 4: 3, 6: 9, 8: 1, 10: 8, 11: 12}  # the 8th's, lost in the translation, filled
+    assert RULES.vedha["venus"].pairs == {1: 8, 2: 7, 3: 1, 4: 10, 5: 9, 8: 5, 9: 11, 11: 6, 12: 3}  # and Venus's nine
 
 
 def test_the_shipped_rules_are_unchecked_until_a_person_checks_them():
@@ -265,15 +265,17 @@ SUB = antardasha.load_rules()
 SUB_CHECKED = dataclasses.replace(SUB, level="translation-checked", checked_by="test")
 
 
-def test_the_antardasha_rules_cover_79_of_81_pairs_and_leave_out_the_two_unreadable_ones():
-    assert len(SUB.effects) == 79 and SUB.level == "unchecked"
-    missing = {(m, a) for m in antardasha.LORDS for a in antardasha.LORDS} - set(SUB.effects)
-    assert missing == {("ketu", "venus"), ("ketu", "mercury")}  # verses 67 and 74 cannot be told apart
+def test_the_antardasha_rules_cover_all_81_pairs():
+    assert len(SUB.effects) == 81 and SUB.level == "unchecked"
+    assert {(m, a) for m in antardasha.LORDS for a in antardasha.LORDS} == set(SUB.effects)
+    # Ketu's dasha, Venus and Mercury sub-chapters: verses 67 and 74, named by a second edition (Sanskrit with translation)
+    assert SUB.effects["ketu", "venus"][1] == 67 and SUB.effects["ketu", "mercury"][1] == 74
 
 
 def test_verses_run_3_to_83_without_repeats():
     verses = sorted(v for _, v in SUB.effects.values())
-    assert verses[0] == 3 and verses[-1] == 83 and len(set(verses)) == 79 and {67, 74}.isdisjoint(verses)
+    assert verses[0] == 3 and verses[-1] == 83 and len(set(verses)) == 81 and 67 in verses and 74 in verses and 49 in verses
+    assert 1 not in verses and 2 not in verses and 84 not in verses  # verse 1-2 and 84 give rules, not results
 
 
 def test_each_mahadasha_block_follows_the_text_order_of_verses():
@@ -292,7 +294,7 @@ def test_the_unchecked_file_gives_nothing_and_the_checked_one_gives_text_and_ver
     assert SUB.result("sun", "moon") is None
     text, verse = SUB_CHECKED.result("sun", "moon")
     assert verse == 4 and "defeat of enemies" in text
-    assert SUB_CHECKED.result("ketu", "venus") is None
+    assert "daughter" in SUB_CHECKED.result("ketu", "venus")[0] and "good son" in SUB_CHECKED.result("ketu", "mercury")[0]
 
 
 @pytest.mark.parametrize("change", [
@@ -345,12 +347,14 @@ def test_the_period_of_life_answer_gets_the_sub_chapters_result_and_the_ai_sees_
 def test_every_view_still_fits_in_one_message_with_both_rule_files_checked(monkeypatch):
     monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
     monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    from samay.render.text import split_message
     for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune")]:
         birth = service.resolve_birth(BirthInput(*born))
         for topic in qa.OUTLOOK_TOPICS:
             answer = qa.answer_topic(topic, birth, NOW)
             for view in ("compact", "full"):
-                assert len(render_answer(answer, view)) < 4096, (born, topic, view)
+                parts = split_message(render_answer(answer, view))
+                assert all(len(p) <= 4096 for p in parts), (born, topic, view)
 
 
 # --- Phaladeepika 8: planets in houses, a second voice -------------------------------------------------------------------
@@ -445,11 +449,35 @@ def test_each_planets_table_adds_up_to_the_texts_total():
     assert sum(totals.values()) == 337
 
 
-def test_the_books_worked_example_is_reproduced():
-    points = ashtakavarga.bhinna(AV, EXAMPLE)
-    total = ashtakavarga.sarva(points)
-    assert sorted(total) == sorted(BOOK_TOTALS) and sum(total) == 337
-    assert points["sun"][1] == 7 and points["jupiter"][5] == 7  # the Sun's Taurus and Jupiter's Virgo, as the chapter says
+# The tables in use equal the standard modern ones (vedastro.org's Bhinnashtakavarga guide), which also follow Brihat Jataka IX.
+STANDARD_DIFFERENCES = {  # the five lists where Phaladeepika's English translation prints something else, as used here
+    ("moon", "jupiter"): (1, 4, 7, 8, 10, 11, 12), ("mars", "jupiter"): (6, 10, 11, 12),
+    ("jupiter", "jupiter"): (1, 2, 3, 4, 7, 8, 10, 11), ("venus", "mars"): (3, 5, 6, 9, 11, 12),
+    ("mercury", "mercury"): (1, 3, 5, 6, 9, 10, 11, 12),
+}
+
+
+def test_the_five_lists_follow_brihat_jataka_and_the_standard_tables():
+    for (planet, src), houses in STANDARD_DIFFERENCES.items():
+        assert AV.tables[planet][src] == houses
+    # a few lists on which every source agrees
+    assert AV.tables["sun"]["sun"] == (1, 2, 4, 7, 8, 9, 10, 11) and AV.tables["moon"]["sun"] == (3, 6, 7, 8, 10, 11)
+    assert AV.tables["saturn"]["jupiter"] == (5, 6, 11, 12) and AV.tables["venus"]["lagna"] == (1, 2, 3, 4, 5, 8, 9, 11)
+
+
+def test_phaladeepikas_worked_example_matches_only_its_own_printed_lists():
+    """Verse 20's twelve sign totals come out under the lists as the translation prints them, and not under the tables in use:
+    the book's example was worked with its own lists, which differ from the standard ones in these five places."""
+    import copy
+    printed = copy.deepcopy(AV)
+    tables = {p: dict(row) for p, row in AV.tables.items()}
+    for v in AV.variants:
+        if "phaladeepika" in v:
+            tables[v["planet"]][v["from"]] = tuple(v["phaladeepika"])
+    printed = dataclasses.replace(AV, tables=tables)
+    assert sorted(ashtakavarga.sarva(ashtakavarga.bhinna(printed, EXAMPLE))) == sorted(BOOK_TOTALS)
+    assert sorted(ashtakavarga.sarva(ashtakavarga.bhinna(AV, EXAMPLE))) != sorted(BOOK_TOTALS)
+    assert sum(ashtakavarga.sarva(ashtakavarga.bhinna(AV, EXAMPLE))) == 337  # the grand total is the same either way
 
 
 def test_points_depend_on_the_chart_not_on_the_totals():
@@ -459,7 +487,8 @@ def test_points_depend_on_the_chart_not_on_the_totals():
 
 
 def test_the_differences_between_the_two_texts_are_recorded():
-    assert len(AV.variants) == 5 and {(v["planet"], v["from"]) for v in AV.variants} >= {("moon", "jupiter"), ("venus", "mars")}
+    assert sum(1 for v in AV.variants if "phaladeepika" in v) == 5 and len(AV.variants) == 6
+    assert {(v["planet"], v["from"]) for v in AV.variants} >= {("moon", "jupiter"), ("venus", "mars"), ("moon", "sun")}
     assert AV.level == "unchecked" and not AV.servable and AV.threshold == 28
     assert AV.meaning[1] == "destruction or loss" and AV.meaning[7].startswith("gaining a kingdom")
 
@@ -510,9 +539,9 @@ def test_checked_tables_show_the_sign_totals_by_house_and_the_28_rule(monkeypatc
     text = render_answer(answer)
     lagna = answer.ashtaka.lagna
     assert f"1st house · {ashtakavarga_sign(lagna)}" in text and "more than 28 points" in text and "✓" in text
-    assert "Source: Phaladeepika 23.3–9, 23.20 · checked" in text
+    assert "Source: Brihat Jataka 9.1–7; Phaladeepika 23.20 · checked" in text
     full = render_answer(answer, "full")
-    assert "Brihat Jataka's differ in 5 of the 56 lists" in full and "Sun " in full
+    assert "prints different lists in 5 of the 56" in full and "Sun " in full and "Brihat Jataka 9.1–7; Phaladeepika" in text
     assert "ashtakavarga points per house" in qa._ai_prompt("which signs are strong?", answer)
 
 
@@ -532,7 +561,8 @@ def test_outlook_stays_carry_the_planets_own_points_once_checked(monkeypatch):
     compact, full = render_answer(qa.answer_topic("future:year", _birth(), NOW)), render_answer(
         qa.answer_topic("future:year", _birth(), NOW), "full")
     assert " pts)" in compact and "23.11" in compact and "Brihat Jataka's tables differ" not in compact
-    assert "pts: " in full and "Brihat Jataka's tables differ from them in 5 of the 56 lists" in full
+    assert "pts: " in full and "Phaladeepika's English translation prints different lists in 5 of the 56" in full
+    assert "; Brihat Jataka 9.1–7" in compact
 
 
 @needs_kernel
@@ -806,3 +836,76 @@ def test_the_running_dasha_answer_adds_lordship_once_checked_and_the_ai_sees_it(
     jupiter = qa.answer_topic("dasha:jupiter", _birth(), NOW)
     assert [v.planet for v in jupiter.lordship] == ["jupiter"]
     assert qa.answer_topic("dasha:rahu", _birth(), NOW).lordship == ()
+
+
+def test_verse_41_kendra_lords_are_adverse_if_benefic_and_favourable_if_malefic():
+    gemini, aries = 2, 0
+    mercury = lordship.judge(LR_CHECKED, _chart(gemini), "mercury")  # lord of the 1st and 4th: kendras, a natural benefic
+    texts = [t for _, t in mercury.nature]
+    assert any("adverse if that planet is a natural benefic" in t for t in texts)
+    assert not any("favourable if that planet is a natural malefic" in t for t in texts)
+    mars = lordship.judge(LR_CHECKED, _chart(aries), "mars")  # 1st and 8th: a natural malefic
+    mtexts = [t for _, t in mars.nature]
+    assert any("favourable if that planet is a natural malefic" in t for t in mtexts)
+    assert not any("adverse if that planet is a natural benefic" in t for t in mtexts)
+
+
+def test_verse_41_trikona_the_evil_houses_and_the_eighth_lord_who_is_also_lagna_lord():
+    aries = 0
+    mars = lordship.judge(LR_CHECKED, _chart(aries), "mars")
+    assert any("trikona" in t for _, t in mars.nature) and any("also the lord of the lagna" in t for _, t in mars.nature)
+    mercury = lordship.judge(LR_CHECKED, _chart(aries), "mercury")  # 3rd and 6th
+    assert any("3rd, 6th and 11th always produce evil" in t for _, t in mercury.nature)
+    saturn = lordship.judge(LR_CHECKED, _chart(aries), "saturn")  # 10th and 11th
+    assert any("3rd, 6th and 11th" in t for _, t in saturn.nature) and any("kendra" in t for _, t in saturn.nature)
+    jupiter = lordship.judge(LR_CHECKED, _chart(aries), "jupiter")  # 9th and 12th: trikona only
+    assert [t for _, t in jupiter.nature] == [next(t for _, t in jupiter.nature if "trikona" in t)]
+
+
+def test_verse_41_the_sun_and_moon_owning_the_eighth_are_free_of_its_stigma():
+    capricorn, sagittarius = 8 + 1, 8  # lagna signs that make Leo / Cancer the 8th house
+    sun = lordship.judge(LR_CHECKED, _chart(capricorn), "sun")
+    moon = lordship.judge(LR_CHECKED, _chart(sagittarius), "moon")
+    assert sun.owned == (8,) and moon.owned == (8,)
+    for v in (sun, moon):
+        assert any("only good effects even if they own the 8th" in t for _, t in v.nature)
+    mars_8th = lordship.judge(LR_CHECKED, _chart(0), "mars")  # Mars owns the 8th too, but is not the Sun or Moon
+    assert not any("only good effects" in t for _, t in mars_8th.nature)
+
+
+def test_the_moon_is_benefic_only_when_waxing():
+    waxing = _chart(0, sun=(0, False, 10.0), moon=(1, False, 10.0))
+    waning = _chart(0, sun=(0, False, 10.0), moon=(6, False, 10.0))
+    assert lordship.natural_benefic(waxing, "moon") and not lordship.natural_benefic(waning, "moon")
+    assert [lordship.natural_benefic(waxing, p) for p in ("jupiter", "venus", "mercury", "sun", "mars", "saturn")] == [True] * 3 + [False] * 3
+
+
+def test_verse_24_the_order_of_main_dashas_counts_from_the_one_born_in():
+    # order: ketu venus sun moon mars rahu jupiter saturn mercury
+    saturn_fourth = lordship.judge(LR_CHECKED, _chart(0), "saturn", "mars")     # mars, rahu, jupiter, saturn
+    assert any("4th in the order" in t for _, t in saturn_fourth.troublesome)
+    assert not any("order" in t for _, t in lordship.judge(LR_CHECKED, _chart(0), "saturn", "venus").troublesome)
+    jupiter_sixth = lordship.judge(LR_CHECKED, _chart(0), "jupiter", "venus")   # venus ... jupiter is the 6th
+    assert any("6th in the order" in t for _, t in jupiter_sixth.troublesome)
+    mars_fifth = lordship.judge(LR_CHECKED, _chart(0), "mars", "ketu")          # ketu venus sun moon mars
+    assert any("5th in the order" in t for _, t in mars_fifth.troublesome)
+
+
+def test_verse_24_a_planet_in_the_last_degree_and_the_lords_of_the_6th_8th_and_12th():
+    last = lordship.judge(LR_CHECKED, _chart(0, sun=(4, False, 29.5)), "sun", "ketu")
+    assert any("last degree of a sign" in t for _, t in last.troublesome)
+    middle = lordship.judge(LR_CHECKED, _chart(0, sun=(4, False, 15.0)), "sun", "ketu")
+    assert not any("last degree" in t for _, t in middle.troublesome)
+    mars = lordship.judge(LR_CHECKED, _chart(0), "mars", "ketu")  # owns the 8th
+    assert any("6th, 8th and 12th" in t for _, t in mars.troublesome)
+    sun = lordship.judge(LR_CHECKED, _chart(0), "sun", "ketu")    # owns only the 5th
+    assert not any("6th, 8th and 12th" in t for _, t in sun.troublesome)
+
+
+@needs_kernel
+def test_the_period_answer_shows_parasaras_view_and_the_troublesome_dashas(monkeypatch):
+    monkeypatch.setattr(lordship, "load_rules", lambda path=None: LR_CHECKED)
+    text = render_answer(qa.answer_topic("dasha:saturn", _birth(), NOW))
+    assert "Parasara's view, as the text gives it (20.41):" in text
+    prompt = qa._ai_prompt("how is the Saturn period?", qa.answer_topic("dasha:saturn", _birth(), NOW))
+    assert "Parasara's view (20.41)" in prompt

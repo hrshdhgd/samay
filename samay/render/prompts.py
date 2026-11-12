@@ -125,7 +125,8 @@ OUTLOOK_NOT_APPLIED = (
 )
 OUTLOOK_ASHTAKA_NOTE = (
     "Points (ashtakavarga) are a planet's benefic points in the sign it is passing, counted from your birth chart with "
-    "Phaladeepika's tables. Brihat Jataka's tables differ from them in {n} of the 56 lists."
+    "Brihat Jataka's tables, which the standard modern tables also give. Phaladeepika's English translation prints "
+    "different lists in {n} of the 56."
 )
 OUTLOOK_DASHA_UNCHECKED = "What the text says about each sub-chapter is waiting for a check, so it is not shown yet."
 OUTLOOK_UNCHECKED = (
