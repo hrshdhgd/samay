@@ -14,3 +14,4 @@ ded93c0	dasha:* + concept:dasha (10)	unchecked	keep	paraphrased from Phaladeepik
 da8f0aa	house:1..10 method entries (11)	unchecked	keep	phaladeepika ch.5,10,12,16 paraphrased: methods and marriage timing only; severe outcome lists left out; awaiting h2 check
 50c26f5	nakshatra syllables (108)	data	keep	desiutils vs hindumirror agree on 108/108; alternates kept; YAML No->False bug found and guarded; not wired into the bot
 e5edb7f	rules:phaladeepika-ch26-gochara	unchecked	keep	ch.26 vv.1-24 paraphrased from PDF pp.246-251; Ketu (no results), Venus vedha and Mercury 8th vedha left out as unreadable; severe rows listed for h2; awaiting check
+2c534ef	rules:phaladeepika-ch21-antardasha	unchecked	keep	ch.21 vv.3-83, 79/81 pairs paraphrased from PDF pp.196-206; v67/v74 (Ketu dasa Venus/Mercury) left out as unclear; v50 mislabel noted; awaiting check
