@@ -30,9 +30,12 @@ in copyright and the repository is public).
 - **Verses 26-29, 33-40, 42-46 (nakshatra transits, danger-to-life combinations, the limbs tables, lattas):** not
   used. Several predict death; they need a decision before any of them is shown to the family.
 
-## Severe rows the checker should decide on
+## Severe rows: owner's decision, 2026-11-12: show everything, hide nothing
 
-These are shown to everyone whose Moon sign puts the planet there, children included (with the under-18 note):
+The owner wants the bot as transparent as possible, with no filters: every row the text gives is shown, including the
+severe ones. The checker only confirms each row matches the text; nothing is hidden for being unpleasant. The rows
+below are shown to everyone whose Moon sign puts the planet there, children included (the under-18 note stays: it
+says the texts describe adult life, which is disclosure, not a filter):
 - Rahu 1st: "illness or death"; Rahu 8th: "danger to life"
 - Saturn 1st: "illness, and performing funeral rites"; Saturn 9th: "... the death of an elder like a father ..."
 - Saturn 2nd and 5th, Mars 5th, Mercury 5th: loss of or trouble with children

@@ -45,14 +45,21 @@ S = data plus an existing pattern; M = a new calculation; L = a new subsystem.
 | 16 | **Kalachakra dasha** | a second dasha system | PD 22 (contents) | new subsystem | low | L | Hard to compute and to explain; little added over Vimshottari. |
 | 17 | **Nakshatra transits**: Saptashalaka, Sarvatobhadra, lattas | day-to-day fortune | PD 26.25-46 (read) | transits (have) | low | M | Much of it predicts death or danger; see below. |
 
-## Methods to leave out of the family bot (decide before building)
+## Sensitive methods: owner's decision, 2026-11-12: include them, no filters
 
-| Method | Source | Why |
+The owner wants the bot as transparent as possible. These are therefore **in scope**, built last, each answer saying
+plainly that it is the old text's statement and quoting or paraphrasing it as written, never softening or dropping
+rows. Order: after the methods above, since they need the same machinery.
+
+| Method | Source | Note |
 |---|---|---|
-| Longevity, early death (balarishta), the time and manner of death | BJ VI-VII, XXV; PD 13-14, 17; PD 26.27-29, 33-34 | Predicts death, including children's. Computable, but not something to show to relatives. |
-| Diseases from planets | PD 14 | Health predictions can mislead; the AI is already told not to give medical advice. |
-| Women's horoscopy | BJ XXIV; PD 11 | Much of it (widowhood, chastity) is harmful to show today. A few neutral parts (husband's nature) could be considered. |
-| Conception, birth circumstances, lost horoscopes, animal horoscopes | BJ III-V, XXVI | Not questions the family asks. |
+| Longevity, early death (balarishta), the time and manner of death | BJ VI-VII, XXV; PD 13-14, 17; PD 26.27-29, 33-34 | Predicts death, including children's. Shown as the text states it, with the source and the "not a forecast" frame. |
+| Diseases from planets | PD 14 | Shown as the text states it. The AI's own wording still carries its standing rule not to give medical advice. |
+| Women's horoscopy | BJ XXIV; PD 11 | Shown as written. |
+| Conception, birth circumstances, lost horoscopes, animal horoscopes | BJ III-V, XXVI | Lower value, same treatment. |
+
+What stays even so (disclosure, not filtering): the source line on every answer, the "old text's view, not a forecast"
+frame, and the under-18 note that the texts describe adult life.
 
 ## Not in these two texts
 
