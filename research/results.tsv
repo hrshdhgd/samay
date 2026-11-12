@@ -15,3 +15,4 @@ da8f0aa	house:1..10 method entries (11)	unchecked	keep	phaladeepika ch.5,10,12,1
 50c26f5	nakshatra syllables (108)	data	keep	desiutils vs hindumirror agree on 108/108; alternates kept; YAML No->False bug found and guarded; not wired into the bot
 e5edb7f	rules:phaladeepika-ch26-gochara	unchecked	keep	ch.26 vv.1-24 paraphrased from PDF pp.246-251; Ketu (no results), Venus vedha and Mercury 8th vedha left out as unreadable; severe rows listed for h2; awaiting check
 2c534ef	rules:phaladeepika-ch21-antardasha	unchecked	keep	ch.21 vv.3-83, 79/81 pairs paraphrased from PDF pp.196-206; v67/v74 (Ketu dasa Venus/Mercury) left out as unclear; v50 mislabel noted; awaiting check
+e42f0eb	rules:phaladeepika-ch8-planets-in-houses	unchecked	keep	ch.8 vv.1-33, 9 planets x 12 houses paraphrased from PDF pp.91-102; verses 34-35 and translator notes left out; awaiting check
