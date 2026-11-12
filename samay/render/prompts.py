@@ -145,6 +145,9 @@ MOON_UNCHECKED = (
 )
 MOON_YOGAS_UNCHECKED = "What the text says about the yogas the Moon makes is waiting for a check, so it is not shown yet."
 LORDSHIP_UNDECIDED = "The text sets conditions for strong and weak; this chart meets neither set, so both readings are given."
+NEED_BIRTH_FOR_TOGETHER = "To look at your planets together I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+TOGETHER_UNCHECKED = "The texts' words on planets together are waiting for a check, so I don't show them yet."
+TOGETHER_NONE = "No two of the seven planets share a sign in the chart, so the texts have nothing to say here."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

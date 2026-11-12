@@ -1,0 +1,37 @@
+# What two planets in the same sign do: Brihat Jataka chapter XIV verses 1-5 (QUOTED from the public-domain translation, scan
+# errors corrected) and Phaladeepika chapter 18 verses 1-5 (PARAPHRASED from Kapoor's in-copyright translation). The two texts
+# are near-identical in sense; where they differ both are shown. Notes and corrections: research/notes/conjunctions.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages and sets level: translation-checked
+# with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "BJ tr. N. Chidambaram Iyer, Madras 1885 (pp. 142-144); PD tr. G. S. Kapoor (pp. 169-170)"
+
+# Both texts: the planets that count are the seven from the Sun to Saturn; Rahu and Ketu are not named.
+three_or_more:
+  bj: "If three or more planets occupy together a sign of the Zodiac at the time of birth, the yoga shall first be split into a number of double planetary yogas and the effects described in this chapter shall then be applied (the translator's note: four planets make six pairs)."
+  pd: "If more than two planets are together in a house, the effects are declared by taking into account the effects described for the various pairs that make up the yoga."
+
+# `bj` continues "If the Sun and the Moon occupy a sign together, the person born will be ..."; `pd` is paraphrased.
+pairs:
+  sun+moon:         {verse_bj: "14.1", verse_pd: "18.1", bj: "a maker of fire engines and will work in stones", bj_note: "Engines of destruction, according to the commentator", pd: "skilled in machine and stone work"}
+  sun+mars:         {verse_bj: "14.1", verse_pd: "18.1", bj: "addicted to sinful deeds", pd: "sinful"}
+  sun+mercury:      {verse_bj: "14.1", verse_pd: "18.1", bj: "skilled in work, intelligent and famous, and will live in comfort", pd: "talented, intelligent, renowned and happy"}
+  sun+jupiter:      {verse_bj: "14.1", verse_pd: "18.1", bj: "cruel and will work for other men", pd: "cruel, but intent on helping others"}
+  sun+venus:        {verse_bj: "14.1", verse_pd: "18.1", bj: "one who will gain money by engaging in public sports and by the use of weapons", pd: "earns through dancing, singing, acting in the theatre, or the use of weapons"}
+  sun+saturn:       {verse_bj: "14.1", verse_pd: "18.1", bj: "skilled in metal work and in earthen-ware", pd: "skilled in working metals and in pottery"}
+  moon+mars:        {verse_bj: "14.2", verse_pd: "18.2", bj: "one who will earn money by the sale of works of art, of women, of liquor, and of pots and will give trouble to his mother", pd: "a dealer in hammers, ploughs and similar rough tools and earthen pots, disobedient to his mother"}
+  moon+mercury:     {verse_bj: "14.2", verse_pd: "18.2", bj: "of sweet speech, skilled in literary interpretation and will become popular and famous", pd: "soft-spoken, clever in interpretation (or in money matters), fortunate and famous"}
+  moon+jupiter:     {verse_bj: "14.2", verse_pd: "18.2", bj: "one who will defeat his enemies, will be an important person in his family, will not be of firm views and will be greatly rich", pd: "victorious over enemies and fickle-minded, the head of his family and very wealthy"}
+  moon+venus:       {verse_bj: "14.2", verse_pd: "18.2", bj: "skilled in cloth work (in weaving, stitching, dyeing, buying and selling cloths)", pd: "someone who specialises in weaving, tailoring and dyeing clothes"}
+  moon+saturn:      {verse_bj: "14.2", verse_pd: "18.2", bj: "the son of a re-married woman", bj_note: "The Sanskrit term for the woman is Punarbhu: a woman who, out of sexual passion, quits her husband and marries a person of her own caste, whether or not she has joined in sexual union (the translator's note)", pd: "the son of a woman (a widow) who remarried"}
+  mars+mercury:     {verse_bj: "14.3", verse_pd: "18.3", bj: "one who will deal in roots and the like, in oil, in works of art and will be skilled in duels", pd: "a dealer in herbs, plants, books, oil and drugs, clever in boxing"}
+  mars+jupiter:     {verse_bj: "14.3", verse_pd: "18.3", bj: "the chief of a town or a king, will acquire money or will be a Brahmin", pd: "the administrator of a city or town, or a king or a rich Brahmin"}
+  mars+venus:       {verse_bj: "14.3", verse_pd: "18.3", bj: "one who will protect cows, will engage in duels, will be skilled in work, will indulge in sexual union with the wives of other men and will be a gambler", pd: "the owner of a court, a wrestler, one who has affairs with other men's wives, a gambler, and clever"}
+  mars+saturn:      {verse_bj: "14.3", verse_pd: "18.3", bj: "afflicted with grief, will be a liar, and will be despised by others", pd: "unhappy, condemned by all, and not keeping his word"}
+  mercury+jupiter:  {verse_bj: "14.4", verse_pd: "18.4", bj: "skilled in duels, will be fond of music and learned in dance", pd: "an actor, fond of singing and well versed in dancing"}
+  mercury+venus:    {verse_bj: "14.4", verse_pd: "18.4", bj: "of good speech, and will be a ruler over countries and over men", pd: "eloquent, a landowner, and head of an assembly"}
+  mercury+saturn:   {verse_bj: "14.4", verse_pd: "18.4", bj: "skilled in deceiving others, and will reject the advice of his preceptor", pd: "an expert cheat, addicted to licentious pleasures"}
+  jupiter+venus:    {verse_bj: "14.4", verse_pd: "18.4", bj: "learned in some respectable department of knowledge, will possess wealth, a wife and various virtues", pd: "learned, with wealth and a wife and noble qualities"}
+  jupiter+saturn:   {verse_bj: "14.4", verse_pd: "18.4", bj: "a barber, a potman or a cook", pd: "a barber, a potter or a cook"}
+  venus+saturn:     {verse_bj: "14.5", verse_pd: "18.5", bj: "short-sighted, will have an increase of wealth through the friendship of a young woman, and will be skilled in writing and painting", pd: "short-sighted, earning wealth and prospering through a young woman, and well versed in painting and writing"}

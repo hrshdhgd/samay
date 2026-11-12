@@ -18,6 +18,7 @@ from .engine import (
     antardasha,
     ashtakavarga,
     chandra_yogas,
+    conjunctions,
     house_effects,
     lordship,
     moon_nature,
@@ -54,6 +55,7 @@ SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "mont
               "years": "years", "decade": "years"}
 OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
+CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together", "yoga", "yogas", "combination", "combinations")
 MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
 # Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
 COMPUTED_PREFIXES = ("future:", "chart:")
@@ -96,7 +98,7 @@ TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon"]
+    "chart:moon", "chart:conjunctions"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -164,6 +166,8 @@ class Answer:
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
     ashtaka: AshtakaView | None = None  # chart:ashtakavarga
     moon: MoonView | None = None  # chart:moon
+    together: tuple[conjunctions.Together, ...] | None = None  # chart:conjunctions
+    together_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -190,6 +194,8 @@ def sort_question(text: str) -> str | None:
     about_dasha = any(w in DASHA_WORDS for w in words)
     if any(w in ASHTAKA_WORDS for w in words):
         return "chart:ashtakavarga"
+    if not planets and any(w in CONJUNCTION_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:conjunctions"
     if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
@@ -221,6 +227,7 @@ TOPIC_HELP = {
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
+    "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
     "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
     "future:week": "the coming week or the next few days (what the week looks like, this weekend)",
@@ -486,6 +493,10 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic == "chart:conjunctions":
+        rules = conjunctions.load_rules()
+        found = conjunctions.find(rules, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), together=found, together_checked=rules.servable, who=subject)
     if topic == "chart:moon":
         return Answer(topic, (), (), moon=_moon_view(birth), who=subject)
     if topic == "chart:ashtakavarga":
@@ -556,6 +567,7 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     if answer.ashtaka is not None and answer.ashtaka.checked:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
     verified += [lordship_fact(v) for v in answer.lordship]
+    verified += conjunction_facts(answer.together or (), answer.who)
     if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
@@ -637,3 +649,13 @@ def lordship_fact(v: lordship.Verdict) -> str:
                 f"for the {_ordinal(h)} house, {'when strong' if k == 'strong' else 'when weak' if k == 'weak' else k}: {t}"
                 for h, k, _, t in v.rows) + "." + "".join(f" Parasara's view (20.41): {t}." for _, t in v.nature)
             + "".join(f" Troublesome (20.24): {t}." for _, t in v.troublesome))
+
+
+def conjunction_facts(together, who: Subject = SELF) -> list[str]:
+    """The planets sharing a sign, with the texts for each pair, as sentences for the AI."""
+    out = []
+    for t in together:
+        for (a, b), p in t.pairs:
+            out.append(f"{who.Your} {a.title()} and {b.title()} are together in {SIGNS[t.sign]}. Brihat Jataka {p.verse_bj}: "
+                       f"the person will be {p.bj}. Phaladeepika {p.verse_pd}: {p.pd}.")
+    return out

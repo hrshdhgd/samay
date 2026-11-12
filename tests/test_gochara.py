@@ -909,3 +909,87 @@ def test_the_period_answer_shows_parasaras_view_and_the_troublesome_dashas(monke
     assert "Parasara's view, as the text gives it (20.41):" in text
     prompt = qa._ai_prompt("how is the Saturn period?", qa.answer_topic("dasha:saturn", _birth(), NOW))
     assert "Parasara's view (20.41)" in prompt
+
+
+# --- Planets together (Brihat Jataka XIV, Phaladeepika 18) --------------------------------------------------------------------
+from samay.engine import conjunctions
+
+CJ = conjunctions.load_rules()
+CJ_CHECKED = dataclasses.replace(CJ, level="translation-checked", checked_by="test")
+
+
+def test_all_21_pairs_have_both_texts_with_their_verses():
+    assert len(CJ.pairs) == 21 and CJ.level == "unchecked" and not CJ.servable
+    assert CJ.pairs["sun", "moon"].verse_bj == "14.1" and CJ.pairs["venus", "saturn"].verse_pd == "18.5"
+    assert all(p.bj and p.pd for p in CJ.pairs.values())
+    assert "Punarbhu" in CJ.pairs["moon", "saturn"].bj_note
+
+
+def test_unchecked_finds_nothing_and_checked_finds_pairs_by_shared_sign():
+    sky = _sky(sun=0, mercury=0, jupiter=5)
+    assert conjunctions.find(CJ, sky) == ()
+    (t,) = conjunctions.find(CJ_CHECKED, _sky(sun=2, mercury=2, jupiter=9, moon=0, mars=4, venus=6, saturn=11))
+    assert t.sign == 2 and t.planets == ("sun", "mercury") and [p for p, _ in t.pairs] == [("sun", "mercury")]
+
+
+def test_three_planets_in_a_sign_are_read_as_three_pairs():
+    (t,) = conjunctions.find(CJ_CHECKED, _sky(moon=1, mars=1, jupiter=1, sun=7, mercury=9, venus=11, saturn=3))
+    assert t.planets == ("moon", "mars", "jupiter")
+    assert [p for p, _ in t.pairs] == [("moon", "mars"), ("moon", "jupiter"), ("mars", "jupiter")]
+
+
+def test_nodes_do_not_count():
+    assert conjunctions.find(CJ_CHECKED, _sky(rahu=2, ketu=2, sun=3, moon=5, mars=7, mercury=9, jupiter=11, venus=0, saturn=1)) == ()
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["pairs"].pop("sun+moon"),
+    lambda r: r["pairs"].update({"sun+rahu": r["pairs"]["sun+moon"]}),
+    lambda r: r["pairs"]["sun+moon"].update(bj=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_conjunction_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(conjunctions.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        conjunctions.load_rules(path)
+
+
+@pytest.mark.parametrize(("question", "topic"), [
+    ("which planets are together in my chart", "chart:conjunctions"), ("do I have any yogas", "chart:conjunctions"),
+    ("what is a yoga", None),
+])
+def test_conjunction_questions_need_personal_phrasing_offline(question, topic):
+    assert qa.sort_question(question) == topic
+
+
+@needs_kernel
+def test_the_conjunction_answer_waits_for_the_check_then_quotes_and_paraphrases(monkeypatch):
+    born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    waiting = render_answer(qa.answer_topic("chart:conjunctions", born, NOW))
+    assert prompts.TOGETHER_UNCHECKED in waiting and "Brihat Jataka 14" not in waiting
+    monkeypatch.setattr(conjunctions, "load_rules", lambda path=None: CJ_CHECKED)
+    answer = qa.answer_topic("chart:conjunctions", born, NOW)
+    text = render_answer(answer)
+    if answer.together:
+        assert "Brihat Jataka 14." in text and "Phaladeepika 18." in text and "· checked" in text
+        assert "Brihat Jataka 14" in qa._ai_prompt("which planets are together?", answer)
+    else:
+        assert prompts.TOGETHER_NONE in text
+    assert render_answer(qa.answer_topic("chart:conjunctions", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_TOGETHER
+
+
+@needs_kernel
+def test_a_chart_with_a_pair_shows_both_texts(monkeypatch):
+    monkeypatch.setattr(conjunctions, "load_rules", lambda path=None: CJ_CHECKED)
+    for date, time_, place in [("1990-08-15", "14:30", "Pune"), ("1952-08-15", "06:30", "Pune"), ("2015-03-14", "06:30", "Pune"),
+                               ("1989-08-14", "12:00", "Mumbai, India"), ("1975-01-01", "10:00", "Pune")]:
+        answer = qa.answer_topic("chart:conjunctions", service.resolve_birth(BirthInput(date, time_, place)), NOW)
+        if answer.together:
+            text = render_answer(answer)
+            first = answer.together[0].pairs[0][1]
+            assert first.bj in text and first.pd[1:] in text
+            return
+    pytest.fail("none of the sample charts has two planets in one sign")

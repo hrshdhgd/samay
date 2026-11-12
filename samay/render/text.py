@@ -5,6 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+from ..engine import conjunctions
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -326,6 +327,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_CHART
     if answer.topic == "chart:moon" and not birth_known:
         return prompts.NEED_BIRTH_FOR_MOON
+    if answer.topic == "chart:conjunctions" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_TOGETHER
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -335,6 +338,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:conjunctions":
+        blocks.append(render_together(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:moon":
         if answer.moon is not None:
             blocks.append(render_moon(answer.moon, full=full, who=who))
@@ -444,6 +451,32 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
     return "\n".join(lines)
+
+
+def render_together(answer, who=SELF, full: bool = False) -> str:
+    """Planets sharing a sign, pair by pair: Brihat Jataka quoted, Phaladeepika paraphrased, both with their verses."""
+    title = f"🪐 Planets together in {who.your} chart"
+    if not answer.together_checked:
+        return f"{title}\n\n{prompts.TOGETHER_UNCHECKED}"
+    if not answer.together:
+        return f"{title}\n\n{prompts.TOGETHER_NONE}"
+    blocks = [title]
+    for t in answer.together:
+        names = " and ".join(p.title() for p in t.planets) if len(t.planets) < 3 else ", ".join(p.title() for p in t.planets)
+        lines = [f"{names} in {SIGNS[t.sign]} ({RASHIS[t.sign]}):"]
+        for (a, b), p in t.pairs:
+            lines.append(f"• {a.title()} with {b.title()}. Brihat Jataka {p.verse_bj}: “the person will be {p.bj}.” "
+                         f"Phaladeepika {p.verse_pd}: {p.pd[0].upper()}{p.pd[1:]}.")
+            if p.bj_note and full:
+                lines.append(f"  ({p.bj_note})")
+        blocks.append("\n".join(lines))
+    if any(len(t.planets) > 2 for t in answer.together):
+        blocks.append(f"With more than two planets in one sign, each pair is read in turn: “{conjunctions.load_rules().three_bj}”")
+    verses = sorted({v for t in answer.together for _, p in t.pairs for v in (p.verse_bj, p.verse_pd)})
+    named = [f"{name} {', '.join(v for v in verses if v.startswith(prefix))}"
+             for name, prefix in (("Brihat Jataka", "14"), ("Phaladeepika", "18")) if any(v.startswith(prefix) for v in verses)]
+    blocks.append("Source: " + "; ".join(named) + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_moon(view, full: bool = False, who=SELF) -> str:
