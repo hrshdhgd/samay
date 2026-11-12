@@ -1,0 +1,62 @@
+# Brihat Jataka chapters XVI ("On the Nakshatras, or the Moon in the Asterisms") and XVII ("On the Moon in the Several Signs of
+# the Zodiac"): what the text says of a person by the nakshatra and the sign the Moon holds at birth.
+# Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain (archive.org b2488442x),
+# chapter XVI pp. 157-160, chapter XVII pp. 160-164. QUOTED from the translation, with obvious scan errors corrected; every
+# correction is listed in research/notes/brihat-jataka-moon.md. Each text continues "A person born with the Moon in ..."
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
+# level: translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "157-164"
+
+# The text's own conditions on these descriptions.
+conditions:
+  nakshatra: {verse: "16 (note)", text: "The effects described above will fully come to pass only if the Moon be powerful."}
+  sign: {verse: "17.13", text: "If at the time of birth of a person, the Moon, the sign occupied by the Moon and the lord of such sign be all powerful the effects described in this chapter will fully come to pass; the same remark applies to planets other than the Moon."}
+  sign_translators_note: {verse: "17.13 (note a)", text: "If two of the three be powerful, the effects will come to pass imperfectly; if only one of the three be powerful, they will come to pass still more imperfectly and if none of the three be powerful, the effects will fail."}
+
+# In the order of the nakshatras, Aswini first (27). `verse` is the verse of chapter XVI that holds it (a verse holds two).
+nakshatras:
+  - {name: "Aswini", verse: 1, text: "will be fond of ornaments, will be of fine appearance, will be popular; skilled in work and intelligent."}
+  - {name: "Bharani", verse: 1, text: "will be successful at work, truthful, free from diseases, able and free from grief."}
+  - {name: "Krittika", verse: 2, text: "will be a glutton, fond of the wives of other men, of bright appearance and of wide-spread fame."}
+  - {name: "Rohini", verse: 2, text: "will be truthful, will not covet the property of other men, will be of cleanly habits, of sweet speech, of firm views, and of fine appearance."}
+  - {name: "Mrigasirsha", verse: 3, text: "will be of no firm principles, will be able, timid, of good speech, of active habits, rich and will indulge in sexual pleasures."}
+  - {name: "Ardra", verse: 3, text: "will be insincere, of irascible temper, ungrateful, troublesome and addicted to wicked deeds."}
+  - {name: "Punarvasu", verse: 4, text: "will be devout and of patient habits, will live in comfort, will be good-natured, quiet, of wrong views, sickly, thirsty and pleased with trifles."}
+  - {name: "Pushya", verse: 5, text: "will have a control over his desires, will be generally liked, learned in the Sastras, rich and will be fond of acts of charity."}
+  - {name: "Aslesha", verse: 5, text: "will not be attentive to the work of other men, will be a promiscuous eater, will be sinful, ungrateful and skilled in cheating other men."}
+  - {name: "Magha", verse: 6, text: "will have numerous servants, will worship the Devas and Pitris and will be engaged in important works."}
+  - {name: "P. Phalguni", verse: 6, text: "will be of sweet speech, will be liberal in his gifts, of wandering habits and will serve under kings."}
+  - {name: "U. Phalguni", verse: 7, text: "will be generally liked, will earn money by his learning and will live in comfort."}
+  - {name: "Hasta", verse: 7, text: "will be of active habits, full of resources, shameless, merciless and a thief and a drunkard."}
+  - {name: "Chittra", verse: 8, text: "will wear cloths and flowers of various colors and will have beautiful eyes and limbs."}
+  - {name: "Swati", verse: 8, text: "will be of a mild and quiet nature, will control his passion, will be skilled in trade, will be merciful, unable to bear thirst, of sweet speech and disposed to do acts of charity."}
+  - {name: "Visakha", verse: 9, text: "will be jealous of another's prosperity, will be a niggard, of bright appearance, of distinct speech, skilled in earning money and disposed to bring about quarrels among men."}
+  - {name: "Anuradha", verse: 9, text: "will be rich, will live in foreign lands, will be unable to bear hunger and disposed to wander from place to place."}
+  - {name: "Jyeshta", verse: 10, text: "will have few friends, will be very cheerful, virtuous, and of irascible temper."}
+  - {name: "Moola", verse: 10, text: "will be haughty, rich, happy, not disposed to injure other men, of firm views and will live in luxury."}
+  - {name: "P. Ashadha", verse: 11, text: "will have an agreeable wife, will be proud and attached to friends."}
+  - {name: "U. Ashadha", verse: 11, text: "will be obedient, will be learned in the rules of virtue, will possess many friends, will be grateful and return favors received and will be generally liked."}
+  - {name: "Sravana", verse: 12, text: "will be prosperous and learned, will have a liberal-minded wife, will be rich and of wide-spread fame."}
+  - {name: "Dhanishta", verse: 12, text: "will be liberal in gifts, rich, valiant, fond of music and will be a niggard."}
+  - {name: "Satabhishak", verse: 13, text: "will be harsh in his speech, will be truthful, will suffer grief, will conquer his enemies, will thoughtlessly engage in work and will be of independent ways."}
+  - {name: "P. Bhadrapada", verse: 13, text: "will suffer from grief, will place his wealth at the disposal of his wife, will be of distinct speech, will be skilled in earning money and will be a niggard."}
+  - {name: "U. Bhadrapada", verse: 14, text: "will be an able speaker, will be happy, will possess children and grand-children, will conquer his enemies and will be virtuous."}
+  - {name: "Revati", verse: 14, text: "will possess perfect limbs, will be liked by all the people, will be deeply learned, will never covet the property of other men and will be rich."}
+
+# Aries first (12). Verse 1 to 12 of chapter XVII, in the order of the signs.
+signs:
+  - {name: "Aries", verse: 1, text: "will have round red-eyes, will be fond of vegetable food and will eat hot meals but in a moderate degree; will be of a quickly relenting nature, will be fond of travels and of sexual union; will be of strong knees; will possess no permanent wealth; will be fond of light and of women; will be skilled in befriending other men; will have disfigured nails and a wounded head; will be haughty, will be the eldest of his brothers; will have lines in his hand of the shape of the weapon known as Sakti; will be fickle-minded and will be afraid of water."}
+  - {name: "Taurus", verse: 2, text: "will be of fine appearance and of beautiful gait; will possess large thighs and face; will possess marks on his back, face and sides, will be liberal in his gifts; will bear misfortunes; will possess great influence and authority; will have a large hump on the neck; will have daughters; will suffer from phlegmatic affections, will be separated from his kinsmen, wealth and sons; will be of agreeable manners and of patient nature; will be a great eater; will be fond of women; will be attached to his friends and will be happy both when young and old."}
+  - {name: "Gemini", verse: 3, text: "will be fond of women, will be skilled in sexual union; will possess red eyes; will be learned in the Sastras; will carry messages; will possess curling hairs and a sharp intellect; will be skilled in wit, in discovering the thoughts of other men and in game; will possess beautiful features; will be of sweet speech; will be a great eater; will be fond of music, and skilled in the rules of dance; will join in sexual union with hermaphrodites; and will possess an elevated nose."}
+  - {name: "Cancer", verse: 4, text: "will possess a bent body; will walk fast; will have a high hip; will be subject to the influence of women; will have an excellent friend; will be learned in Astrology; will have numerous houses, will have a wealth which will increase and decrease as the Moon; will be short; will possess a thick neck; will be capable of being won over by kind words, will be attached to his friends and will be fond of water and forests."}
+  - {name: "Leo", verse: 5, text: "will be of irascible temper, of large cheeks, broad face and brown eyes; will have very few sons; will hate women; will be fond of animal food, forests and hills; will continue angry at trifles for a long time; will be afflicted with pains caused by hunger, thirst, belly-ache, tooth-ache as well as purely mental anxieties; will be liberal in his gifts; will be bold in fight; will be of fixed principles; will be haughty and attached to his mother."}
+  - {name: "Virgo", verse: 6, text: "will, out of modesty, be of mild and beautiful eyes and gait; will have his shoulders and arms sunk or depressed; will live in comfort, will be of soft body; will be truthful, will be skilled in dance, music and painting; will be learned in the Sastras; will be virtuous and intelligent, will be fond of sexual union; will enjoy the house and property of other men; will live in foreign lands; will be of sweet speech; and will have daughters and very few sons."}
+  - {name: "Libra", verse: 7, text: "will respect the Devas, Brahmins, and holy men; will be intelligent, will never covet the property of other men; will lead a religious life; will be subject to the influence of women; will be tall; will have a raised nose; will be of thin and defective limbs and fond of travels; will be rich; will be a trader; will bear the name of a Deva coupled with an excellent surname granted by a body of learned men; will be sickly; will protect his family and will be disgraced and rejected by his kinsmen."}
+  - {name: "Scorpio", verse: 8, text: "will have broad eyes, a broad breast and round shanks, thighs and knees; will be separated from his parents and preceptors; will be afflicted with diseases when young; will be respected by kings, will be of brown color; will not be of a straightforward nature; will have lines in his hand and feet of the shape of the fish, the Vajrayudha or a bird; and will endeavor to conceal his sins."}
+  - {name: "Sagittarius", verse: 9, text: "will have a long face and neck; will inherit his father's property; will be liberal in his gift; will be a literary author; will be powerful and skilled in speech; will have large teeth, ears, lips and nose, will engage in numerous works; will be skilled in sculpture; will have indistinct shoulders, disfigured nails and large hands; will be of a deep and inventive intellect, will be a man of right understanding; will hate his kinsmen; will never yield to compulsion but only to kind treatment."}
+  - {name: "Capricorn", verse: 10, text: "will be ever attached to his wife and children; will do deeds of virtue; will have thin lower limbs, good eyes and a thin waist; will be open to advice; will be of amiable manners and slow at work; will not bear cold; will be of a wandering nature, powerful and a literary author; will be a niggard and will be attached to old women of low caste; will be shameless and merciless."}
+  - {name: "Aquarius", verse: 11, text: "will have a neck like that of the Camel, a body covered with muscles, rough and covered with hair; will be tall; will have large legs, thighs, back, buttocks, face, and lower belly; will be deaf; will be attached to the wives of other men and interested in the wicked deeds of other people; will rise and fall by turns; will be fond of flowers and perfumes; and will be attached to friends and will walk without feeling tired."}
+  - {name: "Pisces", verse: 12, text: "will be a dealer in the produce of the sea and a trader in general; will be fond of his wife and clothes; will have perfect limbs, a bright body, long nose and large head, will put his enemies into disgrace, will be subject to the influence of women, will have beautiful eyes, and will be fair, rich, happy and learned."}

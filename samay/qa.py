@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
-from .engine import antardasha, ashtakavarga, house_effects, planet_houses
+from .engine import antardasha, ashtakavarga, house_effects, moon_nature, planet_houses
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
@@ -46,6 +46,7 @@ SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "mont
               "years": "years", "decade": "years"}
 OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
+MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
 # Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
 COMPUTED_PREFIXES = ("future:", "chart:")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
@@ -86,7 +87,8 @@ LIFE_WORDS = {
 TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
-    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga"]
+    + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
+    "chart:moon"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -103,6 +105,20 @@ class SecondVoice:
     house: int
     rows: tuple[planet_houses.Row, ...]
     verse: str  # the text's verse range for the planet, e.g. "1-4"
+
+
+@dataclass(frozen=True)
+class MoonView:
+    """The person's Moon sign and nakshatra with Brihat Jataka XVII and XVI on them."""
+    sign: int
+    sign_text: moon_nature.Description
+    nakshatra: moon_nature.Description
+    pada: int
+    nakshatra_index: int
+    checked: bool  # the descriptions are shown only once a person has checked the file
+    conditions: dict
+    edition: str
+    pages: str
 
 
 @dataclass(frozen=True)
@@ -135,6 +151,7 @@ class Answer:
     outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
     ashtaka: AshtakaView | None = None  # chart:ashtakavarga
+    moon: MoonView | None = None  # chart:moon
 
 
 _MONTHS = r"(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?"
@@ -160,6 +177,8 @@ def sort_question(text: str) -> str | None:
     about_dasha = any(w in DASHA_WORDS for w in words)
     if any(w in ASHTAKA_WORDS for w in words):
         return "chart:ashtakavarga"
+    if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
     span = next((SPAN_WORDS[w] for w in words if w in SPAN_WORDS), None)
     if span and not planets and not area and not about_dasha:
@@ -188,6 +207,7 @@ TOPIC_HELP = {
     "concept:kalapurusha": "the cosmic person (Kalapurusha)",
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
+    "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
     "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
     "future:week": "the coming week or the next few days (what the week looks like, this weekend)",
@@ -336,6 +356,14 @@ def _transit_facts(report, who: Subject = SELF) -> list[str]:
     return out
 
 
+def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
+    if birth is None:
+        return None
+    rules = moon_nature.load_rules()
+    sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(rules, service.natal_report(birth).chart.planets["moon"].longitude)
+    return MoonView(sign, sign_text, nak_text, pada, nak, rules.servable, rules.conditions, rules.edition, rules.pages)
+
+
 def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
     if birth is None:
         return None
@@ -432,6 +460,8 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic == "chart:moon":
+        return Answer(topic, (), (), moon=_moon_view(birth), who=subject)
     if topic == "chart:ashtakavarga":
         return Answer(topic, (), (), ashtaka=_ashtaka_view(birth), who=subject)
     if topic in OUTLOOK_TOPICS:
@@ -498,6 +528,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += outlook_facts(answer.outlook, answer.who)
     if answer.ashtaka is not None and answer.ashtaka.checked:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
+    if answer.moon is not None and answer.moon.checked:
+        verified += moon_facts(answer.moon, answer.who)
     parts = []
     if not answer.who.is_self:
         relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
@@ -560,3 +592,10 @@ def ashtaka_facts(view: AshtakaView, who: Subject = SELF) -> list[str]:
     head = (f"{who.Your} ashtakavarga points per house (Phaladeepika {view.verse}; more than {view.threshold} is "
             f"{view.above}; fewer: {view.below})")
     return [f"{head}: {line}."]
+
+
+def moon_facts(view: MoonView, who: Subject = SELF) -> list[str]:
+    """The Moon's sign and nakshatra descriptions as sentences for the AI."""
+    return [f"Brihat Jataka XVII on {who.your} Moon in {SIGNS[view.sign]}: a person born with it {view.sign_text.text}",
+            f"Brihat Jataka XVI on {who.your} Moon in {view.nakshatra.name}: a person born with it {view.nakshatra.text}",
+            f"Brihat Jataka says: {view.conditions['sign'][1]}"]

@@ -137,6 +137,11 @@ ASHTAKA_UNCHECKED = (
     "the numbers yet."
 )
 ASHTAKA_KEY = "Points are the benefic dots the seven planets and the lagna give each sign; ✓ marks a sign above the text's 28."
+NEED_BIRTH_FOR_MOON = "To read your Moon I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+MOON_UNCHECKED = (
+    "I know where your Moon is, but the text's descriptions of it are waiting for a check against the book, so I don't "
+    "show them yet."
+)
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

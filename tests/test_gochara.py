@@ -545,3 +545,85 @@ def test_a_points_question_is_not_a_missed_topic_and_its_view_fits_a_message(mon
         for view in ("compact", "full"):
             assert len(render_answer(answer, view)) < 4096, (topic, view)
     assert "chart:".startswith(qa.COMPUTED_PREFIXES) and "future:".startswith(qa.COMPUTED_PREFIXES)
+
+
+# --- Brihat Jataka XVI and XVII: the Moon's nakshatra and sign --------------------------------------------------------------
+from samay.engine import moon_nature
+
+MN = moon_nature.load_rules()
+MN_CHECKED = dataclasses.replace(MN, level="translation-checked", checked_by="test")
+
+
+def test_27_nakshatras_and_12_signs_in_the_order_of_the_engine():
+    assert len(MN.nakshatras) == 27 and len(MN.signs) == 12 and MN.level == "unchecked" and not MN.servable
+    from samay.engine.vedic import SIGNS
+    assert [s.name for s in MN.signs] == SIGNS
+    assert tuple(n.name for n in MN.nakshatras) == moon_nature.TRANSLATION_NAMES
+
+
+def test_a_verse_holds_two_nakshatras_except_punarvasu_alone():
+    verses = [n.verse for n in MN.nakshatras]
+    assert verses == sorted(verses) and verses[0] == 1 and verses[-1] == 14
+    assert [verses.count(v) for v in range(1, 15)] == [2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+
+
+def test_the_moon_longitude_picks_the_sign_nakshatra_and_pada():
+    _, sign_text, _, nak_text, pada = moon_nature.for_moon(MN, 250.5)
+    assert (sign_text.name, nak_text.name, pada) == ("Sagittarius", "Moola", 4)
+    assert moon_nature.for_moon(MN, 0.0)[3].name == "Aswini" and moon_nature.for_moon(MN, 359.9)[3].name == "Revati"
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["nakshatras"].pop(),
+    lambda r: r["signs"].reverse(),
+    lambda r: r["nakshatras"].reverse(),
+    lambda r: r["signs"][0].update(text=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_moon_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(moon_nature.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        moon_nature.load_rules(path)
+
+
+@pytest.mark.parametrize(("question", "topic"), [
+    ("what is my nakshatra", "chart:moon"), ("tell me about my personality", "chart:moon"),
+    ("what is my character like", "chart:moon"), ("what is a nakshatra", None),
+])
+def test_moon_questions_need_personal_phrasing_offline(question, topic):
+    assert qa.sort_question(question) == topic
+
+
+def test_without_a_birth_the_moon_reading_asks_for_one():
+    answer = qa.answer_topic("chart:moon", None, NOW)
+    assert answer.moon is None and render_answer(answer, birth_known=False) == prompts.NEED_BIRTH_FOR_MOON
+
+
+@needs_kernel
+def test_unchecked_moon_descriptions_are_not_shown():
+    text = render_answer(qa.answer_topic("chart:moon", _birth(), NOW))
+    assert prompts.MOON_UNCHECKED in text and "Moon is in" in text and "Brihat Jataka says" not in text
+    assert not any(d.text in text for d in (*MN.signs, *MN.nakshatras))
+
+
+@needs_kernel
+def test_checked_moon_descriptions_are_quoted_with_the_texts_condition_and_sources(monkeypatch):
+    monkeypatch.setattr(moon_nature, "load_rules", lambda path=None: MN_CHECKED)
+    answer = qa.answer_topic("chart:moon", _birth(), NOW)
+    v = answer.moon
+    text = render_answer(answer)
+    assert MN.signs[v.sign].text[1:] in text and MN.nakshatras[v.nakshatra_index].text[1:] in text
+    assert "all powerful the effects described in this chapter will fully come to pass" in text
+    assert f"Source: Brihat Jataka 16.{v.nakshatra.verse}, 17.{v.sign_text.verse}, 17.13 · checked" in text
+    assert "If two of the three be powerful" not in text and "If two of the three be powerful" in render_answer(answer, "full")
+    assert "Brihat Jataka XVII on your Moon" in qa._ai_prompt("what am I like?", answer)
+
+
+@needs_kernel
+def test_other_persons_moon_is_worded_for_them(monkeypatch):
+    monkeypatch.setattr(moon_nature, "load_rules", lambda path=None: MN_CHECKED)
+    text = render_answer(qa.answer_topic("chart:moon", _birth(), NOW, subject=Subject("Maya", "daughter", minor=True)))
+    assert "Maya's Moon is in" in text and prompts.MINOR_NOTE in text

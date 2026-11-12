@@ -270,6 +270,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_FUTURE
     if answer.topic == "chart:ashtakavarga" and not birth_known:
         return prompts.NEED_BIRTH_FOR_CHART
+    if answer.topic == "chart:moon" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_MOON
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -279,6 +281,11 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:moon":
+        if answer.moon is not None:
+            blocks.append(render_moon(answer.moon, full=full, who=who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:ashtakavarga":
         if answer.ashtaka is not None:
             blocks.append(render_ashtaka(answer.ashtaka, full=full, who=who))
@@ -380,6 +387,25 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
     if r.astangata:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
+    return "\n".join(lines)
+
+
+def render_moon(view, full: bool = False, who=SELF) -> str:
+    """The Moon's sign and nakshatra and what Brihat Jataka says of a person born so, with the text's own condition."""
+    head = (f"🌙 {who.Your} Moon is in {SIGNS[view.sign]} ({RASHIS[view.sign]}), in the nakshatra "
+            f"{NAKSHATRAS[view.nakshatra_index]}, pada {view.pada}.")
+    if not view.checked:
+        return f"{head}\n\n{prompts.MOON_UNCHECKED}"
+    lines = [head, "",
+             f"What Brihat Jataka says of a person born with the Moon in {SIGNS[view.sign]} (chapter 17.{view.sign_text.verse}):",
+             f"“{view.sign_text.text[0].upper()}{view.sign_text.text[1:]}”", "",
+             f"…and in {view.nakshatra.name} (chapter 16.{view.nakshatra.verse}):",
+             f"“{view.nakshatra.text[0].upper()}{view.nakshatra.text[1:]}”", "",
+             f"The text adds: {view.conditions['sign'][1]} {view.conditions['nakshatra'][1]}"]
+    if full:
+        lines.append(f"{view.conditions['sign_translators_note'][1]} (the translator's note)")
+        lines.append(f"({view.edition}, pp. {view.pages})")
+    lines.append(f"Source: Brihat Jataka 16.{view.nakshatra.verse}, 17.{view.sign_text.verse}, 17.13 · checked")
     return "\n".join(lines)
 
 
