@@ -1,0 +1,77 @@
+# Phaladeepika's rules for when a house bears fruit: chapter 16 verses 31-35 (any house) and chapter 10 verses 12-14 (marriage). Source:
+# Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
+# printed pages 113-114 and 161-162 (PDF pages 112-113 and 160-161). Every statement is PARAPHRASED. The conditions are coded in
+# samay/engine/house_timing.py; `definition` records each in words for the checker. Notes and what was left out:
+# research/notes/phaladeepika-timing.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each rule and its definition with the pages above and sets level:
+# translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "113-114, 161-162"
+
+frame: "The text gives the conditions under which a house bears fruit; it does not name a date. These are the stretches of the next few years in which each condition holds in this chart."
+
+# "Trikona" is 1st, 5th and 9th from a sign (the text's own meaning, e.g. chapter 20 verse 41). "Sign or navamsa": a condition holds if the
+# planet is in a trikona from the sign OR from the navamsa sign occupied by the lord named (verse 31.1 and 10.14 say "or"; 16.32 says "and").
+general:
+  - id: t1
+    verse: "16.31"
+    definition: "The lord of the lagna, in transit, is in a trikona (1st, 5th or 9th) from the sign or the navamsa sign occupied at birth by the lord of the house."
+    text: "the house bears fruit when the lord of the lagna passes in transit through a trikona from the sign or navamsa occupied by the lord of the house"
+  - id: t2
+    verse: "16.31"
+    definition: "The lord of the lagna, in transit, is in the sign that is the house."
+    text: "the house bears fruit when the lord of the lagna passes through that house in transit"
+  - id: t3
+    verse: "16.31"
+    definition: "The lord of the house, in transit, is in a trikona from the sign or the navamsa sign occupied at birth by the lord of the lagna."
+    text: "the house bears fruit when the lord of the house transits a sign that is a trikona to the sign or navamsa occupied by the lord of the lagna"
+  - id: t4
+    verse: "16.31"
+    definition: "The lord of the lagna and the lord of the house, both in transit, are in the same sign, or each aspects the other (full sights, Brihat Jataka II.13)."
+    text: "the house bears fruit when, in transit, the lord of the lagna and the lord of the house join or aspect each other"
+  - id: jupiter
+    verse: "16.32"
+    definition: "Jupiter, in transit, is in a trikona from the sign or the navamsa sign occupied at birth by the lord of the house."
+    text: "good effects of the house are expected when Jupiter, in transit, is in a trikona from the sign and navamsa of the lord of the house"
+  - id: conjunction
+    verse: "16.35"
+    definition: "The lord of the lagna and the lord of the house, both in transit, are in the same sign; the text adds: provided the lord of the house is strong at birth (own, moolatrikona or exaltation sign), else the result differs."
+    text: "success of the house may be declared when the lord of the lagna joins the lord of the house in transit, provided the lord of the house is strong; otherwise the result will be different"
+# Verse 31 ends: "Similar assessment should be made from the sign in which the Moon is posited (Chandra lagna)." and verse 35 the same.
+# The bot repeats the rules counting from the Moon sign as well.
+moon_note: "The text adds that the same assessment is made from the sign the Moon occupies (Chandra lagna); the rules are repeated from there."
+
+marriage:
+  house: 7
+  rules:
+    - id: m1
+      verse: "10.12"
+      definition: "Venus or the lord of the 7th, in transit, is in a trikona from the sign or the navamsa sign occupied at birth by the lord of the lagna."
+      text: "marriage should take place when Venus or the lord of the 7th transits a sign trine to the sign or navamsa occupied by the lord of the ascendant"
+    - id: m2
+      verse: "10.13"
+      definition: "A mahadasha or antardasha that belongs to the planet in the 7th house at birth, a planet that aspects the 7th house (full sights, Brihat Jataka II.13), or the lord of the 7th."
+      text: "marriage is likely in the dasha of the planet in the 7th house, of a planet that aspects the 7th house, or of the lord of the 7th; it can also happen when the lord of the lagna passes through the sign of the 7th house"
+    - id: m3
+      verse: "10.14"
+      definition: "A mahadasha or antardasha of the strongest of: the lord of the sign holding the 7th lord, the lord of the navamsa sign it holds, Venus, and the Moon (strength by the Brihat Jataka chapter 20 standing in the sign: exaltation, moolatrikona, own, friendly, neutral, inimical, depression; ties are all kept), while Jupiter, in transit, is in a trikona from the sign or navamsa of the 7th lord."
+      text: "compare the ruler of the sign holding the 7th lord, the ruler of the navamsa it holds, Venus and the Moon; marriage is likely in the dasha of the strongest of them, when Jupiter in transit passes a sign trine to the sign or navamsa of the 7th lord"
+
+# The life areas the bot asks about, and the house(s) the timing rules are run for (as in qa.LIFE_AREAS).
+areas:
+  marriage: [7]
+  career: [10]
+  children: [5]
+  wealth: [2, 11]
+  home: [4]
+  siblings: [3]
+  father: [9]
+  health: [1, 6]
+  education: [4, 5]
+  travel: [12]
+  enemies: [6]
+  dharma: [5, 9]
+  mother: [4]
+  family: [2]

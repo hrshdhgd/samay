@@ -5,7 +5,7 @@ import hashlib
 import importlib.metadata
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
@@ -19,6 +19,7 @@ from .engine import (
     geo,
     gochara,
     house_effects,
+    house_timing,
     timestd,
 )
 from .engine.daylight import RahuKaala
@@ -257,3 +258,21 @@ def warm() -> VersionStamp:
     entries.load_entries()
     house_effects.load_rules()
     return data_info()
+
+
+TIMING_YEARS = 3
+
+
+def timing_report(birth: ResolvedBirth, now: datetime, area: str, tz: str | None = None) -> house_timing.Timing | None:
+    """Phaladeepika's timing rules for a life area over the next TIMING_YEARS years, one day at a time (noon UTC). None until the rules are
+    checked."""
+    rules = house_timing.load_rules()
+    if not rules.servable or area not in rules.areas:
+        return None
+    natal = natal_report(birth)
+    profile = load_profile(birth.profile)
+    first = now.astimezone(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
+    times = [first + timedelta(days=d) for d in range(TIMING_YEARS * 365 + 1)]
+    track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
+    found = house_timing.find(rules, natal.chart, natal.dashas, times, track, area)
+    return replace(found, tz=tz or birth.place.tz) if found else None

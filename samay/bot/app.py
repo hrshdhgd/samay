@@ -399,7 +399,7 @@ def answer_markup(
         row = []
         if view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None:
+        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
             row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))

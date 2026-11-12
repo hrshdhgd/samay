@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions
+from ..engine import conjunctions, house_timing
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -331,6 +331,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_TOGETHER
     if answer.topic == "chart:yogas" and not birth_known:
         return prompts.NEED_BIRTH_FOR_YOGAS
+    if answer.topic.startswith("when:") and not birth_known:
+        return prompts.NEED_BIRTH_FOR_WHEN
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -340,6 +342,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic.startswith("when:"):
+        blocks.append(render_timing(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:yogas":
         blocks.append(render_yogas(answer.yogas, who, full))
         blocks.append(DISCLAIMER)
@@ -457,6 +463,65 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
     return "\n".join(lines)
+
+
+def _span(a: datetime, b: datetime, tz: ZoneInfo) -> str:
+    x, y = a.astimezone(tz), b.astimezone(tz)
+    return f"{_day(x)}" if (x.year, x.month, x.day) == (y.year, y.month, y.day) else f"{_day(x)} – {_day(y)}"
+
+
+def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
+    if r.note:
+        return f"• {r.text[0].upper()}{r.text[1:]} ({r.verse}): {r.note}."
+    head = f"• {r.text[0].upper()}{r.text[1:]} ({r.verse}):"
+    if not r.windows:
+        return f"{head} not in this period."
+    if r.total and r.days / r.total > 0.5:
+        return f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}."
+    shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
+    more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
+    return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_timing(answer, who=SELF, full: bool = False) -> str:
+    """When a life area may bear fruit, by Phaladeepika's own conditions, as stretches of the next three years. Never a date."""
+    area = answer.topic.split(":")[1]
+    label = LIFE_AREAS[area][1]
+    title = f"⏳ When might {label} come into play for {who.name if not who.is_self else 'you'}?"
+    if not answer.timing_checked:
+        return f"{title}\n\n{prompts.WHEN_UNCHECKED}"
+    t = answer.timing
+    if t is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_WHEN}"
+    rules = house_timing.load_rules()
+    tz = ZoneInfo(t.tz)
+    limit = 8 if full else 4
+    blocks = [title, f"{rules.frame} ({_day(t.start.astimezone(tz))} – {_day(t.end.astimezone(tz))}.)"]
+    if t.marriage:
+        m1, _, m3 = t.marriage
+        lines = ["Marriage, from Phaladeepika chapter 10:"]
+        main = _rule_line(m3, tz, limit).split("): ", 1)[1]
+        lines.append(f"• While the strongest of the 7th lord's rulers, Venus and the Moon ({', '.join(p.title() for p in t.m3_planets)}) "
+                     f"is running its dasha and Jupiter is in a trikona from the 7th lord's sign or navamsa (10.14): {main}")
+        lines.append(f"• The dasha of a planet in, aspecting or ruling the 7th ({', '.join(p.title() for p in t.m2_planets)}) (10.13):")
+        lines += [f"   – {d.lord.title()} {d.kind}{'' if d.kind == 'mahadasha' else ' in the ' + d.maha.title() + ' mahadasha'}: "
+                  f"{_span(max(d.start, t.start), min(d.end, t.end), tz)}" for d in t.dashas[: 2 * limit]]
+        if not t.dashas:
+            lines.append("   – none begins or runs in this period.")
+        lines.append(_rule_line(m1, tz, limit))
+        blocks.append("\n".join(lines))
+    houses = ", ".join(ordinal(h) for h in t.houses)
+    for ref in ("lagna", "the Moon sign"):
+        rs = [r for r in t.general if r.ref == ref]
+        if not rs:
+            continue
+        lines = [f"For the {houses} house, counted from the {ref} (chapter 16.31–35):"]
+        lines += [f"{'[' + ordinal(r.house) + '] ' if len(t.houses) > 1 else ''}{_rule_line(r, tz, limit)}" for r in rs]
+        blocks.append("\n".join(lines))
+    verses = sorted({r.verse for r in (*t.marriage, *t.general)}, key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])))
+    edition = f" ({rules.edition}, pp. {rules.pages})" if full else ""
+    blocks.append(f"{rules.moon_note}\n\nSource: Phaladeepika {', '.join(verses)}{edition} · checked")
+    return "\n\n".join(blocks)
 
 
 def render_yogas(view, who=SELF, full: bool = False) -> str:

@@ -1308,3 +1308,180 @@ def test_the_moon_answer_adds_aspects_once_checked_and_says_when_none(monkeypatc
     assert "Brihat Jataka XIX" in qa._ai_prompt("what am I like?", answer)
     none = qa.answer_topic("chart:moon", service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune")), NOW)
     assert prompts.MOON_NOT_ASPECTED in render_answer(none)
+
+
+# --- Phaladeepika's timing rules (16.31-35 and 10.12-14) --------------------------------------------------------------------
+from datetime import UTC as _UTC
+
+from samay.engine import house_timing
+from samay.engine.vedic import Period
+
+HT = house_timing.load_rules()
+HT_CHECKED = dataclasses.replace(HT, level="translation-checked", checked_by="test")
+T0 = datetime(2027, 1, 1, 12, tzinfo=_UTC)
+DAYS = [T0 + timedelta(days=d) for d in range(10)]
+
+
+def _track(days=10, **where):
+    """A made-up daily sky: every body sits in Scorpio unless a list of signs (one per day) is given."""
+    return {b: [(where.get(b, [7] * days)[i]) * 30 + 15.0 for i in range(days)]
+            for b in ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")}
+
+
+def _natal(lagna=0, **where):
+    return _full_sky(lagna=lagna, **where)
+
+
+def _run(natal, track, area="marriage", dashas=()):
+    return house_timing.find(HT_CHECKED, natal, dashas, DAYS, track, area)
+
+
+def _by(result, rid, ref="lagna", house=None):
+    return next(r for r in (*result.general, *result.marriage) if r.id == rid and r.ref == ref and (house is None or r.house == house))
+
+
+def _day_numbers(windows):
+    return [((a - T0).days, (b - T0).days) for a, b in windows]
+
+
+def test_the_timing_rules_file_has_all_the_texts_rules_and_every_life_area():
+    assert set(HT.general) == set(house_timing.GENERAL_IDS) and set(HT.marriage) == set(house_timing.MARRIAGE_IDS)
+    assert HT.level == "unchecked" and not HT.servable and set(HT.areas) == set(qa.LIFE_AREAS)
+    assert HT.areas["marriage"] == (7,) and HT.areas["wealth"] == (2, 11)
+
+
+def test_nothing_is_computed_until_the_rules_are_checked():
+    assert house_timing.find(HT, _natal(), (), DAYS, _track(), "marriage") is None
+    assert _run(_natal(), _track(), "no-such-area") is None
+
+
+def test_t2_the_lagna_lord_passing_through_the_sign_of_the_house():
+    # Aries lagna: Mars is the lagna lord, the 7th house is Libra (sign 6). Mars is in Libra on days 2 to 4.
+    res = _run(_natal(), _track(mars=[7, 7, 6, 6, 6, 7, 7, 7, 7, 7]))
+    t2 = _by(res, "t2")
+    assert _day_numbers(t2.windows) == [(2, 4)] and t2.days == 3 and t2.total == 10
+
+
+def test_t1_and_jupiter_use_a_trikona_from_the_sign_or_the_navamsa_of_the_house_lord():
+    # The 7th lord Venus sits in Taurus (sign 1) at birth: its trikona signs are Taurus, Virgo (5), Capricorn (9).
+    nat = _natal(venus=1)
+    res = _run(nat, _track(mars=[7, 5, 5, 7, 7, 7, 7, 7, 7, 7], jupiter=[9, 9, 9, 9, 7, 7, 7, 7, 7, 7]))
+    assert _day_numbers(_by(res, "t1").windows)[0] == (1, 2)
+    assert _day_numbers(_by(res, "jupiter").windows)[0] == (0, 3)
+
+
+def test_t3_the_house_lord_in_transit_in_a_trikona_from_the_lagna_lord():
+    # The lagna lord Mars is in Leo (4) at birth, so its trikona signs are Leo, Sagittarius (8), Aries (0); Venus (7th lord) transits them.
+    res = _run(_natal(mars=4), _track(venus=[7, 7, 8, 8, 0, 7, 7, 7, 7, 7]))
+    assert _day_numbers(_by(res, "t3").windows) == [(2, 4)]
+
+
+def test_t4_conjunction_or_aspect_of_the_two_lords_and_the_same_planet_case():
+    # Mars (lagna lord) and Venus (7th lord): together on days 0-2 (Cancer, Scorpio); apart on days 3-4 (Scorpio, Sagittarius: no sight);
+    # on days 5-6 Mars in Aries sees Libra, where Venus is, by its 7th sight; together again on days 7-9.
+    res = _run(_natal(), _track(mars=[7, 3, 3, 7, 7, 0, 0, 7, 7, 7], venus=[7, 3, 3, 8, 8, 6, 6, 7, 7, 7]))
+    assert _day_numbers(_by(res, "t4").windows) == [(0, 2), (5, 9)]
+    # House 1 (health): the lagna lord is the lord of the house, so conjunction and aspect do not apply and say so
+    health = _run(_natal(), _track(), "health")
+    assert "same planet" in _by(health, "t4", house=1).note and _by(health, "t4", house=1).days == 0
+
+
+def test_the_conjunction_rule_wants_a_strong_house_lord_and_says_so_when_it_is_not():
+    weak = _run(_natal(venus=11), _track())     # Venus is exalted in Pisces: strong
+    assert _by(weak, "conjunction").note == ""
+    meh = _run(_natal(venus=4), _track())       # Venus in Leo: an enemy's sign
+    assert "strong at birth" in _by(meh, "conjunction").note and _by(meh, "conjunction").days == 0
+
+
+def test_the_moon_sign_reference_repeats_the_rules_from_the_moon():
+    res = _run(_natal(moon=2), _track())
+    assert {r.ref for r in res.general} == {"lagna", "the Moon sign"} and len(res.general) == 12
+    assert _by(res, "t2", ref="the Moon sign").house == 7
+
+
+def test_a_multi_house_area_runs_every_house():
+    res = _run(_natal(), _track(), "wealth")
+    assert {r.house for r in res.general} == {2, 11} and len(res.general) == 2 * 2 * 6
+    assert res.marriage == ()
+
+
+def test_marriage_m2_the_dasha_of_the_planet_in_aspecting_or_ruling_the_7th():
+    # Aries lagna, Saturn natal in Aries aspects Libra (the 7th) by its 7th sight; Venus rules the 7th; Mars (in Libra at birth) occupies it.
+    nat = _natal(saturn=0, mars=6)
+    big = (Period("saturn", T0 - timedelta(days=100), T0 + timedelta(days=100)),)
+    res = _run(nat, _track(), dashas=big)
+    assert set(res.m2_planets) >= {"saturn", "venus", "mars"}
+    m2 = _by(res, "m2")
+    assert m2.days == 10 and any(d.kind == "mahadasha" and d.lord == "saturn" for d in res.dashas)
+
+
+def test_marriage_m3_needs_the_strongest_planet_dasha_and_jupiter_in_a_trikona_together():
+    nat = _natal(venus=11, moon=3)  # Venus exalted in Pisces: the strongest of {the sign lord, the navamsa lord, Venus, the Moon}
+    long_venus = (Period("venus", T0 - timedelta(days=5), T0 + timedelta(days=5)),)
+    # the 7th lord is Venus itself, in Pisces; Jupiter's trikona signs are Pisces, Cancer (3), Scorpio (7)
+    res = _run(nat, _track(jupiter=[7, 7, 7, 4, 4, 4, 4, 4, 4, 4]), dashas=long_venus)
+    assert "venus" in res.m3_planets
+    assert _day_numbers(_by(res, "m3").windows) == [(0, 2)]
+    off = _run(nat, _track(jupiter=[4] * 10), dashas=long_venus)
+    assert _by(off, "m3").days == 0
+
+
+def test_m1_venus_or_the_7th_lord_in_a_trikona_from_the_lagna_lord():
+    # Mars (lagna lord) at birth in Leo (4): trikona signs Leo, Sagittarius, Aries. Venus transits Sagittarius (8) on days 3-4.
+    res = _run(_natal(mars=4), _track(venus=[7, 7, 7, 8, 8, 7, 7, 7, 7, 7]))
+    assert _day_numbers(_by(res, "m1").windows) == [(3, 4)]
+
+
+@needs_kernel
+def test_the_when_marriage_answer_for_a_real_chart(monkeypatch):
+    monkeypatch.setattr(house_timing, "load_rules", lambda path=None: HT_CHECKED)
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    answer = qa.answer_topic("when:marriage", born, NOW, tz="America/Chicago")
+    assert answer.timing is not None and answer.timing_checked
+    text = render_answer(answer)
+    assert "⏳ When might marriage and partnership come into play for you?" in text and "does not name a date" in text
+    assert "Marriage, from Phaladeepika chapter 10:" in text and "(10.14)" in text and "(16.32)" in text
+    assert "Source: Phaladeepika 10.12, 10.13, 10.14, 16.31, 16.32, 16.35 · checked" in text
+    assert qa.sort_question("I have a person born 14th Aug 1989 - when will they get married") == "when:marriage"
+    assert "conditions, not dates" in qa._ai_prompt("when will I marry?", answer)
+    maya = qa.answer_topic("when:marriage", born, NOW, subject=Subject("Maya", "daughter", minor=True))
+    assert "for Maya?" in render_answer(maya) and prompts.MINOR_NOTE in render_answer(maya)
+
+
+@needs_kernel
+def test_the_when_answer_waits_for_the_check_and_asks_for_a_birth():
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.WHEN_UNCHECKED in render_answer(qa.answer_topic("when:career", born, NOW))
+    assert render_answer(qa.answer_topic("when:career", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_WHEN
+
+
+@needs_kernel
+def test_every_when_answer_fits_in_messages_and_runs_quickly(monkeypatch):
+    import time
+
+    from samay.render.text import split_message
+    monkeypatch.setattr(house_timing, "load_rules", lambda path=None: HT_CHECKED)
+    born = service.resolve_birth(BirthInput("1952-08-15", "06:30", "Pune"))
+    started = time.perf_counter()
+    for area in qa.LIFE_AREAS:
+        answer = qa.answer_topic(f"when:{area}", born, NOW)
+        for view in ("compact", "full"):
+            assert all(len(p) <= 4096 for p in split_message(render_answer(answer, view))), (area, view)
+    assert time.perf_counter() - started < 20
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["general"].pop(),
+    lambda r: r["marriage"]["rules"].pop(),
+    lambda r: r["marriage"].update(house=8),
+    lambda r: r["general"][0].update(definition=""),
+    lambda r: r["areas"].update(marriage=[13]),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_timing_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(house_timing.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        house_timing.load_rules(path)

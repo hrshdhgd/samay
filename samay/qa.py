@@ -20,6 +20,7 @@ from .engine import (
     chandra_yogas,
     conjunctions,
     house_effects,
+    house_timing,
     lordship,
     moon_aspects,
     moon_nature,
@@ -58,6 +59,7 @@ FUTURE_WORDS = ("future", "forecast", "horoscope", "destiny", "fortune")
 SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "month": "month", "year": "year",
               "years": "years", "decade": "years"}
 OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
+WHEN_PREFIX = "when:"
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
 CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
 YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
@@ -102,6 +104,7 @@ LIFE_WORDS = {
 TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
+    + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
     "chart:moon", "chart:conjunctions", "chart:yogas"]
 )
@@ -189,6 +192,8 @@ class Answer:
     together: tuple[conjunctions.Together, ...] | None = None  # chart:conjunctions
     together_checked: bool = False
     yogas: YogasView | None = None  # chart:yogas
+    timing: house_timing.Timing | None = None  # when:<area>
+    timing_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -223,6 +228,8 @@ def sort_question(text: str) -> str | None:
         return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
     span = next((SPAN_WORDS[w] for w in words if w in SPAN_WORDS), None)
+    if area and "when" in words and not planets and not about_dasha:
+        return f"when:{area}"
     if span and not planets and not area and not about_dasha:
         return f"future:{span}"
     if not planets and any(w in FUTURE_WORDS for w in words):
@@ -250,6 +257,7 @@ TOPIC_HELP = {
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
+    "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:yogas": "the person's yogas: the named planetary combinations in their chart (Nabhasa, raja, Mahapurusha, Lakshmi and the rest)",
     "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
@@ -529,6 +537,10 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic.startswith(WHEN_PREFIX):
+        area = topic[len(WHEN_PREFIX):]
+        report = service.timing_report(birth, now, area, tz) if birth is not None else None
+        return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
     if topic == "chart:yogas":
         return Answer(topic, (), (), yogas=_yogas_view(birth), who=subject)
     if topic == "chart:conjunctions":
@@ -606,6 +618,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
     verified += [lordship_fact(v) for v in answer.lordship]
     verified += conjunction_facts(answer.together or (), answer.who)
+    if answer.timing is not None:
+        verified += timing_facts(answer.timing, answer.who)
     if answer.yogas is not None:
         verified += yoga_facts(answer.yogas, answer.who)
     if answer.moon is not None and answer.moon.aspects is not None:
@@ -717,4 +731,15 @@ def moon_aspect_facts(view: MoonView, who: Subject = SELF) -> list[str]:
     out = [f"Brihat Jataka XIX: {who.Your} Moon in {a.sign}, aspected by {p.title()}: the person will {t}." for p, t in a.in_sign]
     out += [f"Brihat Jataka XIX: {who.Your} Moon in the navamsa of {a.navamsa_lord.title()}, aspected by {p.title()}: the person will {t}."
             for p, t in a.in_navamsa]
+    return out
+
+
+def timing_facts(t, who: Subject = SELF) -> list[str]:
+    """The timing windows as sentences for the AI. The book names conditions, never dates."""
+    out = [f"Phaladeepika's timing rules for {t.area} from {t.start:%d %b %Y} to {t.end:%d %b %Y}. They are conditions, not dates."]
+    for r in (*t.marriage, *t.general):
+        if r.note:
+            continue
+        spans = "; ".join(f"{a:%d %b %Y} to {b:%d %b %Y}" for a, b in r.windows[:6]) or "no stretch in this period"
+        out.append(f"Phaladeepika {r.verse} (from the {r.ref}, house {r.house}): {r.text}. Holds on {r.days} of {r.total} days: {spans}.")
     return out
