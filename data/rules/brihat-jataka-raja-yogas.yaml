@@ -1,0 +1,143 @@
+# Brihat Jataka chapter XI ("On Raja yoga, or the birth of kings"): the configurations of the planets, stated plainly enough to be decided
+# from a whole-sign chart, under which a person becomes a king (or, in a low family, rich). Source: N. Chidambaram Iyer (tr.), Brihat
+# Jataka of Varaha Mihira, Madras 1885, public domain, pp. 112-120. QUOTED, scan errors corrected (research/notes/raja-yogas.md).
+# What was left out (verses 2, 3, 15, 16, 17, 19, 20 and the translators' alternative readings) and why is in that note.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets level:
+# translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "112-120"
+
+# Verse 12: "Persons born under the various yogas described above, though they may be born in low families will become kings. If such
+# persons are born in a king's family they will doubtless become kings. We shall now proceed to describe certain yogas, persons born under
+# which will become kings if they belong to a king's family and will become rich if otherwise."  Applies to verses 1-11 (first) and 13-18 (second).
+family_notes:
+  verse: "11.12"
+  anyone: "Persons born under the various yogas described [in verses 1-11], though they may be born in low families will become kings. If such persons are born in a king's family they will doubtless become kings."
+  royal_only: "Persons born under [these yogas] will become kings if they belong to a king's family and will become rich if otherwise."
+
+# Verse 1 and the translator's notes (a) and (b): three or more planets in their exaltation signs.
+exalted:
+  verse: "11.1"
+  malefic: "According to the Yavanas a person born when three or more malefic planets are in their exaltation signs becomes a tyrannical king. According to Jeevasarma, if such planets be malefic a person will never become a king; Varahamihira is of the opinion of the Yavanas (the translator's notes)."
+  benefic: "If three or more planets occupying their exaltation signs be benefic, the person becomes a good king (the translator's note)."
+  mixed: "If both benefic and malefic, he will become both a good and a bad king (the translator's note)."
+  malefics: [sun, mars, saturn]
+  benefics: [moon, mercury, jupiter, venus]
+
+# Verse 13: three or more powerful planets in their own, exaltation or moolatrikona signs. 'Powerful' is not measured; the bot counts the planets in those signs.
+strong_planets:
+  verse: "11.13"
+  three: "When three or more planets are powerful and occupy either their houses or exaltation signs or their Moolatrikona signs, a person born becomes a king if he belongs to a king's family."
+  five: "When five or more planets are powerful and occupy their houses or exaltation signs or their Moolatrikona signs a person born becomes a king even if he be born in a low family. If in either case the number of powerful planets be less than three or five, the persons described above will not become kings but will become only rich."
+
+# `all`: every item must hold. An item is {planet, sign | signs} or {planet, house | houses} (houses from the lagna; 1 = in the lagna),
+# {planet, sign, first_half: true} for the first 15 degrees. `lagna`: the rising sign must be one of these. `result`: royal or royal_only.
+configs:
+  - id: v4a
+    verse: "11.4"
+    all: [{planet: saturn, sign: Aquarius}, {planet: sun, sign: Aries}, {planet: moon, sign: Taurus}, {planet: mercury, sign: Gemini}, {planet: jupiter, sign: Leo}, {planet: mars, sign: Scorpio}]
+    lagna: [Aquarius, Aries, Taurus]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v4b
+    verse: "11.4"
+    all: [{planet: saturn, sign: Libra}, {planet: moon, sign: Taurus}, {planet: sun, sign: Virgo}, {planet: mercury, sign: Virgo}, {planet: venus, sign: Libra}, {planet: mars, sign: Aries}, {planet: jupiter, sign: Cancer}]
+    lagna: [Libra, Taurus]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v5a
+    verse: "11.5"
+    all: [{planet: mars, sign: Capricorn}, {planet: sun, sign: Sagittarius}, {planet: moon, sign: Sagittarius}, {planet: saturn, sign: Capricorn}]
+    lagna: [Capricorn]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v5b
+    verse: "11.5"
+    all: [{planet: mars, house: 1}, {planet: moon, house: 1}, {planet: sun, sign: Sagittarius}]
+    lagna: [Capricorn]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v5c
+    verse: "11.5"
+    all: [{planet: sun, house: 1}, {planet: saturn, sign: Libra}, {planet: moon, sign: Libra}, {planet: jupiter, sign: Sagittarius}]
+    lagna: [Aries]
+    text: "A person becomes a king."
+    result: royal
+  - id: v6a
+    verse: "11.6"
+    all: [{planet: moon, house: 1}, {planet: sun, sign: Leo}, {planet: jupiter, sign: Scorpio}, {planet: saturn, sign: Aquarius}]
+    lagna: [Taurus]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v6b
+    verse: "11.6"
+    all: [{planet: saturn, house: 1}, {planet: moon, house: 3}, {planet: mars, house: 6}, {planet: mercury, house: 9}, {planet: jupiter, house: 12}]
+    lagna: [Capricorn]
+    text: "A person born becomes a virtuous and famous king."
+    result: royal
+  - id: v7a1
+    verse: "11.7"
+    all: [{planet: moon, sign: Sagittarius}, {planet: jupiter, sign: Sagittarius}, {planet: mars, sign: Capricorn, first_half: true}, {planet: venus, house: 1}]
+    lagna: [Pisces]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v7a2
+    verse: "11.7"
+    all: [{planet: moon, sign: Sagittarius}, {planet: jupiter, sign: Sagittarius}, {planet: mars, sign: Capricorn, first_half: true}, {planet: mercury, house: 1}]
+    lagna: [Virgo]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v7b
+    verse: "11.7"
+    all: [{planet: mercury, house: 1}, {planet: mars, house: 5}, {planet: saturn, house: 5}, {planet: moon, house: 4}, {planet: jupiter, house: 4}, {planet: venus, house: 4}]
+    lagna: [Virgo]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v8a
+    verse: "11.8"
+    all: [{planet: moon, house: 1}, {planet: saturn, sign: Aquarius}, {planet: mars, sign: Capricorn}, {planet: sun, sign: Leo}]
+    lagna: [Pisces]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v8b
+    verse: "11.8"
+    all: [{planet: mars, sign: Aries}, {planet: jupiter, sign: Cancer}]
+    lagna: [Aries, Cancer]
+    text: "A person born becomes a king."
+    result: royal
+  - id: v9
+    verse: "11.9"
+    all: [{planet: jupiter, house: 1}, {planet: moon, sign: Taurus}, {planet: venus, sign: Taurus}, {planet: mercury, sign: Taurus}, {planet: sun, sign: Aries}]
+    lagna: [Cancer]
+    text: "A person born becomes a powerful king."
+    result: royal
+  - id: v10
+    verse: "11.10"
+    all: [{planet: saturn, house: 1}, {planet: mars, sign: Aries}, {planet: moon, sign: Cancer}, {planet: sun, sign: Leo}, {planet: mercury, sign: Gemini}, {planet: venus, sign: Libra}]
+    lagna: [Capricorn]
+    text: "A person born becomes a famous king."
+    result: royal
+  - id: v11
+    verse: "11.11"
+    all: [{planet: mercury, house: 1}, {planet: venus, sign: Gemini}, {planet: moon, sign: Pisces}, {planet: jupiter, sign: Pisces}, {planet: mars, sign: Capricorn}, {planet: saturn, sign: Capricorn}]
+    lagna: [Virgo]
+    text: "A person born becomes a King."
+    result: royal
+  - id: v14
+    verse: "11.14"
+    all: [{planet: sun, house: 1}, {planet: moon, house: 1}, {planet: mars, sign: Capricorn}, {planet: saturn, sign: Aquarius}, {planet: jupiter, sign: Sagittarius}]
+    lagna: [Aries]
+    text: "A person born becomes a king, if he belong to a king's family, and will become only rich if otherwise. (According to another reading the Sun is made to occupy Leo and the yoga remains the same in other respects: the translator's note.)"
+    result: royal_only
+  - id: v18a
+    verse: "11.18"
+    all: [{planet: moon, house: 10}, {planet: saturn, house: 11}, {planet: jupiter, house: 1}, {planet: mercury, house: 2}, {planet: mars, house: 2}, {planet: sun, house: 4}, {planet: venus, house: 4}]
+    text: "A person born becomes a king if he belong to a king's family, and only rich if otherwise."
+    result: royal_only
+  - id: v18b
+    verse: "11.18"
+    all: [{planet: mars, house: 1}, {planet: saturn, house: 1}, {planet: moon, house: 4}, {planet: jupiter, house: 7}, {planet: venus, house: 9}, {planet: sun, house: 10}, {planet: mercury, house: 11}]
+    text: "A person born becomes a king if he belong to a king's family, and only rich if otherwise."
+    result: royal_only

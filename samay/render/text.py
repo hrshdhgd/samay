@@ -329,6 +329,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_MOON
     if answer.topic == "chart:conjunctions" and not birth_known:
         return prompts.NEED_BIRTH_FOR_TOGETHER
+    if answer.topic == "chart:yogas" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_YOGAS
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -338,6 +340,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:yogas":
+        blocks.append(render_yogas(answer.yogas, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:conjunctions":
         blocks.append(render_together(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -451,6 +457,44 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
         where += ", and close enough to the Sun to be obscured (astangata)"
     lines += [where + ".", _rule_sentence(r, shares), prompts.READING_FRAME]
     return "\n".join(lines)
+
+
+def render_yogas(view, who=SELF, full: bool = False) -> str:
+    """Yogas from Brihat Jataka 12 (Nabhasa), Phaladeepika 6 and Brihat Jataka 11 (raja), each only once its own file is checked."""
+    blocks = [f"🧭 {who.Your} yogas"]
+    nab = view.nabhasa
+    if nab.checked:
+        count = f"{nab.sign_count} sign{'s' if nab.sign_count > 1 else ''}"
+        lines = [f"Nabhasa yogas (Brihat Jataka chapter 12), made by where the seven planets sit ({count}):"]
+        for y in nab.yogas:
+            lines.append(f"• {y.name} ({y.detail}): “A person born under it {y.text}”" + (f" {y.variant}" if y.variant and full else ""))
+        lines.append(f"{nab.life_note}" + (f" {nab.life_except}" if full else ""))
+        refs = sorted({y.verse for y in nab.yogas} | {nab.life_verse}, key=lambda v: int(v.split(".")[1]))
+        lines.append("Source: Brihat Jataka " + ", ".join(refs) + " · checked")
+        blocks.append("\n".join(lines))
+    else:
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Nabhasa yogas, Brihat Jataka chapter 12)")
+    if view.chapter6_checked:
+        lines = [f"Yogas from Phaladeepika chapter 6, found in {who.your} chart:"]
+        for f in view.chapter6:
+            lines.append(f"• {f.name} ({f.detail}): {f.text[0].upper()}{f.text[1:]}.")
+        lines.append(view.blemish_note)
+        lines.append("Source: Phaladeepika " + ", ".join(sorted({f.verse for f in view.chapter6}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + " · checked")
+        blocks.append("\n".join(lines))
+    else:
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapter 6)")
+    if view.raja_checked:
+        if view.raja:
+            lines = ["Raja yogas of Brihat Jataka chapter 11:"]
+            for f in view.raja:
+                lines.append(f"• {f.detail}: “{f.text}”" + (f" {f.family_note}" if f.family_note and full else ""))
+            lines.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in view.raja})) + " · checked")
+            blocks.append("\n".join(lines))
+        else:
+            blocks.append(prompts.YOGAS_NONE_RAJA)
+    else:
+        blocks.append(prompts.YOGAS_UNCHECKED + " (raja yogas, Brihat Jataka chapter 11)")
+    return "\n\n".join(blocks)
 
 
 def render_together(answer, who=SELF, full: bool = False) -> str:

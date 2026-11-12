@@ -1,0 +1,282 @@
+# Phaladeepika chapter 6 ("Yogas"): the planetary combinations whose definition can be decided from a whole-sign chart, with what the
+# text says of a person born under each. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright),
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 55-82 (PDF pages 54-81). Every
+# result is PARAPHRASED. How each is decided is in samay/engine/phaladeepika_yogas.py; `definition` below records it in words for the
+# checker. Notes, readings and what was left out: research/notes/phaladeepika-ch6-yogas.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row and its definition with the pages above and sets
+# level: translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "55-82"
+
+# Said once for the whole chapter (verse 1, notes): the yogas give their promised results only when the lagna or the Moon and the
+# yoga-forming planets are without blemish: strong, not with malefics, not combust, not hemmed between malefics. The bot does not
+# compute blemish, and says so.
+blemish_note: "The text adds that a yoga gives what it promises only when the lagna or the Moon and the planets forming it are without blemish: strong, not joined to malefics, not combust and not hemmed in between malefics. This reading does not judge that."
+
+# `benefics`, `malefics`: the text's own division in verse 8 (planets other than the Moon and the nodes); the Moon is used as benefic
+# when waxing only where a yoga needs it, and the nodes are never counted.
+benefics: [mercury, jupiter, venus]
+malefics: [sun, mars, saturn]
+
+yogas:
+  # --- verses 1-4: the five Mahapurusha yogas, reckoned from the lagna and from the Moon
+  ruchaka:
+    name: Ruchaka (Mahapurusha)
+    verse: "6.2"
+    definition: "Mars in Aries, Scorpio or Capricorn, in a kendra (1st, 4th, 7th, 10th) from the lagna or from the Moon (verse 1; verse 4's note: the five are reckoned from both)."
+    text: "a long face; wealth through brave deeds; valour and power; conquers enemies and is arrogant; famous through merit, an army commander, successful in every venture"
+  bhadra:
+    name: Bhadra (Mahapurusha)
+    verse: "6.2"
+    definition: "Mercury in Gemini or Virgo, in a kendra from the lagna or the Moon."
+    text: "long-lived, intelligent, pure in thought and body, praised by the learned, very rich and prosperous, and eloquent"
+  hamsa:
+    name: Hamsa (Mahapurusha)
+    verse: "6.3"
+    definition: "Jupiter in Sagittarius, Pisces or Cancer, in a kendra from the lagna or the Moon."
+    text: "a king or high official respected by good people, with the marks of a conch, lotus, fish and goad on hands and feet, a beautiful body, good food and virtue"
+  malavya:
+    name: Malavya (Mahapurusha)
+    verse: "6.3"
+    definition: "Venus in Taurus, Libra or Pisces, in a kendra from the lagna or the Moon."
+    text: "strong limbs, great wealth, a wife and children and good fortune; prosperous, enjoying life, with good vehicles; renowned and learned, with calm senses"
+  sasa:
+    name: Sasa (Mahapurusha)
+    verse: "6.4"
+    definition: "Saturn in Capricorn, Aquarius or Libra, in a kendra from the lagna or the Moon."
+    text: "praised by all, with good servants, strong, the head of a village or a king; wicked by nature, keeps other men's wives' company and is inclined to use other people's wealth, yet happy"
+  mahapurusha_count:
+    name: How many Mahapurusha yogas
+    verse: "6.4"
+    definition: "The number of the five Mahapurusha yogas the chart has, counted from the lagna and the Moon together."
+    texts:
+      1: "a fortunate person"
+      2: "equal to a king"
+      3: "a king"
+      4: "a sovereign of sovereigns (an emperor)"
+      5: "superior to an emperor"
+  # --- verses 8-11: Vesi, Vasi, Ubhayachari, Kartari
+  subhavesi:
+    name: Subhavesi
+    verse: "6.9"
+    definition: "A benefic (Mercury, Jupiter or Venus) in the 2nd house from the Sun."
+    text: "very good-looking, happy, meritorious, valiant, a king and virtuous"
+  subhavasi:
+    name: Subhavasi
+    verse: "6.9"
+    definition: "A benefic in the 12th house from the Sun."
+    text: "renowned, dear to all, very rich and prosperous, governed by others and liked by the king"
+  subhobhayachari:
+    name: Subhobhayachari
+    verse: "6.9"
+    definition: "Benefics in both the 2nd and the 12th from the Sun."
+    text: "an attractive body, soft-spoken, a delight to the world, eloquent, renowned and wealthy"
+  papavesi:
+    name: Papavesi (Asubhavesi)
+    verse: "6.10"
+    definition: "A malefic (Mars or Saturn) in the 2nd from the Sun."
+    text: "unfairly defames others, is not beautiful and keeps the company of low and wicked people"
+  papavasi:
+    name: Papavasi (Asubhavasi)
+    verse: "6.10"
+    definition: "A malefic in the 12th from the Sun."
+    text: "dishonest, harsh and abusive in speech and keeps wicked company; unvirtuous though he knows the Shastras and scriptures"
+  papobhayachari:
+    name: Papobhayachari (Asubhobhayachari)
+    verse: "6.10"
+    definition: "Malefics in both the 2nd and the 12th from the Sun."
+    text: "suffers mentally from public dishonour and has no wealth or fortune"
+  subhakartari:
+    name: Subhakartari
+    verse: "6.11"
+    definition: "Benefics in both the 12th and the 2nd houses from the lagna."
+    text: "long-lived, fearless, healthy and without enemies"
+  papakartari:
+    name: Papakartari
+    verse: "6.11"
+    definition: "Malefics in both the 12th and the 2nd houses from the lagna."
+    text: "miserable, without wife and children, with defective limbs and a short life"
+  # --- verses 12, 19, 20: Amala, Vasumati
+  amala:
+    name: Amala
+    verse: "6.12"
+    definition: "A benefic (Mercury, Jupiter or Venus) in the 10th house from the lagna or from the Moon (the translator's note to verse 12; verse 19)."
+    text: "virtuous, religious, happy, fortunate, honoured by the king, amiable and always smiling; owns land, is wealthy, has sons, and is famous, prosperous and wise"
+  vasumati:
+    name: Vasumati
+    verse: "6.19"
+    definition: "All the benefics (Mercury, Jupiter, Venus) in the upachaya houses (3rd, 6th, 10th, 11th) from the lagna or from the Moon."
+    text: "always stays at home and is very wealthy"
+  # --- verses 14-18: Kesari, Sakata, Adhama, Sama, Varishtha
+  kesari:
+    name: Kesari
+    verse: "6.16"
+    definition: "The Moon in a kendra (1st, 4th, 7th, 10th) from Jupiter (verse 14)."
+    text: "destroys enemies like a lion, speaks wisely and nobly before an assembly, is passionate and emotional, long-lived, high in reputation and intelligent, and achieves everything by his own valour"
+  sakata:
+    name: Sakata
+    verse: "6.17"
+    definition: "The Moon in the 6th, 8th or 12th from Jupiter, and the yoga is cancelled if the Moon is in a kendra from the lagna (verse 14)."
+    text: "unhappy and unfortunate, unable to gain fame, living an ordinary life, with luck that sometimes dawns and sometimes fades"
+  varishtha:
+    name: Varishtha
+    verse: "6.18"
+    definition: "The Moon in an apoklima house (3rd, 6th, 9th, 12th) from the Sun (verse 14)."
+    text: "wealthy, with vehicles, fame, happiness, knowledge, modesty, ability, learning and generosity"
+  sama:
+    name: Sama
+    verse: "6.18"
+    definition: "The Moon in a panaphara house (2nd, 5th, 8th, 11th) from the Sun."
+    text: "the same good results as Varishtha, in a medium degree"
+  adhama:
+    name: Adhama
+    verse: "6.18"
+    definition: "The Moon in a kendra (1st, 4th, 7th, 10th) from the Sun."
+    text: "the same good results as Varishtha, but very little"
+  # --- verses 21, 24-31: Lakshmi, Gouri, Saraswati, Srikantha, Srinatha, Virinchi
+  lakshmi:
+    name: Lakshmi
+    verse: "6.24"
+    definition: "Venus and the lord of the 9th house each in its own or exaltation sign, and each in a kendra or trikona (1st, 4th, 5th, 7th, 9th, 10th) from the lagna (verse 21)."
+    text: "enjoys life with a woman of noble temperament; brilliant, able to protect his people, a favourite of Lakshmi (very wealthy), free from disease, with fine vehicles, generous, and a capable ruler loved by his subjects"
+  gouri:
+    name: Gouri
+    verse: "6.25"
+    definition: "The Moon in her own or exaltation sign, in a kendra or trikona, and aspected by Jupiter (verse 21)."
+    text: "a beautiful body, a friend of the king, good qualities, sons, an illustrious family and a lotus-like face; praised for his successes"
+  saraswati:
+    name: Saraswati
+    verse: "6.26–27"
+    definition: "Mercury, Jupiter and Venus together in kendras, trikonas or the 2nd house from the lagna, with Jupiter in his own, a friend's or his exaltation sign (verses 26-27)."
+    text: "highly intelligent, able in prose, drama and poetry, learned in the arts and mathematics; famous in the three worlds, very wealthy, with a wife and children, fortunate and revered by the greatest kings"
+  srikantha:
+    name: Srikantha
+    verse: "6.29"
+    definition: "The lagna lord, the Sun and the Moon each in its exaltation, own or a friend's sign, and each in a kendra or trikona (verse 28)."
+    text: "wears rudraksha beads and sacred ash, very liberal, constantly in meditation on Shiva, regular in rites, a friend of the virtuous with no enmity to other faiths, and influential"
+  srinatha:
+    name: Srinatha
+    verse: "6.30"
+    definition: "Venus, the lord of the 9th house and Mercury each in its exaltation, own or a friend's sign, and each in a kendra or trikona (verse 28, as the translation prints it)."
+    text: "wealthy, splendid and soft-spoken with a pleasant, witty manner; marked with Vishnu's signs, a devotee of Vishnu, respected, very handsome, with a virtuous wife and noble children"
+  virinchi:
+    name: Virinchi
+    verse: "6.31"
+    definition: "Jupiter, the lord of the 5th house and Saturn each in its exaltation, own or a friend's sign, and each in a kendra or trikona (verse 28)."
+    text: "extremely intelligent, absorbed in the knowledge of Brahman, true to the Vedic code, full of good qualities and happy at heart, with many disciples, sweet and noble in speech, wealthy with wife and children, long-lived, in control of his senses and revered by kings"
+  # --- verses 32-34: exchange of lords (Parivartana)
+  maha:
+    name: Maha yoga (exchange of lords)
+    verse: "6.34"
+    definition: "Two lords of different houses stand in each other's signs, neither house being the 3rd, 6th, 8th or 12th (28 of the 66 pairs; verse 32 and its notes)."
+    text: "has the grace of Sri, wears fine clothes and ornaments, is honoured by the king, holds a high position and is rewarded with authority, has sons and enjoys wealth and vehicles"
+  dainya:
+    name: Dainya yoga (exchange of lords)
+    verse: "6.33"
+    definition: "Two lords stand in each other's signs, and one of the houses is the 6th, 8th or 12th (30 of the 66 pairs)."
+    text: "a fool who reviles others and does sinful deeds, always in trouble from enemies, harsh in speech with an unsteady mind, meeting obstacles in every venture"
+  kahala:
+    name: Kahala yoga (exchange of lords)
+    verse: "6.33"
+    definition: "Two lords stand in each other's signs, and one of the houses is the 3rd (and neither is the 6th, 8th or 12th); 8 of the 66 pairs."
+    text: "at times haughty and at times sweet in speech; now very prosperous, then driven to poverty, unhappiness and misery"
+  # --- verse 37-38: Raja yoga
+  raja:
+    name: Raja yoga (lords of the 9th and 10th together)
+    verse: "6.38"
+    definition: "The lords of the 9th and 10th houses in the same sign, which is not the 6th, 8th or 12th house (verse 37: 'in any auspicious house'; our reading of 'auspicious')."
+    text: "a king or equal to a king, greeted on journeys by bands and conches, with a royal umbrella, elephants, horses and palanquins, praised by bards and given gifts by eminent people"
+  # --- verses 42-43: Adhi yoga from the lagna
+  lagnadhi:
+    name: Adhi yoga (from the lagna)
+    verse: "6.42"
+    definition: "Benefics (Mercury, Jupiter, Venus) in the 6th, 7th or 8th from the lagna: all three houses need not be filled (the translator's note, citing Shruti Kirti, Vyasa and others)."
+    text: "a commander, a minister or a ruler; renowned, prosperous, wealthy, long-lived and large-souled; lord of men, always wealthy, feeds many kinsmen and overcomes enemies"
+  chandradhi:
+    name: Adhi yoga (from the Moon)
+    verse: "6.42"
+    definition: "Benefics (Mercury, Jupiter, Venus) in the 6th, 7th or 8th from the Moon."
+    text: "a commander, a minister or a ruler; renowned, prosperous, wealthy, long-lived and large-souled; lord of men, always wealthy, feeds many kinsmen and overcomes enemies"
+  # --- verses 57-69: the twelve house yogas from lords in the 6th, 8th and 12th
+  ava:
+    name: Ava (lord of the 1st in the 6th, 8th or 12th)
+    verse: "6.58"
+    definition: "The lord of the 1st house in the 6th, 8th or 12th house (verse 57)."
+    text: "of no significance, exceedingly poor and short-lived, humiliated, in wicked company, deformed and ill-behaved, with an unsteady position"
+  nisswa:
+    name: Nisswa (lord of the 2nd in the 6th, 8th or 12th)
+    verse: "6.59"
+    definition: "The lord of the 2nd house in the 6th, 8th or 12th."
+    text: "harsh in speech, his wife bears no children, in bad company with ill-formed teeth and eyes, without intelligence, children, learning and power, and his wealth is taken by enemies"
+  mriti:
+    name: Mriti (lord of the 3rd in the 6th, 8th or 12th)
+    verse: "6.60"
+    definition: "The lord of the 3rd house in the 6th, 8th or 12th."
+    text: "annihilated by enemies, without brothers, shame, strength and wealth, tired by unseemly actions and excitable"
+  kuhu:
+    name: Kuhu (lord of the 4th in the 6th, 8th or 12th)
+    verse: "6.61"
+    definition: "The lord of the 4th house in the 6th, 8th or 12th."
+    text: "without mother, vehicles, friends, happiness, ornaments and relatives; unemployed and without a home, having lost the one he owned, and keeping company with women of low caste"
+  pamara:
+    name: Pamara (lord of the 5th in the 6th, 8th or 12th)
+    verse: "6.62"
+    definition: "The lord of the 5th house in the 6th, 8th or 12th."
+    text: "a miserable living, indiscriminate, a liar and cheat; loses children or is childless, keeps mean company, has no faith in God or religion and is a glutton"
+  harsha:
+    name: Harsha (the lord of the 6th, 8th or 12th in the 6th)
+    verse: "6.63"
+    definition: "The lord of the 6th, 8th or 12th house in the 6th house (verse 63)."
+    text: "happy and fortunate with a strong constitution; conquers enemies and shrinks from sinful deeds; a friend of illustrious people, wealthy, splendid and famous, with friends and sons"
+  dushkriti:
+    name: Dushkriti (lord of the 7th in the 6th, 8th or 12th)
+    verse: "6.64"
+    definition: "The lord of the 7th house in the 6th, 8th or 12th."
+    text: "deprived of his own wife and with other men's wives, wanders unnoticed, suffers venereal disease, is punished by the government and hated by relatives, and unhappy"
+  sarala:
+    name: Sarala (the lord of the 6th, 8th or 12th in the 8th)
+    verse: "6.65"
+    definition: "The lord of the 6th, 8th or 12th house in the 8th house (verse 65)."
+    text: "long-lived, resolute, fearless, prosperous and learned, with children and wealth; successful in all ventures, victorious over enemies and a great celebrity"
+  nirbhagya:
+    name: Nirbhagya (lord of the 9th in the 6th, 8th or 12th)
+    verse: "6.66"
+    definition: "The lord of the 9th house in the 6th, 8th or 12th."
+    text: "loses all his paternal property, has no regard for good people and elders, irreligious, in old worn clothes, poor and miserable"
+  duryoga:
+    name: Duryoga (lord of the 10th in the 6th, 8th or 12th)
+    verse: "6.67"
+    definition: "The lord of the 10th house in the 6th, 8th or 12th."
+    text: "all efforts prove fruitless; of no importance, a traitor and very selfish, earning only to satisfy his hunger, constantly away from home and living abroad"
+  daridra:
+    name: Daridra (lord of the 11th in the 6th, 8th or 12th)
+    verse: "6.68"
+    definition: "The lord of the 11th house in the 6th, 8th or 12th."
+    text: "constantly in debt, with ear disease, without good brotherhood, engaged in cruelty and sin, indecent in speech and working like a menial"
+  vimala:
+    name: Vimala (the lord of the 6th, 8th or 12th in the 12th)
+    verse: "6.69"
+    definition: "The lord of the 6th, 8th or 12th house in the 12th house (verse 69)."
+    text: "frugal and clever at saving money, well behaved towards others, happy and independent, following a respectable profession and well known for good qualities"
+
+# The Sankhya names Phaladeepika gives (verses 39-41) beside Brihat Jataka's for the same number of signs; shown next to the Brihat Jataka
+# yoga when the chart has it. Keyed by the number of signs the seven planets occupy.
+sankhya:
+  verse: "6.39–41"
+  7: {name: Vallaki (Veena)}
+  6: {name: Dharma}
+  5: {name: Hasha}
+  4: {name: Kendra}
+  3: {name: Shula}
+  2: {name: Yuga}
+  1: {name: Gola}
+  texts:
+    7: "fond of dancing, singing and playing music, and wealthy"
+    6: "generous, a king and a benefactor"
+    5: "enjoys life, wealthy, of good conduct and with relatives"
+    4: "gains wealth and farmland"
+    3: "wrathful, of violent disposition and poor"
+    2: "heretical and without wealth"
+    1: "indolent, short-lived, without wealth, sinful and keeping low company; not a skilful artisan"

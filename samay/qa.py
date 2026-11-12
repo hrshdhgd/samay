@@ -22,7 +22,10 @@ from .engine import (
     house_effects,
     lordship,
     moon_nature,
+    nabhasa,
+    phaladeepika_yogas,
     planet_houses,
+    raja_yogas,
 )
 from .engine import entries as entry_store
 from .engine.entries import Entry
@@ -55,7 +58,8 @@ SPAN_WORDS = {"week": "week", "weekend": "week", "fortnight": "fortnight", "mont
               "years": "years", "decade": "years"}
 OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
-CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together", "yoga", "yogas", "combination", "combinations")
+CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
+YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
 MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
 # Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
 COMPUTED_PREFIXES = ("future:", "chart:")
@@ -98,7 +102,7 @@ TOPICS = frozenset(
     [f"life:{a}" for a in LIFE_AREAS] +
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions"]
+    "chart:moon", "chart:conjunctions", "chart:yogas"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -115,6 +119,18 @@ class SecondVoice:
     house: int
     rows: tuple[planet_houses.Row, ...]
     verse: str  # the text's verse range for the planet, e.g. "1-4"
+
+
+@dataclass(frozen=True)
+class YogasView:
+    """The person's yogas from three sources, each shown only once its own rules file has been checked."""
+    nabhasa: nabhasa.Nabhasa
+    chapter6: tuple
+    chapter6_checked: bool
+    blemish_note: str
+    raja: tuple
+    raja_checked: bool
+    raja_family: str
 
 
 @dataclass(frozen=True)
@@ -168,6 +184,7 @@ class Answer:
     moon: MoonView | None = None  # chart:moon
     together: tuple[conjunctions.Together, ...] | None = None  # chart:conjunctions
     together_checked: bool = False
+    yogas: YogasView | None = None  # chart:yogas
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -196,6 +213,8 @@ def sort_question(text: str) -> str | None:
         return "chart:ashtakavarga"
     if not planets and any(w in CONJUNCTION_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:conjunctions"
+    if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:yogas"
     if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
@@ -227,6 +246,7 @@ TOPIC_HELP = {
     "life:<area>": "an area of the person's life: " + ", ".join(LIFE_AREAS) + " (a marriage question is life:marriage)",
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
+    "chart:yogas": "the person's yogas: the named planetary combinations in their chart (Nabhasa, raja, Mahapurusha, Lakshmi and the rest)",
     "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
     "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
@@ -376,6 +396,15 @@ def _transit_facts(report, who: Subject = SELF) -> list[str]:
     return out
 
 
+def _yogas_view(birth: ResolvedBirth | None) -> YogasView | None:
+    if birth is None:
+        return None
+    chart = service.natal_report(birth).chart
+    nab, pd6, raja = nabhasa.load_rules(), phaladeepika_yogas.load_rules(), raja_yogas.load_rules()
+    return YogasView(nabhasa.find(nab, chart), phaladeepika_yogas.find(pd6, chart), pd6.servable, pd6.blemish_note,
+                     raja_yogas.find(raja, chart), raja.servable, raja.family["verse"] + ": " + raja.family["anyone"])
+
+
 def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
     if birth is None:
         return None
@@ -493,6 +522,8 @@ def answer_topic(
         return Answer(None, (), ())
     if topic == "future:overview":
         return _future_answer(birth, now, entries_dir, subject)
+    if topic == "chart:yogas":
+        return Answer(topic, (), (), yogas=_yogas_view(birth), who=subject)
     if topic == "chart:conjunctions":
         rules = conjunctions.load_rules()
         found = conjunctions.find(rules, service.natal_report(birth).chart) if birth is not None else None
@@ -568,6 +599,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
     verified += [lordship_fact(v) for v in answer.lordship]
     verified += conjunction_facts(answer.together or (), answer.who)
+    if answer.yogas is not None:
+        verified += yoga_facts(answer.yogas, answer.who)
     if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
@@ -658,4 +691,12 @@ def conjunction_facts(together, who: Subject = SELF) -> list[str]:
         for (a, b), p in t.pairs:
             out.append(f"{who.Your} {a.title()} and {b.title()} are together in {SIGNS[t.sign]}. Brihat Jataka {p.verse_bj}: "
                        f"the person will be {p.bj}. Phaladeepika {p.verse_pd}: {p.pd}.")
+    return out
+
+
+def yoga_facts(view: YogasView, who: Subject = SELF) -> list[str]:
+    """The yogas found, as sentences for the AI."""
+    out = [f"Brihat Jataka 12 ({y.name} yoga; {y.detail}): a person born under it {y.text}" for y in view.nabhasa.yogas]
+    out += [f"Phaladeepika {f.verse}, {f.name} ({f.detail}): {f.text}." for f in view.chapter6]
+    out += [f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja]
     return out

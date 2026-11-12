@@ -958,7 +958,7 @@ def test_a_malformed_conjunction_file_is_refused(tmp_path, change):
 
 
 @pytest.mark.parametrize(("question", "topic"), [
-    ("which planets are together in my chart", "chart:conjunctions"), ("do I have any yogas", "chart:conjunctions"),
+    ("which planets are together in my chart", "chart:conjunctions"), ("do I have any yogas", "chart:yogas"), ("which yogas do I have", "chart:yogas"),
     ("what is a yoga", None),
 ])
 def test_conjunction_questions_need_personal_phrasing_offline(question, topic):
@@ -993,3 +993,256 @@ def test_a_chart_with_a_pair_shows_both_texts(monkeypatch):
             assert first.bj in text and first.pd[1:] in text
             return
     pytest.fail("none of the sample charts has two planets in one sign")
+
+
+# --- Nabhasa yogas (Brihat Jataka XII), chapter 6 yogas (Phaladeepika) and raja yogas (Brihat Jataka XI) ----------------------
+from samay.engine import nabhasa, phaladeepika_yogas, raja_yogas
+
+NB = nabhasa.load_rules()
+NB_CHECKED = dataclasses.replace(NB, level="translation-checked", checked_by="test")
+P6 = phaladeepika_yogas.load_rules()
+P6_CHECKED = dataclasses.replace(P6, level="translation-checked", checked_by="test")
+RJ = raja_yogas.load_rules()
+RJ_CHECKED = dataclasses.replace(RJ, level="translation-checked", checked_by="test")
+
+
+def _full_sky(lagna=0, retro_sun_moon=True, **where):
+    """A made-up chart with every body in a named sign (0-11) and degree, defaulting to the 8th sign from the lagna, 15 degrees."""
+    names = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+    planets = {}
+    for n in names:
+        spec = where.get(n, (lagna + 7) % 12)
+        sign, deg = spec if isinstance(spec, tuple) else (spec, 15.0)
+        planets[n] = SimpleNamespace(longitude=sign * 30 + deg, retrograde=False)
+    return SimpleNamespace(planets=planets, ascendant=lagna * 30 + 15.0)
+
+
+def _nab(**where):
+    return [y.key for y in nabhasa.find(NB_CHECKED, _full_sky(**where)).yogas]
+
+
+def test_nabhasa_has_32_yogas_in_the_texts_four_groups_and_is_hidden_until_checked():
+    groups = [y["group"] for y in NB.yogas.values()]
+    assert (groups.count("asraya"), groups.count("dala"), groups.count("akriti"), groups.count("sankhya")) == (3, 2, 20, 7)
+    assert NB.level == "unchecked" and nabhasa.find(NB, _full_sky()).yogas == ()
+
+
+def _all_in(*signs):
+    """Seven planets spread over the given signs in order, repeating the last sign for the extras."""
+    order = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
+    return {p: signs[min(i, len(signs) - 1)] for i, p in enumerate(order)}
+
+
+def test_asraya_all_planets_in_movable_fixed_or_common_signs():
+    assert "kamala" in _nab(**_all_in(0, 3, 6, 9)) and "rajju" not in _nab(**_all_in(0, 3, 6, 9))  # four movable signs = the four kendras
+    assert "rajju" in _nab(**_all_in(0, 3, 6)) and "musala" in _nab(**_all_in(1, 4, 7)) and "nala" in _nab(**_all_in(2, 5))
+    assert "rajju" not in _nab(**_all_in(0, 0, 0, 0, 0, 0, 0)) and "gola" in _nab(**_all_in(0))  # one sign is Gola, not an Asraya
+
+
+def test_sankhya_yogas_count_the_signs():
+    names = {7: "vallaki", 6: "damini", 5: "pasa", 4: "kedara", 3: "sula", 2: "yuga", 1: "gola"}
+    # spread over signs that avoid every Akriti shape: signs 1,2,5,6,9,10,... houses 2 5 6 9 10 11 12 etc.
+    for n in names:
+        sky = _all_in(*[(0, 1, 5, 6, 9, 10, 11)[i] for i in range(n)])
+        got = [y.key for y in nabhasa.find(NB_CHECKED, _full_sky(**sky)).yogas]
+        assert got, (n, got)
+
+
+@pytest.mark.parametrize(("key", "houses"), [
+    ("sakata", (1, 7)), ("vihaga", (4, 10)), ("gada", (1, 4)), ("sringataka", (1, 5, 9)), ("hala", (2, 6, 10)), ("kamala", (1, 4, 7, 10)),
+    ("vapi", (2, 5, 8, 11)), ("yupa", (1, 2, 3, 4)), ("ishu", (4, 5, 6, 7)), ("sakti", (7, 8, 9, 10)), ("danda", (10, 11, 12, 1)),
+    ("nau", (1, 2, 3, 4, 5, 6, 7)), ("kuta", (4, 5, 6, 7, 8, 9, 10)), ("chhatra", (7, 8, 9, 10, 11, 12, 1)), ("chapa", (10, 11, 12, 1, 2, 3, 4)),
+    ("ardha_chandra", (2, 3, 4, 5, 6, 7, 8)), ("samudra", (2, 4, 6, 8, 10, 12)), ("chakra", (1, 3, 5, 7, 9, 11)),
+])
+def test_each_akriti_yoga_needs_exactly_its_houses_occupied(key, houses):
+    lagna = 0  # house h = sign h-1
+    sky = _all_in(*[h - 1 for h in houses])
+    assert key in _nab(lagna=lagna, **sky)
+    missing_one = _all_in(*[h - 1 for h in houses[:-1]]) if len(houses) > 1 else {}
+    if missing_one:
+        assert key not in _nab(lagna=lagna, **missing_one)  # all but one of the houses: not that yoga
+
+
+def test_an_akriti_yoga_replaces_the_sankhya_one_and_an_asraya_one():
+    got = _nab(**_all_in(0, 3))  # houses 1 and 4 only: Gada (adjacent kendras); also movable, and two signs
+    assert "gada" in got and "yuga" not in got and "rajju" not in got
+
+
+def test_dala_srik_and_sarpa_need_three_kendras_and_none_of_the_other_kind():
+    srik = _nab(mercury=0, jupiter=3, venus=6, sun=1, mars=2, saturn=4, moon=5)  # benefics in the 1st, 4th and 7th; malefics elsewhere
+    assert "srik" in srik
+    assert "srik" not in _nab(mercury=0, jupiter=3, venus=6, sun=9, mars=2, saturn=4, moon=5)  # a malefic in the 10th
+    assert "sarpa" in _nab(sun=0, mars=3, saturn=6, mercury=1, jupiter=2, venus=4, moon=5)
+
+
+def test_vajra_and_yava_need_the_benefics_and_malefics_apart():
+    vajra = _nab(mercury=0, venus=6, jupiter=0, sun=3, mars=9, saturn=3, moon=9)  # the waning Moon counts as a malefic
+    assert "vajra" in vajra and "kamala" not in vajra
+    assert "yava" in _nab(mercury=3, venus=9, jupiter=3, sun=0, mars=6, saturn=0, moon=3)
+
+
+def test_the_nabhasa_answer_always_has_a_yoga_for_a_real_chart():
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune"), ("2015-03-14", "06:30", "Pune")]:
+        chart = service.natal_report(service.resolve_birth(BirthInput(*born))).chart
+        n = nabhasa.find(NB_CHECKED, chart)
+        assert n.yogas and n.life_note.startswith("These effects are felt throughout")
+
+
+def test_the_chapter_6_file_has_a_definition_for_every_yoga_and_a_detector_for_every_one():
+    assert set(P6.yogas) == set(phaladeepika_yogas.DETECTORS) and len(P6.yogas) == 45 and P6.level == "unchecked"
+    assert all(y["definition"] for y in P6.yogas.values())
+
+
+def _p6(**where):
+    return {f.key: f for f in phaladeepika_yogas.find(P6_CHECKED, _full_sky(**where))}
+
+
+def test_mahapurusha_needs_own_or_exaltation_sign_in_a_kendra_from_the_lagna_or_the_moon():
+    assert "ruchaka" in _p6(mars=(0, 15.0))                       # Aries, the 1st house
+    assert "ruchaka" not in _p6(mars=(0, 15.0), lagna=1)          # Aries is the 12th from a Taurus lagna: not a kendra, Moon elsewhere
+    from_moon = _p6(mars=7, moon=4, lagna=5)                      # Scorpio is the 4th from the Moon in Leo; the 3rd from a Virgo lagna
+    assert "ruchaka" in from_moon and "from the Moon" in from_moon["ruchaka"].detail
+    assert "mahapurusha_count" in _p6(mars=0, venus=1, mercury=5)  # lagna Aries: Ruchaka, Malavya (Taurus is the 2nd, no)...
+
+
+def test_mahapurusha_count_texts_follow_the_number_of_yogas():
+    one = _p6(mars=0)["mahapurusha_count"]
+    two = _p6(mars=0, mercury=2, jupiter=0, saturn=9)  # Ruchaka, Bhadra (Gemini is the 3rd: no), Hamsa (Aries: no), Sasa (Capricorn: yes)
+    assert one.text == "a fortunate person"
+    assert two["mahapurusha_count"].text == "equal to a king"
+
+
+def test_vesi_vasi_and_ubhayachari_use_the_sun_and_the_benefics_or_malefics():
+    assert "subhavesi" in _p6(sun=0, jupiter=1) and "subhavasi" in _p6(sun=0, venus=11)
+    both = _p6(sun=0, jupiter=1, venus=11)
+    assert "subhobhayachari" in both and "subhavesi" not in both and "subhavasi" not in both
+    assert "papavesi" in _p6(sun=0, saturn=1) and "papavasi" in _p6(sun=0, mars=11)
+    assert "subhavesi" not in _p6(sun=0, moon=1, rahu=1)  # the Moon and nodes do not count
+
+
+def test_kartari_amala_and_vasumati():
+    assert "subhakartari" in _p6(mercury=11, jupiter=1) and "papakartari" in _p6(sun=11, mars=1)
+    assert "amala" in _p6(jupiter=9) and "amala" in _p6(venus=0, moon=3, lagna=2)  # the 10th from the lagna, and from the Moon
+    assert "vasumati" in _p6(mercury=2, jupiter=5, venus=9) and "vasumati" not in _p6(mercury=2, jupiter=5, venus=8)
+
+
+def test_kesari_sakata_and_the_moon_from_the_sun():
+    assert "kesari" in _p6(moon=3, jupiter=0) and "kesari" not in _p6(moon=1, jupiter=0)
+    assert "sakata" in _p6(moon=5, jupiter=0, lagna=1) and "sakata" not in _p6(moon=5, jupiter=0, lagna=5)  # the Moon in a kendra cancels
+    assert "adhama" in _p6(sun=0, moon=3) and "sama" in _p6(sun=0, moon=4) and "varishtha" in _p6(sun=0, moon=2)
+
+
+def test_lakshmi_gouri_and_saraswati():
+    assert "lakshmi" in _p6(lagna=0, venus=6, jupiter=8)    # Aries lagna: the 9th lord Jupiter in Sagittarius (the 9th), Venus in Libra (the 7th)
+    assert "gouri" in _p6(lagna=0, moon=3, jupiter=11)                # the Moon in Cancer (own, the 4th); Jupiter in Pisces sees it from the 5th
+    assert "saraswati" in _p6(lagna=0, mercury=3, jupiter=8, venus=6)
+
+
+def test_srikantha_srinatha_and_virinchi_need_all_three_in_good_signs_in_kendras_or_trikonas():
+    assert "srikantha" in _p6(lagna=0, sun=0, moon=3, mars=0)  # the lagna lord Mars (Aries), the Sun (Aries, exalted), the Moon (Cancer)
+    assert "srikantha" not in _p6(lagna=0, sun=0, moon=3, mars=5)
+
+
+def test_parivartana_pairs_are_classified_by_the_houses_they_touch():
+    # Aries lagna: Mars rules 1 and 8, Venus 2 and 7, Mercury 3 and 6, Moon 4, Sun 5, Jupiter 9 and 12, Saturn 10 and 11.
+    assert "maha" in _p6(lagna=0, mars=1, venus=0)      # lord of the 1st in the 2nd (Taurus) and lord of the 2nd in the 1st (Aries)
+    assert "kahala" in _p6(lagna=0, mars=2, mercury=0)  # the 1st and the 3rd
+    assert "dainya" in _p6(lagna=0, mars=5, mercury=0)  # the 1st and the 6th
+
+
+def test_raja_yoga_needs_the_9th_and_10th_lords_together_outside_the_dusthanas():
+    # Aries lagna: the 9th lord is Jupiter, the 10th lord Saturn
+    assert "raja" in _p6(lagna=0, jupiter=4, saturn=4) and "raja" not in _p6(lagna=0, jupiter=5, saturn=5)  # Virgo is the 6th
+    assert "raja" not in _p6(lagna=0, jupiter=4, saturn=8)
+
+
+def test_adhi_yoga_from_the_lagna_and_the_moon_needs_all_three_benefics_in_the_6th_to_8th():
+    assert "lagnadhi" in _p6(lagna=0, mercury=5, jupiter=6, venus=7) and "lagnadhi" not in _p6(lagna=0, mercury=5, jupiter=6, venus=1)
+    assert "chandradhi" in _p6(moon=0, mercury=5, jupiter=5, venus=6)
+
+
+def test_the_house_yogas_and_the_three_vipareeta_ones():
+    assert "ava" in _p6(lagna=0, mars=5)         # the lagna lord Mars in the 6th
+    assert "daridra" in _p6(lagna=0, saturn=5)    # the 11th lord Saturn in the 6th
+    assert "harsha" in _p6(lagna=0, mercury=5) and "sarala" in _p6(lagna=0, mars=7) and "vimala" in _p6(lagna=0, jupiter=11)
+    assert "ava" not in _p6(lagna=0, mars=4)
+
+
+def test_the_sankhya_names_of_phaladeepika_are_given_by_the_number_of_signs():
+    f = _p6(**_all_in(0, 2, 5, 7))
+    assert f["sankhya"].name.startswith("Kendra") and "four" not in f["sankhya"].detail and "4 signs" in f["sankhya"].detail
+
+
+def _raja(**where):
+    return {f.id for f in raja_yogas.find(RJ_CHECKED, _full_sky(**where))}
+
+
+def test_a_raja_configuration_needs_every_planet_and_the_rising_sign():
+    v4a = {"lagna": 10, "saturn": 10, "sun": 0, "moon": 1, "mercury": 2, "jupiter": 4, "mars": 7}  # Aquarius rising
+    assert "v4a" in _raja(**v4a)
+    assert "v4a" not in _raja(**{**v4a, "sun": 1})            # the Sun in the wrong sign
+    assert "v4a" not in _raja(**{**v4a, "lagna": 5})          # the wrong rising sign
+    assert "v5a" in _raja(lagna=9, mars=9, sun=8, moon=8, saturn=9)
+
+
+def test_first_half_means_the_first_15_degrees():
+    base = {"lagna": 11, "venus": 11, "moon": 8, "jupiter": 8}
+    assert "v7a1" in _raja(**base, mars=(9, 14.9)) and "v7a1" not in _raja(**base, mars=(9, 15.1))
+
+
+def test_three_exalted_planets_and_the_count_of_strong_planets():
+    assert any(f.id == "v1" for f in raja_yogas.find(RJ_CHECKED, _full_sky(sun=0, mars=9, saturn=6)))   # three malefics exalted
+    assert not any(f.id == "v1" for f in raja_yogas.find(RJ_CHECKED, _full_sky(sun=0, mars=9)))
+    five = [f for f in raja_yogas.find(RJ_CHECKED, _full_sky(sun=4, moon=3, mars=0, mercury=2, jupiter=8, venus=1, saturn=9)) if f.id == "v13"]
+    assert five and "five or more" in five[0].text.lower().replace("five or more planets", "five or more")
+
+
+@needs_kernel
+def test_the_yogas_answer_hides_each_source_until_it_is_checked_and_then_shows_all(monkeypatch):
+    born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    waiting = render_answer(qa.answer_topic("chart:yogas", born, NOW))
+    assert waiting.count(prompts.YOGAS_UNCHECKED) == 3 and "Source:" not in waiting
+    monkeypatch.setattr(nabhasa, "load_rules", lambda path=None: NB_CHECKED)
+    only_nabhasa = render_answer(qa.answer_topic("chart:yogas", born, NOW))
+    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 2 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
+    monkeypatch.setattr(phaladeepika_yogas, "load_rules", lambda path=None: P6_CHECKED)
+    monkeypatch.setattr(raja_yogas, "load_rules", lambda path=None: RJ_CHECKED)
+    answer = qa.answer_topic("chart:yogas", born, NOW)
+    text = render_answer(answer)
+    assert prompts.YOGAS_UNCHECKED not in text and "Yogas from Phaladeepika chapter 6" in text and "without blemish" in text
+    assert "Raja yogas of Brihat Jataka chapter 11" in text or prompts.YOGAS_NONE_RAJA in text
+    assert "Phaladeepika 6." in qa._ai_prompt("which yogas do I have?", answer)
+    assert render_answer(qa.answer_topic("chart:yogas", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_YOGAS
+
+
+@needs_kernel
+def test_the_full_yogas_view_splits_into_messages_that_fit(monkeypatch):
+    from samay.render.text import split_message
+    for mod, rules in ((nabhasa, NB_CHECKED), (phaladeepika_yogas, P6_CHECKED), (raja_yogas, RJ_CHECKED)):
+        monkeypatch.setattr(mod, "load_rules", lambda path=None, r=rules: r)
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1990-08-15", "14:30", "Pune"), ("1952-08-15", "06:30", "Pune")]:
+        answer = qa.answer_topic("chart:yogas", service.resolve_birth(BirthInput(*born)), NOW)
+        for view in ("compact", "full"):
+            assert all(len(p) <= 4096 for p in split_message(render_answer(answer, view)))
+
+
+@pytest.mark.parametrize("path_change", [
+    ("nabhasa", lambda r: r["yogas"].pop("rajju")),
+    ("nabhasa", lambda r: r["akriti"].pop("chakra")),
+    ("nabhasa", lambda r: r["verification"].update(level="translation-checked")),
+    ("p6", lambda r: r["yogas"].pop("amala")),
+    ("p6", lambda r: r["yogas"]["amala"].update(definition="")),
+    ("raja", lambda r: r["configs"][0].update(result="emperor")),
+    ("raja", lambda r: r["configs"][0]["all"].append({"planet": "pluto", "sign": "Aries"})),
+    ("raja", lambda r: r["configs"][0]["all"][0].update(house=3)),  # both sign and house
+])
+def test_a_malformed_yoga_file_is_refused(tmp_path, path_change):
+    kind, change = path_change
+    mod, path = {"nabhasa": (nabhasa, nabhasa.RULES_PATH), "p6": (phaladeepika_yogas, phaladeepika_yogas.RULES_PATH),
+                 "raja": (raja_yogas, raja_yogas.RULES_PATH)}[kind]
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    change(raw)
+    out = tmp_path / "rules.yaml"
+    out.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        mod.load_rules(out)

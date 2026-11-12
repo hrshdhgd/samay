@@ -1,0 +1,95 @@
+# Brihat Jataka chapter XII ("On Nabhasa Yogas"), verses 1-19: the 32 yogas made by where the seven planets (Sun to Saturn) sit,
+# and what a person born under each is like. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public
+# domain (archive.org b2488442x), pp. 121-134. The effects are QUOTED, with scan errors corrected (research/notes/nabhasa.md).
+# The definitions (which houses make which yoga) come from the verses and the translator's notes; how they are applied is in
+# samay/engine/nabhasa.py.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets level:
+# translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "121-134"
+
+# Verse 19, last sentence: "These effects are felt throughout a man's life." The translator adds (note b to verse 19) that this is so
+# except for the Vajra and the other yogas of verse 14, whose effects are felt in particular periods, as stated there.
+life_note:
+  verse: "12.19"
+  text: "These effects are felt throughout a man's life."
+  except: "Except in the case of Vajra and other yogas (stanza 14) whose effects will be felt, as stated, in particular periods of a person's life (the translator's note)."
+
+# Which of the Moon, Mercury, Jupiter, Venus count as benefic and Sun, Mars, Saturn as malefic for the Dala yogas: Garga's lists in the
+# translator's notes (a person born with ...). For Vajra and Yava the text does not name them; the bot uses the same planets and
+# takes the Moon as benefic when waxing (a reading, for the checker).
+benefics: [mercury, jupiter, venus]
+malefics: [sun, mars, saturn]
+
+# Effects. `group` is the text's grouping; `verse` is where the effect is given. `bj` quotes "A person born under a ... yoga will ...".
+yogas:
+  rajju:        {name: Rajju,        group: asraya, verse: "12.11", text: "will be jealous of the wealth of others, will proceed to foreign lands and will be fond of travelling."}
+  musala:       {name: Musala,       group: asraya, verse: "12.11", text: "will be respectable, rich, and will engage in various undertakings."}
+  nala:         {name: Nala,         group: asraya, verse: "12.11", text: "will be of defective organs, settled views, rich and skilled in work."}
+  srik:         {name: Srik (Mala),  group: dala,   verse: "12.11", text: "will live in comfort and luxury."}
+  sarpa:        {name: Sarpa,        group: dala,   verse: "12.11", text: "will be miserable in many ways."}
+  gada:         {name: Gada,         group: akriti, verse: "12.13", text: "will perform sacrificial rites, will be rich, and will ever be engaged in the acquisition of wealth."}
+  sakata:       {name: Sakata,       group: akriti, verse: "12.13", text: "will live by means of carts, will be afflicted with diseases, and will have a mean wife."}
+  vihaga:       {name: Vihaga,       group: akriti, verse: "12.13", text: "will live by carrying messages, will be fond of travels, and will cause quarrels."}
+  sringataka:   {name: Sringataka,   group: akriti, verse: "12.13", text: "will be happy in the latter end of life."}
+  hala:         {name: Hala,         group: akriti, verse: "12.13", text: "will till lands."}
+  vajra:        {name: Vajra,        group: akriti, verse: "12.14", text: "will be happy both at the beginning and end of life, will be a general favorite and will be bold in fight."}
+  yava:         {name: Yava,         group: akriti, verse: "12.14", text: "will be powerful, and will be happy at the middle of life."}
+  kamala:       {name: Kamala (Padma), group: akriti, verse: "12.14", text: "will be of great renown, will be greatly happy and possessed of many attainments."}
+  vapi:         {name: Vapi,         group: akriti, verse: "12.14", text: "will live in poor comfort for a long time, will bury his wealth under ground and will be a miser."}
+  yupa:         {name: Yupa,         group: akriti, verse: "12.15", text: "will be liberal in gift and will perform high sacrificial rights."}
+  ishu:         {name: Ishu (Bana),  group: akriti, verse: "12.15", text: "will indulge in torture, will be a jailor and will make arrows."}
+  sakti:        {name: Sakti,        group: akriti, verse: "12.15", text: "will engage in deeds disgraceful to his rank in life, will not be skilled in work, and will be without money and comfort."}
+  danda:        {name: Danda,        group: akriti, verse: "12.15", text: "will be separated from persons of his affection and will earn his livelihood by the lowest of means, viz., servitude."}
+  nau:          {name: Nau,          group: akriti, verse: "12.16", text: "will be of wide-spread fame, happy only now and then, and will be a miser."}
+  kuta:         {name: Kuta,         group: akriti, verse: "12.16", text: "will indulge in lies, and will be a jailor."}
+  chhatra:      {name: Chhatra,      group: akriti, verse: "12.16", text: "will make his people happy and will live in comfort in the latter end of life."}
+  chapa:        {name: Chapa,        group: akriti, verse: "12.16", text: "will delight in fight and will live in comfort both at the beginning and end of life."}
+  ardha_chandra: {name: Ardha-Chandra, group: akriti, verse: "12.17", text: "will be a general favorite, of agreeable person and be respected by all."}
+  samudra:      {name: Samudra,      group: akriti, verse: "12.17", text: "will be as prosperous as a king and will live in comfort."}
+  chakra:       {name: Chakra,       group: akriti, verse: "12.17", text: "will have his feet illumined by the lustre of the gems in the crowns of kings falling prostrate before him by way of respect and submission."}
+  vallaki:      {name: Vallaki,      group: sankhya, signs: 7, verse: "12.17", text: "will be skilled in work and will delight in music and dance."}
+  damini:       {name: Damini,       group: sankhya, signs: 6, verse: "12.18", text: "will be liberal in gift, will delight in helping others and will possess many cows."}
+  pasa:         {name: Pasa,         group: sankhya, signs: 5, verse: "12.18", text: "will, with his servants and kinsmen, earn wealth by proper means."}
+  kedara:       {name: Kedara,       group: sankhya, signs: 4, verse: "12.18", text: "will till lands, and by doing good deeds, will be useful to others."}
+  sula:         {name: Sula,         group: sankhya, signs: 3, verse: "12.18", text: "will be bold in fight, will receive blows and will be fond of money but will be poor.", variant: "According to some other reading, will be fond of torture (the translator's note)."}
+  yuga:         {name: Yuga,         group: sankhya, signs: 2, verse: "12.19", text: "will be poor and will act in contravention of Vedic rules."}
+  gola:         {name: Gola,         group: sankhya, signs: 1, verse: "12.19", text: "will be poor, dirty, ignorant, addicted to low deeds, unskilled in work, and will ever be wandering from place to place.", variant: "For bare subsistence, according to the commentator (note a to verse 19)."}
+
+# How the definitions are applied (verses 2-10 and the notes):
+#  - Asraya (verse 2): all the planets in movable (Rajju), fixed (Musala) or common (Nala) signs; any number of those signs.
+#  - Dala (verse 2, with the translator's notes): Srik when the benefics occupy three of the kendras and no malefic occupies any kendra;
+#    Sarpa when the malefics occupy three of the kendras and no benefic occupies any kendra.
+#  - Akriti (verses 4-9): the planets occupy exactly the named houses (every one of them occupied, and no others).
+#  - Sankhya (verse 10): all the planets in 7, 6, 5, 4, 3, 2 or 1 signs.
+#  - Verse 10: a Sankhya yoga that is also an Akriti yoga is treated as the Akriti only. Verse 12: an Asraya that is also another yoga
+#    is treated as the other. The commentator (final note): an Asraya that coincides with Kedara, Sula or Yuga counts as the Asraya;
+#    one that coincides with Gola counts as Gola. A Dala that coincides with Vallaki, Damini, Pasa or Kedara counts as the Dala only.
+akriti:
+  gada:         [[1, 4], [4, 7], [7, 10], [10, 1]]
+  sakata:       [[1, 7]]
+  vihaga:       [[4, 10]]
+  sringataka:   [[1, 5, 9]]
+  hala:         [[2, 6, 10], [3, 7, 11], [4, 8, 12]]
+  kamala:       [[1, 4, 7, 10]]
+  vapi:         [[2, 5, 8, 11], [3, 6, 9, 12]]
+  yupa:         [[1, 2, 3, 4]]
+  ishu:         [[4, 5, 6, 7]]
+  sakti:        [[7, 8, 9, 10]]
+  danda:        [[10, 11, 12, 1]]
+  nau:          [[1, 2, 3, 4, 5, 6, 7]]
+  kuta:         [[4, 5, 6, 7, 8, 9, 10]]
+  chhatra:      [[7, 8, 9, 10, 11, 12, 1]]
+  chapa:        [[10, 11, 12, 1, 2, 3, 4]]
+  ardha_chandra: [[2, 3, 4, 5, 6, 7, 8], [3, 4, 5, 6, 7, 8, 9], [5, 6, 7, 8, 9, 10, 11], [6, 7, 8, 9, 10, 11, 12],
+                  [8, 9, 10, 11, 12, 1, 2], [9, 10, 11, 12, 1, 2, 3], [11, 12, 1, 2, 3, 4, 5], [12, 1, 2, 3, 4, 5, 6]]
+  samudra:      [[2, 4, 6, 8, 10, 12]]
+  chakra:       [[1, 3, 5, 7, 9, 11]]
+# Vajra and Yava (verse 5): the benefics in the 1st and 7th and the malefics in the 4th and 10th (Vajra), or the reverse (Yava).
+# Varahamihira says in verse 6 that these cannot really occur, since Mercury and Venus never stand a quarter of the zodiac from the
+# Sun; the translator replies that they can in the bhava chakra (unequal houses). With whole-sign houses they will almost never fire.
+vajra_yava:
+  vajra: {benefic_houses: [1, 7], malefic_houses: [4, 10]}
+  yava:  {benefic_houses: [4, 10], malefic_houses: [1, 7]}
