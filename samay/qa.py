@@ -21,6 +21,7 @@ from .engine import (
     conjunctions,
     house_effects,
     lordship,
+    moon_aspects,
     moon_nature,
     nabhasa,
     phaladeepika_yogas,
@@ -149,6 +150,9 @@ class MoonView:
     yogas_checked: bool = False
     yoga_edition: str = ""
     yoga_pages: str = ""
+    aspects: moon_aspects.MoonAspects | None = None  # Brihat Jataka XIX, once its rules are checked
+    aspects_checked: bool = False
+    aspect_texts: tuple = ()  # (aspect rule, degree rule, rising-sign note)
 
 
 @dataclass(frozen=True)
@@ -413,8 +417,11 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
     sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(rules, chart.planets["moon"].longitude)
     yoga_rules = chandra_yogas.load_rules()
     yogas = chandra_yogas.find(yoga_rules, chart)
+    asp_rules = moon_aspects.load_rules()
     return MoonView(sign, sign_text, nak_text, pada, nak, rules.servable, rules.conditions, rules.edition, rules.pages,
-                    yogas.found, yogas.checked, yoga_rules.edition, yoga_rules.pages)
+                    yogas.found, yogas.checked, yoga_rules.edition, yoga_rules.pages,
+                    moon_aspects.find(asp_rules, chart), asp_rules.servable,
+                    (asp_rules.aspect_text, asp_rules.degree_text, asp_rules.degree_rising))
 
 
 def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
@@ -601,6 +608,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     verified += conjunction_facts(answer.together or (), answer.who)
     if answer.yogas is not None:
         verified += yoga_facts(answer.yogas, answer.who)
+    if answer.moon is not None and answer.moon.aspects is not None:
+        verified += moon_aspect_facts(answer.moon, answer.who)
     if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
@@ -699,4 +708,13 @@ def yoga_facts(view: YogasView, who: Subject = SELF) -> list[str]:
     out = [f"Brihat Jataka 12 ({y.name} yoga; {y.detail}): a person born under it {y.text}" for y in view.nabhasa.yogas]
     out += [f"Phaladeepika {f.verse}, {f.name} ({f.detail}): {f.text}." for f in view.chapter6]
     out += [f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja]
+    return out
+
+
+def moon_aspect_facts(view: MoonView, who: Subject = SELF) -> list[str]:
+    """The planets aspecting the Moon, with what the text says for her sign and navamsa, as sentences for the AI."""
+    a = view.aspects
+    out = [f"Brihat Jataka XIX: {who.Your} Moon in {a.sign}, aspected by {p.title()}: the person will {t}." for p, t in a.in_sign]
+    out += [f"Brihat Jataka XIX: {who.Your} Moon in the navamsa of {a.navamsa_lord.title()}, aspected by {p.title()}: the person will {t}."
+            for p, t in a.in_navamsa]
     return out

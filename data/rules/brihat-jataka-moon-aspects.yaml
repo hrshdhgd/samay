@@ -1,0 +1,59 @@
+# Brihat Jataka chapter XIX ("On Planetary Aspects"), verses 1-9: what a person is like when the Moon, in a given sign or navamsa, is
+# aspected by each planet. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 175-180.
+# QUOTED, scan errors corrected (research/notes/moon-aspects.md). Each text continues "...and be aspected by Mars, the person will ...".
+# Cross-checked against Phaladeepika 18.6-15 (Kapoor): wherever the translation's list is complete it agrees; it drops items in six places,
+# so it is used only as confirmation.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets level: translation-checked
+# with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "175-180"
+
+# Which planets aspect which signs: Brihat Jataka II.13. All planets aspect the 7th from themselves fully; Saturn also the 3rd and 10th,
+# Jupiter the 5th and 9th, Mars the 4th and 8th. The lesser sights (quarter, half, three-quarters) are not used. Houses are counted from
+# the aspecting planet's sign to the Moon's.
+aspect_rule:
+  verse: "2.13"
+  text: "All the planets aspect the 3rd and 10th houses with a quarter sight, the 5th and 9th houses with half a sight, the 4th and 8th houses with three-quarters of a sight, and the 7th house with a full sight; but Saturn aspects the 3rd and 10th houses with a full sight; Jupiter aspects the 5th and 9th houses with a full sight, and Mars aspects the 4th and 8th houses with a full sight."
+  full: {sun: [7], moon: [7], mercury: [7], venus: [7], mars: [4, 7, 8], jupiter: [5, 7, 9], saturn: [3, 7, 10]}
+
+# Verse 9 (and its notes): how much of these effects comes to pass.
+degree:
+  verse: "19.9"
+  text: "If the Moon occupy a Vargottama position, her own Navamsa, or other Navamsas and be aspected by benefic planets, the effects will respectively be full, imperfect and small. But if she be aspected by malefic planets, the effects will respectively be small, imperfect and full. If the lord of the Navamsa be powerful, the effects described for planetary aspects in the case of signs and Navamsas will alone come to pass."
+  rising_sign: "The same remark applies to the rising sign and to the Sun (the translator's note)."
+
+# Verses 1-3: the Moon in each sign (Aries first), aspected by each planet.
+signs:
+  Aries:       {mars: "become a king", mercury: "be learned", jupiter: "resemble a king", venus: "be a man of good conduct", saturn: "be a thief", sun: "be poor"}
+  Taurus:      {mars: "be poor", mercury: "be a thief", jupiter: "be respected by the people", venus: "be a king", saturn: "be rich", sun: "be a servant"}
+  Gemini:      {mars: "sell weapons", mercury: "become a king", jupiter: "be learned", venus: "be fearful", saturn: "be a weaver", sun: "be poor"}
+  Cancer:      {mars: "be a valiant soldier", mercury: "be a literary author", jupiter: "be learned", venus: "be a king", saturn: "live by weapons", sun: "suffer from diseases of the eye"}
+  Leo:         {mars: "be a king", mercury: "be an astrologer", jupiter: "be rich", venus: "be a king", saturn: "be a barber", sun: "be a king"}
+  Virgo:       {mars: "live by serving under women", mercury: "be a king", jupiter: "be a commander of armies", venus: "be vigilant", saturn: "live by serving under women", sun: "live by serving under women"}
+  Libra:       {mars: "be a chief and will work mischief", mercury: "be a king", jupiter: "work in gold", venus: "be a trader", saturn: "be a chief and will work mischief", sun: "be a chief and will work mischief"}
+  Scorpio:     {mars: "be a king", mercury: "get twins", jupiter: "be obedient", venus: "be a washerman", saturn: "be of defective limbs", sun: "be poor"}
+  Sagittarius: {mars: "be a fop, will put on a show of virtue and will not attend to the work of other persons", mercury: "protect his kinsmen", jupiter: "be a king", venus: "protect many men", saturn: "be a fop, will put on a show of virtue and will not attend to the work of other persons", sun: "be a fop, will put on a show of virtue and will not attend to the work of other persons"}
+  Capricorn:   {mars: "be a king", mercury: "be the king of kings", jupiter: "be a king", venus: "be learned", saturn: "be rich", sun: "be poor"}
+  Aquarius:    {mars: "be fond of the wives of other men", mercury: "be a king", jupiter: "resemble a king", venus: "be fond of the wives of other men", saturn: "be fond of the wives of other men", sun: "be fond of the wives of other men"}
+  Pisces:      {mars: "do wicked deeds", mercury: "be witty", jupiter: "be a king", venus: "be learned", saturn: "do wicked deeds", sun: "do wicked deeds"}
+# Where the text gives one result for "Saturn, the Sun or Mars" (Virgo, Libra, Sagittarius, Aquarius with Venus too, Pisces): the same
+# words are repeated for each planet above. Verses 2 and 3.
+shared_results:
+  Virgo: [saturn, sun, mars]
+  Libra: [saturn, sun, mars]
+  Sagittarius: [saturn, sun, mars]
+  Aquarius: [venus, saturn, sun, mars]
+  Pisces: [saturn, sun, mars]
+
+# Verses 5-8: the Moon in a navamsa (by the planet that rules the navamsa sign), aspected by each planet. "The Navamsa of Cancer"
+# is the Moon's own, "of Leo" the Sun's.
+navamsas:
+  mars:    {sun: "be the protector of a city", mars: "be fond of torture", mercury: "be skilled in duel fight", jupiter: "be a king", venus: "be rich", saturn: "bring on quarrels"}
+  venus:   {sun: "be a fool", mars: "be fond of the wives of other men", mercury: "produce good literary works", jupiter: "produce good literary works", venus: "be fond of comforts", saturn: "unite with the wives of other men"}
+  mercury: {sun: "be a duellist or a dancer", mars: "be a thief", mercury: "be a great poet", jupiter: "be a minister", venus: "be skilled in music", saturn: "be skilled in mechanical arts"}
+  moon:    {sun: "be of small body", mars: "be a niggard and will possess small wealth", mercury: "practise austerities", jupiter: "be a chief", venus: "thrive by women", saturn: "be fond of work"}
+  sun:     {sun: "be a man of angry temper", mars: "be liked by the king", mercury: "become rich by the discovery of hidden treasure", jupiter: "carry his orders into effect", venus: "have no sons", saturn: "do wicked deeds"}
+  jupiter: {sun: "be a man of well-known powers", mars: "be learned in the rules of fight", mercury: "be skilled in ridicule", jupiter: "be a minister", venus: "be a man of no virility", saturn: "be charitably disposed"}
+  saturn:  {sun: "have very few children", mars: "be unhappy though rich", mercury: "be haughty", jupiter: "do deeds unsuited to his station in life", venus: "be fond of bad women", saturn: "be a niggard"}

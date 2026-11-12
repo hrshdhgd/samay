@@ -1246,3 +1246,65 @@ def test_a_malformed_yoga_file_is_refused(tmp_path, path_change):
     out.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         mod.load_rules(out)
+
+
+# --- The Moon aspected (Brihat Jataka XIX) ----------------------------------------------------------------------------------
+from samay.engine import moon_aspects
+
+MA = moon_aspects.load_rules()
+MA_CHECKED = dataclasses.replace(MA, level="translation-checked", checked_by="test")
+
+
+def test_the_aspect_tables_are_complete_and_hidden_until_checked():
+    assert len(MA.signs) == 12 and len(MA.navamsas) == 7 and MA.level == "unchecked"
+    assert all(len(row) == 6 for row in (*MA.signs.values(), *MA.navamsas.values()))
+    assert moon_aspects.find(MA, _full_sky()) is None
+
+
+def test_the_full_aspects_are_those_of_brihat_jataka_2_13():
+    assert MA.full["mars"] == (4, 7, 8) and MA.full["jupiter"] == (5, 7, 9) and MA.full["saturn"] == (3, 7, 10) and MA.full["sun"] == (7,)
+
+
+def test_a_planet_aspects_the_moon_by_its_own_sights_only():
+    # The Moon in Aries. Counted from the aspecting planet's sign, Aries is the 4th from Capricorn, the 7th from Libra, the 8th from
+    # Virgo, the 5th from Sagittarius, the 9th from Leo, the 3rd from Aquarius and the 10th from Cancer.
+    got = lambda **w: moon_aspects.find(MA_CHECKED, _full_sky(moon=0, **w)).aspecting
+    assert all("mars" in got(mars=s) for s in (9, 6, 5)) and "mars" not in got(mars=8)
+    assert "sun" in got(sun=6) and "sun" not in got(sun=9) and "sun" not in got(sun=5)       # the Sun has only the 7th
+    assert all("jupiter" in got(jupiter=s) for s in (8, 4, 6)) and "jupiter" not in got(jupiter=9)
+    assert all("saturn" in got(saturn=s) for s in (10, 3, 6)) and "saturn" not in got(saturn=8)
+
+
+def test_the_texts_for_her_sign_and_her_navamsa_are_picked_by_planet():
+    a = moon_aspects.find(MA_CHECKED, _full_sky(moon=0, jupiter=6, sun=6))
+    assert a.sign == "Aries" and ("jupiter", "resemble a king") in a.in_sign and ("sun", "be poor") in a.in_sign
+    assert a.navamsa_lord in moon_aspects.NAVAMSA_LORDS and len(a.in_navamsa) == len(a.aspecting)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["signs"].pop("Pisces"),
+    lambda r: r["signs"]["Aries"].pop("sun"),
+    lambda r: r["navamsas"]["mars"].update(venus=""),
+    lambda r: r["aspect_rule"]["full"]["sun"].remove(7),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_aspect_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(moon_aspects.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        moon_aspects.load_rules(path)
+
+
+@needs_kernel
+def test_the_moon_answer_adds_aspects_once_checked_and_says_when_none(monkeypatch):
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))  # Moon in Sagittarius, aspected by Jupiter
+    assert prompts.MOON_ASPECTS_UNCHECKED in render_answer(qa.answer_topic("chart:moon", born, NOW))
+    monkeypatch.setattr(moon_aspects, "load_rules", lambda path=None: MA_CHECKED)
+    answer = qa.answer_topic("chart:moon", born, NOW)
+    text = render_answer(answer)
+    assert "aspected by Jupiter (Brihat Jataka chapter 19)" in text and "Sagittarius, aspected by Jupiter: “the person will be a king.”" in text
+    assert "Brihat Jataka XIX" in qa._ai_prompt("what am I like?", answer)
+    none = qa.answer_topic("chart:moon", service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune")), NOW)
+    assert prompts.MOON_NOT_ASPECTED in render_answer(none)

@@ -552,6 +552,21 @@ def render_moon(view, full: bool = False, who=SELF) -> str:
         refs += sorted({f.verse for f in view.yogas}, key=lambda v: int(v.split(".")[1].split("–")[0]))
     else:
         blocks.append(prompts.MOON_YOGAS_UNCHECKED)
+    if view.aspects_checked and view.aspects is not None:
+        a = view.aspects
+        if not a.aspecting:
+            blocks.append(prompts.MOON_NOT_ASPECTED)
+        else:
+            lines = [f"{who.Your} Moon is aspected by {', '.join(p.title() for p in a.aspecting)} (Brihat Jataka chapter 19):"]
+            lines += [f"• In {a.sign}, aspected by {p.title()}: “the person will {t}.”" for p, t in a.in_sign]
+            lines += [f"• In the navamsa of {a.navamsa_lord.title()} ({a.navamsa_sign}), aspected by {p.title()}: “the person will {t}.”"
+                      for p, t in a.in_navamsa]
+            if full:
+                lines += [view.aspect_texts[1], view.aspect_texts[2]]
+            blocks.append("\n".join(lines))
+            refs += ["19.1–3", "19.5–8"] + (["19.9"] if full else [])
+    else:
+        blocks.append(prompts.MOON_ASPECTS_UNCHECKED)
     if refs:
         editions = f" ({view.edition}, pp. {view.pages}; yogas pp. {view.yoga_pages})" if full else ""
         blocks.append(f"Source: Brihat Jataka {', '.join(dict.fromkeys(refs))}{editions} · checked")
