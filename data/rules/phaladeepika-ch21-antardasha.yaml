@@ -1,0 +1,114 @@
+# Phaladeepika chapter 21 ("Nature of antar dasas and pratyantar dasas"), verses 3-83: what each antardasha (sub-chapter)
+# brings in each mahadasha. 79 of the 81 combinations; the other two are left out because the translation is unclear.
+# Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), openly available at
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 197-207
+# (PDF pages 196-206). The repository is public, so every result is PARAPHRASED, never quoted. Notes and the omissions
+# are in research/notes/phaladeepika-ch21-antardasha.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
+# level: translation-checked with checked_by and checked_on. Owner's decision 2026-11-12: nothing is hidden for being
+# unpleasant; a checker only confirms each row matches the text.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "197-207"
+
+# Verse 1 and the translator's notes (Kapoor, not Mantreswara): the good results show when the planet is well placed in
+# the chart and the bad ones when it is badly placed. Verse 84: judge the person's status, class, work and appearance too.
+
+# Not included, and why:
+#  - Ketu dasa, Venus sub-chapter and Mercury sub-chapter (verses 67 and 74): verse 67's heading is cut off in the
+#    translation, and verse 74 is labelled "Venus" where the standard order would put Mercury. We cannot tell which is
+#    which, so neither is used.
+#  - Verse 50 reads "antar dasa of Ketu in the dasa of Jupiter" but sits in the Saturn block; the order of the verses
+#    makes it Ketu in Saturn's dasa, which is what is used here. The checker should confirm.
+#  - Verse 33 ends in a garbled phrase ("skilful Mercury"); verse 52 ends "loss of wealth and rains". Both are
+#    paraphrased up to the clear part.
+effects:
+  sun:
+    sun:     {verse: 3,  text: "renown through the king's favour, gain of wealth, wandering in hills and forests, fever and heat troubles, and possibly the loss of the father"}
+    moon:    {verse: 4,  text: "defeat of enemies, relief from distress, inflow of wealth, farmland, building a house and meeting friends; if the Moon is badly placed, consumption, watery diseases and danger"}
+    mars:    {verse: 5,  text: "sickness, loss of position, trouble from enemies, hostility among relatives, fear of the king, loss of wealth and ulcers on the body"}
+    rahu:    {verse: 6,  text: "enemies rise, hostility, loss of wealth, theft, disaster, fear of poison, headache, eye trouble, and a leaning towards material pleasures"}
+    jupiter: {verse: 7,  text: "defeat of enemies, many kinds of wealth, regular worship of gods, Brahmins and teachers, hospitality to relatives, ear trouble and diseases like tuberculosis"}
+    saturn:  {verse: 8,  text: "loss of wealth, separation from a son, illness of the wife, the death of an elder (teacher, father or uncle), heavy spending, loss of clothes and household goods, uncleanliness and phlegm troubles"}
+    mercury: {verse: 9,  text: "skin eruptions, boils, leprosy, jaundice, waist and stomach pain, and trouble from all three humours (bile, phlegm and wind)"}
+    ketu:    {verse: 10, text: "loss of friends, misunderstanding in the family, fear of enemies, loss of wealth, illness of an elder relative, leg pains and severe headache"}
+    venus:   {verse: 11, text: "headache, stomach trouble, piles, farming ventures, loss of house and wealth, shortage of grain, and illness of children and wife"}
+  moon:
+    moon:    {verse: 12, text: "the birth of daughters, clean bright clothes, meeting a respected Brahmin, happiness for the mother, and bed comforts"}
+    mars:    {verse: 13, text: "bile troubles, fire, impure blood, distress from enemies and thieves, unhappiness and loss of wealth"}
+    rahu:    {verse: 14, text: "a serious reproach or blame, more enemies, illness among relatives, danger from storms and lightning, and illness from food, drink or indigestion"}
+    jupiter: {verse: 15, text: "delight in giving and grand deeds, honours from the king, meeting friends, new clothes and ornaments, and every kind of happiness"}
+    saturn:  {verse: 16, text: "many diseases, illness of a friend, son and wife, and danger of a great calamity or death"}
+    mercury: {verse: 17, text: "always gaining elephants, horses, cows, wealth, ornaments and property, happiness and self-knowledge"}
+    ketu:    {verse: 18, text: "loss of mental balance, danger from water, and loss of wealth, relatives and servants"}
+    venus:   {verse: 19, text: "dealing in gold, boats, jewels, women and farm produce, and gaining children, friends, cattle and grain"}
+    sun:     {verse: 20, text: "honour from the king, brave deeds, relief from disease, bile and wind troubles, victory over enemies and their downfall"}
+  mars:
+    mars:    {verse: 21, text: "bile and heat illnesses, danger of wounds, separation from brothers, hostility with relatives and the king, danger from thieves and fire, and money from farming and lawsuits"}
+    rahu:    {verse: 22, text: "danger from weapons, fire, thieves, enemies and the king, injury from poison, loss of an elder or teacher, diseases of the waist, eyes and head, and danger of death or calamity to the native"}
+    jupiter: {verse: 23, text: "worship of Brahmins and gods, pilgrimage, good deeds, hospitality to guests, the birth of children, new friends, and severe ear trouble or phlegm"}
+    saturn:  {verse: 24, text: "trouble after trouble for children and elders, countless calamities, loss of money through enemies, fear of illness from heat and wind, loss of wealth and mental distress"}
+    mercury: {verse: 25, text: "harassment by the king or governor, enmity with Shudras, fear of enemies and thieves, loss of wealth, loss of cattle, elephants and horses, and association with enemies"}
+    ketu:    {verse: 26, text: "danger from lightning, sudden trouble from fire and weapons, banishment from the country, loss of wealth, and the death of the native or loss of the wife"}
+    venus:   {verse: 27, text: "defeat in battle, living in a foreign country, theft, trouble in the left eye and loss of servants"}
+    sun:     {verse: 28, text: "honour from the king, greater glory through victory in battle, gaining servants, wealth, grain, women and a harem, and a wider livelihood through daring deeds"}
+    moon:    {verse: 29, text: "many kinds of wealth, the birth of a son, clothes, a bed, ornaments, gems and property, freedom from enemies, trouble to an elder, an enlarged spleen and excess bile"}
+  rahu:
+    rahu:    {verse: 30, text: "illness through water and poison, snake bite, relations with another man's wife, separation from or loss of loved ones, harsh speech, and mental anguish through wicked people"}
+    jupiter: {verse: 31, text: "happiness, worship of Brahmins and gods, freedom from disease, the company of an attractive woman, and discussing the scriptures with the learned"}
+    saturn:  {verse: 32, text: "disputes with wife, sons and brothers, loss of position, loss of servants, bodily injury, and wind and bile diseases"}
+    mercury: {verse: 33, text: "gain of wealth and children, the company of friends, a strong feeling of inferiority, and skill with adornment"}
+    ketu:    {verse: 34, text: "danger from fever, fire, weapons and enemies, headache, trembling, injury to friends, wounds and poison, and hostility with friends"}
+    venus:   {verse: 35, text: "marriage and enjoyment of married life, gaining elephants, horses and land, hostility with relatives, and wind and phlegm troubles"}
+    sun:     {verse: 36, text: "trouble from enemies, many calamities, poison and fire, injury from weapons, eye pain, great harm from the king or government, and distress to wife and children"}
+    moon:    {verse: 37, text: "loss of the wife, quarrels with others, mental anguish, trouble to friends, danger from water, and loss of farm produce, wealth, cattle and children"}
+    mars:    {verse: 38, text: "danger from the king, fire, thieves and weapons, the native's own death through a terrible disease, loss of position, heat troubles and eye trouble"}
+  jupiter:
+    jupiter: {verse: 39, text: "a rise in fortune, more lustre, respect from all sides, the birth of a son, good qualities, honour from the king, the company of a teacher and pious people, and all ambitions fulfilled"}
+    saturn:  {verse: 40, text: "association with prostitutes and drinking, though reaching higher eminence, distress to the family and cattle, extravagance, great fear, distress to children and eye trouble"}
+    mercury: {verse: 41, text: "one view: grief through women, gambling, drinking and an imbalance of the three humours; another view: worship of gods and Brahmins and gaining children, wealth and happiness"}
+    ketu:    {verse: 42, text: "wounds from weapons, hostility with servants, distress to wife and children, bile trouble, separation from elders and relatives, and danger to the native's own life"}
+    venus:   {verse: 43, text: "gaining wealth, cattle, grain, a wife, a son, food, drink, ornaments, a bed and household goods and enjoying them, and reverence to gods and Brahmins"}
+    sun:     {verse: 44, text: "victory over enemies, honour from the king, children and grandchildren, wealth, a palanquin and horses, and living in a populous city with every comfort"}
+    moon:    {verse: 45, text: "many women, wealth, worship of gods and Brahmins, name and fame, farming gains, trading profit and the destruction of enemies"}
+    mars:    {verse: 46, text: "satisfying relatives, wealth gained from many enemies, good land, charity, fame for power, and some injury to a teacher or elder or a severe eye injury"}
+    rahu:    {verse: 47, text: "distress between relatives, mental tension, sickness, danger from thieves, illness of a teacher or elder, stomach disorders, trouble from the king, more enemies and loss of wealth"}
+  saturn:
+    saturn:  {verse: 48, text: "farming gains, more buffaloes and servants, wealth from a Shudra, gaining an elderly woman, and more sinful deeds and laziness"}
+    mercury: {verse: 49, text: "rising fortune, honour from the king, victory over enemies, the company of women, success and friends, illness from the three humours, and sickness of brothers and children"}
+    ketu:    {verse: 50, text: "wind and fire troubles, trouble from enemies, constant quarrels with wife and children, danger from snakes and inauspicious happenings"}
+    venus:   {verse: 51, text: "happiness from wife, children and friends, more wealth from farming and sea trade, and becoming widely renowned"}
+    sun:     {verse: 52, text: "death or constant danger from enemies, sickness of a teacher or elder, stomach disorder, eye trouble and loss of wealth"}
+    moon:    {verse: 53, text: "the death of the native or loss of the wife, trouble to friends, danger from water and wind diseases, and a likelihood of falling sick"}
+    mars:    {verse: 54, text: "loss of position, quarrels with relatives, fever, trouble from fire, weapons and poison, more enemies, hernia and eye disease"}
+    rahu:    {verse: 55, text: "straying from righteousness, loss of life or danger from diabetes, an enlarged spleen, and continuous fever or wounds"}
+    jupiter: {verse: 56, text: "delight in worshipping gods and Brahmins, living happily in one's own house with children, and a large increase in wealth and grain"}
+  mercury:
+    mercury: {verse: 57, text: "following the path of the virtuous, the company of the learned, a clear unbiased mind, wealth through Brahmins, great fame through learning and lasting happiness"}
+    ketu:    {verse: 58, text: "loss of peace of mind through unhappiness, sorrow and quarrels, trembling of the body, association with enemies, and loss of crops and vehicles"}
+    venus:   {verse: 59, text: "worship of gods, teachers and Brahmins, charity and virtuous acts, gaining clothes and ornaments, and meeting friends"}
+    sun:     {verse: 60, text: "gaining gold, coral, horses, elephants and a house, comfort in food and drink, and honour from the king"}
+    moon:    {verse: 61, text: "headache, severe neck pain, eye trouble, leprosy, ringworm and danger to life"}
+    mars:    {verse: 62, text: "danger from fire, eye trouble, danger from thieves, continuous unhappiness, loss of position and wind disease"}
+    rahu:    {verse: 63, text: "headache, eye pain, stomach disorder, weakness from consumption or other disease, loss of wealth, danger from fire, poison and water, and loss of honour or position"}
+    jupiter: {verse: 64, text: "defeat of enemies, freedom from disease, success in gaining self-knowledge, honour from the king and strong interest in penance and religion"}
+    saturn:  {verse: 65, text: "heavy loss of wealth and righteousness, failure in every venture, and wind and phlegm diseases"}
+  ketu:
+    ketu:    {verse: 66, text: "quarrels with enemies, misunderstanding with friends, hearing bad words, fever and heat, loss of wealth, and taking shelter in another man's house"}
+    sun:     {verse: 68, text: "the death of a teacher or elder of the family, misunderstanding with relatives, fever, fighting a rebellion for the king, phlegm and wind disease, and gain from foreign trade"}
+    moon:    {verse: 69, text: "sudden gain or loss of wealth, separation from a son, a difficult childbirth causing much sorrow, gaining servants, and the birth of a daughter"}
+    mars:    {verse: 70, text: "quarrels in the family, loss of brothers, and danger from thieves, fire and enemies"}
+    rahu:    {verse: 71, text: "quarrels because of enemies, danger from the king, fire and thieves, harsh words from wicked people, and acts that harm others"}
+    jupiter: {verse: 72, text: "the birth of a very good son, worship of gods, gaining wealth and land, gifts from many places and honour from the king"}
+    saturn:  {verse: 73, text: "loss of servants, annoyance from or to others, quarrels with enemies, loss of a limb, and loss of position and wealth"}
+  venus:
+    venus:   {verse: 75, text: "plentiful clothes, ornaments, vehicles and perfumes, enjoyment of bed comforts, gain of wealth and a splendid body"}
+    sun:     {verse: 76, text: "diseases of the eye, stomach and cheeks, danger from the king, and trouble from elders of the family"}
+    moon:    {verse: 77, text: "injury to nails, head and teeth, wind and bile disease, loss of wealth, dysentery, consumption and an enlarged spleen"}
+    mars:    {verse: 78, text: "impure blood, bile disease, gaining and storing gold, copper and land, giving a young woman away in marriage, and loss of profession"}
+    rahu:    {verse: 79, text: "gain of wealth, the birth of a son, good speech, respect to and from the family, overcoming and imprisoning an enemy, and injury from poison, fire and thieves"}
+    jupiter: {verse: 80, text: "religious duties, worship of gods, the company of wife and children, and enjoyment from a position of authority"}
+    saturn:  {verse: 81, text: "honour from the public, the military, the police or the king, gaining a good wife, many kinds of wealth, and comforts and luxuries"}
+    mercury: {verse: 82, text: "comfort from sons, many properties and wealth, name and fame, power and authority, destruction of enemies, and diseases of the three humours"}
+    ketu:    {verse: 83, text: "separation from or loss of children, unhappiness, disease in a limb, much suffering through fire, losses, and association with prostitutes"}

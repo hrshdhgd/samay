@@ -428,11 +428,17 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
     start, end = report.start.astimezone(tz), report.end.astimezone(tz)
     lines = [f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}",
              f"Counted from {who.your} Moon sign, {SIGNS[report.moon_sign]} ({RASHIS[report.moon_sign]})."]
+    said = {(m, a): text for m, a, text, _ in report.antardasha}
+
+    def result(maha: str, antar: str) -> str:
+        return f"\n    The text: {said[maha, antar]}." if (maha, antar) in said else ""
+
     if report.dasha_at_start:
         maha, antar = report.dasha_at_start
-        lines.append(f"⏳ {maha.lord.title()} chapter, {antar.lord.title()} sub-chapter until {_day(antar.end)}.")
-    lines += [f"⏳ From {_day(a.start)}: {a.lord.title()} sub-chapter of the "
-              f"{lord.title()} chapter." for lord, a in report.dasha_changes]
+        lines.append(f"⏳ {maha.lord.title()} chapter, {antar.lord.title()} sub-chapter until {_day(antar.end)}."
+                     + result(maha.lord, antar.lord))
+    lines += [f"⏳ From {_day(a.start)}: {a.lord.title()} sub-chapter of the {lord.title()} chapter."
+              + result(lord, a.lord) for lord, a in report.dasha_changes]
     body = []
     by_planet: dict[str, list] = {}
     for s in report.stays:
@@ -447,13 +453,22 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
             body.append(f"{name}: " + "; then ".join(_stay_line(s, report, tz, checked, full, True, r)
                                                      for s, r in zip(stays, repeats, strict=True)))
     blocks = ["\n".join(lines), "\n".join(body)]
+    refs, editions = [], []
     if checked:
         blocks.append(prompts.OUTLOOK_KEY)
         if full:
             blocks.append(prompts.OUTLOOK_NOT_APPLIED)
         verses = sorted({s.verse for s in report.stays if s.verse}, key=lambda v: int(v.split("-")[0]))
-        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika 26.2–8, " + ", ".join(f"26.{v.replace('-', '–')}" for v in verses)
-                      + (f" ({report.rules_edition}, pp. {report.rules_pages})" if full else "") + " · checked")
+        refs += ["26.2–8", *(f"26.{v.replace('-', '–')}" for v in verses)]
+        editions.append(f"pp. {report.rules_pages}")
     else:
         blocks.append(prompts.OUTLOOK_UNCHECKED)
+    if report.antardasha_checked:
+        refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
+        editions.append(f"pp. {report.antardasha_pages}")
+    else:
+        blocks.append(prompts.OUTLOOK_DASHA_UNCHECKED)
+    if refs:
+        edition = f" ({report.rules_edition}; {', '.join(editions)})" if full else ""
+        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)}{edition} · checked")
     return "\n\n".join(blocks)

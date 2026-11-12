@@ -14,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 from . import narrate, service
+from .engine import antardasha, house_effects
 from .engine import entries as entry_store
-from .engine import house_effects
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
 from .engine.vedic import DASHA_YEARS, RASHIS, SIGNS, house_from, sign_index
@@ -303,6 +303,15 @@ def _transit_facts(report, who: Subject = SELF) -> list[str]:
     return out
 
 
+def _antardasha_fact(maha: str, antar: str) -> list[str]:
+    """What Phaladeepika 21 says for this sub-chapter, once its rules file has been checked."""
+    found = antardasha.load_rules().result(maha, antar)
+    if found is None:
+        return []
+    text, verse = found
+    return [f"For the {antar.title()} sub-chapter of the {maha.title()} chapter the text says: {text} (Phaladeepika 21.{verse})."]
+
+
 def _future_answer(
     birth: ResolvedBirth | None, now: datetime, entries_dir: Path | None, subject: Subject = SELF
 ) -> Answer:
@@ -321,6 +330,7 @@ def _future_answer(
     entries = entry_store.answers_for(f"dasha:{lord}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     own = [*_dasha_facts(lord, birth, now, subject),
            f"Inside it {subject.you_are} in the {antar.lord.title()} sub-chapter until {antar.end:%d %b %Y}.",
+           *_antardasha_fact(lord, antar.lord),
            *_planet_facts(lord, birth, subject)]
     reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
     shares = house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
@@ -464,6 +474,8 @@ def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
                    f"sub-chapter until {antar.end:%d %b %Y}.")
     out += [f"From {a.start:%d %b %Y}: the {a.lord.title()} sub-chapter of the {lord.title()} chapter."
             for lord, a in report.dasha_changes]
+    out += [f"Phaladeepika 21.{verse} on the {a.title()} sub-chapter of the {m.title()} chapter: {text}."
+            for m, a, text, verse in report.antardasha]
     for s in report.stays:
         when = ("all through the period" if s.start is None and s.end is None
                 else f"until {s.end:%d %b %Y}" if s.start is None

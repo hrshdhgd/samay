@@ -110,3 +110,7 @@ class OutlookReport:
     rules_level: str
     rules_edition: str
     rules_pages: str
+    antardasha: tuple[tuple[str, str, str, int], ...] = ()  # (mahadasha, antardasha, result, verse): Phaladeepika 21
+    antardasha_edition: str = ""
+    antardasha_pages: str = ""
+    antardasha_checked: bool = False

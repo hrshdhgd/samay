@@ -256,3 +256,98 @@ def test_another_persons_period_is_worded_for_them_and_the_ai_gets_the_facts(mon
     assert "🔮 Maya's month ahead" in text and "Maya's Moon sign" in text and prompts.MINOR_NOTE in text
     prompt = qa._ai_prompt("how is her month?", answer)
     assert "Phaladeepika chapter 26" in prompt and RULES.effects["jupiter"][9] in prompt
+
+
+# --- Phaladeepika 21: what each sub-chapter brings -----------------------------------------------------------------------
+from samay.engine import antardasha
+
+SUB = antardasha.load_rules()
+SUB_CHECKED = dataclasses.replace(SUB, level="translation-checked", checked_by="test")
+
+
+def test_the_antardasha_rules_cover_79_of_81_pairs_and_leave_out_the_two_unreadable_ones():
+    assert len(SUB.effects) == 79 and SUB.level == "unchecked"
+    missing = {(m, a) for m in antardasha.LORDS for a in antardasha.LORDS} - set(SUB.effects)
+    assert missing == {("ketu", "venus"), ("ketu", "mercury")}  # verses 67 and 74 cannot be told apart
+
+
+def test_verses_run_3_to_83_without_repeats():
+    verses = sorted(v for _, v in SUB.effects.values())
+    assert verses[0] == 3 and verses[-1] == 83 and len(set(verses)) == 79 and {67, 74}.isdisjoint(verses)
+
+
+def test_each_mahadasha_block_follows_the_text_order_of_verses():
+    # Jupiter's block is verses 39-47: Jupiter, Saturn, Mercury, Ketu, Venus, Sun, Moon, Mars, Rahu
+    order = ["jupiter", "saturn", "mercury", "ketu", "venus", "sun", "moon", "mars", "rahu"]
+    assert [SUB.effects["jupiter", a][1] for a in order] == list(range(39, 48))
+
+
+def test_known_results():
+    assert "death of the native or loss of the wife" in SUB.effects["saturn", "moon"][0]
+    assert "marriage" in SUB.effects["rahu", "venus"][0]
+    assert SUB.effects["jupiter", "mercury"][0].startswith("one view:")
+
+
+def test_the_unchecked_file_gives_nothing_and_the_checked_one_gives_text_and_verse():
+    assert SUB.result("sun", "moon") is None
+    text, verse = SUB_CHECKED.result("sun", "moon")
+    assert verse == 4 and "defeat of enemies" in text
+    assert SUB_CHECKED.result("ketu", "venus") is None
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["effects"].update(pluto={}),
+    lambda r: r["effects"]["sun"].update(pluto={"verse": 1, "text": "x"}),
+    lambda r: r["effects"]["sun"]["sun"].update(text=""),
+    lambda r: r["effects"]["sun"]["sun"].update(verse="3"),
+    lambda r: r["effects"]["sun"]["moon"].update(verse=3),  # a repeated verse
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_antardasha_file_is_rejected(tmp_path, change):
+    raw = yaml.safe_load(antardasha.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises((ValueError, TypeError)):
+        antardasha.load_rules(path)
+
+
+@needs_kernel
+def test_unchecked_antardasha_results_are_not_shown_and_the_wait_is_said():
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
+    assert prompts.OUTLOOK_DASHA_UNCHECKED in text and "The text:" not in text
+    assert not any(t in text for t, _ in SUB.effects.values())
+
+
+@needs_kernel
+def test_checked_antardasha_results_appear_under_their_dasha_lines_with_sources(monkeypatch):
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
+    # at the start: Rahu mahadasha, Saturn antardasha (verse 32); from 9 Jul 2029: Mercury antardasha (verse 33)
+    assert SUB.effects["rahu", "saturn"][0] in text and SUB.effects["rahu", "mercury"][0] in text
+    assert "21.32" in text and "21.33" in text and prompts.OUTLOOK_DASHA_UNCHECKED not in text
+    report = qa.answer_topic("future:years", _birth(), NOW).outlook
+    assert {(m, a) for m, a, _, _ in report.antardasha} == {("rahu", "saturn"), ("rahu", "mercury")}
+
+
+@needs_kernel
+def test_the_period_of_life_answer_gets_the_sub_chapters_result_and_the_ai_sees_it(monkeypatch):
+    plain = qa.answer_topic("future:overview", _birth(), NOW)
+    assert not any("the text says" in f for f in plain.facts)
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    answer = qa.answer_topic("future:overview", _birth(), NOW)
+    line = next(f for f in answer.facts if "the text says" in f)
+    assert SUB.effects["rahu", "saturn"][0] in line and "(Phaladeepika 21.32)" in line
+    assert line in qa._ai_prompt("how is my life now?", answer)
+
+
+@needs_kernel
+def test_every_view_still_fits_in_one_message_with_both_rule_files_checked(monkeypatch):
+    monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune")]:
+        birth = service.resolve_birth(BirthInput(*born))
+        for topic in qa.OUTLOOK_TOPICS:
+            answer = qa.answer_topic(topic, birth, NOW)
+            for view in ("compact", "full"):
+                assert len(render_answer(answer, view)) < 4096, (born, topic, view)

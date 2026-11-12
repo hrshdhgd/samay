@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
-from .engine import daylight, entries, ephemeris, geo, gochara, house_effects, timestd
+from .engine import antardasha, daylight, entries, ephemeris, geo, gochara, house_effects, timestd
 from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
 from .engine.geo import Place
@@ -209,10 +209,16 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
         if maha.end <= start or maha.start >= end:
             continue
         changes += [(maha.lord, a) for a in antardashas(maha) if start < a.start < end]
+    at_start = current_dasha(moon_lon, birth.utc, start, profile.dasha_year_days)
+    sub = antardasha.load_rules()
+    pairs = [(at_start[0].lord, at_start[1].lord)] if at_start else []
+    pairs += [(lord, a.lord) for lord, a in changes]
+    results = tuple((m, a, *sub.result(m, a)) for m, a in dict.fromkeys(pairs) if sub.result(m, a))
     return OutlookReport(
         natal=natal, span=span, start=start, end=end, tz=tz or birth.place.tz, moon_sign=moon_sign,
-        stays=tuple(found), dasha_at_start=current_dasha(moon_lon, birth.utc, start, profile.dasha_year_days),
+        stays=tuple(found), dasha_at_start=at_start,
         dasha_changes=tuple(changes), rules_level=rules.level, rules_edition=rules.edition, rules_pages=rules.pages,
+        antardasha=results, antardasha_edition=sub.edition, antardasha_pages=sub.pages, antardasha_checked=sub.servable,
     )
 
 
