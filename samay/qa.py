@@ -16,6 +16,7 @@ from pathlib import Path
 from . import narrate, service
 from .engine import (
     antardasha,
+    ascendants,
     ashtakavarga,
     chandra_yogas,
     conjunctions,
@@ -81,6 +82,7 @@ MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "t
 COMPUTED_PREFIXES = ("future:", "chart:")
 KALAPURUSHA_WORDS = ("kalapurusha", "kalapurush", "purusha")
 LAGNA_WORDS = ("lagna", "ascendant", "rising")
+LAGNA_DESCRIBE = ("like", "describe", "appearance", "looks", "look", "nature", "body", "personality")
 ORDINAL_WORDS = {
     "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5, "sixth": 6, "seventh": 7, "eighth": 8,
     "ninth": 9, "tenth": 10, "eleventh": 11, "twelfth": 12,
@@ -119,7 +121,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -222,6 +224,8 @@ class Answer:
     death_checked: bool = False
     upagrahas: upagrahas.Upagrahas | None = None  # chart:upagrahas
     upagrahas_checked: bool = False
+    lagna: dict | None = None  # chart:lagna
+    lagna_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -252,6 +256,8 @@ def sort_question(text: str) -> str | None:
         return "chart:conjunctions"
     if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:yogas"
+    if any(w in LAGNA_WORDS for w in words) and any(w in LAGNA_DESCRIBE for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:lagna"
     if any(w in UPAGRAHA_WORDS for w in words):
         return "chart:upagrahas"
     if not planets and "when" in words and any(w in DEATH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
@@ -299,6 +305,7 @@ TOPIC_HELP = {
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
+    "chart:lagna": "what the person's rising sign (lagna, ascendant) says of their body and temperament: 'what is my rising sign like'",
     "chart:upagrahas": "the person's Gulika (Mandi) and the other upagrahas, the shadowy points of the chart, and what the old book says of them",
     "chart:women": "the old book's pointers about a woman's husband, marriage and children (a sensitive topic: the bot asks first)",
     "chart:houses": "which houses of the chart are helped or harmed, and why (the strength of each house)",
@@ -603,6 +610,12 @@ def answer_topic(
         area = topic[len(WHEN_PREFIX):]
         report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
+    if topic == "chart:lagna":
+        ar, nat = ascendants.load_rules(), moon_nature.load_rules()
+        sign = sign_index(service.natal_report(birth).chart.ascendant) if birth is not None else None
+        view = None if sign is None else {"sign": sign, "pd": ar.text(sign), "bj": nat.signs[sign] if nat.servable else None,
+                                          "pd_frame": ar.frame, "moon_rule": ar.moon_rule["text"], "edition": ar.edition, "pages": ar.pages, "pd_checked": ar.servable}
+        return Answer(topic, (), (), lagna=view, lagna_checked=ar.servable or nat.servable, who=subject)
     if topic == "chart:upagrahas":
         ur = upagrahas.load_rules()
         found = service.upagraha_report(birth) if birth is not None else None
@@ -728,6 +741,9 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += health_facts(answer.health, answer.who)
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
+    if answer.lagna:
+        verified += [f"Phaladeepika {answer.lagna['pd'][0]} on a rising sign of {SIGNS[answer.lagna['sign']]}: {answer.lagna['pd'][1]}."] if answer.lagna['pd'] else []
+        verified += [f"Brihat Jataka XVII (also said of the rising sign): a person born with it {answer.lagna['bj'].text}"] if answer.lagna['bj'] else []
     if answer.upagrahas is not None:
         verified += [f"Phaladeepika {v}, {h}: {t}." for v, h, t in answer.upagrahas.effects]
     if answer.death is not None:

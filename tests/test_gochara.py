@@ -2170,3 +2170,45 @@ def test_a_malformed_upagraha_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises((ValueError, KeyError)):
         upagrahas.load_rules(path)
+
+
+# --- Phaladeepika 9: the rising sign ---------------------------------------------------------------------------------------------
+from samay.engine import ascendants
+
+AS = ascendants.load_rules()
+AS_CHECKED = dataclasses.replace(AS, level="translation-checked", checked_by="test")
+
+
+def test_all_twelve_ascendant_descriptions_are_present_and_gated():
+    assert len(AS.signs) == 12 and AS.level == "unchecked" and AS.text(0) is None
+    assert AS_CHECKED.text(8)[0] == "9.9" and "eloquent" in AS_CHECKED.text(8)[1]
+
+
+@needs_kernel
+def test_the_lagna_answer_shows_both_books_once_checked_and_is_routed(monkeypatch):
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.LAGNA_UNCHECKED in render_answer(qa.answer_topic("chart:lagna", born, NOW))
+    monkeypatch.setattr(ascendants, "load_rules", lambda path=None: AS_CHECKED)
+    monkeypatch.setattr(moon_nature, "load_rules", lambda path=None: MN_CHECKED)
+    answer = qa.answer_topic("chart:lagna", born, NOW)
+    text = render_answer(answer)
+    sign = answer.lagna["sign"]
+    assert "Libra" in text and f"Phaladeepika {AS.signs['Libra']['verse']}" in text and "Brihat Jataka 17." in text and "· checked" in text
+    assert qa.sort_question("what is my rising sign like") == "chart:lagna" and qa.sort_question("describe my ascendant") == "chart:lagna"
+    assert qa.sort_question("what is my ascendant") == "house:1" and sign == 6
+    assert "Phaladeepika 9." in qa._ai_prompt("what is my lagna like", answer)
+    assert render_answer(qa.answer_topic("chart:lagna", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_LAGNA
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["signs"].pop("Pisces"),
+    lambda r: r["signs"]["Aries"].update(text=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_ascendant_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(ascendants.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ascendants.load_rules(path)

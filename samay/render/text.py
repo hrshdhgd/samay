@@ -344,6 +344,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:lagna" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_LAGNA
     if answer.topic == "chart:upagrahas" and not birth_known:
         return prompts.NEED_BIRTH_FOR_UPAGRAHAS
     if answer.topic == "chart:death_timing" and not birth_known:
@@ -363,6 +365,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:lagna":
+        blocks.append(render_lagna(answer, who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:upagrahas":
         blocks.append(render_upagrahas(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -526,6 +532,26 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_lagna(answer, who=SELF) -> str:
+    """The rising sign as Phaladeepika 9 describes it, with Brihat Jataka's Moon-in-sign text (which the translator says holds for the rising sign too)."""
+    v = answer.lagna
+    if v is None:
+        return prompts.NEED_BIRTH_FOR_LAGNA
+    title = f"🌅 {who.Your} rising sign is {SIGNS[v['sign']]} ({RASHIS[v['sign']]})"
+    if not answer.lagna_checked:
+        return f"{title}\n\n{prompts.LAGNA_UNCHECKED}"
+    blocks = [title]
+    refs = []
+    if v["pd"]:
+        blocks.append(f"Phaladeepika {v['pd'][0]}: “A person with {SIGNS[v['sign']]} rising has {v['pd'][1]}.”\n{v['pd_frame']} {v['moon_rule']}")
+        refs.append(f"Phaladeepika {v['pd'][0]}")
+    if v["bj"]:
+        blocks.append(f"Brihat Jataka 17.{v['bj'].verse}, said of the Moon in {SIGNS[v['sign']]} and, the translator notes, of the rising sign as well:\n“A person born with it {v['bj'].text}”")
+        refs.append(f"Brihat Jataka 17.{v['bj'].verse}")
+    blocks.append(f"Source: {'; '.join(refs)} · checked")
+    return "\n\n".join(blocks)
 
 
 def render_upagrahas(answer, who=SELF, full: bool = False) -> str:

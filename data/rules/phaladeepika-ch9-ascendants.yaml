@@ -1,0 +1,25 @@
+# Phaladeepika chapter 9 ("Effects of different ascendants"), verses 1-13: what the rising sign says of a person's body, temperament and life. Source: Mantreswara's
+# Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 105-107 (PDF pages 104-106).
+# PARAPHRASED. Notes: research/notes/phaladeepika-ascendants.md.
+#
+# UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "105-107"
+
+frame: "These are an old text's descriptions of a person by the rising sign. They are broad pictures, written long ago, and no one fits all of one. The book adds (9.13) that the same is said when the Moon is in that sign."
+moon_rule: {verse: "9.13", text: "Whatever is said of a rising sign is also said to come to pass if the Moon is in that sign."}
+
+signs:
+  Aries:       {verse: "9.1",  text: "round eyes, weak knees, an aggressive temperament yet afraid of water; active and always on the move, with bruised limbs; eats sparingly, is passionate and speaks falsehoods"}
+  Taurus:      {verse: "9.2",  text: "plump thighs and a big face, engaged in farming ventures, happy in the middle and last parts of life, fond of the company of young women; sacrificing and forgiving, able to endure hardship, owns cattle and has moles on the back, face and sides"}
+  Gemini:      {verse: "9.3",  text: "black eyes and curly hair, enjoys the company of women, a thick neck and many friends; intelligent, able to read minds, with a raised nose, fond of music and dancing and of staying indoors"}
+  Cancer:      {verse: "9.4",  text: "henpecked, with a thick neck, fond of making friends, owning many houses and wealthy; a thick waist but short, intelligent, fond of water sports such as swimming, a fast walker with few sons, and crooked"}
+  Leo:         {verse: "9.5",  text: "reddish eyes, a large chin and broad face; arrogant, powerful, valiant and firm-minded, obedient to his mother, fond of roaming forests and hills, and quick to anger over trifles"}
+  Virgo:       {verse: "9.6",  text: "truthful and kind in speech, with bashful eyes, liked at once by others; well versed in the Shastras, takes advantage of other people's houses and wealth, with drooping arms and shoulders and few sons"}
+  Libra:       {verse: "9.7",  text: "reveres gods and Brahmins, active, with a lean thin body and tall stature; deft in trade, patient and intent on being first, often has two names, few children and a fondness for wandering; brave, merciless and impartial in arguments"}
+  Scorpio:     {verse: "9.8",  text: "rounded thighs and knees, a broad chest and wide eyes; suffers diseases from an early age and is separated from parents and teacher; does cruel things yet is honoured by the king, and has lotus marks on the feet"}
+  Sagittarius: {verse: "9.9",  text: "a long face and neck, big nose and ears, always busy with some work; eloquent and self-sacrificing, short, courageous and able to overcome his enemies; wealthy, a favourite of the king, and won over by persuasion and kindness"}
+  Capricorn:   {verse: "9.10", text: "weak lower limbs and little vitality; takes other people's advice but is lazy, has affairs with old women of a forbidden kind, is a religious hypocrite and fond of wandering; fortunate but shameless, and suffers wind diseases"}
+  Aquarius:    {verse: "9.11", text: "commits sinful acts in secret, has little wealth, is greedy and eager to take other people's money; endures long marches, is clever at hurting others, has a body like a water pot, is fond of perfumes and flowers, and has fluctuating finances"}
+  Pisces:      {verse: "9.12", text: "a beautiful symmetrical body and attractive eyes; learned, grateful and contented, with a wife and good fortune; gains money from selling the produce of the sea, and overcomes his enemies"}
