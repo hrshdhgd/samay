@@ -712,6 +712,15 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
         blocks.append("\n".join(lines))
     else:
         blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapter 6)")
+    if view.ch7_checked:
+        if view.ch7:
+            lines = ["Raja yogas and cancelled debilitations from Phaladeepika chapter 7:"]
+            lines += [f"• {f.detail}: {f.text[0].upper()}{f.text[1:]}." for f in view.ch7]
+            lines.append(view.ch7_frame)
+            lines.append("Source: Phaladeepika " + ", ".join(sorted({f.verse for f in view.ch7}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + " · checked")
+            blocks.append("\n".join(lines))
+    else:
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapter 7: raja yogas and Neechabhanga)")
     if view.raja_checked:
         if view.raja:
             lines = ["Raja yogas of Brihat Jataka chapter 11:"]

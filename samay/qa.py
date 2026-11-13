@@ -29,6 +29,7 @@ from .engine import (
     moon_aspects,
     moon_nature,
     nabhasa,
+    phaladeepika_raja,
     phaladeepika_yogas,
     planet_houses,
     raja_yogas,
@@ -145,6 +146,9 @@ class YogasView:
     raja: tuple
     raja_checked: bool
     raja_family: str
+    ch7: tuple = ()  # Phaladeepika 7: raja yogas and Neechabhanga
+    ch7_checked: bool = False
+    ch7_frame: str = ""
 
 
 @dataclass(frozen=True)
@@ -448,8 +452,10 @@ def _yogas_view(birth: ResolvedBirth | None) -> YogasView | None:
         return None
     chart = service.natal_report(birth).chart
     nab, pd6, raja = nabhasa.load_rules(), phaladeepika_yogas.load_rules(), raja_yogas.load_rules()
+    ch7 = phaladeepika_raja.load_rules()
     return YogasView(nabhasa.find(nab, chart), phaladeepika_yogas.find(pd6, chart), pd6.servable, pd6.blemish_note,
-                     raja_yogas.find(raja, chart), raja.servable, raja.family["verse"] + ": " + raja.family["anyone"])
+                     raja_yogas.find(raja, chart), raja.servable, raja.family["verse"] + ": " + raja.family["anyone"],
+                     phaladeepika_raja.find(ch7, chart), ch7.servable, ch7.frame)
 
 
 def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
@@ -817,6 +823,7 @@ def yoga_facts(view: YogasView, who: Subject = SELF) -> list[str]:
     out = [f"Brihat Jataka 12 ({y.name} yoga; {y.detail}): a person born under it {y.text}" for y in view.nabhasa.yogas]
     out += [f"Phaladeepika {f.verse}, {f.name} ({f.detail}): {f.text}." for f in view.chapter6]
     out += [f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja]
+    out += [f"Phaladeepika {f.verse} ({f.detail}): {f.text}." for f in view.ch7]
     return out
 
 

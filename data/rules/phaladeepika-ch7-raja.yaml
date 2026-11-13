@@ -1,0 +1,56 @@
+# Phaladeepika chapter 7 ("Raja yogas"): the combinations that make a king or a person of high standing, and the five Neechabhanga raja yogas that cancel a
+# planet's debilitation. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
+# printed pages 83-91 (PDF pages 82-90). PARAPHRASED. Conditions coded in samay/engine/phaladeepika_raja.py; `definition` says each in words.
+# Notes and what was left out: research/notes/phaladeepika-raja.md.
+#
+# UNCHECKED: nothing is shown until a person checks each row and its definition and sets level: translation-checked. Owner's decision 2026-11-12: nothing hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "83-91"
+
+frame: "These are an old text's marks of high standing. The book says some of them make a king even from an ordinary family; the translator notes that an exalted or strong planet only gives its full result when it is well placed and free of malefic influence, so treat 'king' as 'a person of unusual standing'."
+
+yogas:
+  three_strong_kendras: {verse: "7.1", definition: "Three or more planets of the seven, each in its own, moolatrikona or exaltation sign, each in a kendra (1st, 4th, 7th, 10th) from the lagna.", text: "a widely renowned king; with five or more so placed, even a person of an ordinary family rules the earth"}
+  one_strong_retrograde: {verse: "7.3", definition: "A planet among Mars, Mercury, Jupiter, Venus, Saturn that is retrograde, not combust, and not in the 6th, 8th or 12th house (even if in its debilitation sign). The book wants this of one planet for 'equal to a king' and three for 'a king'.", text: "even one such planet, though in debilitation, makes a person equal to a king; three or more make a king"}
+  digbala: {verse: "7.4", definition: "Planets with directional strength by whole-sign house: the Sun and Mars in the 10th, the Moon and Venus in the 4th, Mercury and Jupiter in the 1st, Saturn in the 7th. Two or more for 'victorious everywhere'; four or more, not counting Saturn, for a king from any family. (The book measures this from the middle of the house; whole signs are used here.)", text: "with two or more planets having directional strength a person of a royal family is victorious everywhere; with four or five (Saturn excluded) even one of ordinary family becomes a king"}
+  vargottama_lagna_moon: {verse: "7.5", definition: "The lagna and the Moon are both in the same sign as in the navamsa (vargottama), and four planets other than the Moon aspect the lagna (full sights).", text: "a king even from a low family"}
+  vargottama_lagna_lord: {verse: "7.6", definition: "The lord of the lagna is vargottama and stands in a kendra or trikona in its own or exaltation sign (our reading of a garbled verse).", text: "a king who rides in a golden howdah on an elephant with chowries on both sides"}
+  full_moon_aspected: {verse: "7.7", definition: "The Moon is nearly full (within 36 degrees of opposite the Sun) and is aspected by a planet in its own or exaltation sign.", text: "a king, even if his birth is of doubtful legitimacy"}
+  full_moon_kendra: {verse: "7.7", definition: "The Moon is nearly full and in the 4th, 7th or 10th house.", text: "a king with elephants and horses"}
+  venus_ashwini: {verse: "7.8", definition: "Venus is in the lagna, in the Ashwini nakshatra, aspected by three planets.", text: "a powerful king able to overcome his enemies"}
+  lagna_lord_second: {verse: "7.8", definition: "The lord of the lagna is in its own, moolatrikona or exaltation sign, in the 2nd house with Venus, and Venus is not in its debilitation or an enemy's sign.", text: "a king"}
+  mars_cardinal_lagna: {verse: "7.9", definition: "Mars is in Aries or Sagittarius, which is also the lagna, and a friendly planet aspects it.", text: "a king"}
+  ninth_tenth_exchange: {verse: "7.9", definition: "The lord of the 9th is in the 10th and the lord of the 10th is in the 9th.", text: "a king praised by all (the book calls this a very powerful raja yoga)"}
+  sun_moon_sagittarius: {verse: "7.10", definition: "The Sun and the Moon together in the middle of Sagittarius (10 to 20 degrees), Saturn in the lagna, Mars in its exaltation sign.", text: "an extremely valiant king whom enemies salute from afar"}
+  moon_leo_navamsa: {verse: "7.11", definition: "The Moon is nearly full and in a Leo navamsa, with a benefic (Mercury, Jupiter, Venus) in a kendra and no malefic (Sun, Mars, Saturn, Rahu, Ketu) in any kendra.", text: "a king with many elephants"}
+  moon_three_own_navamsa: {verse: "7.12", definition: "The Moon is nearly full, and three other planets are each in their own navamsa, not in a debilitation or enemy's sign, and each aspected by a benefic.", text: "lord of the earth who defeats his enemies"}
+  vargottama_moon: {verse: "7.13", definition: "The Moon is vargottama, aspected by a planet in its own or exaltation sign, and no malefic is in the lagna.", text: "an emperor with a fine body"}
+  full_vargottama_moon: {verse: "7.17", definition: "The Moon is nearly full and vargottama.", text: "a powerful, renowned king whose army's dust hides the sun"}
+  jupiter_moon_kendra: {verse: "7.18", definition: "Jupiter and the Moon are both in kendras (from the lagna), aspected by Venus, and no planet is in its debilitation sign.", text: "a king of unequalled fame"}
+  moon_water_sign: {verse: "7.19", definition: "The Moon is in Cancer, Scorpio or Pisces, her navamsa sign is the lagna sign, and no malefic is in a kendra.", text: "a king with many elephants"}
+  venus_jupiter_aspect: {verse: "7.20", definition: "Venus is aspected by Jupiter.", text: "a king, for one born in a royal family"}
+  jupiter_lagna: {verse: "7.20", definition: "Jupiter is in the lagna, in any sign other than Capricorn.", text: "a king with many elephants"}
+  lagna_lord_kendra: {verse: "7.20", definition: "The lord of the lagna is in its own, moolatrikona or exaltation sign and in a kendra.", text: "a king"}
+  mercury_kendra_jupiter: {verse: "7.20", definition: "Mercury is in its own, moolatrikona or exaltation sign, in a kendra, and aspected by Jupiter.", text: "so influential that kings act on his advice"}
+  exalted_with_friend_aspect: {verse: "7.21", definition: "A planet is in its exaltation sign and a planet friendly to it (by Brihat Jataka chapter 20) aspects it.", text: "can become a king; if a friend is also with it, extremely rich and prosperous"}
+  sun_own_navamsa_moon_own_sign: {verse: "7.21", definition: "The Sun is in a Leo navamsa and the Moon is in Cancer.", text: "a king with many horses and elephants"}
+  moon_pisces_full: {verse: "7.22", definition: "The Moon is nearly full, in Pisces, and a friendly planet aspects her.", text: "a king of pre-eminent position, a delight to the world"}
+  moon_exalted_full: {verse: "7.22", definition: "The Moon is nearly full and in Taurus (her exaltation sign).", text: "a very generous, charitable and praiseworthy king"}
+  malefics_3_6_11: {verse: "7.24", definition: "Malefics (Sun, Mars, Saturn) stand in each of the 3rd, 6th and 11th houses from the lagna (the book also names the Moon and the lagna lord's house as starting points; only the lagna is used).", text: "a raja yoga"}
+  mars_mercury_second: {verse: "7.24", definition: "Mars and Mercury are both in the 2nd house.", text: "a raja yoga"}
+  sun_venus_fourth: {verse: "7.24", definition: "The Sun and Venus are both in the 4th house.", text: "a raja yoga"}
+  mars_saturn_jupiter: {verse: "7.24", definition: "Mars in the 10th, Saturn in the 11th and Jupiter in the lagna.", text: "a raja yoga"}
+  lords_from_moon: {verse: "7.25", definition: "One of the lords of the 11th, 9th and 2nd houses is in a kendra from the Moon, and Jupiter rules the 2nd, 5th or 11th house.", text: "lord of a full empire"}
+
+# Verses 26-30: Neechabhanga, the cancellation of debilitation. Applies to each of the seven planets that stands in its debilitation sign.
+# The translator (and Jataka Parijata) holds that any one of the conditions is enough; another commentator wants both of the first two.
+neechabhanga:
+  verse: "7.26–30"
+  text: "a planet in its debilitation sign has that debilitation cancelled, and this makes a raja yoga: a powerful king, an emperor revered by kings"
+  note: "The translator holds that any one of these conditions cancels the debilitation (Shri Subrahmanya Shastri and Jataka Parijata agree); Pt. Gopesh Kumar Ojha wanted both of the first two together. The planet 'exalted in that sign' is taken as the translator prefers (for Saturn in Aries, the Sun)."
+  conditions:
+    sign_or_exaltation_lord_kendra: "the lord of the debilitation sign, or the planet that is exalted in that sign, is in a kendra from the lagna or from the Moon (verses 26, 29 and the translator's notes 1 and 4)"
+    mutual_kendras: "the lord of the debilitation sign and the lord of the sign in which the planet is exalted are in kendras from each other (verse 27)"
+    aspected_by_sign_lord: "the debilitated planet is aspected by the lord of its debilitation sign (verse 28)"
+    planet_in_kendra: "the debilitated planet is itself in a kendra from the lagna or from the Moon (verse 30)"

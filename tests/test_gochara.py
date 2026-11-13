@@ -1202,12 +1202,13 @@ def test_three_exalted_planets_and_the_count_of_strong_planets():
 def test_the_yogas_answer_hides_each_source_until_it_is_checked_and_then_shows_all(monkeypatch):
     born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
     waiting = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert waiting.count(prompts.YOGAS_UNCHECKED) == 3 and "Source:" not in waiting
+    assert waiting.count(prompts.YOGAS_UNCHECKED) == 4 and "Source:" not in waiting
     monkeypatch.setattr(nabhasa, "load_rules", lambda path=None: NB_CHECKED)
     only_nabhasa = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 2 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
+    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 3 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
     monkeypatch.setattr(phaladeepika_yogas, "load_rules", lambda path=None: P6_CHECKED)
     monkeypatch.setattr(raja_yogas, "load_rules", lambda path=None: RJ_CHECKED)
+    monkeypatch.setattr(phaladeepika_raja, "load_rules", lambda path=None: R7_CHECKED)
     answer = qa.answer_topic("chart:yogas", born, NOW)
     text = render_answer(answer)
     assert prompts.YOGAS_UNCHECKED not in text and "Yogas from Phaladeepika chapter 6" in text and "without blemish" in text
@@ -2013,3 +2014,77 @@ def test_the_death_timing_answer_is_sensitive_names_no_date_and_fits_messages(mo
     assert answer.death is not None and len(answer.death.results) == 5
     assert render_answer(qa.answer_topic("chart:death_timing", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_DEATH
     assert not re.search(r"is (due|expected|predicted) to die", text) and "will die on" not in text
+
+
+# --- Phaladeepika 7: raja yogas and Neechabhanga -----------------------------------------------------------------------------
+from samay.engine import phaladeepika_raja
+
+R7 = phaladeepika_raja.load_rules()
+R7_CHECKED = dataclasses.replace(R7, level="translation-checked", checked_by="test")
+
+
+def _r7(lagna=0, **where):
+    """A made-up chart; unnamed bodies sit in the 3rd house (no chapter 7 rule looks there), Moon and Sun far apart so the Moon is not full."""
+    calm = {b: (lagna + 2) % 12 for b in phaladeepika_raja.BODIES}
+    return {f.key: f for f in phaladeepika_raja.find(R7_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))}
+
+
+def test_the_chapter_7_file_matches_the_code_and_waits_for_a_check():
+    assert set(R7.yogas) == set(phaladeepika_raja.DETECTORS) and len(R7.yogas) == 31 and R7.level == "unchecked"
+    assert phaladeepika_raja.find(R7, _full_sky()) == () and all(y["definition"] for y in R7.yogas.values())
+
+
+def test_three_strong_planets_in_kendras_and_the_retrograde_rule():
+    got = _r7(mars=(0, 15.0), sun=(0, 15.0), jupiter=(3, 15.0))      # Aries lagna: Mars own, Sun exalted, Jupiter exalted in Cancer (the 4th)
+    assert "three_strong_kendras" in got and "three_strong_kendras" not in _r7(mars=(0, 15.0), sun=(0, 15.0))
+    assert "one_strong_retrograde" not in _r7()                      # nothing in the made-up sky is retrograde (the helper sets retrograde False)
+
+
+def test_digbala_and_the_exchange_and_the_small_combinations():
+    assert "digbala" in _r7(sun=(9, 15.0), moon=(3, 15.0))           # the Sun in the 10th, the Moon in the 4th
+    assert "digbala" not in _r7(sun=(9, 15.0))
+    assert "ninth_tenth_exchange" in _r7(jupiter=(9, 15.0), saturn=(8, 15.0))   # 9th lord Jupiter in the 10th; 10th lord Saturn in the 9th
+    assert "mars_mercury_second" in _r7(mars=1, mercury=1) and "sun_venus_fourth" in _r7(sun=3, venus=3)
+    assert "mars_saturn_jupiter" in _r7(mars=9, saturn=10, jupiter=0)
+    assert "malefics_3_6_11" in _r7(sun=2, mars=5, saturn=10)
+    assert "jupiter_lagna" in _r7(jupiter=(0, 15.0)) and "jupiter_lagna" not in _r7(lagna=9, jupiter=(9, 15.0))
+
+
+def test_neechabhanga_each_of_the_four_conditions():
+    # Saturn debilitated in Aries (sign 0). Lord of Aries is Mars; the Sun is exalted in Aries.
+    kendra = _r7(lagna=0, saturn=(0, 15.0), mars=(3, 15.0))          # Mars in Cancer, the 4th from the lagna
+    assert "neechabhanga" in kendra and "lord of that sign" in kendra["neechabhanga"].detail
+    sun_here = _r7(lagna=1, saturn=(0, 15.0), sun=(4, 15.0))         # Taurus lagna: Saturn in the 12th; the Sun in Leo is the 4th: "the planet exalted in it"
+    assert "neechabhanga" in sun_here and "exalted in it" in sun_here["neechabhanga"].detail
+    mutual = _r7(lagna=2, saturn=(0, 15.0), mars=(5, 15.0), venus=(8, 15.0))   # Mars (Aries lord) and Venus (Saturn's exaltation-sign lord, Libra) 4 signs apart? Virgo to Sagittarius: 4th
+    assert "neechabhanga" in mutual
+    aspect = _r7(lagna=2, saturn=(0, 15.0), mars=(6, 15.0))          # Mars in Libra sees Aries by its 7th sight
+    assert "neechabhanga" in aspect and "aspects it" in aspect["neechabhanga"].detail
+    none = _r7(lagna=1, moon=2, saturn=(0, 15.0), mars=(3, 15.0), venus=(4, 15.0), sun=(3, 15.0))    # none holds (Mars in Cancer is itself debilitated, so check Saturn only)
+    assert "Saturn is debilitated" not in (none["neechabhanga"].detail if "neechabhanga" in none else "") and "neechabhanga" not in _r7(lagna=0)
+
+
+@needs_kernel
+def test_chart_7_yogas_appear_in_the_yogas_answer_only_once_checked(monkeypatch):
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Phaladeepika chapter 7" in render_answer(qa.answer_topic("chart:yogas", born, NOW))
+    monkeypatch.setattr(phaladeepika_raja, "load_rules", lambda path=None: R7_CHECKED)
+    answer = qa.answer_topic("chart:yogas", born, NOW)
+    text = render_answer(answer)
+    assert "Raja yogas and cancelled debilitations from Phaladeepika chapter 7:" in text and "debilitated" in text
+    assert "Phaladeepika 7." in qa._ai_prompt("which yogas do I have?", answer)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["yogas"].pop("digbala"),
+    lambda r: r["yogas"]["digbala"].update(definition=""),
+    lambda r: r["neechabhanga"]["conditions"].pop("mutual_kendras"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_chapter_7_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(phaladeepika_raja.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        phaladeepika_raja.load_rules(path)
