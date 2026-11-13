@@ -372,7 +372,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return "\n\n".join(blocks)
     if answer.topic in OUTLOOK_TOPICS:
         if answer.outlook is not None:
-            blocks.append(render_outlook(answer.outlook, full=full, who=who))
+            blocks.append(render_outlook(answer.outlook, full=True, who=who) if full else render_outlook_plain(answer.outlook, who))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic.startswith("life:"):
@@ -786,6 +786,72 @@ def _stay_line(s, report: OutlookReport, tz: ZoneInfo, checked: bool, full: bool
     elif checked and full and s.vedha_house and s.effect and not repeat:
         line += f" (unless a planet is in the {ordinal(s.vedha_house)}: vedha)"
     return line
+
+
+def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
+    """The period ahead in everyday words: the life chapter, when things change, and (once the book's meanings are checked) what each
+    stretch is said to bring, as good or hard for that planet. Houses, points and verse numbers are in the technical view."""
+    tz = ZoneInfo(report.tz)
+    checked = report.rules_level in SERVABLE_LEVELS
+    start, end = report.start.astimezone(tz), report.end.astimezone(tz)
+    lines = [f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}"]
+    if report.dasha_at_start:
+        maha, antar = report.dasha_at_start
+        lines.append(f"{who.you_are.capitalize()} in the {maha.lord.title()} chapter of life, in its {antar.lord.title()} sub-chapter "
+                     f"until {_day(antar.end)}.")
+    said = {(m, a): text for m, a, text, _ in report.antardasha}
+    if report.dasha_at_start and (report.dasha_at_start[0].lord, report.dasha_at_start[1].lord) in said:
+        lines.append(f"The old book says of this sub-chapter: {said[report.dasha_at_start[0].lord, report.dasha_at_start[1].lord]}.")
+    for lord, a in report.dasha_changes:
+        lines.append(f"A new sub-chapter ({a.lord.title()}, in the {lord.title()} chapter) begins on {_day(a.start)}."
+                     + (f" The book says of it: {said[lord, a.lord]}." if (lord, a.lord) in said else ""))
+    blocks = ["\n".join(lines)]
+    moves = sorted((s.start, s.planet) for s in report.stays if s.start is not None)
+    stay = [s.planet for s in report.stays if s.planet not in {p for _, p in moves}]
+    if moon := [t for t, p in moves if p == "moon"]:
+        times = ", ".join(_stamp(t, tz, report.span) for t in moon)
+        blocks.append(f"🌙 The Moon changes house every couple of days, so it is what shifts the mood through the week: it moves on {times}.")
+    others = [(t, p) for t, p in moves if p != "moon"]
+    if others:
+        blocks.append("Other planets that change house in this time: " + "; ".join(
+            f"{PLANET_ICONS[p]} {p.title()} on {_stamp(t, tz, report.span)}" for t, p in others[:10]) + (" …" if len(others) > 10 else "") + ".")
+    if stay and report.span in ("week", "fortnight", "month"):
+        blocks.append("Staying where they are the whole time: " + ", ".join(f"{PLANET_ICONS[p]} {p.title()}" for p in dict.fromkeys(stay)) + ".")
+    if not checked:
+        blocks.append("What the old book says these planet positions bring is still waiting for a check, so I am not saying what they mean yet.")
+    else:
+        lines = []
+        by_planet: dict[str, list] = {}
+        for s in report.stays:
+            by_planet.setdefault(s.planet, []).append(s)
+        for planet, stays in by_planet.items():
+            keep = 6 if planet == "moon" else 3
+            shown = stays[:keep]
+            for s in shown:
+                if not s.effect:
+                    continue
+                if s.favourable is None:
+                    verdict = ""
+                else:
+                    verdict = "a good stretch" if s.favourable else "a hard stretch"
+                    if s.blocked_by:
+                        verdict += f" (its good result is held back by {' and '.join(g.title() for g in s.blocked_by)})"
+                first = "now" if s.start is None else _stamp(s.start, tz, report.span)
+                last = "the end" if s.end is None else _stamp(s.end, tz, report.span)
+                when = "all through" if s.start is None and s.end is None else f"{first} – {last}"
+                lines.append(f"{PLANET_ICONS[planet]} {planet.title()}, {when}: {verdict + ': ' if verdict else ''}{s.effect}.")
+            if len(stays) > keep:
+                n = len(stays) - keep
+                lines.append(f"   …and {n} more change{'s' if n > 1 else ''} for {planet.title()} (see the technical details).")
+        if lines:
+            blocks.append("What the old book says each stretch brings:\n" + "\n".join(lines))
+        verses = sorted({s.verse for s in report.stays if s.verse}, key=lambda v: int(v.split("-")[0]))
+        refs = ["26.2–8", *(f"26.{v.replace('-', '–')}" for v in verses)]
+        if report.antardasha_checked:
+            refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
+        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)} · checked")
+    blocks.append(prompts.OUTLOOK_TECH_HINT)
+    return "\n\n".join(blocks)
 
 
 def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:

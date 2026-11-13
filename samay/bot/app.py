@@ -397,7 +397,10 @@ def answer_markup(
         row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}")]
     else:
         row = []
-        if view == "full":
+        if answer.outlook is not None:  # plain words by default, the houses and points one tap away
+            row.append(InlineKeyboardButton(prompts.BTN_PLAIN if view == "full" else prompts.BTN_TECH,
+                                            callback_data=f"{QA_PREFIX}{'en' if view == 'full' else 'full'}{tag}:{answer.topic}"))
+        elif view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
         elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))

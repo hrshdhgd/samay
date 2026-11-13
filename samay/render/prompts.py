@@ -110,6 +110,8 @@ FUTURE_TITLE = "🔮 {Your} current period of life"
 NEED_BIRTH_FOR_FUTURE = (
     "To look at your future I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 )
+BTN_TECH = "🔧 Technical details"
+BTN_PLAIN = "💬 Plain words"
 BTN_MORE = "➕ More"
 BTN_LESS = "➖ Less"
 LIFE_FRAME = (
@@ -128,6 +130,7 @@ OUTLOOK_ASHTAKA_NOTE = (
     "Brihat Jataka's tables, which the standard modern tables also give. Phaladeepika's English translation prints "
     "different lists in {n} of the 56."
 )
+OUTLOOK_TECH_HINT = "Tap “🔧 Technical details” for the houses, the points and the book’s verse numbers."
 OUTLOOK_DASHA_UNCHECKED = "What the text says about each sub-chapter is waiting for a check, so it is not shown yet."
 OUTLOOK_UNCHECKED = (
     "The text's results for these transits are waiting for a check, so for now I show only where the planets are."
@@ -163,7 +166,10 @@ MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this i
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."
-AI_UNAVAILABLE = "🤖 The AI could not answer just now. The sourced answer above is all I have."
+AI_UNAVAILABLE = (
+    "🤖 The AI helper was too slow this time and did not finish. It runs on a small home server, and everything above "
+    "comes from the books and does not depend on it."
+)
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."
 NEED_BIRTH = "First I need your birth details."

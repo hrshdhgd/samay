@@ -657,7 +657,7 @@ def ai_on(monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
     cfg = {"sort": "planet:saturn", "ai": "Saturn is linked with discipline and patience in Jyotish.", "calls": []}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None):
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
         cfg["calls"].append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
         return cfg["sort"] if system == qa.MODEL_SYSTEM else cfg["ai"]
 
@@ -936,7 +936,7 @@ async def test_the_chat_shows_typing_while_the_model_thinks(ctx, ai_on, clock, m
     update.effective_chat = _chat_with_actions()
     real = ai_on["calls"]
 
-    async def slow(system, prompt, client=None, model=None, timeout=None):
+    async def slow(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
         real.append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
         await asyncio.sleep(0.05)
         return "planet:saturn" if system == qa.MODEL_SYSTEM else "A slow answer."
@@ -996,14 +996,16 @@ async def test_a_question_about_the_week_ahead_gets_the_outlook_with_more_and_is
     update, msg = message(ALLOWED, "What does my upcoming week look like")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert "🔮 Your week ahead" in text and "🌙 Moon" in text
-    assert [b.text for b in last_buttons(msg)] == [prompts.BTN_MORE]
+    assert "🔮 Your week ahead" in text and "The Moon changes house every couple of days" in text
+    assert "house" not in text.split("Tap")[0].replace("changes house", "").replace("change house", "")  # no houses, points or verses in plain words
+    assert [b.text for b in last_buttons(msg)] == [prompts.BTN_TECH]
     assert store.top_misses() == []
     tap_update, _ = tap(ALLOWED, last_buttons(msg)[0].callback_data)
     tap_update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(tap_update, ctx)
-    shown = tap_update.callback_query.edit_message_text.await_args.args[0]
-    assert "🔮 Your week ahead" in shown
+    shown = tap_update.callback_query.edit_message_text.await_args
+    assert "🌙 Moon" in shown.args[0] and "Counted from your Moon sign" in shown.args[0]  # the technical view
+    assert [b.text for b in shown.kwargs["reply_markup"].inline_keyboard[0]] == [prompts.BTN_PLAIN]
 
 
 async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on_the_last(ctx):

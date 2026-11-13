@@ -659,7 +659,7 @@ async def ai_answer(question: str, answer: Answer, client=None, history=()) -> s
     It is given the checked entries and chart facts as verified context. None if the model is off or fails."""
     reply = await narrate.complete(
         AI_SYSTEM, _ai_prompt(question, answer, history), client,
-        model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS,
+        model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS, max_tokens=narrate.AI_MAX_TOKENS,
     )
     if not reply:
         return None

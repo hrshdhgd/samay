@@ -202,7 +202,7 @@ def test_without_a_birth_the_period_answer_asks_for_one():
 
 @needs_kernel
 def test_unchecked_rules_show_positions_only():
-    text = render_answer(qa.answer_topic("future:week", _birth(), NOW))
+    text = render_answer(qa.answer_topic("future:week", _birth(), NOW), "full")
     assert "🔮 Your week ahead" in text and "Sagittarius (Dhanu)" in text and prompts.OUTLOOK_UNCHECKED in text
     assert not any(effect in text for houses in RULES.effects.values() for effect in houses.values())
     assert "✓" not in text and "Source:" not in text
@@ -212,12 +212,11 @@ def test_unchecked_rules_show_positions_only():
 def test_checked_rules_show_the_texts_results_marks_and_source(monkeypatch):
     monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
     answer = qa.answer_topic("future:week", _birth(), NOW, tz="America/Chicago")
-    text = render_answer(answer)
+    text = render_answer(answer, "full")
     assert RULES.effects["jupiter"][9] in text and "✓" in text and prompts.OUTLOOK_KEY in text
     assert "Source: Phaladeepika 26.2–8" in text and "· checked" in text
     assert "⛔ blocked by" in text  # Jupiter in the 9th with Venus in the 10th that week
-    full = render_answer(answer, "full")
-    assert prompts.OUTLOOK_NOT_APPLIED in full and "G. S. Kapoor" in full
+    assert prompts.OUTLOOK_NOT_APPLIED in text and "G. S. Kapoor" in text
 
 
 @needs_kernel
@@ -230,8 +229,11 @@ def test_dates_are_shown_in_the_timezone_asked_for(monkeypatch):
 @needs_kernel
 def test_a_result_is_not_repeated_when_a_planet_turns_back_into_a_house(monkeypatch):
     monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
-    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
-    jupiter = next(line for line in text.splitlines() if line.startswith("♃"))
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW), "full")
+    lines = text.splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("♃"))
+    stop = next(i for i, line in enumerate(lines[start + 1:], start + 1) if line and not line.startswith(("•", " ")))
+    jupiter = "\n".join(lines[start:stop])
     assert jupiter.count(RULES.effects["jupiter"][9]) == 1 and jupiter.count("9th ✓") > 1
 
 
@@ -252,7 +254,7 @@ def test_another_persons_period_is_worded_for_them_and_the_ai_gets_the_facts(mon
     monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
     maya = Subject("Maya", "daughter", minor=True)
     answer = qa.answer_topic("future:month", _birth(), NOW, subject=maya)
-    text = render_answer(answer)
+    text = render_answer(answer, "full")
     assert "🔮 Maya's month ahead" in text and "Maya's Moon sign" in text and prompts.MINOR_NOTE in text
     prompt = qa._ai_prompt("how is her month?", answer)
     assert "Phaladeepika chapter 26" in prompt and RULES.effects["jupiter"][9] in prompt
@@ -316,7 +318,7 @@ def test_a_malformed_antardasha_file_is_rejected(tmp_path, change):
 
 @needs_kernel
 def test_unchecked_antardasha_results_are_not_shown_and_the_wait_is_said():
-    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW), "full")
     assert prompts.OUTLOOK_DASHA_UNCHECKED in text and "The text:" not in text
     assert not any(t in text for t, _ in SUB.effects.values())
 
@@ -324,7 +326,7 @@ def test_unchecked_antardasha_results_are_not_shown_and_the_wait_is_said():
 @needs_kernel
 def test_checked_antardasha_results_appear_under_their_dasha_lines_with_sources(monkeypatch):
     monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
-    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW), "full")
     # at the start: Rahu mahadasha, Saturn antardasha (verse 32); from 9 Jul 2029: Mercury antardasha (verse 33)
     assert SUB.effects["rahu", "saturn"][0] in text and SUB.effects["rahu", "mercury"][0] in text
     assert "21.32" in text and "21.33" in text and prompts.OUTLOOK_DASHA_UNCHECKED not in text
@@ -558,11 +560,10 @@ def test_outlook_stays_carry_the_planets_own_points_once_checked(monkeypatch):
     assert all(s.points is not None for s in report.stays if s.planet not in ("rahu", "ketu"))
     assert all(s.points is None for s in report.stays if s.planet in ("rahu", "ketu"))
     assert all(0 <= s.points <= 8 for s in report.stays if s.points is not None)
-    compact, full = render_answer(qa.answer_topic("future:year", _birth(), NOW)), render_answer(
-        qa.answer_topic("future:year", _birth(), NOW), "full")
-    assert " pts)" in compact and "23.11" in compact and "Brihat Jataka's tables differ" not in compact
-    assert "pts: " in full and "Phaladeepika's English translation prints different lists in 5 of the 56" in full
-    assert "; Brihat Jataka 9.1–7" in compact
+    full = render_answer(qa.answer_topic("future:year", _birth(), NOW), "full")
+    assert " pts: " in full and "23.11" in full and "; Brihat Jataka 9.1–7" in full
+    assert "Phaladeepika's English translation prints different lists in 5 of the 56" in full
+    assert " pts" not in render_answer(qa.answer_topic("future:year", _birth(), NOW))  # the plain view carries no points
 
 
 @needs_kernel
@@ -1612,3 +1613,58 @@ def test_a_malformed_health_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         health.load_rules(path)
+
+
+# --- plain words by default, technical details one tap away ---------------------------------------------------------------
+@needs_kernel
+def test_the_default_outlook_is_in_everyday_words_and_the_technical_view_keeps_the_houses():
+    answer = qa.answer_topic("future:week", _birth(), NOW, tz="America/Chicago")
+    plain, tech = render_answer(answer), render_answer(answer, "full")
+    assert "chapter of life" in plain and "The Moon changes house every couple of days" in plain and prompts.OUTLOOK_TECH_HINT in plain
+    assert "th house" not in plain and "Counted from" not in plain and "✓" not in plain and " pts" not in plain
+    assert "Counted from your Moon sign" in tech and "Moon\n•" in tech
+
+
+@needs_kernel
+def test_plain_words_give_the_books_meanings_as_good_or_hard_stretches_once_checked(monkeypatch):
+    monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: SUB_CHECKED)
+    text = render_answer(qa.answer_topic("future:week", _birth(), NOW, tz="America/Chicago"))
+    assert "What the old book says each stretch brings:" in text and "a good stretch" in text and "a hard stretch" in text
+    assert RULES.effects["jupiter"][9] in text and "held back by Venus" in text
+    assert "The old book says of this sub-chapter:" in text and "Source: Phaladeepika 26.2–8" in text and "21.32" in text
+    assert "9th" not in text and "✓" not in text
+
+
+@needs_kernel
+def test_a_long_plain_period_lists_a_few_changes_per_planet_and_points_to_the_rest(monkeypatch):
+    monkeypatch.setattr(gochara, "load_rules", lambda path=None: CHECKED)
+    text = render_answer(qa.answer_topic("future:years", _birth(), NOW))
+    assert "more change" in text and "see the technical details" in text
+    assert all(len(p) <= 4096 for p in __import__("samay.render.text", fromlist=["x"]).split_message(text))
+
+
+def test_the_ai_gets_four_minutes_and_a_length_cap_and_says_plainly_when_it_is_too_slow():
+    from samay import narrate
+    assert narrate.AI_TIMEOUT_SECONDS >= 240 and 0 < narrate.AI_MAX_TOKENS <= 400
+    assert "too slow" in prompts.AI_UNAVAILABLE and "does not depend on it" in prompts.AI_UNAVAILABLE
+
+
+async def test_the_models_length_cap_is_sent_to_ollama(monkeypatch):
+    import json
+
+    import httpx
+
+    from samay import narrate
+    monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.read()))
+        return httpx.Response(200, json={"response": "ok"})
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    assert await narrate.complete("s", "p", client, max_tokens=123) == "ok" and seen["options"] == {"num_predict": 123}
+    seen.clear()
+    await narrate.complete("s", "p", client)
+    assert "options" not in seen

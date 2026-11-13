@@ -80,7 +80,7 @@ def ai(monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
     cfg = {"route": "none", "extract": json.dumps(EXTRACTED), "ai": "A thoughtful reading.", "calls": []}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None):
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
         cfg["calls"].append({"system": system, "prompt": prompt})
         if system == qa.MODEL_SYSTEM:
             return cfg["route"](prompt) if callable(cfg["route"]) else cfg["route"]

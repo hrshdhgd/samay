@@ -343,7 +343,7 @@ async def test_the_router_prompt_lists_the_topics_and_the_previous_one(model_on)
 async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_facts(model_on, monkeypatch):
     captured = {}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None):
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
         captured["prompt"] = prompt
         return "ok"
 

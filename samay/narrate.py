@@ -18,7 +18,8 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 TIMEOUT_SECONDS = 20.0
 # Free-form answers are longer than sorting a question, and a bigger model can be used for them.
 AI_MODEL = os.environ.get("OLLAMA_QA_MODEL") or OLLAMA_MODEL
-AI_TIMEOUT_SECONDS = 90.0
+AI_TIMEOUT_SECONDS = 240.0  # gemma3:12b on the 4-core server needs ~150 s for a reading; the sourced answer is sent first
+AI_MAX_TOKENS = 260  # about 190 words, the length the prompt asks for
 
 SYSTEM = (
     "You write short, warm daily readings in the Jyotish tradition for a Telegram bot. "
@@ -64,6 +65,7 @@ async def complete(
     client: httpx.AsyncClient | None = None,
     model: str | None = None,
     timeout: float | None = None,
+    max_tokens: int | None = None,
 ) -> str | None:
     """The model's reply, or None when the model is off, slow, failing or silent."""
     if not enabled():
@@ -71,7 +73,8 @@ async def complete(
     try:
         r = await (client or _get_client()).post(
             f"{OLLAMA_URL.rstrip('/')}/api/generate",
-            json={"model": model or OLLAMA_MODEL, "system": system, "prompt": prompt, "stream": False},
+            json={"model": model or OLLAMA_MODEL, "system": system, "prompt": prompt, "stream": False,
+                  **({"options": {"num_predict": max_tokens}} if max_tokens else {})},
             **({} if timeout is None else {"timeout": timeout}),
         )
         r.raise_for_status()
