@@ -25,6 +25,7 @@ from .engine import (
     house_effects,
     house_strength,
     house_timing,
+    livelihood,
     longevity,
     lordship,
     moon_aspects,
@@ -221,6 +222,7 @@ class Answer:
     longevity: longevity.Longevity | None = None  # chart:longevity
     longevity_checked: bool = False
     houses: tuple | None = None  # chart:houses
+    livelihood: livelihood.Livelihood | None = None  # life:career, Brihat Jataka X, once checked
     houses_checked: bool = False
     women: tuple | None = None  # chart:women
     women_checked: bool = False
@@ -601,8 +603,11 @@ def _life_answer(area: str, birth: ResolvedBirth | None, entries_dir: Path | Non
                     readings.append((r, house_effects.shares(rules, r)))
                 if (voice := _second_voice(chart, g)) is not None:
                     second.append(voice)
+    work = None
+    if area == "career" and birth is not None:
+        work = livelihood.find(livelihood.load_rules(), service.natal_report(birth).chart)
     return Answer(f"life:{area}", tuple(found), tuple(facts), more_readings=tuple(readings), who=subject,
-                  second=tuple(second))
+                  second=tuple(second), livelihood=work)
 
 
 def answer_topic(
@@ -761,6 +766,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += timing_facts(answer.timing, answer.who)
     if answer.health is not None:
         verified += health_facts(answer.health, answer.who)
+    if answer.livelihood is not None:
+        verified += [f"Brihat Jataka {v}, {w}: {t}." for v, w, t in (*answer.livelihood.wealth, *answer.livelihood.work)] + [f"Brihat Jataka {v}: {t}." for v, t in answer.livelihood.conditions]
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:

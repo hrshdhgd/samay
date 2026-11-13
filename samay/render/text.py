@@ -456,6 +456,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(render_reading(reading, shares, full=full, who=who))
     for voice in answer.second:
         blocks.append(render_second(voice, who))
+    if answer.livelihood is not None:
+        blocks.append(render_livelihood(answer.livelihood, who, full))
     for verdict in answer.lordship:
         blocks.append(render_lordship(verdict, who, full))
     if answer.facts:
@@ -546,6 +548,18 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_livelihood(lv, who=SELF, full: bool = False) -> str:
+    """Brihat Jataka chapter X: where wealth comes from and the kind of work, quoted, with the text's conditions."""
+    lines = [f"On {who.your} source of wealth and work (Brihat Jataka chapter 10):"]
+    lines += [f"• {w}: “{t}.” [{v}]" if full else f"• {w}: “{t}.”" for v, w, t in lv.wealth]
+    lines += [f"• {w}: “{t}.” [{v}]" if full else f"• {t}." for v, w, t in lv.work]
+    lines += [f"• {t}" for _, t in lv.conditions]
+    lines += [n for n in lv.notes if full]
+    verses = sorted({v for v, _, _ in (*lv.wealth, *lv.work)} | {v for v, _ in lv.conditions}, key=lambda x: int(x.split(".")[1].split("–")[0]))
+    lines.append("Source: Brihat Jataka " + ", ".join(verses) + " · checked")
+    return "\n".join(lines)
 
 
 def render_signs(answer, who=SELF, full: bool = False) -> str:

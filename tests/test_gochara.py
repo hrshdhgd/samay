@@ -2489,3 +2489,56 @@ def test_a_malformed_planets_in_signs_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         planets_in_signs.load_rules(path)
+
+
+# --- Brihat Jataka X: livelihood, inside the career answer ---------------------------------------------------------------------------
+from samay.engine import livelihood
+
+LV = livelihood.load_rules()
+LV_CHECKED = dataclasses.replace(LV, level="translation-checked", checked_by="test")
+
+
+def _lv(lagna=0, **where):
+    """A made-up chart; unnamed bodies sit in the 3rd house, away from the 10th, 11th, 1st and 2nd."""
+    calm = {b: (lagna + 2) % 12 for b in livelihood.SEVEN}
+    return livelihood.find(LV_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))
+
+
+def test_the_livelihood_file_is_complete_gated_and_quotes_the_translation():
+    assert LV.level == "unchecked" and livelihood.find(LV, _full_sky()) is None
+    assert LV.wealth["jupiter"] == "his brother" and LV.avocation["saturn"].startswith("acquire wealth by means of hard labour")
+
+
+def test_a_planet_in_the_10th_from_the_lagna_or_the_moon_names_the_source_of_wealth():
+    lg = _lv(lagna=0, mercury=(9, 15.0))                       # Aries lagna: Mercury in Capricorn, the 10th
+    assert [w for _, w, _ in lg.wealth] == ["Mercury is in the 10th from the lagna"] and lg.wealth[0][2].endswith("his friend") and not lg.work
+    both = _lv(lagna=0, mercury=(9, 15.0), moon=(2, 15.0), venus=(11, 15.0))      # the Moon in Gemini: its 10th is Pisces, where Venus is
+    assert len(both.wealth) == 2 and any("his wife" in t for _, _, t in both.wealth) and "both sources" in " ".join(both.notes)
+
+
+def test_with_no_planet_in_either_10th_the_navamsa_lords_of_the_10th_lords_give_the_work():
+    lg = _lv(lagna=0)                                            # nobody in Capricorn, nor in the 10th from the Moon (in the 3rd house: Pisces)
+    assert not lg.wealth and len(lg.work) == 3 and all(t.startswith("A person will") for _, _, t in lg.work)
+    assert any("10th from the lagna is Capricorn" in w for _, w, _ in lg.work) and "all three" in " ".join(lg.notes)
+
+
+def test_verse_4_conditions_friend_enemy_own_house_and_benefics_in_good_houses():
+    own = _lv(lagna=0, saturn=(9, 15.0))                         # Saturn in Capricorn, its own sign, in the 10th
+    assert any("by means of his house" in t for _, t in own.conditions)
+    enemy = _lv(lagna=0, mars=(9, 15.0))                         # Mars in Capricorn: exalted, not friend or enemy
+    assert not any("through his enemy" in t for _, t in enemy.conditions)
+    exalted_sun = _lv(lagna=0, sun=(9, 15.0))                    # the Sun in Capricorn: an enemy's sign
+    assert any("through his enemy" in t for _, t in exalted_sun.conditions)
+    assert any("various ways" in t for _, t in _lv(lagna=0, jupiter=(10, 15.0)).conditions)      # a benefic in the 11th
+
+
+@needs_kernel
+def test_the_career_answer_adds_livelihood_only_once_checked(monkeypatch):
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 10" not in render_answer(qa.answer_topic("life:career", born, NOW))
+    monkeypatch.setattr(livelihood, "load_rules", lambda path=None: LV_CHECKED)
+    answer = qa.answer_topic("life:career", born, NOW)
+    text = render_answer(answer)
+    assert "source of wealth and work (Brihat Jataka chapter 10)" in text and "Brihat Jataka 10." in text
+    assert "Brihat Jataka 10." in qa._ai_prompt("what work suits me", answer)
+    assert qa.answer_topic("life:marriage", born, NOW).livelihood is None

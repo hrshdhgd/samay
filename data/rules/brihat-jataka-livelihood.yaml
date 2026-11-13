@@ -1,0 +1,43 @@
+# Brihat Jataka chapter X ("On Avocation"), verses 1-4: the source of a person's wealth and the kind of work, from the planet in the 10th house, or failing that from the
+# navamsa lords of the 10th lords. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 110-113. QUOTED, scan errors corrected
+# (research/notes/brihat-jataka-livelihood.md). Shown inside the life:career answer.
+#
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "110-113"
+
+# Verse 1: a person gets wealth from ... according as the planet in the 10th house from the lagna or from the Moon is ...
+source_of_wealth:
+  verse: "10.1"
+  lead: "A person gets wealth from"
+  sun: "his father"
+  moon: "his mother"
+  mars: "his enemy"
+  mercury: "his friend"
+  jupiter: "his brother"
+  venus: "his wife"
+  saturn: "his servant"
+  both_note: "If the 10th from the lagna and the 10th from the Moon are both occupied by planets, a person will acquire wealth from both sources, and if several planets occupy the 10th house there will be several sources of wealth (the translator's note)."
+fallback:
+  verse: "10.1"
+  text: "If there be no such planet, the avocation of a person will be that stated for the lord of the navamsa occupied by the lord of the 10th house from the lagna, from the Moon and from the Sun; the translator adds that all three are meant."
+# Verses 2-3: the work by the lord of that navamsa.
+avocation:
+  verse: "10.2–3"
+  sun: "deal in perfumes, gold, woollen fabric, medicine, and the like"
+  moon: "till lands or deal in the productions of water (pearls, conch shells, whale-bones and the like) or get money through women (by serving under or otherwise following them)"
+  mars: "deal in metals or minerals, fire or weapons and also acquire wealth by acts of boldness"
+  mercury: "be a writer, an accountant, and the like, and also acquire wealth by various handicraft"
+  jupiter: "get wealth through Brahmins, the Devas or learned men, through mines and the like, and through acts of virtue"
+  venus: "deal in gems, silver and other metals, in cows and buffaloes"
+  saturn: "acquire wealth by means of hard labour, by acts of torture, by carrying burdens and by low deeds unsuited to his rank"
+# Verse 4: the condition of the yoga planet (the planet in the 10th, or the navamsa lord).
+yoga_planet:
+  verse: "10.4"
+  friendly_sign: "a person will acquire wealth, in the dasa or antardasa of such a planet, through a friend"
+  inimical_sign: "a person will get wealth through his enemy"
+  own_sign: "a person will get wealth by means of his house"
+  sun_exalted: "when the Sun is the yoga planet and stands in its exaltation sign, a person will acquire wealth by his own powers"
+  benefics_prosper: "if powerful benefic planets occupy the 11th house, the lagna or the 2nd house, a person will acquire wealth in various ways: he will prosper whatever avocation he chooses (the translator's note)"
