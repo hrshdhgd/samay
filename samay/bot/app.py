@@ -403,7 +403,7 @@ def answer_markup(
                                             callback_data=f"{QA_PREFIX}{'en' if view == 'full' else 'full'}{tag}:{answer.topic}"))
         elif view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None or answer.houses is not None or answer.women is not None or answer.death is not None or answer.upagrahas is not None or answer.strength is not None or answer.signs is not None or answer.vargas is not None:
+        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None or answer.houses is not None or answer.women is not None or answer.death is not None or answer.upagrahas is not None or answer.strength is not None or answer.signs is not None or answer.vargas is not None or answer.malefic is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
             row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))

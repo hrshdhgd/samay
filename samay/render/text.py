@@ -12,6 +12,7 @@ from ..engine import (
     house_strength,
     house_timing,
     longevity,
+    malefic_yogas,
     planet_strength,
     planets_in_signs,
     upagrahas,
@@ -351,6 +352,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_SIGNS
     if answer.topic == "chart:vargas" and not birth_known:
         return prompts.NEED_BIRTH_FOR_VARGAS
+    if answer.topic == "chart:malefic" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_MALEFIC
     if answer.topic == "chart:strength" and not birth_known:
         return prompts.NEED_BIRTH_FOR_STRENGTH
     if answer.topic == "chart:lagna" and not birth_known:
@@ -374,6 +377,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:malefic":
+        blocks.append(render_malefic(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:vargas":
         blocks.append(render_vargas(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -604,6 +611,21 @@ def render_vargas(answer, who=SELF, full: bool = False) -> str:
     body = "\n\n".join(lines) if lines else "None of the book's statements in this chapter applies."
     blocks = [title, body, rules.caution]
     blocks.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in answer.vargas}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
+
+
+def render_malefic(answer, who=SELF, full: bool = False) -> str:
+    """The chapter XXIII rules that hold for the chart, quoted, with the translator's notes and verse numbers on More. Sensitive: the bot shows it only after a warning."""
+    title = f"⚠️ What Brihat Jataka lists as afflictions in {who.your} chart"
+    rules = malefic_yogas.load_rules()
+    if not answer.malefic_checked:
+        return f"{title}\n\n{prompts.MALEFIC_UNCHECKED}"
+    if answer.malefic is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_MALEFIC}"
+    lines = [f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.”" + (f" [{f.verse}]" if full else "") for f in answer.malefic]
+    blocks = [title, "\n\n".join(lines) if lines else prompts.MALEFIC_NONE, rules.frame]
+    if answer.malefic:
+        blocks.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in answer.malefic}, key=lambda v: int(v.split(".")[1]))) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
     return "\n\n".join(blocks)
 
 

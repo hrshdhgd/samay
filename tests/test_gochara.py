@@ -2728,3 +2728,109 @@ def test_a_malformed_karakas_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         karakas.load_rules(path)
+
+
+# --- Brihat Jataka XXIII: the malefic yogas (sensitive) -------------------------------------------------------------------------------
+from samay.engine import malefic_yogas
+
+MY = malefic_yogas.load_rules()
+MY_CHECKED = dataclasses.replace(MY, level="translation-checked", checked_by="test")
+
+
+def _my(**where):
+    return {f.id: f for f in malefic_yogas.find(MY_CHECKED, _full_sky(**where))}
+
+
+def test_the_malefic_file_is_gated_and_codes_exactly_its_rules():
+    assert MY.level == "unchecked" and malefic_yogas.find(MY, _full_sky()) is None
+    assert len(MY.rules) == 49 and set(MY.rules) == set(malefic_yogas.DETECTORS) | {"imprisonment_houses", "imprisonment_drekkana"}
+    assert all(r["definition"] and r["verse"].startswith("23.") for r in MY.rules.values())
+
+
+def test_sons_and_wife_follow_benefics_or_lords_in_the_5th_and_7th_from_the_lagna_or_the_moon():
+    got = _my(lagna=0)   # everything in Scorpio: Jupiter aspects the 5th from the Moon (Pisces)
+    assert "sons" in got and "no_sons" not in got and "Jupiter" in got["sons"].detail
+    bare = _my(lagna=0, jupiter=(1, 15.0), venus=(1, 15.0), mercury=(1, 15.0), moon=(1, 15.0))   # the 5th (Virgo) and 7th (Scorpio) from the Moon, lagna Aries: 5th Leo, 7th Libra
+    assert "no_sons" in bare or "sons" in bare       # exactly one of the pair
+    assert ("sons" in bare) != ("no_sons" in bare) and ("wife" in bare) != ("no_wife" in bare)
+
+
+def test_the_virgo_rising_sun_with_saturn_in_pisces_or_mars_in_capricorn():
+    assert "virgo_wife" in _my(lagna=5, sun=(5, 15.0), saturn=(11, 15.0)) and "virgo_sons" not in _my(lagna=5, sun=(5, 15.0), saturn=(11, 15.0))
+    assert "virgo_sons" in _my(lagna=5, sun=(5, 15.0), mars=(9, 15.0)) and "virgo_wife" not in _my(lagna=0, sun=(5, 15.0), saturn=(11, 15.0))
+
+
+def test_the_number_of_wives_is_the_navamsa_of_the_seventh_lord_counted_from_aries():
+    got = _my(lagna=0, moon=(0, 15.0), saturn=(0, 15.0), venus=(0, 5.0))   # Moon and Saturn aspect Libra; Venus (its lord) at 5 degrees Aries is in the navamsa of Taurus, number 2
+    assert "wives_number" in got and "2 wives" in got["wives_number"].text
+    assert "several_wives" in _my(lagna=0, moon=(0, 15.0), venus=(0, 15.0))
+
+
+def test_the_wifes_death_needs_the_translators_drekkana_proviso():
+    base = {"lagna": 0, "sun": (4, 15.0), "mars": (8, 15.0)}      # malefics in the 4th and 8th from a Taurus Venus
+    assert "wife_fire" in _my(venus=(1, 5.0), **base)         # the 1st drekkana of Taurus carries fire
+    assert "wife_fire" not in _my(venus=(1, 15.0), **base)    # the 2nd drekkana does not
+    assert "wife_fall" in _my(lagna=0, venus=(6, 15.0), sun=(5, 15.0), mars=(7, 15.0))   # the 2nd drekkana of Libra, malefics either side
+    assert "wife_rope" not in _my(lagna=0)                    # without a rope drekkana nothing fires
+
+
+def test_the_eyes_limbs_and_the_chapters_four_planet_placements():
+    assert "one_eye" in _my(lagna=0, sun=(11, 15.0), moon=(5, 15.0)) and "one_eye" in _my(lagna=0, sun=(5, 15.0), moon=(11, 15.0))
+    assert "limbs_venus_sun" in _my(lagna=0, sun=(6, 15.0), venus=(6, 15.0)) and "limbs_venus_sun" not in _my(lagna=0, sun=(6, 15.0), venus=(5, 15.0))
+    blind = _my(lagna=0, sun=(7, 15.0), moon=(5, 15.0), mars=(1, 15.0), saturn=(11, 15.0))
+    assert "blind" in blind and "Sun: heat or wood" in blind["blind"].text and "Moon: phlegmatic" in blind["blind"].text
+    assert "blind" not in _my(lagna=0, sun=(7, 15.0), moon=(5, 15.0), mars=(1, 15.0), saturn=(10, 15.0))
+
+
+def test_jupiter_in_the_lagna_with_saturn_or_mars_in_the_seventh():
+    assert "windy" in _my(lagna=0, jupiter=(0, 15.0), saturn=(6, 15.0)) and "insane" in _my(lagna=0, jupiter=(0, 15.0), mars=(6, 15.0))
+    assert "idiot_saturn_mars" in _my(lagna=0, saturn=(0, 15.0), mars=(4, 15.0)) and "idiot_saturn_mars" not in _my(lagna=0, saturn=(0, 15.0), mars=(3, 15.0))
+
+
+def test_servitude_counts_and_the_servants_rank_by_how_many_malefics_stand_in_the_tenth():
+    assert "serve under other men" in _my(lagna=0)["servitude"].text
+    low = _my(lagna=0, sun=(9, 15.0), mars=(9, 20.0), saturn=(9, 25.0))
+    assert "servant of low rank" in low["servant"].text
+    assert "dignified servant" in _my(lagna=0, sun=(9, 15.0))["servant"].text
+
+
+def test_imprisonment_takes_its_kind_from_the_rising_sign_and_the_rising_drekkana():
+    got = _my(lagna=0, sun=(11, 15.0), moon=(4, 15.0), mars=(1, 15.0), saturn=(8, 15.0))
+    assert "imprisonment_houses" in got and "bound with ropes" in got["imprisonment_houses"].text
+    sarpa = _my(lagna=7, saturn=(9, 15.0))       # the 2nd drekkana of Scorpio is a snake drekkana, of the sign Pisces, which Saturn aspects
+    assert "imprisonment_drekkana" in sarpa and "fortress" in sarpa["imprisonment_drekkana"].text
+
+
+def test_the_malefic_topic_is_sensitive_for_everyone_and_stronger_for_a_child():
+    from samay.subject import SELF, Subject
+    assert qa.sensitivity("chart:malefic", SELF) == "sensitive" and qa.sensitivity("chart:malefic", Subject("Maya", None, True)) == "child"
+    assert qa.sort_question("what malefic yogas do I have") == "chart:malefic"
+
+
+@needs_kernel
+def test_the_malefic_answer_waits_then_quotes_with_verse_numbers(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.MALEFIC_UNCHECKED in render_answer(qa.answer_topic("chart:malefic", born, NOW))
+    monkeypatch.setattr(malefic_yogas, "load_rules", lambda path=None: MY_CHECKED)
+    answer = qa.answer_topic("chart:malefic", born, NOW)
+    text, full = render_answer(answer), render_answer(answer, "full")
+    assert "Source: Brihat Jataka 23." in text and "[23." not in text.split("Source:")[0] and "[23." in full and MY.frame in text
+    assert all(len(p) <= 4096 for p in split_message(full)) and "Brihat Jataka XXIII" in qa._ai_prompt("my malefic yogas", answer)
+    assert render_answer(qa.answer_topic("chart:malefic", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_MALEFIC
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop(0),
+    lambda r: r["rules"][0].update(definition=""),
+    lambda r: r["rules"].append(dict(r["rules"][0])),
+    lambda r: r["causes"].pop("sun"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_malefic_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(malefic_yogas.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        malefic_yogas.load_rules(path)
