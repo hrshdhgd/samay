@@ -183,6 +183,10 @@ HOUSES_NONE = "None of the book's tests for this house finds anything in the cha
 NEED_BIRTH_FOR_WOMEN = "To read the book's pointers for a woman's chart I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
 WOMEN_UNCHECKED = "The book's pointers for a woman's chart are waiting for a check, so I can't show them yet."
 WOMEN_NONE = "None of the book's pointers about husband, marriage or children is met by this chart."
+SENS_WARN_AFTERLIFE = (
+    "⚠️ Before I show this\n\nThe next answer gives an old book's belief about the world a person came from and the one they go to after death, "
+    "including the world of the ancestors and the region of hell. It is a tradition's teaching, not something anyone can know. Would you like to see it?"
+)
 SENS_WARN_DEATH = (
     "⚠️ Please read this first\n\nThis asks WHEN the old book links the end of life to the sky. The book gives conditions, never dates, and no one can "
     "foretell a death: most people live through many such stretches. What follows can be very frightening to read. Are you sure you want to see it?"
@@ -207,6 +211,8 @@ VARGAS_UNCHECKED = "What Brihat Jataka says of the planets in their own, friendl
 NEED_BIRTH_FOR_MALEFIC = "To read the book's list of ill omens I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
 MALEFIC_UNCHECKED = "What Brihat Jataka says of the malefic yogas is waiting for a check, so I can't show it yet."
 MALEFIC_NONE = "None of the afflictions in Brihat Jataka chapter XXIII applies to this chart."
+NEED_BIRTH_FOR_AFTERLIFE = "To read what the old book says of a past and a next life I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
+AFTERLIFE_UNCHECKED = "What Brihat Jataka says of the worlds before and after this life is waiting for a check, so I can't show it yet."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

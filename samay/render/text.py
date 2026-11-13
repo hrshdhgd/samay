@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 
 from ..engine import (
     conjunctions,
+    death_bj,
     death_timing,
     health,
     house_strength,
@@ -369,6 +370,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_HOUSES
     if answer.topic == "chart:longevity" and not birth_known:
         return prompts.NEED_BIRTH_FOR_LONGEVITY
+    if answer.topic == "chart:afterlife" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_AFTERLIFE
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -416,6 +419,11 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return "\n\n".join(blocks)
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
+        blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
+    if answer.topic == "chart:afterlife":
+        blocks.append(render_death_bj(answer, who, ("past", "next")))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic == "chart:health":
@@ -810,6 +818,31 @@ def render_longevity(answer, who=SELF) -> str:
     refs = sorted({i.verse for _, items in parts for i in items} | {i.verse for i in lg.framing},
                   key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
     blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
+    return "\n\n".join(blocks)
+
+
+DEATH_BJ_HEADS = {"cause": "Cause and manner of death", "place": "Place of death and the time before it", "body": "What becomes of the body",
+                  "past": "The world the person came from (25.14)", "next": "The world the person goes to (25.15)"}
+
+
+def render_death_bj(answer, who=SELF, sections=("cause", "place", "body")) -> str:
+    """Brihat Jataka XXV for the chart, quoted, by section, with the chart's own facts and the translator's notes. Shown only after the warning and a tap."""
+    afterlife = "past" in sections
+    title = f"{'🕊' if afterlife else '🕯'} What Brihat Jataka chapter 25 says of {'the worlds before and after this life' if afterlife else 'death'} in {who.your} chart"
+    rules = death_bj.load_rules()
+    if not answer.death_bj_checked:
+        return f"{title}\n\n{prompts.AFTERLIFE_UNCHECKED if afterlife else prompts.LONGEVITY_UNCHECKED + ' (Brihat Jataka chapter 25)'}"
+    if answer.death_bj is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_AFTERLIFE if afterlife else prompts.NEED_BIRTH_FOR_LONGEVITY}"
+    blocks = [title, rules.afterlife_frame if afterlife else rules.caution]
+    for sec in sections:
+        items = [f for f in answer.death_bj if f.section == sec]
+        if items:
+            lines = [f"{DEATH_BJ_HEADS[sec]}:"]
+            lines += [f"• {f.detail[:1].upper() + f.detail[1:]}: “{f.text[:1].upper() + f.text[1:]}.”" + (f" ({f.note})" if f.note else "") + f" [{f.verse}]" for f in items]
+            blocks.append("\n".join(lines))
+    verses = sorted({f.verse for f in answer.death_bj}, key=lambda v: int(v.split(".")[1]))
+    blocks.append(f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
     return "\n\n".join(blocks)
 
 

@@ -543,3 +543,19 @@ async def test_when_will_i_die_gets_its_own_stronger_warning_and_a_child_gets_th
     update, msg = message(ME, "when will she die")
     await bot.on_text(update, ctx)
     assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN_DEATH_CHILD.format(name="Maya")]
+
+
+@needs_kernel
+async def test_a_past_life_question_gets_its_own_warning_first_and_a_child_the_stronger_one(ctx, store, clock, monkeypatch):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    calls = _computed(monkeypatch)
+    update, msg = message(ME, "what was my past life")
+    await bot.on_text(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN_AFTERLIFE] and calls == []
+    buttons = [b for row in msg.reply_text.await_args_list[0].kwargs["reply_markup"].inline_keyboard for b in row]
+    assert buttons[0].callback_data == "sens:yes:chart:afterlife"
+    pid = store.save_person(ME, "Maya", "daughter", BirthInput("2015-03-14", "06:30", "Pune"))
+    bot._session(ctx, ME)["active"] = pid
+    update, msg = message(ME, "what was her past life")
+    await bot.on_text(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN_CHILD.format(name="Maya")]

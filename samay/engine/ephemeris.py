@@ -81,6 +81,30 @@ def ascendant_tropical(ramc_deg: float, lat_deg: float, eps_deg: float) -> float
     return (lam + 180.0) % 360.0
 
 
+SIDEREAL_DEG_PER_MINUTE = 360.98564736629 / 1440.0  # how fast the local sidereal time (RAMC) turns
+
+
+def rising_sign_rest_minutes(chart: Chart) -> float:
+    """Minutes, at the birth place, until the sidereal ascendant reaches the end of the sign rising at birth: the rising time of the part of the sign still below the
+    horizon (Brihat Jataka XXV.12). The ayanamsa and the obliquity are held fixed over those few hours."""
+    t = _skyfield_time(chart.utc)
+    ramc0 = (t.gast * 15.0 + chart.longitude) % 360.0
+    eps = mean_obliquity(t.tt)
+
+    def gained(d: float) -> float:
+        asc = (ascendant_tropical(ramc0 + d, chart.latitude, eps) - chart.ayanamsa) % 360.0
+        return (asc - chart.ascendant) % 360.0
+
+    need = 30.0 - chart.ascendant % 30.0
+    lo, hi = 0.0, 0.5
+    while gained(hi) < need and hi < 360.0:
+        lo, hi = hi, hi + 0.5
+    for _ in range(40):
+        mid = (lo + hi) / 2.0
+        lo, hi = (mid, hi) if gained(mid) < need else (lo, mid)
+    return hi / SIDEREAL_DEG_PER_MINUTE
+
+
 @dataclass(frozen=True)
 class Placement:
     longitude: float  # sidereal, degrees [0, 360)

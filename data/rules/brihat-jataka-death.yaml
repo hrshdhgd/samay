@@ -1,0 +1,110 @@
+# Brihat Jataka chapter XXV ("On Death", nairyanika), verses 1-15: the cause and manner of death, its place, the time of insensibility before it, what becomes of the body,
+# the world the person came from and the one they go to. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 207-213.
+# QUOTED, scan errors corrected; where Iyer's English departs from the Sanskrit (research/sources/gretil-brhajjataka.txt, BJ_25) in a way that changes the rule, the Sanskrit is
+# followed, the change is shown in [square brackets] and listed in research/notes/brihat-jataka-death.md for the checker. Conditions are coded in samay/engine/death_bj.py.
+#
+# MOST SENSITIVE. Verses 1-13 are shown inside chart:longevity and verses 14-15 as chart:afterlife; both only after a warning and a tap (a stronger warning for a child).
+# It is an old text's rules, not a forecast: it never gives a date, and no one can say how a life will end.
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden; a warning and approval come first.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "207-213"
+
+caution: "These are an old text's rules about death and what follows it, written long ago. They are not a forecast: they give no date, many overlap, and no one can say how or where a life will end."
+afterlife_frame: "These verses state the old book's belief about the world a person came from and the one they go to. They are a tradition's teaching, not a reading of this life."
+
+# Verse 1. Humours (the translator's table) and the limb each sign is in the body of the Kalapurusha (I.4).
+humours: {sun: "bile", moon: "wind and phlegm", mars: "bile", mercury: "all three humours", jupiter: "phlegm", venus: "wind and phlegm", saturn: "wind"}
+limbs: [head, face, breast, heart, belly, navel, abdomen, genital organ, thighs, knees, ankles, feet]
+aspect:
+  verse: "25.1"
+  text: "If the 8th house from the rising sign is unoccupied and aspected by a powerful planet, the person will die of an excess of the humour belonging to such powerful planet; the part of the body attacked will be the part which such 8th house represents in the body of the Kalapurusha. If several planets aspect the 8th house the part will be subject to several attacks from an excess of the various humours belonging to such powerful planets, and death will ensue"
+occupant:
+  verse: "25.1"
+  lead: "If the 8th house is occupied by"
+  sun: "the Sun, the death of the person will be caused by fire"
+  moon: "the Moon, the death will be caused by water"
+  mars: "Mars, death will be caused by weapons"
+  mercury: "Mercury, it will be caused by fever"
+  jupiter: "Jupiter, it will be caused by some unknown disease"
+  venus: "Venus, it will be caused by thirst"
+  saturn: "Saturn, death will be caused by starvation"
+  work:
+    strong: "the planet being powerful, death while the person is engaged in a good work"
+    weak: "the planet being weak, death while the person is engaged in a bad work"
+    middle: "the planet neither powerful nor weak, death while the person is engaged in a work of indifferent character"
+  work_note: "(the translator's note)"
+sign_kind:
+  verse: "25.1"
+  movable: "If the 8th house is a movable sign the person will die in foreign lands"
+  fixed: "if it is a fixed sign he will die in his own country"
+  common: "if it is a common sign he will die on his way"
+
+# Verses 2-10: particular yogas. Malefic = the Sun, Mars, Saturn; benefic = Mercury, Jupiter, Venus; "waning" = the Moon within 180 degrees before the Sun.
+yogas:
+  - {id: stones, verse: "25.2", text: "If the Sun and Mars occupy the 4th or the 10th house from the rising sign, the person will die being struck with stones", definition: "Each of the Sun and Mars is in the 4th or the 10th house (together or apart)."}
+  - {id: well, verse: "25.2", text: "If the 4th, 7th and 10th houses are respectively occupied by Saturn, the Moon and Mars, the person will die by falling into a well", definition: "Saturn in the 4th, the Moon in the 7th, Mars in the 10th."}
+  - {id: kinsmen, verse: "25.2", text: "If the Sun and Moon occupy the sign Virgo and are aspected by a malefic planet there will be death caused by the person's kinsmen", definition: "The Sun and the Moon both in Virgo, and Mars or Saturn aspecting Virgo."}
+  - {id: drowning, verse: "25.2", text: "If the rising sign is a common sign and is occupied by the Sun and the Moon there will be death by drowning", definition: "The lagna is Gemini, Virgo, Sagittarius or Pisces and the Sun and the Moon are both in it."}
+  - {id: dropsy, verse: "25.3", text: "If Saturn occupies the sign Cancer and the Moon the sign Capricorn the person will die from an attack of dropsy", definition: "Saturn in Cancer and the Moon in Capricorn."}
+  - {id: moon_mars_signs, verse: "25.3", text: "If the Moon occupies the sign Aries or Scorpio and is between malefic planets, death will be caused by weapons or by fire", definition: "The Moon in Aries or Scorpio with a malefic in the sign before hers and a malefic in the sign after."}
+  - {id: moon_virgo, verse: "25.3", text: "If the Moon occupies the sign Virgo and is between malefic planets, death will be caused by a corruption of the blood or by want of blood", definition: "The Moon in Virgo, a malefic in the sign before and one in the sign after."}
+  - {id: moon_saturn_signs, verse: "25.3", text: "If the Moon occupies the sign Capricorn or Aquarius and is between malefic planets, there will be death by hanging, by fire or by a fall", definition: "The Moon in Capricorn or Aquarius, a malefic in the sign before and one in the sign after."}
+  - {id: prison, verse: "25.4", text: "If the 5th or the 9th house is occupied by two malefic planets and such planets are not aspected by benefic planets, the person will meet his death by being shut up in a prison or by other restraint", definition: "Two or more malefics stand in the 5th and 9th houses taken together, and no benefic aspects any of them."}
+  - {id: prison_drekkana, verse: "25.4", text: "If the 8th house from the rising sign contains a Sarpa or Nigala drekkana, death will also result from imprisonment or other restraint", definition: "The drekkana in the 8th house (the 22nd from the rising drekkana) carries a snake, a noose or fetters in chapter XXVII's figures: Cancer 2nd and 3rd, Scorpio 1st and 2nd, Pisces 3rd (snakes), Capricorn 1st (fetters)."}
+  - {id: woman_at_home, verse: "25.4", text: "If Virgo is the 7th house from the ascendant and is occupied by the Moon accompanied by a [malefic] planet, if Venus occupies the sign Aries and the Sun the rising sign, the person will die in his own house and such death will be caused by a woman", definition: "Lagna Pisces with the Sun in it; the Moon in Virgo with the Sun, Mars or Saturn; Venus in Aries. (Iyer prints 'benefic'; the Sanskrit reads aśubhānvite, 'joined with a malefic'.)"}
+  - {id: spear_1, verse: "25.5", text: "If the 4th house from the ascendant is occupied by Mars or the Sun and the 10th house by Saturn, the person will die being stabbed with a spear", definition: "Mars or the Sun in the 4th and Saturn in the 10th."}
+  - {id: spear_2, verse: "25.5", text: "If the Sun, Mars, Saturn and the waning Moon occupy the ascendant, the 5th house and the 9th house, the person will die being stabbed with a spear", definition: "The Sun, Mars, Saturn and the waning Moon all stand in the 1st, 5th and 9th houses."}
+  - {id: spear_3, verse: "25.5", text: "If the Sun occupies the 4th house and Mars, which occupies the 10th house, is aspected by the waning Moon, the person will die being stabbed with a spear", definition: "The Sun in the 4th, Mars in the 10th, and the waning Moon aspecting the 10th (so standing in the 4th)."}
+  - {id: wood, verse: "25.5", text: "If the Sun occupies the 4th house and Mars, which occupies the 10th house, is aspected by Saturn, the person will die being struck with a piece of wood", definition: "The Sun in the 4th, Mars in the 10th, and Saturn aspecting the 10th."}
+  - {id: club, verse: "25.6", text: "If the 8th, 10th, 1st and 4th houses are occupied respectively by the waning Moon, Mars, Saturn and the Sun, the person will die being struck with a club or stick", definition: "The waning Moon in the 8th, Mars in the 10th, Saturn in the 1st, the Sun in the 4th."}
+  - {id: smoke, verse: "25.6", text: "If the 10th, 9th, 1st and 5th houses are occupied respectively by the waning Moon, Mars, Saturn and the Sun, the death of the person will be caused by smoke, by fire, by imprisonment or by blows", definition: "The waning Moon in the 10th, Mars in the 9th, Saturn in the 1st, the Sun in the 5th."}
+  - {id: king, verse: "25.7", text: "If the 4th, 7th and 10th houses are respectively occupied by Mars, the Sun and Saturn, the person will die by weapons, by fire or by the king", definition: "Mars in the 4th, the Sun in the 7th, Saturn in the 10th."}
+  - {id: worms, verse: "25.7", text: "If the 2nd, 4th and 10th houses are respectively occupied by Saturn, the Moon and Mars, the person will die of sores and worms", definition: "Saturn in the 2nd, the Moon in the 4th, Mars in the 10th."}
+  - {id: vehicle, verse: "25.8", text: "If the Sun occupies the 10th house and Mars the 4th house, the person will die in consequence of a fall from a vehicle or conveyance", definition: "The Sun in the 10th and Mars in the 4th."}
+  - {id: machine, verse: "25.8", text: "If Mars occupies the 7th house and [Saturn and the Moon] occupy the rising sign, the person will die being caught in a machine", definition: "Mars in the 7th; Saturn and the Moon in the lagna. (Iyer adds the Sun; the Sanskrit names Saturn and the Moon, saurendunā.)"}
+  - {id: excrement_1, verse: "25.8", text: "If the sign Libra is occupied by Mars, the sign Aries by Saturn and the sign Capricorn or Aquarius by the Moon, the person will die in the middle of excrement", definition: "Mars in Libra, Saturn in Aries, the Moon in Capricorn or Aquarius."}
+  - {id: excrement_2, verse: "25.8", text: "If the 10th, 7th and 4th houses are respectively occupied by the waning Moon, by the Sun and by Mars, the person will die in the middle of excrement", definition: "The waning Moon in the 10th, the Sun in the 7th, Mars in the 4th."}
+  - {id: privities, verse: "25.9", text: "If the waning Moon is aspected by powerful Mars and Saturn occupies the 8th house, the person will die of diseases affecting the privities; the part affected will be either eaten through by worms or cut with the lancet or burnt", definition: "The waning Moon aspected by Mars, Mars in its own, moolatrikona or exaltation sign; Saturn in the 8th."}
+  - {id: birds, verse: "25.10", text: "If the Sun and Mars occupy the 7th house, Saturn occupies the [8th] house and the waning Moon the 4th house, the death of the person will be caused by birds", definition: "The Sun and Mars in the 7th, Saturn in the 8th, the waning Moon in the 4th. (Iyer prints the 6th; the Sanskrit reads nidhane, the 8th.)"}
+  - {id: mountain, verse: "25.10", text: "If the 1st, 5th, 8th and 9th houses are occupied respectively by the Sun, Mars, Saturn and the Moon, the person's death will be caused by a fall from a mountain top, by an attack of lightning or by the fall of a wall", definition: "The Sun in the 1st, Mars in the 5th, Saturn in the 8th, the Moon in the 9th."}
+
+# Verse 11: when none of the yogas above applies.
+fallback:
+  verse: "25.11"
+  text: "The cause of death of a person whose horoscope does not contain any of the yogas enumerated above shall be determined from the 22nd drekkana counted from the rising drekkana; death will be caused by the lord of such drekkana or by the lord of the sign of which the drekkana is a division, whichever is powerful, by water, fire or other means belonging to such lord"
+
+# Verse 12: the place of death, and the time of insensibility.
+place:
+  verse: "25.12"
+  text: "The place of death will be that of the sign occupied by the lord of the rising navamsa, or the place of the sign of a planet in the same sign as that lord, or of a planet aspecting it, or of the lord of the navamsa that lord is in. The actual place shall be determined by a careful examination of the several points"
+  note: "Where different places are pointed out by different planets, the place of the sign of the most powerful planet will be the place of death; of the two signs of a planet, that of its moolatrikona sign (the translator's notes)."
+  places: [place frequented by sheep, place frequented by oxen, a house, a well, a forest, a water-bank, a bazaar or store-house, a hole, place frequented by horses, watery tracts, a house, watery places]
+insensibility:
+  verse: "25.12"
+  text: "The period for which a person will remain insensible before death will be the time of oblique ascension of the portion of the rising sign below the horizon; if the rising sign is aspected by its lord, twice; if aspected by benefic planets, three times (the translator: by its lord and a benefic, six times)"
+
+# Verse 13: what becomes of the body (the drekkana in the 8th house, which is the 22nd from the rising drekkana).
+body:
+  verse: "25.13"
+  fiery: "If the 22nd drekkana from the rising drekkana is a fiery drekkana, the body of the person after death will be burnt and reduced to ashes"
+  watery: "If the 22nd drekkana is a watery drekkana, the body will be thrown into water"
+  misra: "If such drekkana is a misra (mixed) drekkana, the body will be neither burnt nor thrown into water but allowed to dry up"
+  sarpa: "If the 8th house contains a Sarpa drekkana, the body will be devoured by dogs, jackals, crows and the like"
+  note: "A fiery drekkana is the drekkana of a malefic planet, a watery one that of a benefic planet; a misra drekkana is a benefic's drekkana occupied by a malefic or a malefic's occupied by a benefic (the translator's notes)."
+
+# Verse 14: the world the person came from, and verse 15: the world they go to.
+worlds: {jupiter: "Devaloka (the world of the gods)", moon: "Pitriloka (the world of the ancestors)", venus: "Pitriloka (the world of the ancestors)", sun: "the world of the lower animals", mars: "the world of the lower animals", saturn: "the region of hell", mercury: "the region of hell"}
+past:
+  verse: "25.14"
+  text: "If the lord of the drekkana occupied by the Sun or the Moon, whichever is powerful, is Jupiter, the person has come from Devaloka; if the Moon or Venus, from Pitriloka; if the Sun or Mars, from the world of lower animals; if Saturn or Mercury, from the region of hell"
+  exalted: "such lord being in his exaltation sign, the last life of the person was of an exalted character"
+  middle: "such lord being between his exaltation and depression signs, the last life was one of middle importance"
+  debilitated: "such lord being in his depression sign, the last life was one of a low character"
+next:
+  verse: "25.15"
+  text: "If the 6th and the 8th houses are unoccupied, the person will after death go to the world of the planet most powerful of the lords of the drekkanas of the 6th and 8th houses; or the person will go to the world of the planet occupying the 6th, 7th or 8th house (the translator: of the most powerful of them, if several)"
+salvation:
+  verse: "25.15"
+  text: "If Jupiter occupies the 6th house, one of the kendra houses or the 8th house and is at the same time in his exaltation sign, or if the rising sign is Pisces and Jupiter occupies it in the navamsa of a benefic planet while the other planets are weak, the person will obtain salvation (moksha) after death"

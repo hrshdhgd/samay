@@ -2921,3 +2921,143 @@ def test_a_malformed_bj_women_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         women_bj.load_rules(path)
+
+
+# --- Brihat Jataka XXV: death, its place, the body, the worlds before and after (most sensitive) ----------------------------------
+from samay.engine import death_bj
+
+DB = death_bj.load_rules()
+DB_CHECKED = dataclasses.replace(DB, level="translation-checked", checked_by="test")
+_SEVEN = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
+
+
+def _db(lagna=0, park=None, minutes=None, **where):
+    """Every planet not named is parked in one sign (default: the 3rd from the lagna, which neither holds nor aspects the 8th for most bodies)."""
+    park = (lagna + 2) % 12 if park is None else park
+    spots = {p: where.get(p, (park, 15.0)) for p in _SEVEN}
+    return {f.id: f for f in death_bj.find(DB_CHECKED, _full_sky(lagna=lagna, **spots), minutes)}
+
+
+def test_the_death_file_is_gated_and_codes_exactly_its_yogas():
+    assert DB.level == "unchecked" and death_bj.find(DB, _full_sky()) is None
+    assert set(DB.yogas) == set(death_bj.YOGAS) and len(DB.yogas) == 26
+    assert DB.raw["limbs"][7] == "genital organ" and DB.raw["place"]["places"][3] == "a well"
+
+
+def test_a_planet_in_the_eighth_names_the_means_and_the_work_by_its_strength():
+    got = _db(lagna=0, saturn=(7, 15.0))
+    assert "starvation" in got["occupant_saturn"].text and "bad work" in got["occupant_saturn"].note      # Saturn in Scorpio: inimical
+    assert "aspect" not in got and "fallback" not in got and "own country" in got["sign_kind"].text        # Scorpio is fixed
+
+
+def test_an_empty_eighth_aspected_gives_the_humour_and_the_limb():
+    got = _db(lagna=0, mars=(4, 15.0))      # Mars in Leo aspects Scorpio (its 4th); the rest in Gemini aspect Sagittarius
+    assert "aspected by Mars" in got["aspect"].detail and "bile" in got["aspect"].detail and "genital organ" in got["aspect"].detail
+
+
+def test_with_no_yoga_the_22nd_drekkana_or_its_sign_lord_whichever_is_stronger_gives_the_cause():
+    got = _db(lagna=1)          # Taurus 15: the 22nd drekkana is the 2nd of Sagittarius (lord Mars, depressed in Cancer); the sign lord Jupiter is exalted in Cancer
+    assert "fallback" in got and "Jupiter: it will be caused by some unknown disease" in got["fallback"].detail
+
+
+@pytest.mark.parametrize("where, yid", [
+    ({"saturn": (3, 15.0), "moon": (6, 15.0), "mars": (9, 15.0)}, "well"),
+    ({"sun": (5, 10.0), "moon": (5, 20.0), "saturn": (11, 15.0)}, "kinsmen"),
+    ({"sun": (6, 15.0), "mars": (6, 20.0), "saturn": (7, 15.0), "moon": (3, 15.0)}, "birds"),
+    ({"mars": (6, 15.0), "saturn": (0, 15.0), "moon": (0, 20.0)}, "machine"),
+    ({"sun": (9, 15.0), "mars": (3, 15.0)}, "vehicle"),
+    ({"saturn": (3, 15.0), "moon": (9, 15.0)}, "dropsy"),
+])
+def test_the_particular_yogas(where, yid):
+    assert yid in _db(lagna=0, **where)
+
+
+def test_iyers_departures_from_the_sanskrit_are_coded_as_the_sanskrit_reads():
+    assert "birds" not in _db(lagna=0, sun=(6, 15.0), mars=(6, 20.0), saturn=(5, 15.0), moon=(3, 15.0))     # Saturn in the 6th (Iyer) does not fire; the 8th does
+    assert "machine" in _db(lagna=0, mars=(6, 15.0), saturn=(0, 15.0), moon=(0, 20.0), sun=(2, 15.0))      # the Sun need not be in the lagna
+
+
+def test_the_place_lists_its_candidates_and_the_insensibility_multiplies_by_the_lagnas_aspects():
+    got = _db(lagna=0, minutes=60.0)
+    assert "(the most powerful)" in got["place"].detail and "insensibility" in got
+    assert "1 hours 0 minutes" in got["insensibility"].detail
+    assert "2 hours 0 minutes" in _db(lagna=0, minutes=60.0, mars=(6, 15.0))["insensibility"].detail            # Mars, the lagna lord, aspects Aries
+    assert "3 hours 0 minutes" in _db(lagna=0, minutes=60.0, jupiter=(4, 15.0))["insensibility"].detail         # Jupiter in Leo aspects Aries (9th)
+    assert "6 hours 0 minutes" in _db(lagna=0, minutes=60.0, mars=(6, 15.0), jupiter=(4, 15.0))["insensibility"].detail
+    assert "insensibility" not in _db(lagna=0)
+
+
+def test_the_body_by_the_22nd_drekkana():
+    got = _db(lagna=0)          # Aries 15: the 22nd drekkana is the 2nd of Scorpio, lord Jupiter: watery, and it carries a snake
+    assert "watery" in got and "sarpa" in got
+    assert "misra" in _db(lagna=0, saturn=(7, 15.0))       # a malefic in a benefic's drekkana
+    assert "fiery" in _db(lagna=1) and "watery" in _db(lagna=2)   # Taurus 15: 2nd of Sagittarius = Aries, Mars; Gemini 15: 2nd of Capricorn = Taurus, Venus
+
+
+def test_the_past_world_by_the_stronger_lights_drekkana_lord_and_its_dignity():
+    got = _db(lagna=0, sun=(4, 15.0), moon=(7, 15.0), jupiter=(3, 15.0))   # Sun in Leo (moolatrikona) beats the depressed Moon; Leo 2nd = Sagittarius, Jupiter, exalted
+    assert "Devaloka" in got["past_sun"].text and "exalted character" in got["past_sun"].text and "past_moon" not in got
+    low = _db(lagna=0, sun=(4, 5.0), moon=(7, 15.0))            # Leo 1st: the Sun's own drekkana, the Sun in Leo (moolatrikona): middle
+    assert "lower animals" in low["past_sun"].text and "middle importance" in low["past_sun"].text
+
+
+def test_the_next_world_and_salvation():
+    empty = _db(lagna=0)              # everything in Gemini: the 6th and 8th are empty
+    assert "next_drekkana" in empty and "next_occupant" not in empty
+    occ = _db(lagna=0, saturn=(6, 15.0))
+    assert "next_occupant" in occ and "hell" in occ["next_occupant"].text
+    assert "salvation" in _db(lagna=0, jupiter=(3, 15.0))      # Jupiter exalted in the 4th (a kendra)
+    assert "salvation" not in _db(lagna=0, jupiter=(2, 15.0))
+
+
+@needs_kernel
+def test_the_rising_sign_rest_is_when_the_ascendant_leaves_its_sign():
+    from datetime import timedelta
+
+    from samay.engine import ephemeris
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    chart = service.natal_report(born).chart
+    m = ephemeris.rising_sign_rest_minutes(chart)
+    sign = int(chart.ascendant // 30)
+    before = ephemeris.compute_chart(chart.utc + timedelta(minutes=m - 1), chart.latitude, chart.longitude)
+    after = ephemeris.compute_chart(chart.utc + timedelta(minutes=m + 1), chart.latitude, chart.longitude)
+    assert 0 < m < 180 and int(before.ascendant // 30) == sign and int(after.ascendant // 30) == (sign + 1) % 12
+
+
+def test_the_afterlife_topic_is_sensitive_and_routed_only_by_its_own_phrases():
+    from samay.subject import SELF, Subject
+    assert qa.sensitivity("chart:afterlife", SELF) == "sensitive" and qa.sensitivity("chart:afterlife", Subject("Maya", None, True)) == "child"
+    assert qa.sort_question("what was my past life") == "chart:afterlife" and qa.sort_question("will I get moksha") == "chart:afterlife"
+    assert qa.sort_question("how will my life be next year") != "chart:afterlife"
+
+
+@needs_kernel
+def test_longevity_and_afterlife_answers_show_chapter_25_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 25" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert prompts.AFTERLIFE_UNCHECKED in render_answer(qa.answer_topic("chart:afterlife", born, NOW))
+    monkeypatch.setattr(death_bj, "load_rules", lambda path=None: DB_CHECKED)
+    lon, aft = qa.answer_topic("chart:longevity", born, NOW), qa.answer_topic("chart:afterlife", born, NOW)
+    lt, at = render_answer(lon), render_answer(aft)
+    assert "Cause and manner of death:" in lt and "Place of death" in lt and "What becomes of the body:" in lt and "world the person came from" not in lt
+    assert "The world the person came from (25.14):" in at and "Cause and manner" not in at and DB.afterlife_frame in at
+    assert "hours" in lt and all(len(p) <= 4096 for p in split_message(lt) + split_message(at))
+    assert "Brihat Jataka XXV" in qa._ai_prompt("how will I die", lon) and "Brihat Jataka XXV.14" in qa._ai_prompt("past life", aft)
+    assert render_answer(qa.answer_topic("chart:afterlife", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_AFTERLIFE
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["yogas"].pop(0),
+    lambda r: r["yogas"][0].update(definition=""),
+    lambda r: r["humours"].pop("sun"),
+    lambda r: r["limbs"].pop(),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_death_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(death_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        death_bj.load_rules(path)

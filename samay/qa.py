@@ -20,7 +20,9 @@ from .engine import (
     ashtakavarga,
     chandra_yogas,
     conjunctions,
+    death_bj,
     death_timing,
+    ephemeris,
     health,
     house_effects,
     house_strength,
@@ -86,6 +88,7 @@ MALEFIC_WORDS = ("malefic", "inauspicious", "afflictions", "anishta", "aristha")
 VARGAS_WORDS = ("vargas", "varga", "horas", "hora", "drekkana", "drekkanas", "trimsamsa", "trimsamsas", "dignity", "dignities")
 WOMEN_WORDS = ("woman", "women", "female", "feminine")
 STRENGTH_WORDS = ("strong", "weak", "strength", "houses")
+AFTERLIFE_WORDS = ("afterlife", "rebirth", "reborn", "reincarnation", "moksha", "salvation", "liberation")
 LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
 HEALTH_WORDS = ("disease", "diseases", "ailment", "ailments", "sickness", "sick")
 MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
@@ -132,7 +135,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs", "chart:vargas", "chart:malefic"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs", "chart:vargas", "chart:malefic", "chart:afterlife"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -251,6 +254,8 @@ class Answer:
     vargas_checked: bool = False
     malefic: tuple | None = None  # chart:malefic
     malefic_checked: bool = False
+    death_bj: tuple | None = None  # Brihat Jataka 25: inside chart:longevity (cause, place, body) and chart:afterlife (past, next)
+    death_bj_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -299,6 +304,8 @@ def sort_question(text: str) -> str | None:
         return "chart:strength"
     if not planets and {"strength", "houses"} & set(words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:houses"
+    if any(w in AFTERLIFE_WORDS for w in words) or any(f"{a} {b}" in " ".join(words) for a in ("past", "previous", "former", "next", "last") for b in ("life", "lives", "birth", "births")):
+        return "chart:afterlife"
     if not planets and (any(w in LONGEVITY_WORDS for w in words) or {"long", "live"} <= set(words)) and any(w in PERSONAL_WORDS for w in words):
         return "chart:longevity"
     if not planets and any(w in HEALTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
@@ -338,6 +345,7 @@ TOPIC_HELP = {
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
+    "chart:afterlife": "what the old book says of the world the person came from (past life) and the one they go to after death, and of moksha (Brihat Jataka XXV; a sensitive topic: the bot asks first): 'what was my past life'",
     "chart:malefic": "the old book's list of ill omens in the person's chart: marriage, wife and sons, disease, disability, servitude, imprisonment (Brihat Jataka XXIII; a sensitive topic: the bot asks first): 'what malefic yogas do I have'",
     "chart:vargas": "how the planets stand in their own, friendly and hostile signs, horas, drekkanas, the rising navamsa and trimsamsas (Brihat Jataka XXI): 'what do my vargas say', 'my planets\' dignity'",
     "chart:signs": "what each planet says of the person by the SIGN it is in (the Sun in Cancer, Saturn in Libra...): 'what do my planets in their signs say'",
@@ -524,7 +532,7 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
                     (asp_rules.aspect_text, asp_rules.degree_text, asp_rules.degree_rising))
 
 
-SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women", "chart:death_timing", "chart:malefic"})
+SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women", "chart:death_timing", "chart:malefic", "chart:afterlife"})
 CHILD_SENSITIVE_TOPICS = SENSITIVE_TOPICS | {"chart:health", "chart:upagrahas"}
 
 
@@ -536,6 +544,15 @@ def sensitivity(topic: str | None, subject: Subject) -> str | None:
     if subject.minor and topic in CHILD_SENSITIVE_TOPICS:
         return "child"
     return "sensitive" if topic in SENSITIVE_TOPICS else None
+
+
+def _death_bj(rules, birth: ResolvedBirth | None, sections: tuple[str, ...]) -> tuple | None:
+    """Brihat Jataka XXV for a birth, only the given sections; None without a birth or until the rules are checked."""
+    if birth is None or not rules.servable:
+        return None
+    chart = service.natal_report(birth).chart
+    found = death_bj.find(rules, chart, ephemeris.rising_sign_rest_minutes(chart))
+    return tuple(f for f in found if f.section in sections)
 
 
 def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
@@ -693,7 +710,12 @@ def answer_topic(
     if topic == "chart:longevity":
         lrules = longevity.load_rules()
         found = longevity.find(lrules, service.natal_report(birth).chart) if birth is not None else None
-        return Answer(topic, (), (), longevity=found, longevity_checked=lrules.servable, who=subject)
+        drules = death_bj.load_rules()
+        return Answer(topic, (), (), longevity=found, longevity_checked=lrules.servable, death_bj=_death_bj(drules, birth, ("cause", "place", "body")),
+                      death_bj_checked=drules.servable, who=subject)
+    if topic == "chart:afterlife":
+        drules = death_bj.load_rules()
+        return Answer(topic, (), (), death_bj=_death_bj(drules, birth, ("past", "next")), death_bj_checked=drules.servable, who=subject)
     if topic == "chart:health":
         hrules = health.load_rules()
         found = health.find(hrules, service.natal_report(birth).chart) if birth is not None else None
@@ -803,6 +825,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:
         verified += [f"Brihat Jataka XVIII, {r.planet.title()} in {SIGNS[r.sign]}: a person born with it is {r.text}." for r in answer.signs]
+    if answer.death_bj:
+        verified += [f"Brihat Jataka XXV.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.death_bj]
     if answer.malefic:
         verified += [f"Brihat Jataka XXIII.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.malefic]
     if answer.vargas:
