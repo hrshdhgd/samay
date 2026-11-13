@@ -27,7 +27,7 @@ STANDING_RANK = {"exaltation": 6, "moolatrikona": 5, "own": 4, "friendly": 3, "n
 AGNI = {(1, 1), (10, 2)}
 NIPATA = {(6, 2), (11, 3)}
 PASA = {(9, 1)}
-SARPA = {(3, 3), (7, 1), (7, 2), (11, 3)}
+SARPA = {(3, 2), (3, 3), (7, 1), (7, 2), (11, 3)}  # figures carrying or wrapped in a snake
 
 
 @dataclass(frozen=True)
