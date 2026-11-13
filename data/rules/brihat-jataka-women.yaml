@@ -1,0 +1,77 @@
+# Brihat Jataka chapter XXIV ("On the Horoscopy of Women"), verses 1-16: the second source (after Phaladeepika 11) for the book's pointers about a woman's character, husband,
+# marriage and children. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 201-207. QUOTED, scan errors corrected against the
+# Sanskrit (research/sources/gretil-brhajjataka.txt), the translator's notes applied where they define a term. Conditions are coded in samay/engine/women_bj.py; every rule has a
+# `definition` for the checker. Notes and what was left out: research/notes/brihat-jataka-women.md.
+#
+# THIS IS SENSITIVE. It is part of chart:women: shown only after a warning and a tap (a stronger warning for a child). It is an old text's pointers, not a forecast, and it speaks of
+# chastity, adultery and widowhood in the words of its time. UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked
+# with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden; a warning and approval come first.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "201-207"
+
+frame: "Brihat Jataka's chapter on a woman's chart says the same remarks apply as for a man's, but the effects that suit a woman alone affect her and the rest affect her husband; some say all affect the husband. It was written long ago, in the words of its time, and is not a forecast."
+houses:
+  verse: "24.1"
+  text: "The death of the husband is determined from the 8th house from the ascendant in the horoscope of a woman. Matters connected with her physique are determined from the rising sign and the sign occupied by the Moon, and matters connected with her fortune and her husband from the 7th house."
+closing:
+  verse: "24.16"
+  text: "All that has been said in this chapter applies to the positions of the planets at the time of the promise of the gift of the girl in marriage, of such gift and of marriage, and also at the time of a query (the translator adds: provided such effects do not clash with those in the chapters on marriage of the Brihat Samhita)."
+
+# Verses 3-6: the rising trimsamsa, and the trimsamsa the Moon is in, read with the sign it lies in. Trimsamsa lords: Mars, Saturn, Jupiter, Mercury, Venus (1.7). Verse 6: the effect
+# of whichever of the two is the more powerful comes to pass.
+trimsamsa:
+  more_powerful: {verse: "24.6", text: "The effects described for the rising trimsamsa or those described for the trimsamsa occupied by the Moon come to pass according as the one trimsamsa or the other is the more powerful."}
+  groups:
+    - {signs: [Aries, Scorpio], verse: "24.3", mars: "she will be unchaste before marriage", saturn: "she will lead a life of servitude", jupiter: "she will be chaste", mercury: "she will be deceitful", venus: "she will be of bad conduct"}
+    - {signs: [Taurus, Libra], verse: "24.4", mars: "she will be of bad conduct", saturn: "she will marry a second time", jupiter: "she will possess good qualities", mercury: "she will be skilled in music and dance", venus: "she will possess all good qualities and will be of wide-spread fame"}
+    - {signs: [Gemini, Virgo], verse: "24.4", mars: "she will be deceitful", saturn: "she will partake of the nature of a hermaphrodite", jupiter: "she will be chaste", mercury: "she will possess many good qualities", venus: "she will, out of lust, commit adultery"}
+    - {signs: [Cancer], verse: "24.5", mars: "she will be of an independent nature", saturn: "she will murder her husband", jupiter: "she will possess many good qualities", mercury: "she will be skilled in works of art", venus: "she will be of bad conduct"}
+    - {signs: [Leo], verse: "24.5", mars: "she will be of a masculine nature", saturn: "she will commit adultery", jupiter: "she will be the wife of a king", mercury: "she will be of a masculine nature", venus: "she will commit adultery with a person of low caste"}
+    - {signs: [Sagittarius, Pisces], verse: "24.5", mars: "she will possess many good qualities", saturn: "she will not indulge much in sexual union", jupiter: "she will possess many good qualities", mercury: "she will be a woman of knowledge", venus: "she will not be chaste"}
+    - {signs: [Capricorn, Aquarius], verse: "24.5", mars: "she will lead a life of servitude", saturn: "she will join a person of low caste", jupiter: "she will be chaste", mercury: "she will be of bad conduct", venus: "she will be barren"}
+
+# Verses 11-12: the lord of the setting (7th) sign or the setting navamsa. If they are of different planets, the more powerful comes to pass (the translator's note).
+setting:
+  verse: "24.11–12"
+  saturn: "the husband will be an old man and a fool"
+  mars: "the husband will be of irascible temper but will be attached to his wife"
+  venus: "the husband will be beautiful and fond of his wife"
+  mercury: "the husband will be learned and intelligent"
+  moon: "the husband will be full of lustful desires and of a quiet nature"
+  jupiter: "the husband will possess courage and other virtues and will have control over his passions and desires"
+  sun: "the husband will be of very soft nature and will engage in many works (the translator: some read that he will indulge much in sexual union)"
+
+rules:
+  - {id: feminine, verse: "24.2", text: "If the rising sign and the sign occupied by the Moon are even signs, the woman will be of a true feminine character", definition: "The lagna sign and the Moon's sign are both even signs (Taurus, Cancer, Virgo, Scorpio, Capricorn, Pisces)."}
+  - {id: virtuous, verse: "24.2", text: "If such signs are aspected by benefic planets she will be virtuous and modest and will wear ornaments", definition: "Both signs even (as above) and each aspected by a benefic (Mercury, Jupiter, Venus)."}
+  - {id: masculine_shape, verse: "24.2", text: "If such signs are odd the woman will possess a masculine shape and will be of masculine character", definition: "The lagna sign and the Moon's sign are both odd signs."}
+  - {id: mixed_character, verse: "24.2 (note)", text: "If either the rising sign or the sign occupied by the Moon is odd and the other even, the woman will partake of the character of a male and a female (the translator's note)", definition: "One of the two signs odd and the other even."}
+  - {id: wicked, verse: "24.2", text: "If they are either occupied or aspected by malefic planets she will be wicked and possess few virtues", definition: "Both the lagna sign and the Moon's sign are occupied or aspected by a malefic (Sun, Mars, Saturn; the Moon herself is not counted for her own sign)."}
+  - {id: women_together, verse: "24.7", text: "If Saturn and Venus occupy each other's navamsa and aspect each other, or if the rising sign is Taurus or Libra and the rising navamsa is that of Aquarius, the woman will quench the poisonous fire of her strong lustful desires by means of other women, assuming a masculine character", definition: "Saturn in a navamsa of Taurus or Libra and Venus in a navamsa of Capricorn or Aquarius, each aspecting the other's sign; or the lagna Taurus or Libra with the rising navamsa Aquarius."}
+  - {id: husband_wicked, verse: "24.8", text: "If the 7th house is not occupied by planets, is weak and is not aspected by benefic planets, the husband of the woman will be wicked", definition: "The 7th sign holds no planet, its lord is weak (in an inimical or depression sign, or in the 6th, 8th or 12th house), and no benefic aspects it."}
+  - {id: husband_hermaphrodite, verse: "24.8", text: "If the 7th house is occupied by Mercury the husband will be a hermaphrodite", definition: "Mercury in the 7th sign."}
+  - {id: husband_travels, verse: "24.8", text: "If the 7th house is a movable sign, the husband will be travelling in foreign lands", definition: "The 7th sign is Aries, Cancer, Libra or Capricorn."}
+  - {id: husband_stays, verse: "24.8 (note)", text: "If the 7th house is a fixed sign the husband will remain in his place (the translator's note)", definition: "The 7th sign is Taurus, Leo, Scorpio or Aquarius."}
+  - {id: husband_returns, verse: "24.8 (note)", text: "If the 7th house is a common sign he will travel to foreign lands but will return to his place every now and then (the translator's note)", definition: "The 7th sign is Gemini, Virgo, Sagittarius or Pisces."}
+  - {id: rejected_sun, verse: "24.8", text: "If the 7th house is occupied by the Sun, the woman will be rejected by her husband", definition: "The Sun in the 7th sign."}
+  - {id: widow_young, verse: "24.8", text: "If the 7th house is occupied by Mars and aspected by malefic planets, she will become a widow while young", definition: "Mars in the 7th sign and the Sun or Saturn aspecting it."}
+  - {id: unmarried_old, verse: "24.8", text: "If the 7th house is occupied by Saturn and aspected by malefic planets, she will remain unmarried to an old age", definition: "Saturn in the 7th sign and the Sun or Mars aspecting it."}
+  - {id: widow_malefics, verse: "24.9", text: "If the 7th house is occupied by several malefic planets, the woman will become a widow", definition: "Two or more of the Sun, Mars and Saturn in the 7th sign."}
+  - {id: quits_husband, verse: "24.9", text: "If the 7th house is occupied by several benefic and malefic planets, she will quit her husband and marry another person", definition: "At least two planets in the 7th sign, among them a benefic (Mercury, Jupiter, Venus) and a malefic (Sun, Mars, Saturn)."}
+  - {id: rejected_weak, verse: "24.9", text: "If the 7th house is occupied by a malefic planet, is weak and is aspected by a benefic planet, the woman will be rejected by her husband (the translator: a malefic is the Sun, Mars or Saturn; a benefic Mercury, Jupiter or Venus)", definition: "A malefic (Sun, Mars, Saturn) in the 7th sign, its lord weak (as above) and a benefic aspecting the sign."}
+  - {id: venus_mars_navamsas, verse: "24.9", text: "If Venus and Mars occupy each other's navamsa the woman will commit adultery", definition: "Venus in a navamsa of Aries or Scorpio and Mars in a navamsa of Taurus or Libra."}
+  - {id: permitted, verse: "24.9", text: "If the 7th house from the rising sign is occupied by the Moon, Venus and Mars, she will commit adultery with the permission of her husband", definition: "The Moon, Venus and Mars all in the 7th sign from the lagna."}
+  - {id: mother_too, verse: "24.10", text: "If the rising sign is that of Saturn or Mars and is occupied by the Moon and Venus and aspected by malefic planets, the woman and her mother will commit adultery (the translator: the sign of Saturn is Capricorn or Aquarius, of Mars Aries or Scorpio)", definition: "The lagna is Capricorn, Aquarius, Aries or Scorpio, the Moon and Venus are in it and a malefic (Sun, Mars, Saturn) aspects it."}
+  - {id: diseased_genital, verse: "24.10", text: "If the setting navamsa is that of Mars and the setting sign is aspected by Saturn, the woman will possess a diseased genital organ", definition: "The navamsa of the descendant point (the lagna degree plus 180) is a navamsa of Aries or Scorpio, and Saturn aspects the 7th sign."}
+  - {id: fine_genital, verse: "24.10", text: "If the setting navamsa is that of a benefic planet, the woman will possess a fine genital organ and will become an agreeable wife", definition: "The navamsa of the descendant point is a navamsa of Mercury, Jupiter or Venus."}
+  - {id: moon_venus_lagna, verse: "24.13", text: "If the rising sign is occupied by the Moon and Venus, the woman will be envious of the prosperity of other persons and will be greatly mindful of her comforts", definition: "The Moon and Venus both in the lagna sign."}
+  - {id: moon_mercury_lagna, verse: "24.13", text: "If the rising sign is occupied by the Moon and Mercury, the woman will be learned in the fine arts, will be in the enjoyment of comfort and will possess many good qualities", definition: "The Moon and Mercury both in the lagna sign."}
+  - {id: venus_mercury_lagna, verse: "24.13", text: "If the rising sign is occupied by Venus and Mercury, the woman will be beautiful, much liked by her husband and learned in music, vocal and instrumental", definition: "Venus and Mercury both in the lagna sign."}
+  - {id: three_in_lagna, verse: "24.13", text: "If the rising sign is occupied by the Moon, Mercury and Venus, the woman will be in the enjoyment of immense wealth and comfort and possessed of many good qualities; the same if by Mercury, Jupiter and Venus", definition: "The Moon, Mercury and Venus, or Mercury, Jupiter and Venus, all in the lagna sign."}
+  - {id: widow_eighth, verse: "24.14", text: "If the 8th house from the ascendant is occupied by a malefic planet, the woman will become a widow, and the widowhood will occur in the antardasha of the planet whose navamsa is occupied by the lord of such 8th house", definition: "A malefic (Sun, Mars, Saturn) in the 8th sign; the antardasha is that of the lord of the navamsa sign the 8th lord stands in."}
+  - {id: dies_first, verse: "24.14", text: "If the 8th house is occupied by a malefic planet and the 2nd house by a benefic planet, the woman will die before her husband", definition: "A malefic in the 8th sign and a benefic (Mercury, Jupiter, Venus) in the 2nd."}
+  - {id: few_sons, verse: "24.14", text: "If the Moon occupies the sign Virgo, Scorpio, Taurus or Leo, she will have very few sons", definition: "The Moon in Virgo, Scorpio, Taurus or Leo."}
+  - {id: masculine_planets, verse: "24.15", text: "If Saturn is neither powerful nor weak, the Moon, Venus and Mercury are weak, and the Sun, Mars and Jupiter are powerful, and the rising sign is odd, the woman will be of a masculine character (the translator: according to some she will enjoy many men)", definition: "Powerful = in an own, moolatrikona or exaltation sign; weak = in an inimical or depression sign; Saturn in a friendly or neutral sign; the lagna an odd sign."}
+  - {id: famed, verse: "24.15", text: "If Jupiter, Mars, Venus and Mercury are powerful and the rising sign is an even sign, the woman will be of wide-spread fame, vastly learned and learned also in the science of divinity", definition: "Jupiter, Mars, Venus and Mercury each in an own, moolatrikona or exaltation sign, and the lagna an even sign."}
+  - {id: ascetic, verse: "24.16", text: "If the 7th house from the rising sign is occupied by a malefic planet while the 9th house is occupied by some planet, the woman will without doubt become an ascetic of the class belonging to the planet occupying such 9th house (the translator: and the other effects already described will fail)", definition: "A malefic (Sun, Mars, Saturn) in the 7th sign and any planet in the 9th; the class is that of the planet in the 9th."}

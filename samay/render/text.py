@@ -18,6 +18,7 @@ from ..engine import (
     upagrahas,
     vargas,
     women,
+    women_bj,
 )
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
@@ -735,17 +736,26 @@ def render_women(answer, who=SELF) -> str:
     """The book's pointers about a woman's husband, marriage and children, with its frame and the translator's remark that times have changed."""
     title = f"🌸 What Phaladeepika's chapter on a woman's chart points to in {who.your} chart"
     rules = women.load_rules()
-    if not answer.women_checked:
-        return f"{title}\n\n{prompts.WOMEN_UNCHECKED}"
-    if answer.women is None:
+    if answer.women is None and answer.women_checked:
         return f"{title}\n\n{prompts.NEED_BIRTH_FOR_WOMEN}"
-    blocks = [title, rules.frame, rules.houses["text"], rules.houses["translators_note"]]
-    if answer.women:
+    blocks = [title, rules.frame, rules.houses["text"], rules.houses["translators_note"]] if answer.women_checked else [title, prompts.WOMEN_UNCHECKED + " (Phaladeepika chapter 11)"]
+    if not answer.women_checked:
+        pass
+    elif answer.women:
         blocks.append("In this chart:\n" + "\n".join(f"• {p.text[0].upper()}{p.text[1:]} ({p.detail}) [{p.verse}]" for p in answer.women))
     else:
         blocks.append(prompts.WOMEN_NONE)
-    verses = sorted({p.verse for p in answer.women} | {rules.houses["verse"]}, key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])))
-    blocks.append(f"Source: Phaladeepika {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
+    if answer.women_checked:
+        verses = sorted({p.verse for p in (answer.women or ())} | {rules.houses["verse"]}, key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])))
+        blocks.append(f"Source: Phaladeepika {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
+    bj = women_bj.load_rules()
+    if not answer.women_bj_checked:
+        blocks.append(prompts.WOMEN_UNCHECKED + " (Brihat Jataka chapter 24)")
+    elif answer.women_bj is not None:
+        lines = ["From Brihat Jataka chapter 24:", bj.frame, bj.houses["text"]]
+        lines += [f"• {p.detail}: “{p.text[:1].upper() + p.text[1:]}.” [{p.verse}]" for p in answer.women_bj]
+        lines.append("Source: Brihat Jataka " + ", ".join(sorted({p.verse.split(" ")[0] for p in answer.women_bj} | {bj.houses["verse"]}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + f" ({bj.edition}, pp. {bj.pages}) · checked")
+        blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
 
 

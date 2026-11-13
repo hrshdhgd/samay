@@ -42,6 +42,7 @@ from .engine import (
     upagrahas,
     vargas,
     women,
+    women_bj,
 )
 from .engine import entries as entry_store
 from .engine.entries import Entry
@@ -234,6 +235,8 @@ class Answer:
     houses_checked: bool = False
     women: tuple | None = None  # chart:women
     women_checked: bool = False
+    women_bj: tuple | None = None  # chart:women, Brihat Jataka 24
+    women_bj_checked: bool = False
     death: death_timing.DeathTiming | None = None  # chart:death_timing
     death_checked: bool = False
     upagrahas: upagrahas.Upagrahas | None = None  # chart:upagrahas
@@ -680,7 +683,9 @@ def answer_topic(
     if topic == "chart:women":
         wr = women.load_rules()
         found = women.find(wr, service.natal_report(birth).chart) if birth is not None else None
-        return Answer(topic, (), (), women=found, women_checked=wr.servable, who=subject)
+        bj = women_bj.load_rules()
+        found_bj = women_bj.find(bj, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), women=found, women_checked=wr.servable, women_bj=found_bj, women_bj_checked=bj.servable, who=subject)
     if topic == "chart:houses":
         hs = house_strength.load_rules()
         found = house_strength.find(hs, service.natal_report(birth).chart) if birth is not None else None
@@ -811,6 +816,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += [f"Phaladeepika {v}, {h}: {t}." for v, h, t in answer.upagrahas.effects]
     if answer.death is not None:
         verified += [f"Phaladeepika {r.verse}: {r.text}. Holds on {r.days} of {r.total} days." for r in answer.death.results if not r.note.startswith('does not apply')]
+    if answer.women_bj:
+        verified += [f"Brihat Jataka XXIV.{p.verse.split('.')[1].split(' ')[0]} ({p.detail}): {p.text}." for p in answer.women_bj]
     if answer.women:
         verified += [f"Phaladeepika {p.verse} ({p.detail}): {p.text}." for p in answer.women]
     if answer.yogas is not None:

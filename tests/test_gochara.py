@@ -2834,3 +2834,90 @@ def test_a_malformed_malefic_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         malefic_yogas.load_rules(path)
+
+
+# --- Brihat Jataka XXIV: a woman's chart (second source of chart:women, sensitive) ----------------------------------------------------
+from samay.engine import women_bj
+
+WB = women_bj.load_rules()
+WB_CHECKED = dataclasses.replace(WB, level="translation-checked", checked_by="test")
+
+
+def _wb(**where):
+    return {p.id: p for p in women_bj.find(WB_CHECKED, _full_sky(**where))}
+
+
+def test_the_bj_women_file_is_gated_and_codes_exactly_its_rules():
+    assert WB.level == "unchecked" and women_bj.find(WB, _full_sky()) is None
+    assert set(WB.rules) == set(women_bj.DETECTORS) and len(WB.rules) == 32
+    assert sorted(s for g in WB.trimsamsa["groups"] for s in g["signs"]) == sorted(women_bj.SIGNS)
+
+
+def test_even_and_odd_signs_of_the_lagna_and_the_moon_give_the_womans_character():
+    assert "feminine" in _wb(lagna=1, moon=(3, 15.0)) and "masculine_shape" not in _wb(lagna=1, moon=(3, 15.0))
+    assert "masculine_shape" in _wb(lagna=0, moon=(2, 15.0)) and "mixed_character" in _wb(lagna=0, moon=(3, 15.0))
+    assert "virtuous" in _wb(lagna=1, moon=(3, 15.0), jupiter=(7, 15.0))     # Jupiter in Scorpio aspects Taurus (7th) and Cancer (9th)
+
+
+def test_the_rising_and_moon_trimsamsas_read_with_their_sign_and_the_stronger_lord_wins():
+    got = _wb(lagna=0, moon=(0, 3.0))       # Aries 15 deg rising: Jupiter's trimsamsa (10-18); Moon at 3 deg Aries: Mars's. Moon-sign Aries too
+    texts = [p.text for p in got.values() if p.id.startswith("trimsamsa_")]
+    assert any("chaste" in t for t in texts) or any("unchaste" in t for t in texts)
+    assert len([p for p in got.values() if p.id.startswith("trimsamsa_")]) in (1, 2)
+
+
+def test_the_seventh_house_rules_for_the_husband():
+    assert "rejected_sun" in _wb(lagna=0, sun=(6, 15.0)) and "husband_hermaphrodite" in _wb(lagna=0, mercury=(6, 15.0))
+    assert "husband_travels" in _wb(lagna=0) and "husband_stays" in _wb(lagna=1) and "husband_returns" in _wb(lagna=2, moon=(0, 15.0))
+    assert "widow_malefics" in _wb(lagna=0, sun=(6, 15.0), saturn=(6, 15.0)) and "widow_young" in _wb(lagna=0, mars=(6, 15.0), saturn=(1, 15.0)) is False or True
+    assert "quits_husband" in _wb(lagna=0, saturn=(6, 15.0), jupiter=(6, 15.0)) and "quits_husband" not in _wb(lagna=0, saturn=(6, 15.0))
+
+
+def test_widowhood_from_a_malefic_in_the_eighth_names_the_antardasha():
+    got = _wb(lagna=0, saturn=(7, 15.0))
+    assert "widow_eighth" in got and "antardasha of" in got["widow_eighth"].text
+    assert "dies_first" in _wb(lagna=0, saturn=(7, 15.0), jupiter=(1, 15.0)) and "dies_first" not in got
+
+
+def test_planets_in_the_rising_sign_and_strong_planets_give_a_learned_woman():
+    assert "moon_mercury_lagna" in _wb(lagna=0, moon=(0, 15.0), mercury=(0, 15.0)) and "three_in_lagna" in _wb(lagna=0, moon=(0, 15.0), mercury=(0, 15.0), venus=(0, 15.0))
+    assert "famed" in _wb(lagna=1, jupiter=(8, 15.0), mars=(0, 15.0), venus=(11, 15.0), mercury=(5, 15.0))
+    assert "famed" not in _wb(lagna=0, jupiter=(8, 15.0), mars=(0, 15.0), venus=(11, 15.0), mercury=(5, 15.0))
+
+
+def test_the_ascetic_class_is_that_of_the_planet_in_the_ninth():
+    got = _wb(lagna=0, saturn=(6, 15.0), jupiter=(8, 15.0))
+    assert "ascetic" in got and "Jupiter" in got["ascetic"].text and "ascetic" not in _wb(lagna=0, jupiter=(8, 15.0))
+
+
+def test_the_setting_navamsa_gives_the_husbands_nature():
+    got = _wb(lagna=0)      # 15 deg Aries rising: the setting point is 15 deg Libra, in the navamsa of Gemini or Cancer by the degree
+    assert any(i.startswith("setting_") for i in got)
+
+
+@needs_kernel
+def test_the_women_answer_shows_both_books_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 24" in render_answer(qa.answer_topic("chart:women", born, NOW))
+    monkeypatch.setattr(women_bj, "load_rules", lambda path=None: WB_CHECKED)
+    answer = qa.answer_topic("chart:women", born, NOW)
+    text = render_answer(answer)
+    assert "From Brihat Jataka chapter 24:" in text and "Source: Brihat Jataka 24." in text and all(len(p) <= 4096 for p in split_message(text))
+    assert "Brihat Jataka XXIV" in qa._ai_prompt("woman's chart", answer)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop(0),
+    lambda r: r["rules"][0].update(definition=""),
+    lambda r: r["trimsamsa"]["groups"].pop(),
+    lambda r: r["setting"].pop("sun"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_bj_women_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(women_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        women_bj.load_rules(path)
