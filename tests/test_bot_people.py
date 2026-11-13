@@ -437,7 +437,7 @@ def test_only_the_longevity_topic_is_sensitive_and_health_is_sensitive_for_child
 async def test_a_question_about_length_of_life_gets_a_warning_first_and_nothing_is_computed(ctx, store, clock, monkeypatch):
     store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
     calls = _computed(monkeypatch)
-    update, msg = message(ME, "how long will I live, when will I die")
+    update, msg = message(ME, "how long will I live")
     await bot.on_text(update, ctx)
     sent = [c.args[0] for c in msg.reply_text.await_args_list]
     assert sent == [prompts.SENS_WARN] and calls == []
@@ -529,3 +529,17 @@ async def test_the_consent_is_not_remembered_between_questions(ctx, store, clock
         assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN]
         yes = _tap_with_markup(ME, "sens:yes:chart:longevity")
         await bot.on_button(*[yes[0], ctx])
+
+
+@needs_kernel
+async def test_when_will_i_die_gets_its_own_stronger_warning_and_a_child_gets_the_strongest(ctx, store, clock, ai):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    ai["route"] = "chart:death_timing"
+    update, msg = message(ME, "when will I die")
+    await bot.on_text(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN_DEATH]
+    pid = store.save_person(ME, "Maya", "daughter", BirthInput("2015-03-14", "06:30", "Pune"))
+    bot._session(ctx, ME)["active"] = pid
+    update, msg = message(ME, "when will she die")
+    await bot.on_text(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN_DEATH_CHILD.format(name="Maya")]

@@ -14,6 +14,7 @@ from .engine import (
     antardasha,
     ashtakavarga,
     daylight,
+    death_timing,
     entries,
     ephemeris,
     geo,
@@ -275,4 +276,22 @@ def timing_report(birth: ResolvedBirth, now: datetime, area: str, tz: str | None
     times = [first + timedelta(days=d) for d in range(TIMING_YEARS * 365 + 1)]
     track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
     found = house_timing.find(rules, natal.chart, natal.dashas, times, track, area)
+    return replace(found, tz=tz or birth.place.tz) if found else None
+
+
+DEATH_TIMING_YEARS = 5
+
+
+def death_timing_report(birth: ResolvedBirth, now: datetime, tz: str | None = None) -> death_timing.DeathTiming | None:
+    """Phaladeepika's death-timing conditions as stretches of days over the next DEATH_TIMING_YEARS years (noon UTC, one per day). None until checked.
+    Never a date: the book names conditions only."""
+    rules = death_timing.load_rules()
+    if not rules.servable:
+        return None
+    natal = natal_report(birth)
+    profile = load_profile(birth.profile)
+    first = now.astimezone(UTC).replace(hour=12, minute=0, second=0, microsecond=0)
+    times = [first + timedelta(days=d) for d in range(DEATH_TIMING_YEARS * 365 + 1)]
+    track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
+    found = death_timing.find(rules, natal.chart, natal.dashas, times, track)
     return replace(found, tz=tz or birth.place.tz) if found else None

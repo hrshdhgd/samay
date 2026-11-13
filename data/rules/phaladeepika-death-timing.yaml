@@ -1,0 +1,34 @@
+# Phaladeepika's rules that tie the end of life to a transit or a dasha: chapter 13 verses 18-19 and chapter 20 verses 32 and 40. Source: Mantreswara's
+# Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 134-135 and 187-190.
+# PARAPHRASED. Conditions are coded in samay/engine/death_timing.py. Notes: research/notes/phaladeepika-death-timing.md.
+#
+# MOST SENSITIVE. Shown only after its own warning and a tap. The book gives CONDITIONS, never dates; the bot shows stretches of days in which a
+# condition holds, over the next five years, and says so first. UNCHECKED: nothing is shown until a person checks each rule and sets level: translation-checked.
+# Owner's decision 2026-11-13: build it, behind a warning and approval (children included, with a stronger warning).
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "134-135, 187-190"
+
+frame: "The book names conditions in the sky and in the dashas that it links to the end of life. It names no date, no one can foretell a death, and most people live through many such stretches. These are only the stretches in the next five years when each of the book's conditions holds in this chart. Please do not read them as a forecast."
+
+rules:
+  - id: saturn_point
+    verse: "13.18"
+    definition: "For a native of short life (alpayu; the bot cannot tell), add the sidereal longitudes of the Sun, the Moon, Jupiter and Saturn at birth; Saturn, in transit, is in the sign that the sum falls in. The book's example gives a sign and a stretch of 7 degrees; the whole sign is used."
+    text: "for a native of short life, the end comes when Saturn, in transit, reaches the sign given by adding the longitudes of the Sun, Moon, Jupiter and Saturn at birth"
+  - id: lagna_lord_transit
+    verse: "13.19"
+    definition: "Applies only if the lagna lord is joined with a malefic (Sun, Mars, Saturn, Rahu, Ketu), combust, or in its debilitation sign or an enemy's sign at birth; then the lagna lord, in transit, is in the 6th, 8th or 12th house or the lagna (from the lagna sign), or in the same sign as a planet there. The same is read from the navamsa lagna, the decanate lagna and the Moon sign; only the lagna and the Moon sign are used."
+    text: "if the lord of the lagna is joined with a malefic, eclipsed by the Sun, or in its debilitation or an enemy's sign, death is pronounced when that lord, in transit, stands in the 6th, 8th or 12th or in the lagna, or is connected with it"
+  - id: jupiter_eighth
+    verse: "20.32"
+    definition: "Jupiter, in transit, is in the sign occupied at birth by the lord of the 8th, or in a trikona (the 1st, 5th, 9th) from that sign, or from the navamsa sign the 8th lord occupies. The book names the navamsa and its trikonas as well; both the sign and the navamsa sign are used."
+    text: "death is linked to Jupiter's transit through the sign occupied by the lord of the 8th, the navamsa it occupies, or a trikona from either"
+  - id: maraka_dasha
+    verse: "20.40"
+    definition: "A mahadasha or antardasha of a planet that is the lord of the 2nd or the 7th house, or a planet standing in the 2nd or the 7th house, when that planet is powerful (in its own, moolatrikona or exaltation sign)."
+    text: "the 2nd and 7th houses are death-dealing (maraka) houses; if their lords, or planets in them, are powerful they cause death in their dasha"
+  - id: eighth_twelfth_antardasha
+    verse: "20.40"
+    definition: "An antardasha of the lord of the 8th or the 12th when that lord is very weak (in its debilitation sign, or combust)."
+    text: "if the lord of the 8th or 12th is very weak, death is likely in the antardasha of either"

@@ -183,6 +183,16 @@ HOUSES_NONE = "None of the book's tests for this house finds anything in the cha
 NEED_BIRTH_FOR_WOMEN = "To read the book's pointers for a woman's chart I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
 WOMEN_UNCHECKED = "The book's pointers for a woman's chart are waiting for a check, so I can't show them yet."
 WOMEN_NONE = "None of the book's pointers about husband, marriage or children is met by this chart."
+SENS_WARN_DEATH = (
+    "⚠️ Please read this first\n\nThis asks WHEN the old book links the end of life to the sky. The book gives conditions, never dates, and no one can "
+    "foretell a death: most people live through many such stretches. What follows can be very frightening to read. Are you sure you want to see it?"
+)
+SENS_WARN_DEATH_CHILD = (
+    "⚠️ Please read this first — it is about {name}, a child\n\nThis asks when the old book links the end of life to the sky, for a child. The book "
+    "gives conditions, never dates, nobody can foretell this, and it can be terrifying to read about a child. Please only continue if you are certain."
+)
+NEED_BIRTH_FOR_DEATH = "To look at this I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
+DEATH_UNCHECKED = "The book's death-timing conditions are waiting for a check, so I can't show them yet."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, health, house_strength, house_timing, longevity, women
+from ..engine import conjunctions, death_timing, health, house_strength, house_timing, longevity, women
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -335,6 +335,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:death_timing" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_DEATH
     if answer.topic == "chart:women" and not birth_known:
         return prompts.NEED_BIRTH_FOR_WOMEN
     if answer.topic == "chart:houses" and not birth_known:
@@ -350,6 +352,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:death_timing":
+        blocks.append(render_death_timing(answer, who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:women":
         blocks.append(render_women(answer, who))
         blocks.append(DISCLAIMER)
@@ -505,6 +511,36 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_death_timing(answer, who=SELF) -> str:
+    """Stretches of days in which each of the book's death-timing conditions holds, over five years. Never a date; the frame comes first."""
+    title = f"🕯 When the old book links the end of life to the sky, for {who.name if not who.is_self else 'you'}"
+    rules = death_timing.load_rules()
+    if not answer.death_checked:
+        return f"{title}\n\n{prompts.DEATH_UNCHECKED}"
+    t = answer.death
+    if t is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_DEATH}"
+    tz = ZoneInfo(t.tz)
+    blocks = [title, rules.frame, f"({_day(t.start.astimezone(tz))} – {_day(t.end.astimezone(tz))})"]
+    lines = []
+    for r in t.results:
+        if r.note.startswith("does not apply") or r.note.startswith("no lord") or r.note.startswith("neither"):
+            lines.append(f"• {r.text[0].upper()}{r.text[1:]} ({r.verse}): {r.note}.")
+            continue
+        head = f"• {r.text[0].upper()}{r.text[1:]} ({r.verse})" + (f" — {r.note}" if r.note else "") + ":"
+        if not r.windows:
+            lines.append(f"{head} not in this period.")
+        elif r.total and r.days / r.total > 0.5:
+            lines.append(f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}.")
+        else:
+            shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:6])
+            more = f" and {len(r.windows) - 6} more" if len(r.windows) > 6 else ""
+            lines.append(f"{head} {shown}{more} ({r.days} of {r.total} days).")
+    blocks.append("\n".join(lines))
+    blocks.append(f"Source: Phaladeepika {', '.join(sorted({r.verse for r in t.results}, key=lambda v: (int(v.split('.')[0]), int(v.split('.')[1]))))} ({rules.edition}) · checked")
+    return "\n\n".join(blocks)
 
 
 def render_women(answer, who=SELF) -> str:

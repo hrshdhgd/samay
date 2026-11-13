@@ -1758,7 +1758,8 @@ def test_the_longevity_answer_waits_and_then_renders_without_any_date(monkeypatc
     assert "length of life" in text and "Source: Phaladeepika" in text and "not a forecast" in text
     import re
     assert not re.search(r"\b(19|20)\d\d\b", text.split("Source:")[0])      # no year, so no date or window for death
-    assert qa.sort_question("when will I die") == "chart:longevity" and qa.sort_question("what is death") is None
+    assert qa.sort_question("how long will I live") == "chart:longevity" and qa.sort_question("when will I die") == "chart:death_timing"
+    assert qa.sort_question("what is death") is None
     assert render_answer(qa.answer_topic("chart:longevity", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_LONGEVITY
 
 
@@ -1947,3 +1948,68 @@ def test_a_malformed_women_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         women.load_rules(path)
+
+
+# --- Death-timing conditions (Phaladeepika 13.18-19, 20.32, 20.40): windows of days, never a date --------------------------
+from samay.engine import death_timing
+
+DT = death_timing.load_rules()
+DT_CHECKED = dataclasses.replace(DT, level="translation-checked", checked_by="test")
+
+
+def _dt(natal, track, dashas=()):
+    return {r.id: r for r in death_timing.find(DT_CHECKED, natal, dashas, DAYS, track).results}
+
+
+def test_the_death_timing_file_is_gated_and_states_that_it_names_no_date():
+    assert DT.level == "unchecked" and death_timing.find(DT, _full_sky(), (), DAYS, _track()) is None
+    assert "names no date" in DT.frame and "do not read them as a forecast" in DT.frame.lower()
+
+
+def test_saturn_in_the_sign_of_the_summed_longitudes_marks_the_days():
+    nat = _full_sky(sun=(0, 15.0), moon=(1, 15.0), jupiter=(2, 15.0), saturn=(3, 15.0))   # 15+45+75+105 = 240 degrees: sign 8 (Sagittarius)
+    r = _dt(nat, _track(saturn=[8, 8, 7, 7, 8, 8, 8, 7, 7, 7]))["saturn_point"]
+    assert r.days == 5 and _day_numbers(r.windows) == [(0, 1), (4, 6)] and "the sign 9" in r.note
+
+
+def test_the_lagna_lord_rule_only_applies_when_the_lord_is_afflicted_at_birth():
+    ok = _dt(_full_sky(lagna=0, mars=(0, 15.0), saturn=(0, 15.0)), _track(mars=[7, 5, 5, 7, 7, 7, 7, 7, 7, 7]))["lagna_lord_transit"]
+    assert "joined with a malefic" in ok.note and ok.days >= 2        # Mars with Saturn at birth; in the 6th (Virgo) on days 1-2
+    assert _dt(_full_sky(lagna=0, mars=(3, 15.0)), _track())["lagna_lord_transit"].note.endswith("at birth")   # Mars in Cancer: debilitated
+    calm = _dt(_full_sky(lagna=0, mars=(0, 15.0)), _track())["lagna_lord_transit"]
+    assert calm.note.startswith("does not apply") and calm.days == 0
+
+
+def test_jupiters_transit_through_the_eighth_lords_sign_navamsa_or_trikonas():
+    nat = _full_sky(lagna=0, mars=(0, 15.0))                      # the 8th lord Mars in Aries: Aries, Leo, Sagittarius (trikonas)
+    r = _dt(nat, _track(jupiter=[3, 3, 4, 4, 8, 8, 3, 3, 3, 3]))["jupiter_eighth"]
+    assert _day_numbers(r.windows) == [(2, 5)]
+
+
+def test_maraka_and_weak_eighth_twelfth_dashas_need_the_condition_at_birth():
+    nat = _full_sky(lagna=0, venus=(1, 15.0))                      # Venus rules the 2nd and 7th and is in its own sign Taurus
+    run = (Period("venus", T0 - timedelta(days=50), T0 + timedelta(days=4)),)
+    got = _dt(nat, _track(), run)
+    assert got["maraka_dasha"].days == 4 and "no lord" not in got["maraka_dasha"].note
+    none = _dt(_full_sky(lagna=0, venus=(5, 15.0)), _track(), run)["maraka_dasha"]
+    assert none.days == 0 and none.note.startswith("no lord")
+    calm = _full_sky(lagna=0, venus=(1, 15.0), jupiter=(8, 15.0), mars=(0, 15.0))     # the 8th and 12th lords (Mars, Jupiter) in strong signs, away from the Sun
+    assert _dt(calm, _track())["eighth_twelfth_antardasha"].note.startswith("neither")
+
+
+@needs_kernel
+def test_the_death_timing_answer_is_sensitive_names_no_date_and_fits_messages(monkeypatch):
+    import re
+
+    from samay.render.text import split_message
+    from samay.subject import SELF, Subject
+    assert qa.sensitivity("chart:death_timing", SELF) == "sensitive" and qa.sensitivity("chart:death_timing", Subject("Maya", None, True)) == "child"
+    born = service.resolve_birth(BirthInput("1952-08-15", "06:30", "Pune"))
+    assert prompts.DEATH_UNCHECKED in render_answer(qa.answer_topic("chart:death_timing", born, NOW))
+    monkeypatch.setattr(death_timing, "load_rules", lambda path=None: DT_CHECKED)
+    answer = qa.answer_topic("chart:death_timing", born, NOW)
+    text = render_answer(answer)
+    assert "names no date" in text and "Source: Phaladeepika 13.18" in text and all(len(p) <= 4096 for p in split_message(text))
+    assert answer.death is not None and len(answer.death.results) == 5
+    assert render_answer(qa.answer_topic("chart:death_timing", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_DEATH
+    assert not re.search(r"is (due|expected|predicted) to die", text) and "will die on" not in text

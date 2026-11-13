@@ -19,6 +19,7 @@ from .engine import (
     ashtakavarga,
     chandra_yogas,
     conjunctions,
+    death_timing,
     health,
     house_effects,
     house_strength,
@@ -67,6 +68,7 @@ WHEN_PREFIX = "when:"
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
 CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
 YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
+DEATH_WORDS = ("die", "death", "dying")
 WOMEN_WORDS = ("woman", "women", "female", "feminine")
 STRENGTH_WORDS = ("strong", "weak", "strength", "houses")
 LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
@@ -114,7 +116,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -210,6 +212,8 @@ class Answer:
     houses_checked: bool = False
     women: tuple | None = None  # chart:women
     women_checked: bool = False
+    death: death_timing.DeathTiming | None = None  # chart:death_timing
+    death_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -240,6 +244,8 @@ def sort_question(text: str) -> str | None:
         return "chart:conjunctions"
     if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:yogas"
+    if not planets and "when" in words and any(w in DEATH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:death_timing"
     if not planets and any(w in WOMEN_WORDS for w in words) and {"horoscope", "chart", "husband"} & set(words):
         return "chart:women"
     if not planets and {"strength", "houses"} & set(words) and any(w in PERSONAL_WORDS for w in words):
@@ -282,6 +288,7 @@ TOPIC_HELP = {
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
+    "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
     "chart:women": "the old book's pointers about a woman's husband, marriage and children (a sensitive topic: the bot asks first)",
     "chart:houses": "which houses of the chart are helped or harmed, and why (the strength of each house)",
     "chart:longevity": "how long a life the chart points to, dangers to life at birth and the cause of death (a sensitive topic: the bot asks first)",
@@ -460,7 +467,7 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
                     (asp_rules.aspect_text, asp_rules.degree_text, asp_rules.degree_rising))
 
 
-SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women"})
+SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women", "chart:death_timing"})
 CHILD_SENSITIVE_TOPICS = SENSITIVE_TOPICS | {"chart:health"}
 
 
@@ -583,6 +590,10 @@ def answer_topic(
         area = topic[len(WHEN_PREFIX):]
         report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
+    if topic == "chart:death_timing":
+        dr = death_timing.load_rules()
+        report = service.death_timing_report(birth, now, tz) if birth is not None else None
+        return Answer(topic, (), (), death=report, death_checked=dr.servable, who=subject)
     if topic == "chart:women":
         wr = women.load_rules()
         found = women.find(wr, service.natal_report(birth).chart) if birth is not None else None
@@ -682,6 +693,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += health_facts(answer.health, answer.who)
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
+    if answer.death is not None:
+        verified += [f"Phaladeepika {r.verse}: {r.text}. Holds on {r.days} of {r.total} days." for r in answer.death.results if not r.note.startswith('does not apply')]
     if answer.women:
         verified += [f"Phaladeepika {p.verse} ({p.detail}): {p.text}." for p in answer.women]
     if answer.yogas is not None:
