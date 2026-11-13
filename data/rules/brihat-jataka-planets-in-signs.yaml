@@ -1,0 +1,100 @@
+# Brihat Jataka chapter XVIII ("On the Sun, Mars and other planets in the several signs of the zodiac"), verses 1-19: what a person is like with each of the Sun, Mars, Mercury,
+# Jupiter, Venus and Saturn in each sign. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain (archive.org b2488442x), pp. 165-171.
+# QUOTED, scan errors corrected (research/notes/brihat-jataka-planets-in-signs.md). Each text continues "A person born with the <planet> in <sign> will be ...".
+#
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "165-171"
+
+# Verse 1's translator's note (a): the Sun in the exaltation degree gives a different reading from the one in verse 1 ("not in its exaltation degree").
+sun_exaltation_degree:
+  verse: "18.1 (note a)"
+  text: "will be very rich, will remain for ever in a place, will have servants carrying arms, will be of great fame and able"
+  from_degree: 9.0   # the 10th degree of Aries is the deep-exaltation point (Phaladeepika 1.6); the 10th degree is used here for "the exaltation degree"
+  to_degree: 10.0
+# The text's own conditions on how much of this comes to pass: chapter XVII verse 13 ("the same remark applies to planets other than the Moon", i.e. these) and verse 20 of this chapter.
+condition:
+  verse: "18.20 and 17.13"
+  text: "The effects given for the signs hold also when the planet is in the rising sign, and more is due to the rising sign and the other houses; if the houses and their lords are powerful these effects come to pass fully. The translator refers to chapter XVII verse 13: they come to pass fully only if the planet, the sign it is in and the lord of that sign are all powerful; with two of the three, imperfectly; with one, still more imperfectly; with none, not at all."
+# Aquarius for Jupiter says "all that has been said of the Moon in Cancer" (chapter XVII); that text is brihat-jataka-moon.yaml's sign 4.
+planets:
+  sun:
+    Aries: {verse: "1", text: "of wide-spread fame, able, of wandering habits, possessed of small wealth and will carry weapons"}
+    Taurus: {verse: "1", text: "one who will deal in cloths, perfumes and other articles, will hate women and will be skilled in music"}
+    Gemini: {verse: "2", text: "learned in grammar, will be an Astrologer and will be rich"}
+    Cancer: {verse: "2", text: "independent, fierce, poor, will do the work of other people and will suffer from the fatigue of foot-journey"}
+    Leo: {verse: "2", text: "fond of living in forests, mountains and cow-sheds, will be powerful and will be a fool"}
+    Virgo: {verse: "2", text: "skilled in writing, painting, in literary productions and in mathematics, and will possess a body resembling that of a woman"}
+    Libra: {verse: "3", text: "fond of liquor or will manufacture it, will be of a wandering nature, will be an alchemist and will do wicked deeds"}
+    Scorpio: {verse: "3", text: "of a fierce nature, will thoughtlessly engage in work, will earn money by acts connected with poison and will be vastly learned in the use of arms"}
+    Sagittarius: {verse: "3", text: "respected by sages, will be rich and independent and will be learned in medicine and sculpture"}
+    Capricorn: {verse: "4", text: "one who will engage in deeds unsuited to his rank in life, will be ignorant, will deal in mean articles, will possess small wealth, will be avaricious and will enjoy the property of other men"}
+    Aquarius: {verse: "4", text: "one who will engage in deeds unsuited to his rank in life, will be poor and will have no sons"}
+    Pisces: {verse: "4", text: "one who will become rich by dealing in the produce of water, will be respected by women, will possess a mole or other marks in the part of body corresponding to the sign occupied by the Sun and Moon together"}
+  mars:
+    Aries: {verse: "5", text: "respected by the king, of a wandering nature, a commander of armies or a trader, rich, with a body marked with wounds, a thief and in the enjoyment of the pleasures of the senses"}
+    Taurus: {verse: "5", text: "subject to the influence of women, not open to the advice of friends, fond of the wives of other men, learned in the games of magic, one who will adorn his person, of a timid nature and with a rough body"}
+    Gemini: {verse: "6", text: "of bright appearance, with sons and no friends, one who will help others, skilled in music and fight, a niggard, fearless and of a begging nature"}
+    Cancer: {verse: "6", text: "rich, one who will cross seas and earn wealth, of defective limbs and wicked"}
+    Leo: {verse: "7", text: "poor, one who will patiently bear afflictions, will wander in the forests, will be fearless and will have few wives and children"}
+    Virgo: {verse: "6", text: "of bright appearance, with sons and no friends, one who will help others, skilled in music and fight, a niggard, fearless and of a begging nature"}
+    Libra: {verse: "5", text: "subject to the influence of women, not open to the advice of friends, fond of the wives of other men, learned in the games of magic, one who will adorn his person, of a timid nature and with a rough body"}
+    Scorpio: {verse: "5", text: "respected by the king, of a wandering nature, a commander of armies or a trader, rich, with a body marked with wounds, a thief and in the enjoyment of the pleasures of the senses"}
+    Sagittarius: {verse: "7", text: "one who will have many enemies, will be the king's minister, of wide-spread fame, fearless and with very few children"}
+    Capricorn: {verse: "7", text: "very rich, with many sons, and a king or one who will resemble a king"}
+    Aquarius: {verse: "7", text: "one who will ever suffer grief, will be poor, will wander from place to place, will be a liar, independent and wicked"}
+    Pisces: {verse: "7", text: "one who will have many enemies, will be the king's minister, of wide-spread fame, fearless and with very few children"}
+  mercury:
+    Aries: {verse: "8", text: "fond of gambling, of running into debt and of liquor; an atheist who will argue against the spirit of the Sastras, a thief, poor, with a mean wife, deceitful, a liar and one who will swerve from the path of rectitude"}
+    Taurus: {verse: "8", text: "a preacher, with many sons and wives, ever engaged in earning money, liberal in gift and one who will respect his preceptor"}
+    Gemini: {verse: "9", text: "talkative, a liar, learned in the sciences, in music, in dance and in painting; of sweet speech and one who will live in comfort"}
+    Cancer: {verse: "9", text: "one who will earn money by works connected with water and will be disliked by his kinsmen"}
+    Leo: {verse: "10", text: "disliked by women, poor, with neither comfort nor sons, one who will wander from place to place, ignorant, fond of women and one who will suffer disgrace"}
+    Virgo: {verse: "10", text: "liberal in gift, learned, possessed of many virtues, one who will live in comfort, of a patient nature, ingenious and fearless"}
+    Libra: {verse: "8", text: "a preacher, with many sons and wives, ever engaged in earning money, liberal in gift and one who will respect his preceptor"}
+    Scorpio: {verse: "8", text: "fond of gambling, of running into debt and of liquor; an atheist who will argue against the spirit of the Sastras, a thief, poor, with a mean wife, deceitful, a liar and one who will swerve from the path of rectitude"}
+    Sagittarius: {verse: "11", text: "respected by kings, and learned in sciences and in laws"}
+    Capricorn: {verse: "11", text: "one who will work for other men, be poor, a sculptor, run into debts and work for no fees"}
+    Aquarius: {verse: "11", text: "one who will work for other men, be poor, a sculptor, run into debts and work for no fees"}
+    Pisces: {verse: "11", text: "skilled in befriending other men, one who will readily discover the views of other people, and will be learned in the handicraft of men of low castes"}
+  jupiter:
+    Aries: {verse: "12", text: "a commander of armies, very rich, with many wives and children, liberal in gift, with good servants, of a patient nature and of bright appearance, happy with his wife and of great fame"}
+    Taurus: {verse: "12", text: "free from diseases, one who will live in comfort, be rich, have friends and sons, be liberal in gift and be liked by all"}
+    Gemini: {verse: "12", text: "one who will have many clothes, houses, servants, sons and friends, will be a minister and will live in comfort"}
+    Cancer: {verse: "13", text: "possessed of gems, sons, wealth, wives, influence, intelligence and comfort"}
+    Leo: {verse: "13", text: "all that has been said in the case of a person born with Jupiter in Cancer, and besides a commander of armies"}
+    Virgo: {verse: "12", text: "one who will have many clothes, houses, servants, sons and friends, will be a minister and will live in comfort"}
+    Libra: {verse: "12", text: "free from diseases, one who will live in comfort, be rich, have friends and sons, be liberal in gift and be liked by all"}
+    Scorpio: {verse: "12", text: "a commander of armies, very rich, with many wives and children, liberal in gift, with good servants, of a patient nature and of bright appearance, happy with his wife and of great fame"}
+    Sagittarius: {verse: "13", text: "the ruler of a province or a minister under a king or the commander of armies or very rich"}
+    Capricorn: {verse: "13", text: "one who will do deeds disgraceful to his rank in life, will possess very little wealth and will be afflicted with grief"}
+    Aquarius: {verse: "13", text: "all that has been said in the case of a person born with the Moon in sign Cancer"}
+    Pisces: {verse: "13", text: "the ruler of a province or a minister under a king or the commander of armies or very rich"}
+  venus:
+    Aries: {verse: "14", text: "fond of the wives of other men, one who will lose his property through their influence and will bring disgrace on his family"}
+    Taurus: {verse: "14", text: "one who will acquire wealth by his own powers, will be liked by the king, will be an important person among his kinsmen, will be a man of fame and will be fearless"}
+    Gemini: {verse: "15", text: "one who will do the work of a king, will be rich and learned in music"}
+    Cancer: {verse: "16", text: "one who will have two wives, will be a beggar, will be timid and haughty and will suffer grief"}
+    Leo: {verse: "16", text: "one who will acquire money through women, will have an excellent wife and very few sons"}
+    Virgo: {verse: "15", text: "one who will engage in hard work"}
+    Libra: {verse: "14", text: "one who will acquire wealth by his own powers, will be liked by the king, will be an important person among his kinsmen, will be a man of fame and will be fearless"}
+    Scorpio: {verse: "14", text: "fond of the wives of other men, one who will lose his property through their influence and will bring disgrace on his family"}
+    Sagittarius: {verse: "16", text: "possessed of excellent qualities and rich"}
+    Capricorn: {verse: "15", text: "liked by all, subject to the influence of women and fond of bad women"}
+    Aquarius: {verse: "15", text: "liked by all, subject to the influence of women and fond of bad women"}
+    Pisces: {verse: "16", text: "learned, a man of authority, rich, respected by the king and liked by all"}
+  saturn:
+    Aries: {verse: "17", text: "a fool, one who will wander from place to place, will be a fop and will be separated from his friends"}
+    Taurus: {verse: "18", text: "fond of women of low caste, one who will possess small wealth and will have several wives"}
+    Gemini: {verse: "17", text: "shameless, one who will suffer grief, will be poor, will have no sons, will be a bad painter, will be a constable and will be a chief officer"}
+    Cancer: {verse: "18", text: "poor, with very few teeth, separated from his mother and with no sons"}
+    Leo: {verse: "18", text: "not deserving of respect, one who will suffer grief, will have no sons and will carry burdens"}
+    Virgo: {verse: "17", text: "shameless, one who will suffer grief, will be poor, will have no sons, will be a bad painter, will be a constable and will be a chief officer"}
+    Libra: {verse: "18", text: "the chief of a party of men in a town or in an army or in a village, and rich"}
+    Scorpio: {verse: "17", text: "one who will suffer imprisonment, will receive blows, will be indifferent to work and will be merciless"}
+    Sagittarius: {verse: "19", text: "one who will die an excellent death, will be a faithful officer in the king's palace, will have good sons and a good wife, will be wealthy, will be the chief man in a town, in an army or in a village"}
+    Capricorn: {verse: "19", text: "one who will enjoy the wives and property of other men, will be the head of a town, a village or an army, will have weak eyes, will be dirty, will be indifferent to bathing, will have a permanent wealth and authority and will enjoy the property acquired by him"}
+    Aquarius: {verse: "19", text: "one who will enjoy the wives and property of other men, will be the head of a town, a village or an army, will have weak eyes, will be dirty, will be indifferent to bathing, will have a permanent wealth and authority and will enjoy the property acquired by him"}
+    Pisces: {verse: "19", text: "one who will die an excellent death, will be a faithful officer in the king's palace, will have good sons and a good wife, will be wealthy, will be the chief man in a town, in an army or in a village"}

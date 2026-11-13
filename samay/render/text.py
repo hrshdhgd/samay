@@ -13,6 +13,7 @@ from ..engine import (
     house_timing,
     longevity,
     planet_strength,
+    planets_in_signs,
     upagrahas,
     women,
 )
@@ -345,6 +346,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:signs" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_SIGNS
     if answer.topic == "chart:strength" and not birth_known:
         return prompts.NEED_BIRTH_FOR_STRENGTH
     if answer.topic == "chart:lagna" and not birth_known:
@@ -368,6 +371,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:signs":
+        blocks.append(render_signs(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:strength":
         blocks.append(render_strength(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -539,6 +546,25 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_signs(answer, who=SELF, full: bool = False) -> str:
+    """Each of six planets in its sign as Brihat Jataka XVIII says, quoted, with how well placed the planet is by the text's own measure."""
+    title = f"🪐 What Brihat Jataka says of {who.your} planets in their signs"
+    rules = planets_in_signs.load_rules()
+    if not answer.signs_checked:
+        return f"{title}\n\n{prompts.SIGNS_UNCHECKED}"
+    if answer.signs is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_SIGNS}"
+    lines = []
+    for r in answer.signs:
+        lines.append(f"{PLANET_ICONS[r.planet]} {r.planet.title()} in {SIGNS[r.sign]} ({STRENGTH_SHORT[r.strength]}): “A person born with it is {r.text}.”" + (f" [{r.verse}]" if full else ""))
+        if r.note and full:
+            lines.append(f"   ({r.note})")
+    blocks = [title, "\n\n".join(lines), rules.condition["text"]] if full else [title, "\n\n".join(lines),
+                                                                                  "The old book says these come to pass fully only when the planet is strong in its sign; see Technical details."]
+    blocks.append("Source: Brihat Jataka " + ", ".join(sorted({f"18.{r.verse}" for r in answer.signs}, key=lambda v: int(v.split(".")[1]))) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_strength(answer, who=SELF, full: bool = False) -> str:

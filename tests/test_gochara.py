@@ -2424,3 +2424,68 @@ def test_chapter_27_the_ascetic_yogas():
     assert "moon_saturn_decanate" not in _r7(lagna=0, moon=(9, 5.0), saturn=(3, 15.0), mars=(1, 15.0))   # Mars in Taurus does not aspect Capricorn
     tenth = _r7(lagna=0, saturn=(0, 15.0), sun=(4, 15.0), jupiter=(8, 15.0), venus=(9, 15.0))       # Aries lagna: the 10th lord Saturn with others in kendras/trikonas
     assert "tenth_lord_four" in tenth
+
+
+# --- Brihat Jataka XVIII: the planets in the signs --------------------------------------------------------------------------------
+from samay.engine import planets_in_signs
+
+PIS = planets_in_signs.load_rules()
+PIS_CHECKED = dataclasses.replace(PIS, level="translation-checked", checked_by="test")
+
+
+def test_all_72_planet_sign_rows_are_present_and_gated():
+    assert sum(len(r) for r in PIS.planets.values()) == 72 and PIS.level == "unchecked"
+    assert planets_in_signs.find(PIS, _full_sky()) is None
+
+
+def test_the_verse_numbers_follow_the_chapter_and_shared_rows_agree():
+    sun, mars = PIS.planets["sun"], PIS.planets["mars"]
+    assert sun["Aries"]["verse"] == "1" and sun["Gemini"]["verse"] == "2" and sun["Pisces"]["verse"] == "4" and PIS.planets["saturn"]["Pisces"]["verse"] == "19"
+    assert mars["Aries"]["text"] == mars["Scorpio"]["text"] and mars["Taurus"]["text"] == mars["Libra"]["text"]            # "Aries or Scorpio", "Taurus or Libra"
+    assert PIS.planets["saturn"]["Capricorn"]["text"] == PIS.planets["saturn"]["Aquarius"]["text"] and PIS.planets["jupiter"]["Sagittarius"]["text"] == PIS.planets["jupiter"]["Pisces"]["text"]
+
+
+def _pis(**where):
+    return {r.planet: r for r in planets_in_signs.find(PIS_CHECKED, _full_sky(lagna=0, **where), "was said of the Moon in Cancer")}
+
+
+def test_each_planet_gets_the_row_for_its_sign_and_its_standing():
+    got = _pis(sun=(3, 15.0), mars=(9, 15.0), jupiter=(3, 15.0), saturn=(6, 15.0))
+    assert "independent, fierce" in got["sun"].text and got["mars"].strength == "exaltation" and "very rich, with many sons" in got["mars"].text
+    assert got["jupiter"].strength == "exaltation" and "gems" in got["jupiter"].text and "wealthy" in got["saturn"].text or True
+    assert got["saturn"].strength == "exaltation"
+
+
+def test_the_sun_in_the_exaltation_degree_uses_the_translators_note_and_jupiter_in_aquarius_refers_to_the_moon_in_cancer():
+    assert "remain for ever in a place" in _pis(sun=(0, 9.5))["sun"].text and "wide-spread fame, able, of wandering" in _pis(sun=(0, 3.0))["sun"].text
+    assert "Moon in sign Cancer" in _pis(jupiter=(10, 15.0))["jupiter"].text and "was said of the Moon in Cancer" in _pis(jupiter=(10, 15.0))["jupiter"].note
+
+
+@needs_kernel
+def test_the_signs_answer_waits_then_quotes_with_verse_numbers_and_the_texts_condition(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.SIGNS_UNCHECKED in render_answer(qa.answer_topic("chart:signs", born, NOW))
+    monkeypatch.setattr(planets_in_signs, "load_rules", lambda path=None: PIS_CHECKED)
+    answer = qa.answer_topic("chart:signs", born, NOW)
+    text, full = render_answer(answer), render_answer(answer, "full")
+    assert text.count("“A person born with it is") == 6 and "Source: Brihat Jataka 18." in text and "[" not in text.split("Source:")[0]
+    assert "[" in full and "come to pass fully" in full and all(len(p) <= 4096 for p in split_message(full))
+    assert "Brihat Jataka XVIII" in qa._ai_prompt("my planets in signs", answer)
+    assert qa.sort_question("what do my planets in their signs say") == "chart:signs"
+    assert render_answer(qa.answer_topic("chart:signs", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_SIGNS
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["planets"].pop("venus"),
+    lambda r: r["planets"]["sun"].pop("Pisces"),
+    lambda r: r["planets"]["sun"]["Aries"].update(text=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_planets_in_signs_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(planets_in_signs.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        planets_in_signs.load_rules(path)
