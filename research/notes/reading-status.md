@@ -38,3 +38,4 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 5. **Chapter 17's 28 transit rules** for death need Mandi/Gulika, Yamakantaka and the 22nd decanate: they follow once (4) exists. They are death-timing windows and would join the gated `chart:death_timing` answer.
 
 ## Phaladeepika is now read in full (all 28 chapters), 2026-11-13. Brihat Jataka chapters I-VIII, X, XV, XVIII, XXI-XXVIII are still only skimmed.
+Update 2026-11-13: Brihat Jataka X (livelihood), XVIII (planets in signs) and XXI (vargas) and XXII (miscellaneous yogas) are now read in full and built. Still only skimmed: I-VIII, XV, XXIII-XXVIII.
