@@ -1876,3 +1876,74 @@ def test_a_malformed_house_strength_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         house_strength.load_rules(path)
+
+
+# --- Phaladeepika 11: the pointers about husband, marriage and children (sensitive, gated) -----------------------------------
+from samay.engine import women
+
+WM = women.load_rules()
+WM_CHECKED = dataclasses.replace(WM, level="translation-checked", checked_by="test")
+
+
+def _wm(lagna=0, **where):
+    calm = {b: (lagna + 2) % 12 for b in women.BODIES}
+    got = women.find(WM_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))
+    return {p.key for p in got}
+
+
+def test_the_women_file_is_complete_unchecked_and_has_no_chastity_or_character_rule():
+    assert set(WM.rules) == set(women.RULE_KEYS) and WM.level == "unchecked" and women.find(WM, _full_sky()) is None
+    words = " ".join(r["text"] for r in WM.rules.values()).lower()
+    assert not any(w in words for w in ("unchaste", "prostitute", "chaste", "eunuch", "maid", "diseased sexual"))
+    assert "times have changed" in WM.houses["translators_note"]
+
+
+def test_even_and_odd_signs_with_aspects():
+    # Taurus lagna (1) and Moon in Cancer (3): both even. Jupiter in Scorpio sees Taurus (7th) and Cancer (the 9th from Scorpio).
+    assert "even_signs_benefic" in _wm(lagna=1, moon=3, jupiter=7)
+    assert "even_signs_benefic" not in _wm(lagna=1, moon=3)
+    # Aries lagna (0) and Moon in Leo (4): both odd. Saturn in Aquarius sees Aries by its 3rd sight and Leo by its 7th.
+    assert "odd_signs_malefic" in _wm(lagna=0, moon=4, saturn=10)
+    assert "odd_signs_malefic" not in _wm(lagna=0, moon=4)
+
+
+def test_the_7th_house_owner_and_the_occupants_of_the_7th_8th_and_2nd():
+    assert "seventh_lord_benefic" in _wm(lagna=0) and "seventh_lord_not_benefic" not in _wm(lagna=0)   # Aries: Venus rules Libra
+    assert "seventh_lord_not_benefic" in _wm(lagna=1)                                                  # Taurus: Mars rules Scorpio
+    assert "mars_in_seventh" in _wm(lagna=0, mars=6)
+    assert "mixed_seventh" in _wm(lagna=0, venus=6, saturn=6) and "mixed_seventh" not in _wm(lagna=0, venus=6)
+    assert "malefic_eighth" in _wm(lagna=0, saturn=7) and "malefic_second" in _wm(lagna=0, mars=1)
+
+
+def test_trikonas_and_the_few_children_moon():
+    assert "benefics_trikonas" in _wm(lagna=0, jupiter=4) and "benefics_trikonas" not in _wm(lagna=0, jupiter=4, saturn=8)
+    assert "malefics_trikonas" in _wm(lagna=0, saturn=8) and "malefics_trikonas" not in _wm(lagna=0, saturn=8, venus=0)
+    assert "five_malefic_moon" in _wm(lagna=0, moon=4) and "five_malefic_moon" not in _wm(lagna=0, moon=3)
+
+
+@needs_kernel
+def test_the_women_topic_is_gated_framed_by_the_translators_remark_and_never_a_forecast(monkeypatch):
+    from samay.subject import SELF, Subject
+    assert qa.sensitivity("chart:women", SELF) == "sensitive" and qa.sensitivity("chart:women", Subject("Maya", None, True)) == "child"
+    born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    assert prompts.WOMEN_UNCHECKED in render_answer(qa.answer_topic("chart:women", born, NOW))
+    monkeypatch.setattr(women, "load_rules", lambda path=None: WM_CHECKED)
+    answer = qa.answer_topic("chart:women", born, NOW)
+    text = render_answer(answer)
+    assert "not a forecast" in text and "times have changed" in text and "Source: Phaladeepika 11." in text
+    assert qa.sort_question("show my woman's horoscope") == "chart:women"
+    assert render_answer(qa.answer_topic("chart:women", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_WOMEN
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop("mars_in_seventh"),
+    lambda r: r["rules"]["malefic_second"].update(text=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_women_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(women.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        women.load_rules(path)

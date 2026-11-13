@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, health, house_strength, house_timing, longevity
+from ..engine import conjunctions, health, house_strength, house_timing, longevity, women
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -335,6 +335,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:women" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_WOMEN
     if answer.topic == "chart:houses" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HOUSES
     if answer.topic == "chart:longevity" and not birth_known:
@@ -348,6 +350,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:women":
+        blocks.append(render_women(answer, who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:houses":
         blocks.append(render_houses(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -499,6 +505,24 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_women(answer, who=SELF) -> str:
+    """The book's pointers about a woman's husband, marriage and children, with its frame and the translator's remark that times have changed."""
+    title = f"🌸 What Phaladeepika's chapter on a woman's chart points to in {who.your} chart"
+    rules = women.load_rules()
+    if not answer.women_checked:
+        return f"{title}\n\n{prompts.WOMEN_UNCHECKED}"
+    if answer.women is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_WOMEN}"
+    blocks = [title, rules.frame, rules.houses["text"], rules.houses["translators_note"]]
+    if answer.women:
+        blocks.append("In this chart:\n" + "\n".join(f"• {p.text[0].upper()}{p.text[1:]} ({p.detail}) [{p.verse}]" for p in answer.women))
+    else:
+        blocks.append(prompts.WOMEN_NONE)
+    verses = sorted({p.verse for p in answer.women} | {rules.houses["verse"]}, key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])))
+    blocks.append(f"Source: Phaladeepika {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
+    return "\n\n".join(blocks)
 
 
 def render_houses(answer, who=SELF, full: bool = False) -> str:

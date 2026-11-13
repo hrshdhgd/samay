@@ -1,0 +1,63 @@
+# Phaladeepika chapter 11 ("Female horoscopy"), verses 1-3 and the trikona line of verse 5: the book's pointers for a woman's chart about her husband,
+# her marriage and her children. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
+# printed pages 116-118 (PDF pages 115-117). PARAPHRASED. Conditions are coded in samay/engine/women.py. Notes and what was left out:
+# research/notes/phaladeepika-women.md.
+#
+# SENSITIVE: shown only after a warning and a tap. UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked.
+# Owner's decision 2026-11-12: nothing is hidden. One category was held back on purpose and is flagged to the owner (see the note).
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "116-118"
+
+frame: "These are an old text's pointers about a woman's husband, marriage and children, written long ago for the women and families of its time. They are not a forecast about anyone, and the translator himself says the times have changed and a woman's own raja yogas and strengths now apply to her. The bot does not know a person's sex: it applies these only because you asked."
+
+houses:
+  verse: "11.1"
+  text: "The effects given for men apply to women too, or to their husbands. Her prosperity and happiness are read from the 8th house (from the lagna or the Moon, whichever is stronger), her children from the 9th (the translator and Parasara prefer the 5th), her appearance from the lagna, her power to influence her husband and the nature of the husband from the 7th, and her contacts with other men from the 4th. Benefics in these houses do good and malefics harm, unless the malefic owns the house."
+  translators_note: "The translator holds that the times have changed, that women now hold high posts, and that the effects of raja yogas and Adhi yoga in their charts should apply to them and not to their husbands, except where they depend entirely on them."
+
+rules:
+  even_signs_benefic:
+    verse: "11.2"
+    definition: "The lagna and the Moon are both in even signs (Taurus, Cancer, Virgo, Scorpio, Capricorn, Pisces) and both are aspected by a benefic (Mercury, Jupiter, Venus) by the full sights of Brihat Jataka II.13."
+    text: "she is blessed with good sons, her husband is of good character and wears ornaments, and she is prosperous with praiseworthy qualities"
+  odd_signs_malefic:
+    verse: "11.2"
+    definition: "The lagna and the Moon are both in odd signs (Aries, Gemini, Leo, Libra, Sagittarius, Aquarius) and both are aspected by a malefic (Sun, Mars, Saturn) by the full sights."
+    text: "she is masculine in bearing, of a wicked disposition, beyond her husband's control, insincere, wrathful and poor"
+  seventh_lord_benefic:
+    verse: "11.3"
+    definition: "The 7th house is owned by a benefic (Mercury, Jupiter, Venus). The book also says 'or the setting navamsa'; the navamsa is not used."
+    text: "her husband is handsome, well reputed, learned and wealthy"
+  seventh_lord_not_benefic:
+    verse: "11.3"
+    definition: "The 7th house is owned by the Sun, Mars, Saturn or the Moon, i.e. not by a benefic (the book: 'if it be otherwise')."
+    text: "her husband is deformed, stupid, deceitful and poor, and she is separated from him"
+  mars_in_seventh:
+    verse: "11.3"
+    definition: "Mars is in the 7th house."
+    text: "she becomes a widow"
+  mixed_seventh:
+    verse: "11.3"
+    definition: "Both a benefic (Mercury, Jupiter, Venus) and a malefic (Sun, Mars, Saturn, Rahu, Ketu) are in the 7th house."
+    text: "she will marry again"
+  malefic_eighth:
+    verse: "11.3"
+    definition: "A malefic (Sun, Mars, Saturn, Rahu, Ketu) is in the 8th house."
+    text: "her husband will be short-lived"
+  malefic_second:
+    verse: "11.3"
+    definition: "A malefic is in the 2nd house."
+    text: "she dies with her husband (that is, before him or together with him)"
+  benefics_trikonas:
+    verse: "11.5"
+    definition: "A benefic (Mercury, Jupiter, Venus) is in at least one of the 1st, 5th and 9th houses, and no malefic (Sun, Mars, Saturn, Rahu, Ketu) is in any of them."
+    text: "she is happy, blessed with children, full of good qualities and wealthy"
+  malefics_trikonas:
+    verse: "11.5"
+    definition: "A malefic is in at least one of the 1st, 5th and 9th houses and no benefic is in any of them."
+    text: "she is either barren or gives birth to stillborn children"
+  five_malefic_moon:
+    verse: "11.4"
+    definition: "The Moon is in Taurus, Leo, Virgo or Scorpio and that sign is the 5th house."
+    text: "she has few children"
