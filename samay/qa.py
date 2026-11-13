@@ -38,6 +38,7 @@ from .engine import (
     planets_in_signs,
     raja_yogas,
     upagrahas,
+    vargas,
     women,
 )
 from .engine import entries as entry_store
@@ -78,6 +79,7 @@ UPAGRAHA_WORDS = ("gulika", "mandi", "upagraha", "upagrahas", "dhuma", "upaketu"
 DEATH_WORDS = ("die", "death", "dying")
 PLANET_STRENGTH_WORDS = ("strong", "strongest", "stronger", "weak", "weakest", "strength", "strengths")
 SIGNS_WORDS = ("signs",)
+VARGAS_WORDS = ("vargas", "varga", "horas", "hora", "drekkana", "drekkanas", "trimsamsa", "trimsamsas", "dignity", "dignities")
 WOMEN_WORDS = ("woman", "women", "female", "feminine")
 STRENGTH_WORDS = ("strong", "weak", "strength", "houses")
 LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
@@ -126,7 +128,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs", "chart:vargas"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -236,6 +238,8 @@ class Answer:
     strength_checked: bool = False
     signs: tuple | None = None  # chart:signs
     signs_checked: bool = False
+    vargas: tuple | None = None  # chart:vargas
+    vargas_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -274,6 +278,8 @@ def sort_question(text: str) -> str | None:
         return "chart:death_timing"
     if not planets and any(w in WOMEN_WORDS for w in words) and {"horoscope", "chart", "husband"} & set(words):
         return "chart:women"
+    if not planets and any(w in VARGAS_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:vargas"
     if not planets and {"planet", "planets"} & set(words) and "signs" in words and any(w in PERSONAL_WORDS for w in words):
         return "chart:signs"
     if not planets and {"planet", "planets"} & set(words) and any(w in PLANET_STRENGTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
@@ -319,6 +325,7 @@ TOPIC_HELP = {
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
+    "chart:vargas": "how the planets stand in their own, friendly and hostile signs, horas, drekkanas, the rising navamsa and trimsamsas (Brihat Jataka XXI): 'what do my vargas say', 'my planets\' dignity'",
     "chart:signs": "what each planet says of the person by the SIGN it is in (the Sun in Cancer, Saturn in Libra...): 'what do my planets in their signs say'",
     "chart:strength": "which planets are strong or weak in the person's chart (the six strengths of a planet): 'which planet is strongest in my chart'",
     "chart:lagna": "what the person's rising sign (lagna, ascendant) says of their body and temperament: 'what is my rising sign like'",
@@ -633,6 +640,10 @@ def answer_topic(
         sr, mn = planets_in_signs.load_rules(), moon_nature.load_rules()
         found = planets_in_signs.find(sr, service.natal_report(birth).chart, mn.signs[3].text if mn.servable else None) if birth is not None else None
         return Answer(topic, (), (), signs=found, signs_checked=sr.servable, who=subject)
+    if topic == "chart:vargas":
+        vr = vargas.load_rules()
+        found = vargas.find(vr, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), vargas=found, vargas_checked=vr.servable, who=subject)
     if topic == "chart:strength":
         sr = planet_strength.load_rules()
         found = service.strength_report(birth) if birth is not None else None
@@ -772,6 +783,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:
         verified += [f"Brihat Jataka XVIII, {r.planet.title()} in {SIGNS[r.sign]}: a person born with it is {r.text}." for r in answer.signs]
+    if answer.vargas:
+        verified += [f"Brihat Jataka XXI.{f.verse.split('.')[1]}, {f.because}: {f.text}." for f in answer.vargas]
     if answer.strength is not None:
         verified += [f"Phaladeepika 4: {s.planet.title()} has {s.total:g} of the book's six strengths." for s in answer.strength.planets]
     if answer.lagna:

@@ -15,6 +15,7 @@ from ..engine import (
     planet_strength,
     planets_in_signs,
     upagrahas,
+    vargas,
     women,
 )
 from ..engine.daylight import RahuKaala
@@ -348,6 +349,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_HEALTH
     if answer.topic == "chart:signs" and not birth_known:
         return prompts.NEED_BIRTH_FOR_SIGNS
+    if answer.topic == "chart:vargas" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_VARGAS
     if answer.topic == "chart:strength" and not birth_known:
         return prompts.NEED_BIRTH_FOR_STRENGTH
     if answer.topic == "chart:lagna" and not birth_known:
@@ -371,6 +374,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:vargas":
+        blocks.append(render_vargas(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:signs":
         blocks.append(render_signs(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -578,6 +585,25 @@ def render_signs(answer, who=SELF, full: bool = False) -> str:
     blocks = [title, "\n\n".join(lines), rules.condition["text"]] if full else [title, "\n\n".join(lines),
                                                                                   "The old book says these come to pass fully only when the planet is strong in its sign; see Technical details."]
     blocks.append("Source: Brihat Jataka " + ", ".join(sorted({f"18.{r.verse}" for r in answer.signs}, key=lambda v: int(v.split(".")[1]))) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
+
+
+def render_vargas(answer, who=SELF, full: bool = False) -> str:
+    """The chapter XXI statements that hold for the chart: what the chart shows, then the book's words, with verse numbers and the book's notes on More."""
+    title = f"🔱 What Brihat Jataka says of {who.your} planets' dignity"
+    rules = vargas.load_rules()
+    if not answer.vargas_checked:
+        return f"{title}\n\n{prompts.VARGAS_UNCHECKED}"
+    if answer.vargas is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_VARGAS}"
+    lines = []
+    for f in answer.vargas:
+        lines.append(f"• {f.because[:1].upper() + f.because[1:]}: “{f.text[:1].upper() + f.text[1:]}.”" + (f" [{f.verse}]" if full else ""))
+        if f.note and full:
+            lines.append(f"   ({f.note})")
+    body = "\n\n".join(lines) if lines else "None of the book's statements in this chapter applies."
+    blocks = [title, body, rules.caution]
+    blocks.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in answer.vargas}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
     return "\n\n".join(blocks)
 
 

@@ -2542,3 +2542,108 @@ def test_the_career_answer_adds_livelihood_only_once_checked(monkeypatch):
     assert "source of wealth and work (Brihat Jataka chapter 10)" in text and "Brihat Jataka 10." in text
     assert "Brihat Jataka 10." in qa._ai_prompt("what work suits me", answer)
     assert qa.answer_topic("life:marriage", born, NOW).livelihood is None
+
+
+# --- Brihat Jataka XXI: the planets in the several vargas ---------------------------------------------------------------------------
+from samay.engine import vargas
+
+VG = vargas.load_rules()
+VG_CHECKED = dataclasses.replace(VG, level="translation-checked", checked_by="test")
+
+
+def _vg(**where):
+    return vargas.find(VG_CHECKED, _full_sky(**where))
+
+
+def _vg_has(findings, fragment):
+    return any(fragment in f.text or fragment in f.because for f in findings)
+
+
+def test_hora_drekkana_and_trimsamsa_follow_chapter_one():
+    assert [vargas.hora(30 * s + d) for s, d in ((0, 5), (0, 20), (1, 5), (1, 20))] == ["solar", "lunar", "lunar", "solar"]
+    assert vargas.drekkana(4 * 30 + 5) == (4, 1) and vargas.drekkana(4 * 30 + 15) == (8, 2) and vargas.drekkana(4 * 30 + 25) == (0, 3)
+    assert [vargas.trimsamsa_lord(d) for d in (3, 7, 12, 20, 27)] == ["mars", "saturn", "jupiter", "mercury", "venus"]
+    assert [vargas.trimsamsa_lord(30 + d) for d in (3, 8, 15, 22, 28)] == ["venus", "mercury", "jupiter", "saturn", "mars"]
+
+
+def test_the_vargas_file_is_complete_and_hidden_until_checked():
+    assert VG.level == "unchecked" and vargas.find(VG, _full_sky()) is None
+    r = VG.raw
+    assert len(r["own_signs"]["counts"]) == len(r["friendly_signs"]["counts"]) == len(r["weak_signs"]["counts"]) == 7
+    assert len(r["rising_navamsa"]) == 14 and set(r["moon_drekkana"]["kinds"]) == set(vargas.KINDS)
+    assert "pakshi" in r["moon_drekkana"]["kinds"] and r["moon_drekkana"]["kinds"]["sarpa"]["where"] == {3: [2], 7: [1], 11: [3]}
+
+
+def test_counts_of_planets_in_own_friendly_and_weak_signs():
+    got = _vg(lagna=0, sun=(4, 5.0), moon=(3, 15.0), mars=(0, 15.0), mercury=(5, 15.0), jupiter=(8, 15.0), venus=(1, 15.0), saturn=(6, 15.0))
+    assert _vg_has(got, "6 of the seven planets in their own signs") and _vg_has(got, "luxurious ease")
+    got = _vg(lagna=0)   # everything in Scorpio: only Mars is in its own sign
+    assert _vg_has(got, "1 of the seven planets in their own signs (Mars)") and _vg_has(got, "average dignity")
+
+
+def test_a_single_exalted_planet_aspected_by_a_friend_makes_a_king_and_a_friend_beside_it_a_rich_man():
+    got = _vg(lagna=0, sun=(0, 15.0), jupiter=(6, 15.0))       # Jupiter in Libra aspects Aries from the 7th; only the Sun is exalted
+    assert _vg_has(got, "Jupiter (friendly) aspects it") and _vg_has(got, "become a king")
+    assert not _vg_has(_vg(lagna=0, sun=(0, 15.0)), "aspects it")
+    beside = _vg(lagna=0, sun=(0, 15.0), mars=(0, 20.0))
+    assert _vg_has(beside, "very rich")
+
+
+def test_the_aquarius_rising_sign_and_the_vargottama_rising_navamsa():
+    got = _vg(lagna=10)       # ascendant at 15 degrees Aquarius: the navamsa is also Aquarius, so vargottama
+    assert _vg_has(got, "Aquarius is the rising sign") and any("chief of the respective class" in f.note for f in got)
+    other = _vg(lagna=0)      # 15 degrees Aries: the 5th navamsa of Aries is Leo, not vargottama
+    assert _vg_has(other, "will be a king") and not any("chief of the respective class" in f.note for f in other)
+
+
+def test_horas_full_and_moderate():
+    full = _vg(lagna=0, sun=(0, 5.0), mars=(4, 5.0), saturn=(2, 5.0))      # all malefics in the solar hora of an odd sign
+    assert [f.text for f in full if "wide-spread fame" in f.text] and not any("moderate degree" in f.text for f in full if "wide-spread fame" in f.text)
+    moderate = _vg(lagna=0, sun=(1, 20.0), mars=(1, 20.0), saturn=(1, 20.0))   # solar horas but an even sign
+    assert any("moderate degree" in f.text and "wide-spread fame" in f.text for f in moderate)
+    assert not _vg_has(_vg(lagna=0, sun=(0, 20.0), mars=(1, 5.0), saturn=(0, 5.0)), "wide-spread fame")   # mixed: nothing
+
+
+def test_the_moons_drekkana_kind_and_lord():
+    got = _vg(lagna=0, moon=(7, 5.0))       # the first drekkana of Scorpio is a Sarpa drekkana
+    assert _vg_has(got, "Sarpa") and not _vg_has(got, "Pakshi")
+    both = _vg(lagna=0, moon=(0, 15.0))     # the 2nd drekkana of Aries is Chatushpad and Pakshi: both, with the book's remark
+    assert _vg_has(both, "Chatushpad") and _vg_has(both, "Pakshi") and any("each" in f.note for f in both)
+    assert _vg_has(_vg(lagna=0, moon=(3, 5.0)), "very fine beauty")         # Cancer's first drekkana: her own
+
+
+def test_trimsamsa_own_and_the_lights_in_another_planets_trimsamsa():
+    got = _vg(lagna=10, sun=(0, 3.0), moon=(1, 3.0), mars=(0, 3.0), saturn=(0, 7.0), venus=(1, 3.0), mercury=(0, 20.0), jupiter=(0, 12.0))
+    own = [f.because for f in got if "own trimsamsa" in f.because]
+    assert len(own) == 5 and _vg_has(got, "the Sun is in the trimsamsa of Mars") and _vg_has(got, "bold in fight")
+    assert _vg_has(got, "liked by the people") and _vg_has(got, "Moon is in the trimsamsa of Venus")
+
+
+@needs_kernel
+def test_the_vargas_answer_waits_then_quotes_with_verse_numbers(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.VARGAS_UNCHECKED in render_answer(qa.answer_topic("chart:vargas", born, NOW))
+    monkeypatch.setattr(vargas, "load_rules", lambda path=None: VG_CHECKED)
+    answer = qa.answer_topic("chart:vargas", born, NOW)
+    text, full = render_answer(answer), render_answer(answer, "full")
+    assert "Source: Brihat Jataka 21." in text and "[21." not in text.split("Source:")[0] and "[21." in full
+    assert all(len(p) <= 4096 for p in split_message(full)) and "Brihat Jataka XXI" in qa._ai_prompt("my vargas", answer)
+    assert qa.sort_question("what do my vargas say") == "chart:vargas" and qa.sort_question("what is my planets' dignity") == "chart:vargas"
+    assert render_answer(qa.answer_topic("chart:vargas", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_VARGAS
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["own_signs"]["counts"].pop(7),
+    lambda r: r["moon_drekkana"]["kinds"].pop("pakshi"),
+    lambda r: r["rising_navamsa"].pop("Pisces"),
+    lambda r: r["trimsamsa_own"].pop("venus"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_vargas_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(vargas.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        vargas.load_rules(path)
