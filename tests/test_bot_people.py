@@ -399,3 +399,133 @@ async def test_the_age_line_is_exactly_eighteen_years(ctx, store, ai, clock):
     young = await bot._subject_and_birth(ctx, ME, store.list_people(ME)[0].id)
     old = await bot._subject_and_birth(ctx, ME, store.list_people(ME)[1].id)
     assert young[0].minor is True and old[0].minor is False
+
+
+# --- the consent gate for sensitive answers --------------------------------------------------------------------------------
+from samay.engine import longevity
+
+
+def _tap_with_markup(chat, data):
+    update, msg = tap(chat, data)
+    update.callback_query.edit_message_reply_markup = AsyncMock()
+    return update, msg
+
+
+def _computed(monkeypatch):
+    """Records every call to qa.answer_topic, so a test can prove nothing was computed before consent."""
+    calls = []
+    real = qa.answer_topic
+
+    def spy(topic, *a, **k):
+        calls.append(topic)
+        return real(topic, *a, **k)
+
+    monkeypatch.setattr(qa, "answer_topic", spy)
+    return calls
+
+
+def test_only_the_longevity_topic_is_sensitive_and_health_is_sensitive_for_children():
+    from samay.subject import SELF, Subject
+    child = Subject("Maya", "daughter", minor=True)
+    assert qa.sensitivity("chart:longevity", SELF) == "sensitive" and qa.sensitivity("chart:longevity", child) == "child"
+    assert qa.sensitivity("chart:health", SELF) is None and qa.sensitivity("chart:health", child) == "child"
+    assert qa.sensitivity("planet:saturn", child) is None and qa.sensitivity(None, child) is None
+    assert qa.sensitivity("future:week", child) is None
+
+
+@needs_kernel
+async def test_a_question_about_length_of_life_gets_a_warning_first_and_nothing_is_computed(ctx, store, clock, monkeypatch):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    calls = _computed(monkeypatch)
+    update, msg = message(ME, "how long will I live, when will I die")
+    await bot.on_text(update, ctx)
+    sent = [c.args[0] for c in msg.reply_text.await_args_list]
+    assert sent == [prompts.SENS_WARN] and calls == []
+    buttons = [b for row in msg.reply_text.await_args_list[0].kwargs["reply_markup"].inline_keyboard for b in row]
+    assert [b.text for b in buttons] == [prompts.BTN_SENS_YES, prompts.BTN_SENS_NO]
+    assert buttons[0].callback_data == "sens:yes:chart:longevity" and buttons[1].callback_data == "sens:no"
+
+
+@needs_kernel
+async def test_the_warning_is_the_same_even_when_the_model_is_on_and_the_ai_is_never_asked(ctx, store, clock, ai):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    ai["route"] = "chart:longevity"
+    update, msg = message(ME, "will I live long?")
+    await bot.on_text(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN]
+    assert all(call["system"] != qa.AI_SYSTEM for call in ai["calls"])
+
+
+@needs_kernel
+async def test_declining_shows_nothing_and_accepting_shows_the_answer_once_without_the_ai(ctx, store, clock, ai, monkeypatch):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    rules = longevity.load_rules()
+    import dataclasses
+    monkeypatch.setattr(longevity, "load_rules", lambda path=None: dataclasses.replace(rules, level="translation-checked", checked_by="t"))
+    update, msg = _tap_with_markup(ME, "sens:no")
+    await bot.on_button(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_DECLINED]
+    ai["calls"].clear()
+    update, msg = _tap_with_markup(ME, "sens:yes:chart:longevity")
+    await bot.on_button(update, ctx)
+    sent = [c.args[0] for c in msg.reply_text.await_args_list]
+    assert len(sent) == 1 and "length of life" in sent[0] and "not a forecast" in sent[0]
+    update.callback_query.edit_message_reply_markup.assert_awaited_once_with(reply_markup=None)  # the buttons are removed after the tap
+    assert ai["calls"] == []
+
+
+@needs_kernel
+async def test_a_child_gets_the_stronger_warning_with_their_name_for_length_of_life_and_for_health(ctx, store, clock, ai, monkeypatch):
+    pid = store.save_person(ME, "Maya", "daughter", BirthInput("2015-03-14", "06:30", "Pune"))
+    state = bot._session(ctx, ME)
+    state["active"] = pid
+    calls = _computed(monkeypatch)
+    for question, topic in (("how long will she live", "chart:longevity"), ("what diseases might she have", "chart:health")):
+        ai["route"] = topic
+        update, msg = message(ME, question)
+        await bot.on_text(update, ctx)
+        sent = [c.args[0] for c in msg.reply_text.await_args_list]
+        assert sent == [prompts.SENS_WARN_CHILD.format(name="Maya")], question
+        yes = msg.reply_text.await_args_list[0].kwargs["reply_markup"].inline_keyboard[0][0].callback_data
+        assert yes.startswith(f"sens:yes@{pid}:chart:")
+    assert calls == []
+
+
+@needs_kernel
+async def test_an_adult_is_not_warned_about_health_and_a_child_is_warned_even_if_the_button_is_replayed(ctx, store, clock):
+    store.save_user(ME, BirthInput("1952-08-15", "06:30", "Pune"))
+    update, msg = message(ME, "what diseases might I have")
+    await bot.on_text(update, ctx)
+    assert prompts.SENS_WARN not in [c.args[0] for c in msg.reply_text.await_args_list]
+    # a crafted More/Less button for a sensitive topic does nothing (it must come through the warning)
+    pid = store.save_person(ME, "Maya", "daughter", BirthInput("2015-03-14", "06:30", "Pune"))
+    update, msg = tap(ME, f"qa:full@{pid}:chart:health")
+    update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(update, ctx)
+    update.callback_query.edit_message_text.assert_not_awaited()
+    update, msg = tap(ME, "qa:full:chart:longevity")
+    update.callback_query.edit_message_text = AsyncMock()
+    await bot.on_button(update, ctx)
+    update.callback_query.edit_message_text.assert_not_awaited()
+
+
+@needs_kernel
+async def test_a_consent_tap_for_a_deleted_person_or_a_wrong_topic_is_ignored(ctx, store, clock):
+    update, msg = _tap_with_markup(ME, "sens:yes@999:chart:longevity")
+    await bot.on_button(update, ctx)
+    assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.PERSON_GONE]
+    for data in ("sens:yes:planet:saturn", "sens:yes:nonsense", "sens:yes@x:chart:longevity", "sens:yes"):
+        update, msg = _tap_with_markup(ME, data)
+        await bot.on_button(update, ctx)
+        msg.reply_text.assert_not_awaited()
+
+
+@needs_kernel
+async def test_the_consent_is_not_remembered_between_questions(ctx, store, clock):
+    store.save_user(ME, BirthInput("1990-08-15", "14:30", "Pune"))
+    for _ in range(2):
+        update, msg = message(ME, f"how long will I live {next(_ids)}")
+        await bot.on_text(update, ctx)
+        assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN]
+        yes = _tap_with_markup(ME, "sens:yes:chart:longevity")
+        await bot.on_button(*[yes[0], ctx])

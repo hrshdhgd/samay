@@ -162,6 +162,21 @@ WHEN_ALL_DAY = "holds on {pct}% of the days, so it does not narrow anything"
 NEED_BIRTH_FOR_HEALTH = "To read the book's disease rules for your chart I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 HEALTH_UNCHECKED = "The book's disease rules are waiting for a check, so I can't show them yet."
 HEALTH_NONE = "No planet is in the 6th, 8th or 12th house, is lord of the 6th, or joins it, so the book names no source of disease in this chart."
+SENS_WARN = (
+    "⚠️ Before I show this\n\nThe next answer comes from old rules about how long a life may be and about death. It is "
+    "not a forecast, nobody can know these things, and it can be upsetting to read. Would you like to see it?"
+)
+SENS_WARN_CHILD = (
+    "⚠️ Before I show this — it is about {name}, a child\n\nThe old texts describe adult life, and their rules about "
+    "length of life and about sickness speak of dangers to babies and children. These are not predictions, nobody can know "
+    "them, and they can be very upsetting, especially about a child. Please only continue if you are sure. Would you like to see it?"
+)
+BTN_SENS_YES = "Show it"
+BTN_SENS_NO = "No thanks"
+SENS_DECLINED = "Okay, I won't show it."
+NEED_BIRTH_FOR_LONGEVITY = "To read the book's rules on length of life I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+LONGEVITY_UNCHECKED = "The book's rules on length of life are waiting for a check, so I can't show them yet."
+LONGEVITY_NONE = "None of the book's danger signs or length-of-life pointers is present in this chart."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."

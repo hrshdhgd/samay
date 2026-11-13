@@ -22,6 +22,7 @@ from .engine import (
     health,
     house_effects,
     house_timing,
+    longevity,
     lordship,
     moon_aspects,
     moon_nature,
@@ -64,6 +65,7 @@ WHEN_PREFIX = "when:"
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
 CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
 YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
+LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
 HEALTH_WORDS = ("disease", "diseases", "ailment", "ailments", "sickness", "sick")
 MOON_WORDS = ("nakshatra", "nakshatras", "rashi", "personality", "character", "temperament")
 # Topics computed from the chart rather than answered from entries: no entry is expected, so no miss is recorded.
@@ -108,7 +110,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -198,6 +200,8 @@ class Answer:
     timing_checked: bool = False
     health: health.Health | None = None  # chart:health
     health_checked: bool = False
+    longevity: longevity.Longevity | None = None  # chart:longevity
+    longevity_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -228,6 +232,8 @@ def sort_question(text: str) -> str | None:
         return "chart:conjunctions"
     if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:yogas"
+    if not planets and (any(w in LONGEVITY_WORDS for w in words) or {"long", "live"} <= set(words)) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:longevity"
     if not planets and any(w in HEALTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:health"
     if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
@@ -264,6 +270,7 @@ TOPIC_HELP = {
     "people:add": "the message gives someone's birth details (a date, time or place of birth), or asks to add a person",
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
+    "chart:longevity": "how long a life the chart points to, dangers to life at birth and the cause of death (a sensitive topic: the bot asks first)",
     "chart:health": "which diseases or troubles the chart points to, by the planets in the 6th, 8th and 12th houses and the lord of the 6th (an old text's list, not medical advice)",
     "chart:yogas": "the person's yogas: the named planetary combinations in their chart (Nabhasa, raja, Mahapurusha, Lakshmi and the rest)",
     "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
@@ -439,6 +446,20 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
                     (asp_rules.aspect_text, asp_rules.degree_text, asp_rules.degree_rising))
 
 
+SENSITIVE_TOPICS = frozenset({"chart:longevity"})
+CHILD_SENSITIVE_TOPICS = SENSITIVE_TOPICS | {"chart:health"}
+
+
+def sensitivity(topic: str | None, subject: Subject) -> str | None:
+    """"sensitive" when the bot must show a warning and wait for a tap before answering, "child" for the stronger warning about a person
+    under 18, None when the answer can be given straight away."""
+    if topic is None:
+        return None
+    if subject.minor and topic in CHILD_SENSITIVE_TOPICS:
+        return "child"
+    return "sensitive" if topic in SENSITIVE_TOPICS else None
+
+
 def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
     if birth is None:
         return None
@@ -548,6 +569,10 @@ def answer_topic(
         area = topic[len(WHEN_PREFIX):]
         report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
+    if topic == "chart:longevity":
+        lrules = longevity.load_rules()
+        found = longevity.find(lrules, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), longevity=found, longevity_checked=lrules.servable, who=subject)
     if topic == "chart:health":
         hrules = health.load_rules()
         found = health.find(hrules, service.natal_report(birth).chart) if birth is not None else None

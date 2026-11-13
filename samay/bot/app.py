@@ -65,6 +65,7 @@ QA_VIEWS = {"sa": "sanskrit", "en": "compact", "full": "full"}
 CHAT_KEY = "chats"  # in memory only: a few recent turns per chat, so follow-ups make sense
 CHAT_TURNS = 4
 SESSION_KEY = "sessions"  # in memory only: whom the chat is about, people not saved, who was just added
+SENS_PREFIX = "sens:"  # sens:yes@<pid>:<topic> | sens:no  (consent for a sensitive answer; nothing is remembered between taps)
 PEOPLE_PREFIX = "ppl:"  # ppl:<add|me|use:ID|del:ID|delyes:ID|delno:ID>
 CHAT_TTL_SECONDS = 15 * 60
 BRIEF_PREFIX = "brief:"  # brief:<hour> or brief:off
@@ -474,6 +475,14 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
         return
     if changed and subject.is_self:
         await _say(update, prompts.SWITCHED_SELF, MENU)
+    level = qa.sensitivity(route.topic, subject) if birth is not None else None
+    if level:  # warn first; the answer is computed only after the tap
+        yes = f"{SENS_PREFIX}yes{'' if pid is None else f'@{pid}'}:{route.topic}"
+        warning = prompts.SENS_WARN_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN
+        await _say(update, warning, InlineKeyboardMarkup([[
+            InlineKeyboardButton(prompts.BTN_SENS_YES, callback_data=yes),
+            InlineKeyboardButton(prompts.BTN_SENS_NO, callback_data=f"{SENS_PREFIX}no")]]))
+        return
     tz = await _home_tz(ctx, chat_id)
     answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
     if answer.topic is not None and not answer.topic.startswith(qa.COMPUTED_PREFIXES) and not answer.entries:
@@ -498,6 +507,32 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
         await _say(update, render_ai(reply) if reply else prompts.AI_UNAVAILABLE, MENU)
 
 
+async def _sensitive_button(update: Update, ctx, chat_id: int, choice: str) -> None:
+    """The tap on a warning. "no" drops it; "yes" gives the answer once, without the AI (which is never asked about these topics). The person's
+    age is worked out again here, so the warning cannot be skipped by an old button."""
+    if choice == "no":
+        await update.callback_query.edit_message_reply_markup(reply_markup=None)
+        await _say(update, prompts.SENS_DECLINED, MENU)
+        return
+    head, _, topic = choice.removeprefix("yes").partition(":")
+    pid = None
+    if head.startswith("@"):
+        try:
+            pid = int(head[1:])
+        except ValueError:
+            return
+        if await _person_by_id(ctx, chat_id, pid) is None:
+            await _say(update, prompts.PERSON_GONE, MENU)
+            return
+    if topic not in qa.TOPICS or topic not in qa.CHILD_SENSITIVE_TOPICS:
+        return
+    subject, birth = await _subject_and_birth(ctx, chat_id, pid)
+    tz = await _home_tz(ctx, chat_id)
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
+    await update.callback_query.edit_message_reply_markup(reply_markup=None)
+    await _say(update, render_answer(answer, birth_known=birth is not None), MENU)
+
+
 async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None:
     head, _, topic = choice.partition(":")
     mode, _, pid_text = head.partition("@")
@@ -513,6 +548,8 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
             await _say(update, prompts.PERSON_GONE, MENU)
             return
     subject, birth = await _subject_and_birth(ctx, chat_id, pid)
+    if qa.sensitivity(topic, subject):  # a sensitive answer is reached only through its warning, never through a More/Less button
+        return
     tz = await _home_tz(ctx, chat_id)
     answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
     view = QA_VIEWS[mode]
@@ -768,6 +805,9 @@ async def on_button(update: Update, ctx) -> None:
     chat_id, data = update.effective_chat.id, query.data or ""
     if data.startswith(QA_PREFIX):
         await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX):])
+        return
+    if data.startswith(SENS_PREFIX):
+        await _sensitive_button(update, ctx, chat_id, data[len(SENS_PREFIX):])
         return
     if data.startswith(PEOPLE_PREFIX):
         await _people_button(update, ctx, chat_id, data[len(PEOPLE_PREFIX):])

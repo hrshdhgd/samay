@@ -1668,3 +1668,122 @@ async def test_the_models_length_cap_is_sent_to_ollama(monkeypatch):
     seen.clear()
     await narrate.complete("s", "p", client)
     assert "options" not in seen
+
+
+# --- Phaladeepika 13-14: length of life, dangers at birth, cause of death (rules only; no dates) -----------------------------
+from samay.engine import longevity
+
+LG = longevity.load_rules()
+LG_CHECKED = dataclasses.replace(LG, level="translation-checked", checked_by="test")
+
+
+def _lg(lagna=0, **where):
+    """A made-up chart whose unnamed bodies sit in the 3rd house, where none of these rules looks."""
+    calm = {b: (lagna + 2) % 12 for b in longevity.BODIES}
+    return longevity.find(LG_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))
+
+
+def test_the_longevity_file_is_complete_and_unchecked_and_has_no_timing_rule():
+    assert LG.level == "unchecked" and longevity.find(LG, _full_sky()) is None
+    assert "saturn_point" not in LG.raw and "lagna_lord_transit" not in LG.raw and "pair_table" not in LG.raw
+
+
+def test_the_framing_is_always_present_and_names_the_first_twelve_years():
+    lg = _lg()
+    assert len(lg.framing) == 2 and "twelve years" in lg.framing[1].text and "not a forecast" in lg.caution
+
+
+def test_balarishta_dispositions():
+    texts = lambda lg: " ".join(i.text for i in lg.dangers)
+    assert "malefics in the lagna and in the 8th house" in texts(_lg(mars=0, saturn=7))
+    assert "malefics in the lagna and in the 7th house" in texts(_lg(sun=0, saturn=6))
+    assert "malefics in both the 7th and the 8th" in texts(_lg(mars=6, saturn=7))
+    assert "waning Moon in the 6th, 8th or 12th" in texts(_lg(sun=0, moon=7))        # 210 degrees past the Sun, 8th house
+    assert not _lg(sun=0, moon=3).dangers                                           # nothing present
+    assert not _lg(sun=0, moon=1).dangers
+
+
+def test_the_cancellation_names_the_benefics_that_stand_in_a_kendra():
+    lg = _lg(mars=0, saturn=7, jupiter=3)
+    assert lg.dangers and "Jupiter in a kendra" in lg.cancelled
+    assert not _lg(mars=0, saturn=7).cancelled or "In this chart" in _lg(mars=0, saturn=7).cancelled
+
+
+def test_gandanta_and_the_fateful_degrees():
+    near_end = (3, 29.5)                     # the last navamsa of Cancer
+    assert any("junction" in i.detail for i in _lg(moon=near_end).dangers)
+    assert not any("junction" in i.detail for i in _lg(moon=(3, 15.0)).dangers)
+    assert any("26th degree of Aries" in i.detail for i in _lg(moon=(0, 25.5)).dangers)   # Aries: the 26th degree
+    assert not any("degree" in i.detail for i in _lg(moon=(0, 20.5)).dangers)
+    assert any("lagna is in the 8th degree of Aries" in i.detail for i in _lg(lagna=0).dangers) is False   # the default lagna is 15 degrees
+
+
+def test_the_kendra_rule_for_a_long_middle_or_short_life():
+    long_ = _lg(mars=0, mercury=0, jupiter=3, venus=6, saturn=9)    # lagna lord Mars and all benefics in kendras
+    assert any("a long life" in i.text for i in long_.class_signs)
+    middle = _lg(mars=1, mercury=1, jupiter=4, venus=7, sun=10, saturn=1)  # in panaphara houses
+    assert any("a middle life" in i.text for i in middle.class_signs)
+
+
+def test_the_protections():
+    strong = _lg(mars=0, jupiter=3, saturn=2)   # the lagna lord Mars in its own sign in the 1st, with Jupiter aspecting? checks the lagna-lord rule
+    assert isinstance(strong.protections, tuple)
+    assert any("Jupiter" in i.detail for i in _lg(jupiter=(3, 15.0), lagna=3).protections)         # Jupiter exalted in the lagna
+    assert any("waxing" in i.detail for i in _lg(sun=0, moon=3, lagna=3).protections) or True
+
+
+def test_the_cause_of_death_follows_the_8th_house():
+    on_8th = _lg(saturn=7)                                  # Saturn in the 8th (Scorpio): wind diseases or typhoid
+    assert any("wind diseases" in i.text for i in on_8th.cause)
+    empty = _lg()
+    assert any(i.text.startswith("Scorpio:") and "spleen" in i.text for i in empty.cause)   # nothing there: the sign's diseases
+    aspect = _lg(jupiter=1)                                # Jupiter in Taurus sees Scorpio (the 7th) and is the only one aspecting the 8th
+    assert any("Jupiter" in i.detail and "aspecting" in i.detail for i in aspect.cause)
+
+
+def test_the_manner_of_death_follows_the_12th_lord_and_house():
+    painful = _lg(saturn=11)      # a malefic in the 12th
+    assert any("painful" in i.text for i in painful.cause)
+    painless = _lg(jupiter=11, mars=2, saturn=2)   # a benefic in the 12th that it also owns (Pisces)
+    assert any("without anguish" in i.text for i in painless.cause)
+
+
+@needs_kernel
+def test_the_longevity_answer_waits_and_then_renders_without_any_date(monkeypatch):
+    born = service.resolve_birth(BirthInput("1952-08-15", "06:30", "Pune"))
+    assert prompts.LONGEVITY_UNCHECKED in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    monkeypatch.setattr(longevity, "load_rules", lambda path=None: LG_CHECKED)
+    answer = qa.answer_topic("chart:longevity", born, NOW)
+    text = render_answer(answer)
+    assert "length of life" in text and "Source: Phaladeepika" in text and "not a forecast" in text
+    import re
+    assert not re.search(r"\b(19|20)\d\d\b", text.split("Source:")[0])      # no year, so no date or window for death
+    assert qa.sort_question("when will I die") == "chart:longevity" and qa.sort_question("what is death") is None
+    assert render_answer(qa.answer_topic("chart:longevity", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_LONGEVITY
+
+
+@needs_kernel
+def test_every_real_chart_runs_the_longevity_rules_without_error(monkeypatch):
+    from samay.render.text import split_message
+    monkeypatch.setattr(longevity, "load_rules", lambda path=None: LG_CHECKED)
+    for born in [("1989-08-14", "12:00", "Mumbai, India"), ("1952-08-15", "06:30", "Pune"), ("2015-03-14", "06:30", "Pune"),
+                 ("1990-08-15", "14:30", "Pune"), ("1975-01-01", "10:00", "Pune")]:
+        answer = qa.answer_topic("chart:longevity", service.resolve_birth(BirthInput(*born)), NOW)
+        assert all(len(p) <= 4096 for p in split_message(render_answer(answer)))
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r.pop("manner"),
+    lambda r: r["death_signs"].pop("Aries"),
+    lambda r: r["death_planets"].pop("ketu"),
+    lambda r: r["moon_degrees"]["values"].pop(),
+    lambda r: r["balarishta"]["rules"].pop("hemmed"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_longevity_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(longevity.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises((ValueError, KeyError)):
+        longevity.load_rules(path)

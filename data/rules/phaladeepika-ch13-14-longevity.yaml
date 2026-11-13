@@ -1,0 +1,117 @@
+# Phaladeepika chapter 13 ("Determination of longevity") verses 6-24 and chapter 14 ("Diseases, death...") verses 12-23: the book's rules for
+# short and long life, for dangers at birth, for the cause and manner of death, and for the transits that mark it. Source: Mantreswara's
+# Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages
+# 130-136 and 140-143 (PDF pages 129-135 and 139-142). PARAPHRASED. Conditions are coded in samay/engine/longevity.py. Notes and what was left out:
+# research/notes/phaladeepika-longevity.md.
+#
+# Left out on purpose (research/notes/phaladeepika-longevity.md): the death-timing transits (13.18-19), the pair table of 13.14 (the translation's table cannot be read
+# unambiguously), the afterlife verses (14.22-23) and the 'malefic 8th' manner (14.20).
+#
+# THIS IS SENSITIVE. It is shown only after the person has read a warning and tapped to approve it (and, for a child, a stronger warning).
+# It is an old text's rules, not a forecast. UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked.
+# Owner's decision 2026-11-12: nothing is hidden; a warning and approval come first (a consent gate in the bot).
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "130-136, 140-143"
+
+caution: "These are an old text's rules about long and short life and about death. They are not a forecast, no one can say how long a life will be, and the book itself says the first twelve years cannot be judged."
+
+classes:
+  verse: "13.6–7"
+  text: "A hundred years is taken as the full span of life, in three parts. Life to 32 years is called short (alpayu), to 70 middle (madhyamayu) and to 100 full (poornayu). The first eight years are balarishta (danger from birth) and troubles to the twentieth year come from planetary combinations (yogarishta)."
+first_twelve:
+  verse: "13.3–4"
+  text: "In the first twelve years the length of life cannot be determined: even where the chart shows long life, a child may die through the sins of parents, in the first four years those of the mother, between four and eight those of the father, and between eight and twelve the child's own in past births."
+
+# Verse 9: sandhi and gandanta.
+gandanta:
+  verse: "13.9"
+  signs_end: [3, 7, 11]      # Cancer, Scorpio, Pisces: the last navamsa (3 degrees 20 minutes)
+  signs_start: [4, 8, 0]     # Leo, Sagittarius, Aries: the first navamsa
+  text: "A birth at the junction of Pisces and Aries, Cancer and Leo, or Scorpio and Sagittarius (gandanta) brings the death of a parent or of the native; if the native lives, he becomes splendid like a king. A birth at a sign junction not aspected by or joined with benefics is said to end soon after birth."
+# Verses 10-11: the "fateful degrees" in each sign, Aries first. A planet counts when it is in that degree of its sign (the Nth degree = longitude from N-1 up to N).
+moon_degrees:
+  verse: "13.10"
+  values: [26, 12, 13, 25, 24, 11, 26, 14, 13, 25, 5, 12]
+  text: "The Moon in the fateful degree of her sign indicates death; the book adds (verse 9) that the same follows if the Moon is in her fateful degree and in a kendra or the 8th house."
+lagna_degrees:
+  verse: "13.11"
+  values: [8, 9, 22, 22, 25, 14, 4, 23, 18, 20, 21, 10]
+  text: "The lagna in its fateful degree (mrityubhaga) is a sign of danger to life."
+
+# Verse 12: seven dispositions in which a child dies soon after birth. The first ("malefics in the kendra or the 8th") is ambiguous in the translation and fires
+# in most charts if read as "any malefic"; it is left out.
+balarishta:
+  verse: "13.12"
+  cancelled: "The book says the evil does not come to pass if benefics aspect the lagna, the Moon or the malefics, or if benefics stand in a kendra."
+  rules:
+    lagna_and_8th: {text: "malefics in the lagna and in the 8th house", definition: "A malefic (Sun, Mars, Saturn, Rahu, Ketu) in the 1st house and a malefic in the 8th."}
+    lagna_and_7th: {text: "malefics in the lagna and in the 7th house", definition: "A malefic in the 1st house and a malefic in the 7th."}
+    hemmed: {text: "the Moon and the lagna each hemmed in between malefics", definition: "A malefic in the sign before and in the sign after the Moon, and also before and after the lagna sign."}
+    waning_dusthana: {text: "the waning Moon in the 6th, 8th or 12th house", definition: "The Moon within 180 degrees before the Sun (waning) and in the 6th, 8th or 12th house from the lagna."}
+    waning_malefics: {text: "the waning Moon with malefics in the 1st, 5th, 7th or 9th house", definition: "The waning Moon in the 1st, 5th, 7th or 9th house, in the same sign as a malefic."}
+    malefics_7_8: {text: "malefics in both the 7th and the 8th houses", definition: "A malefic in the 7th house and a malefic in the 8th."}
+
+# Verse 13: weak lords in the 6th, 8th or 12th.
+weak_lords:
+  verse: "13.13"
+  text: "If the lord of the lagna or the lord of the Moon's sign is weak (in an enemy or debilitation sign, or combust) and stands in the 6th, 8th or 12th house, the native lives as many years as the number of the sign (counted from Aries, Aries being 1) that the lord is in."
+
+# Verse 15.
+kendra_rule:
+  verse: "13.15"
+  benefic: "If the lord of the lagna and all the benefics (Mercury, Jupiter, Venus) are in kendras, the native has a long life; in panaphara houses, a middle life; in apoklima houses, a short life."
+  malefic: "If the lord of the 8th and all the malefics are in kendras, the native has a short life; in panaphara houses, a middle life; in apoklima houses, a long life."
+friendship_rule:
+  verse: "13.15"
+  text: "If the lord of the Moon's sign and the lord of the 8th from the Moon sign, the lord of the lagna and the lord of the 8th, and the lord of the lagna and the Sun, are friends the native has a long life; neutral, a middle life; enemies, a short life."
+
+# Verse 16.
+stronger:
+  verse: "13.16"
+  text: "The native has a long life if the lord of the lagna is stronger than the lord of the 8th, the lord of the rising navamsa than the lord of the 8th from the navamsa lagna, the lord of the Moon's sign than the lord of the 8th from the Moon, and the lord of the Moon's navamsa than the lord of the 8th from it. Otherwise the reverse."
+  note: "Strength here is the planet's standing in its sign: exaltation, moolatrikona, own, friendly, neutral, inimical, depression."
+short_vicissitudes:
+  verse: "13.17"
+  text: "If the lord of the 8th, stronger than the lord of the lagna, stands in a kendra and malefics occupy the 8th and the 12th, the native is short-lived; even if he reaches middle age his life is a mix of happiness and misery."
+
+# Verses 21-23: what wards it off.
+protections:
+  verse: "13.21–23"
+  lagna_lord: {text: "death is warded off and the life is long, with good qualities, wealth and power, if the lord of the lagna is very strong, free of malefics, aspected by or joined with benefics, and in a kendra", definition: "The lord of the lagna in a kendra, in its own, moolatrikona or exaltation sign, with no malefic joined or aspecting and a benefic (Mercury, Jupiter, Venus) joined or aspecting."}
+  jupiter: {text: "a strong Jupiter in the lagna can by himself ward off many evils", definition: "Jupiter in the lagna in its own, moolatrikona or exaltation sign."}
+  bright_moon: {text: "a birth in the bright half of the month with the Moon in the 1st, 4th, 5th, 7th, 9th, 10th or 11th house, in a Cancer, Leo, Sagittarius or Pisces navamsa, destroys many dangers to life", definition: "The Moon waxing (within 180 degrees after the Sun), in the 1st, 4th, 5th, 7th, 9th, 10th or 11th house from the lagna, in the navamsa of Cancer, Leo, Sagittarius or Pisces."}
+
+# Chapter 14 verses 12-16: the cause of death.
+death_planets:
+  verse: "14.14–15"
+  sun: "fire, high fever, bile or a weapon"
+  moon: "cholera, watery diseases or lung disease"
+  mars: "fire, magical spells, witchcraft and weapons"
+  mercury: "anaemia, bloodlessness, giddiness and the like"
+  jupiter: "death without much trouble, or through phlegm"
+  venus: "venereal diseases or those from association with women"
+  saturn: "wind diseases or a dangerous fever like typhoid"
+  rahu: "leprosy, food poisoning, venomous bites, smallpox and the like"
+  ketu: "unnatural death such as suicide, assassination out of hatred, or worms"
+cause_rule:
+  verse: "14.12–13"
+  text: "Death comes through the diseases of the strongest planet occupying or aspecting the 8th house. If no planet occupies or aspects the 8th, death comes through the diseases of the 8th house's sign, or of the house in which the lord of the 8th stands, or of the lord of the 8th, or of the lord of the 22nd decanate."
+death_signs:
+  verse: "14.17–19"
+  Aries: "fever from excess bile, heat illnesses such as stroke, liver or gastric trouble"
+  Taurus: "an imbalance of the three humours (bile, phlegm and wind), injury by weapon or fire"
+  Gemini: "catarrh, asthma or sharp pain such as colic"
+  Cancer: "insanity, wind diseases, loss of appetite"
+  Leo: "fatal injury by wild animals, fever, boils, enemies"
+  Virgo: "trouble caused by women, venereal disease, a fall from a height"
+  Libra: "brain fever and typhoid"
+  Scorpio: "diseases of the spleen, dyspepsia and jaundice"
+  Sagittarius: "injury from a fall from a tree"
+  Capricorn: "stomach ache, loss of appetite, aberration of mind"
+  Aquarius: "cough, fever, consumption"
+  Pisces: "watery diseases such as dropsy, drowning"
+manner:
+  verse: "14.20–22"
+  painless: "If the lord of the 12th stands in a benefic's sign or navamsa or is joined with a benefic, or the 12th is occupied and owned by a benefic, death comes without anguish or suffering."
+  painful: "Death is painful if the lord of the 12th is in a malefic's sign or navamsa and joined with a malefic, or the 12th is occupied or owned by a malefic."

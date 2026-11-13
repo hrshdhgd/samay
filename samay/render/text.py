@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, health, house_timing
+from ..engine import conjunctions, health, house_timing, longevity
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -335,6 +335,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:longevity" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_LONGEVITY
     if view == "sanskrit":
         return _render_verses(answer)
     full = view == "full"
@@ -344,6 +346,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:longevity":
+        blocks.append(render_longevity(answer, who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:health":
         blocks.append(render_health(answer, who, full))
         blocks.append(DISCLAIMER)
@@ -487,6 +493,34 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_longevity(answer, who=SELF) -> str:
+    """The book's rules on length of life, dangers at birth and the cause of death, as they apply to the chart. Shown only after the
+    reader has been warned and has tapped to see it; never a date, never a window."""
+    title = f"🕯 What Phaladeepika's rules say about length of life in {who.your} chart"
+    rules = longevity.load_rules()
+    if not answer.longevity_checked:
+        return f"{title}\n\n{prompts.LONGEVITY_UNCHECKED}"
+    lg = answer.longevity
+    if lg is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_LONGEVITY}"
+    blocks = [title, lg.caution, "\n".join(f"• {i.text}" for i in lg.framing)]
+    parts = (("Dangers at birth that the chart meets", lg.dangers), ("Pointers to a long, middle or short life", lg.class_signs),
+             ("What the book says wards it off", lg.protections), ("Cause and manner of death, by the 8th and 12th houses", lg.cause))
+    shown = False
+    for head, items in parts:
+        if items:
+            shown = True
+            blocks.append(head + ":\n" + "\n".join(f"• {i.text} ({i.detail}) [{i.verse}]" for i in items))
+    if lg.cancelled:
+        blocks.append(lg.cancelled)
+    if not shown:
+        blocks.append(prompts.LONGEVITY_NONE)
+    refs = sorted({i.verse for _, items in parts for i in items} | {i.verse for i in lg.framing},
+                  key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
+    blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
+    return "\n\n".join(blocks)
 
 
 def render_health(answer, who=SELF, full: bool = False) -> str:
