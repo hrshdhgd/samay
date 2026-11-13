@@ -1015,7 +1015,7 @@ def _full_sky(lagna=0, retro_sun_moon=True, **where):
         spec = where.get(n, (lagna + 7) % 12)
         sign, deg = spec if isinstance(spec, tuple) else (spec, 15.0)
         planets[n] = SimpleNamespace(longitude=sign * 30 + deg, retrograde=False)
-    return SimpleNamespace(planets=planets, ascendant=lagna * 30 + 15.0)
+    return SimpleNamespace(planets=planets, ascendant=lagna * 30 + 15.0, ayanamsa=24.0)
 
 
 def _nab(**where):
@@ -2030,7 +2030,7 @@ def _r7(lagna=0, **where):
 
 
 def test_the_chapter_7_file_matches_the_code_and_waits_for_a_check():
-    assert set(R7.yogas) == set(phaladeepika_raja.DETECTORS) and len(R7.yogas) == 31 and R7.level == "unchecked"
+    assert set(R7.yogas) == set(phaladeepika_raja.DETECTORS) and len(R7.yogas) == 38 and R7.level == "unchecked"
     assert phaladeepika_raja.find(R7, _full_sky()) == () and all(y["definition"] for y in R7.yogas.values())
 
 
@@ -2067,11 +2067,11 @@ def test_neechabhanga_each_of_the_four_conditions():
 @needs_kernel
 def test_chart_7_yogas_appear_in_the_yogas_answer_only_once_checked(monkeypatch):
     born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
-    assert "Phaladeepika chapter 7" in render_answer(qa.answer_topic("chart:yogas", born, NOW))
+    assert "Phaladeepika chapters 7 and 27" in render_answer(qa.answer_topic("chart:yogas", born, NOW))
     monkeypatch.setattr(phaladeepika_raja, "load_rules", lambda path=None: R7_CHECKED)
     answer = qa.answer_topic("chart:yogas", born, NOW)
     text = render_answer(answer)
-    assert "Raja yogas and cancelled debilitations from Phaladeepika chapter 7:" in text and "debilitated" in text
+    assert "Raja yogas, cancelled debilitations and ascetic yogas from Phaladeepika chapters 7 and 27:" in text and "debilitated" in text
     assert "Phaladeepika 7." in qa._ai_prompt("which yogas do I have?", answer)
 
 
@@ -2305,3 +2305,122 @@ def test_the_death_timing_answer_adds_chapter_17_only_when_its_file_is_checked_a
     assert not re.search(r"will die on|is due to die", text)
     from samay.render.text import split_message
     assert all(len(p) <= 4096 for p in split_message(text))
+
+
+# --- Phaladeepika 4: the six strengths of a planet ---------------------------------------------------------------------------------
+from samay.engine import planet_strength
+
+PS = planet_strength.load_rules()
+PS_CHECKED = dataclasses.replace(PS, level="translation-checked", checked_by="test")
+
+
+def _ps(night=False, **where):
+    """A made-up chart; unnamed bodies sit in the 3rd house away from the Sun. Returns {planet: PlanetStrength}."""
+    calm = {b: 2 for b in planet_strength.SEVEN}
+    s = planet_strength.find(PS_CHECKED, _full_sky(lagna=0, **{**calm, **where}), night)
+    return {x.planet: x for x in s.planets}
+
+
+def test_the_strength_file_has_the_six_kinds_and_waits_for_a_check():
+    assert set(PS.kinds) == set(planet_strength.KINDS) and PS.level == "unchecked" and planet_strength.find(PS, _full_sky(), False) is None
+
+
+def test_dik_is_the_whole_sign_house_each_planet_likes():
+    got = _ps(sun=9, moon=3, mercury=0, jupiter=0, saturn=6, mars=9, venus=3)     # Aries lagna: the 10th, 4th, 1st, 7th
+    assert all(got[p].held["dik"] == 1.0 for p in ("sun", "mars", "moon", "venus", "mercury", "jupiter", "saturn"))
+    assert _ps(sun=0)["sun"].held["dik"] == 0.0
+
+
+def test_chesta_is_a_full_moon_a_northern_sun_and_retrograde_for_the_rest():
+    full = _ps(sun=(0, 15.0), moon=(6, 15.0))                       # the Moon opposite the Sun
+    assert full["moon"].held["chesta"] == 1.0 and _ps(sun=(0, 15.0), moon=(1, 15.0))["moon"].held["chesta"] == 0.0
+    assert full["sun"].held["chesta"] == 1.0 and _ps(sun=(7, 15.0))["sun"].held["chesta"] == 0.0     # the Sun south of the equator in sidereal Scorpio
+
+
+def test_uchcha_is_the_closeness_to_the_deep_exaltation_point():
+    near = _ps(sun=(0, 10.0))["sun"]
+    far = _ps(sun=(6, 10.0))["sun"]                                  # the deep debilitation point
+    assert near.held["uchcha"] == 1.0 and "100% of the way" in near.notes[0] and far.held["uchcha"] == 0.0 and "0% of the way" in far.notes[0]
+
+
+def test_kala_is_two_half_points_the_hour_of_birth_and_the_half_of_the_month():
+    day = _ps(night=False, sun=(0, 15.0), moon=(8, 15.0))            # 240 degrees past the Sun: a waning Moon, the dark half
+    night = _ps(night=True, sun=(0, 15.0), moon=(8, 15.0))
+    assert day["saturn"].held["kala"] == 1.0 and night["saturn"].held["kala"] == 0.5     # Saturn: a day planet, and a malefic in the dark half
+    assert day["mercury"].held["kala"] == 0.5 and night["mercury"].held["kala"] == 0.5   # Mercury: any hour, but a benefic in the dark half
+    assert _ps(night=None, sun=(0, 15.0), moon=(8, 15.0))["saturn"].held["kala"] == 0.5
+
+
+def test_sthana_needs_a_good_sign_or_a_kendra_and_not_debilitation_or_combustion():
+    assert _ps(mars=(0, 15.0))["mars"].held["sthana"] == 1.0         # Mars in Aries
+    assert _ps(mars=(3, 15.0))["mars"].held["sthana"] == 0.0         # debilitated in Cancer
+    assert _ps(sun=(0, 15.0), mercury=(0, 16.0))["mercury"].held["sthana"] == 0.0     # combust
+    assert any("eclipsed" in n for n in _ps(sun=(0, 15.0), mercury=(0, 16.0))["mercury"].notes)
+
+
+def test_the_nodes_are_strong_in_the_signs_the_book_names():
+    s = planet_strength.find(PS_CHECKED, _full_sky(lagna=0, rahu=(0, 15.0), ketu=(6, 15.0)), False)
+    assert "strong there" in s.nodes[0] and "not one of the signs" in s.nodes[1]
+    k = planet_strength.find(PS_CHECKED, _full_sky(lagna=0, rahu=(6, 15.0), ketu=(8, 20.0)), False)
+    assert "strong there" in k.nodes[1]                              # Ketu in the latter half of Sagittarius
+
+
+@needs_kernel
+def test_the_strength_answer_waits_then_ranks_planets_and_fits_messages(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.STRENGTH_UNCHECKED in render_answer(qa.answer_topic("chart:strength", born, NOW))
+    monkeypatch.setattr(planet_strength, "load_rules", lambda path=None: PS_CHECKED)
+    answer = qa.answer_topic("chart:strength", born, NOW)
+    text, full = render_answer(answer), render_answer(answer, "full")
+    assert "Which planets are strong in your chart" in text and "of 6" in text and "Strongest by this count" in text and "Source: Phaladeepika 4.1–8" in text
+    assert "Rahu is in" in full and "natural order" in full.lower() and all(len(p) <= 4096 for p in split_message(full))
+    assert qa.sort_question("which planet is strongest in my chart") == "chart:strength" and qa.sort_question("how strong are my houses") == "chart:houses"
+    assert "Phaladeepika 4:" in qa._ai_prompt("which planet is strong", answer)
+    assert render_answer(qa.answer_topic("chart:strength", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_STRENGTH
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["kinds"].pop("dik"),
+    lambda r: r["kinds"]["kala"].update(definition=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_strength_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(planet_strength.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        planet_strength.load_rules(path)
+
+
+def test_the_relationship_rule_of_chapter_2_natural_plus_temporary_friendship():
+    ctx = phaladeepika_raja.Ctx(_full_sky(lagna=0, moon=(1, 15.0), sun=(2, 15.0), mars=(0, 15.0), venus=(1, 15.0), saturn=(9, 15.0), mercury=(1, 15.0)))
+    # the Moon in Taurus. The Sun is a natural friend and stands in the 2nd sign from her: adhimitra. Mars is a natural neutral in the 12th from her: a friend.
+    assert ctx.relation("moon", "sun") == "adhimitra" and ctx.relation("moon", "mars") == "friend"
+    assert ctx.relation("moon", "mercury") == "neutral"          # a natural friend in the same sign (the 1st): not a temporary friend -> neutral
+    assert ctx.relation("moon", "saturn") == "enemy"             # a natural neutral in the 9th sign from her (not a temporary friend): an enemy for the time being
+
+
+def test_7_23_the_moon_in_an_adhimitra_navamsa_aspected_by_venus_or_jupiter():
+    from samay.engine.vedic import SIGN_LORDS, navamsa_sign
+    # the Moon in Taurus; find a degree whose navamsa lord is a natural friend of the Moon (the Sun or Mercury), then put that lord in the 2nd sign from her
+    degree = next(d for d in range(1, 30) if SIGN_LORDS[navamsa_sign(30.0 + d + 0.5)] in ("sun", "mercury"))
+    lord = SIGN_LORDS[navamsa_sign(30.0 + degree + 0.5)]
+    base = {"moon": (1, degree + 0.5), lord: (2, 15.0)}
+    assert "moon_adhimitra_venus" in _r7(lagna=0, venus=(7, 15.0), **base)          # Venus in Scorpio sees Taurus by its 7th sight
+    assert "moon_adhimitra_jupiter" in _r7(lagna=0, jupiter=(7, 15.0), **base)
+    assert "moon_adhimitra_venus" not in _r7(lagna=0, venus=(3, 15.0), **base)      # Venus not aspecting her
+    assert "moon_adhimitra_venus" not in _r7(lagna=0, venus=(7, 15.0), moon=(1, degree + 0.5), **{lord: (1, 20.0)})  # the lord in her own sign: not a temporary friend
+
+
+def test_chapter_27_the_ascetic_yogas():
+    four = _r7(lagna=0, sun=(5, 5.0), mars=(5, 20.0), mercury=(5, 15.0), jupiter=(5, 25.0))     # four planets in Virgo
+    assert "four_in_one_sign" in four and "Virgo" in four["four_in_one_sign"].detail and "gives" in four["four_in_one_sign"].text
+    spread = {"moon": 1, "venus": 3, "saturn": 4}                                                    # everyone else in different signs
+    assert "four_in_one_sign" not in _r7(lagna=0, sun=(5, 5.0), mars=(5, 20.0), mercury=(5, 15.0), jupiter=(8, 15.0), **spread)   # only three there
+    dec = _r7(lagna=0, moon=(9, 5.0), saturn=(3, 15.0), mars=(6, 15.0))      # the Moon in the first decanate of Capricorn (Saturn's); Saturn in Cancer (7th sight) and Mars in Libra (4th sight) both aspect it
+    assert "moon_saturn_decanate" in dec
+    assert "moon_saturn_decanate" not in _r7(lagna=0, moon=(9, 5.0), saturn=(3, 15.0), mars=(1, 15.0))   # Mars in Taurus does not aspect Capricorn
+    tenth = _r7(lagna=0, saturn=(0, 15.0), sun=(4, 15.0), jupiter=(8, 15.0), venus=(9, 15.0))       # Aries lagna: the 10th lord Saturn with others in kendras/trikonas
+    assert "tenth_lord_four" in tenth

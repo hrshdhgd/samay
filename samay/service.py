@@ -22,6 +22,7 @@ from .engine import (
     gochara,
     house_effects,
     house_timing,
+    planet_strength,
     timestd,
     upagrahas,
 )
@@ -324,3 +325,15 @@ def upagraha_report(birth: ResolvedBirth, force: bool = False) -> upagrahas.Upag
 
     local = birth.utc.astimezone(ZoneInfo(p.tz))
     return upagrahas.find(rules, natal.chart, local, p.latitude, p.longitude, p.tz, ascendant_at)
+
+
+def strength_report(birth: ResolvedBirth) -> planet_strength.Strengths | None:
+    """Which of Phaladeepika's six strengths each planet has. None until the rules are checked."""
+    rules = planet_strength.load_rules()
+    if not rules.servable:
+        return None
+    p = birth.place
+    local = birth.utc.astimezone(ZoneInfo(p.tz))
+    sun = daylight.sun_times(p.latitude, p.longitude, p.tz, local.date())
+    night = None if sun is None else not (sun.sunrise <= local < sun.sunset)
+    return planet_strength.find(rules, natal_report(birth).chart, night)

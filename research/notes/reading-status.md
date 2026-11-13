@@ -5,7 +5,7 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 ## Phaladeepika (Kapoor), 28 chapters
 | Chapter | Read? | Used by the bot? |
 |---|---|---|
-| 1 signs and houses, 2 planets, 3 divisions, 4 strengths | **not yet** | only through Brihat Jataka I-II entries |
+| 1 signs/houses, 2 planets, 3 divisions, 4 strengths | **yes, 2026-11-13** | ch.2 as unchecked entries; ch.4 as `chart:strength`; ch.1 and 3 not built |
 | 5 livelihood | partly (method only) | method entries, unchecked |
 | 6 yogas | yes | 45 yogas (`chart:yogas`) |
 | 7 raja yogas (30 verses, incl. **Neechabhanga**) | **yes, now** | **not built** (see below) |
@@ -19,13 +19,14 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 | 16 houses in general | partly | timing only |
 | **17 exit from the world** | **yes, now** | **not built**: 28 verses of death-timing transits |
 | 18 conjunctions | yes | `chart:conjunctions`, Moon aspects |
-| 19 dashas | **not yet** | ch. 20-21 used |
+| 19 dashas | yes | Vimshottari entries were already in (checked) |
 | 20 dasha by lordship, 21 antardasha | yes | built |
 | 22 Kalachakra dasha | **not yet** | not built |
 | 23 ashtakavarga | yes | built; 24 (reductions) **not yet** |
 | 25 upagrahas (Gulika/Mandi...) | **yes, now** | **not built** |
 | 26 transits | yes | built (vv.25-46 nakshatra rules not) |
-| 27 ascetic yogas, 28 conclusion | **not yet** | - |
+| 27 ascetic yogas | **yes, 2026-11-13** | built (with chapter 7) |
+| 28 conclusion | yes | nothing to build |
 
 ## Brihat Jataka (Iyer): chapters used are IX, XI, XII, XIII, XIV, XVI, XVII, XIX, XX; the others (I-VIII, X, XV, XVIII, XXI-XXVIII) have only been skimmed for the catalogue.
 

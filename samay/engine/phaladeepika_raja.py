@@ -88,6 +88,13 @@ class Ctx:
     def friends(self, p: str, q: str) -> bool:
         return q in self.ch20.friends[p]
 
+    def relation(self, p: str, q: str) -> str:
+        """How q stands to p by Phaladeepika 2.21-23: the natural friendship plus the temporary one (q in the 2nd, 3rd, 4th, 10th, 11th or 12th sign from p)."""
+        natural = "friend" if q in self.ch20.friends[p] else "neutral" if q in self.ch20.neutrals[p] else "enemy"
+        temporary = house_from(self.sign[p], self.sign[q]) in (2, 3, 4, 10, 11, 12)
+        return {("friend", True): "adhimitra", ("friend", False): "neutral", ("enemy", False): "adhishatru", ("enemy", True): "neutral",
+                ("neutral", True): "friend", ("neutral", False): "enemy"}[natural, temporary]
+
 
 def _o(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
@@ -237,6 +244,58 @@ def _d_moon_exalted(c: Ctx) -> str | None:
     return "the Moon is nearly full in Taurus" if c.full_moon and c.sign["moon"] == 1 else None
 
 
+def _adhimitra_moon(c: Ctx) -> str | None:
+    lord = SIGN_LORDS[c.nav["moon"]]
+    return lord if lord != "moon" and c.relation("moon", lord) == "adhimitra" else None
+
+
+def _d_adhimitra_venus(c: Ctx) -> str | None:
+    lord = _adhimitra_moon(c)
+    return f"the Moon is in the navamsa of {lord.title()}, her adhimitra, and Venus aspects her" if lord and c.sees("venus", c.sign["moon"]) else None
+
+
+def _d_adhimitra_jupiter(c: Ctx) -> str | None:
+    lord = _adhimitra_moon(c)
+    return f"the Moon is in the navamsa of {lord.title()}, her adhimitra, and Jupiter aspects her" if lord and c.sees("jupiter", c.sign["moon"]) else None
+
+
+def _d_four_one_sign(c: Ctx) -> str | None:
+    by_sign: dict[int, list[str]] = {}
+    for p in SEVEN:
+        by_sign.setdefault(c.sign[p], []).append(p)
+    for s, ps in by_sign.items():
+        if len(ps) >= 4:
+            rank = {p: ("depression", "inimical", "neutral", "friendly", "own", "moolatrikona", "exaltation").index(c.stand(p)) for p in ps}
+            top = [p for p in ps if rank[p] == max(rank.values())]
+            return f"{_names(ps)} are together in {SIGNS[s]}; the strongest there: {_names(top)}"
+    return None
+
+
+def _decanate_lord(lon: float) -> str:
+    return SIGN_LORDS[(sign_index(lon) + (0, 4, 8)[int(degree_in_sign(lon) // 10)]) % 12]
+
+
+def _d_moon_sat_dec(c: Ctx) -> str | None:
+    ok = _decanate_lord(c.chart.planets["moon"].longitude) == "saturn" and c.sees("saturn", c.sign["moon"]) and c.sees("mars", c.sign["moon"])
+    return "the Moon is in a decanate of Saturn and Saturn and Mars aspect her" if ok else None
+
+
+def _d_moon_mars_nav(c: Ctx) -> str | None:
+    return "the Moon is in the navamsa of Mars and Saturn aspects her" if SIGN_LORDS[c.nav["moon"]] == "mars" and c.sees("saturn", c.sign["moon"]) else None
+
+
+def _d_moon_lord_sat(c: Ctx) -> str | None:
+    lord = SIGN_LORDS[c.sign["moon"]]
+    seen = c.seers(c.sign[lord])
+    return f"the lord of the Moon's sign, {lord.title()}, is aspected by Saturn only" if seen == ["saturn"] else None
+
+
+def _d_tenth_four(c: Ctx) -> str | None:
+    l10 = c.lord(10)
+    good = [p for p in SEVEN if c.house[p] in (1, 4, 5, 7, 9, 10)]
+    return f"{_names(good)} stand in kendras or trikonas, including the 10th lord {l10.title()}" if l10 in good and len(good) >= 4 else None
+
+
 def _d_m36(c: Ctx) -> str | None:
     got = {h: [p for p in ("sun", "mars", "saturn") if c.house[p] == h] for h in (3, 6, 11)}
     return "malefics are in the 3rd, 6th and 11th: " + "; ".join(f"{_names(v)} in the {_o(h)}" for h, v in got.items()) if all(got.values()) else None
@@ -269,6 +328,8 @@ DETECTORS: dict[str, Detect] = {
     "jupiter_moon_kendra": _d_jm_kendra, "moon_water_sign": _d_water, "venus_jupiter_aspect": _d_venus_jup, "jupiter_lagna": _d_jup_lagna,
     "lagna_lord_kendra": _d_ll_kendra, "mercury_kendra_jupiter": _d_merc, "exalted_with_friend_aspect": _d_exalted_friend,
     "sun_own_navamsa_moon_own_sign": _d_sun_moon_nav, "moon_pisces_full": _d_moon_pisces, "moon_exalted_full": _d_moon_exalted,
+    "moon_adhimitra_venus": _d_adhimitra_venus, "moon_adhimitra_jupiter": _d_adhimitra_jupiter, "four_in_one_sign": _d_four_one_sign, "moon_saturn_decanate": _d_moon_sat_dec,
+    "moon_mars_navamsa_saturn": _d_moon_mars_nav, "moon_sign_lord_saturn": _d_moon_lord_sat, "tenth_lord_four": _d_tenth_four,
     "malefics_3_6_11": _d_m36, "mars_mercury_second": _d_mm, "sun_venus_fourth": _d_sv, "mars_saturn_jupiter": _d_msj, "lords_from_moon": _d_lords_moon,
 }
 NB_KEYS = ("sign_or_exaltation_lord_kendra", "mutual_kendras", "aspected_by_sign_lord", "planet_in_kendra")
@@ -299,7 +360,11 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
     for key, y in rules.yogas.items():
         detail = DETECTORS[key](c)
         if detail:
-            out.append(Found(key, y["verse"], y["text"], detail))
+            text = y["text"]
+            if key == "four_in_one_sign":
+                top = detail.split("the strongest there: ")[1].split(", ")
+                text += ": " + "; ".join(f"{p.lower()} gives {y['orders'][p.lower()]}" for p in top)
+            out.append(Found(key, y["verse"], text, detail))
     moon = c.sign["moon"]
     nb = rules.nb
     for p in SEVEN:

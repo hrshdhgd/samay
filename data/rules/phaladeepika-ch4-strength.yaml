@@ -1,0 +1,57 @@
+# Phaladeepika chapter 4 ("The various kinds of strengths of planets and houses"), Mantreswara's verses 1-8: the six kinds of strength a planet can have, and when it is
+# strong or weak. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
+# printed pages 35-45 (PDF pages 34-44). PARAPHRASED. Conditions are coded in samay/engine/planet_strength.py. Notes and what was left out: research/notes/phaladeepika-strength.md.
+#
+# UNCHECKED: nothing is shown until a person checks each row and its definition and sets level: translation-checked. Owner's decision 2026-11-12: nothing hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "35-45"
+
+frame: "The book names six kinds of strength a planet can have. This lists which of them each planet has in the chart. It is a simple count of the book's yes-or-no tests, not the full shadbala arithmetic, and a planet is judged by its strengths along with where it sits and what it rules."
+order_note: "The book also gives a fixed natural order of strength: the Sun is the strongest, then the Moon, Venus, Jupiter, Mercury, Mars and Saturn (4.3)."
+
+kinds:
+  kala:
+    verse: "4.1"
+    name: "Time"
+    definition: "Two tests, each half a point. (1) Birth time suits the planet: Mars, the Moon and Venus are strong at night; the Sun, Jupiter and Saturn by day; Mercury at any hour. (2) The half of the month suits it: benefics (the waxing Moon, Mercury, Jupiter, Venus) in the bright half, malefics (the Sun, Mars, Saturn, and the waning Moon) in the dark half."
+    text: "strong at the hour of birth that suits it and in the half of the month that suits it"
+  chesta:
+    verse: "4.2"
+    name: "Motion"
+    definition: "The Moon when nearly full (within 36 degrees of opposite the Sun); the Sun when it is on its northern course (north of the celestial equator); Mars, Mercury, Jupiter, Venus and Saturn when retrograde."
+    text: "the Moon is strong when full, the Sun on its northern course, and the other planets when retrograde"
+  uchcha:
+    verse: "4.2"
+    name: "Exaltation"
+    definition: "Closeness to the deep exaltation point (Sun Aries 10, Moon Taurus 3, Mars Capricorn 28, Mercury Virgo 15, Jupiter Cancer 5, Venus Pisces 27, Saturn Libra 20 degrees): full at that point, nothing at the opposite point, in proportion between; counted as held when at least two thirds of full."
+    text: "a planet has full strength of exaltation at its deep exaltation point, and none at its deep debilitation point"
+  dik:
+    verse: "4.2"
+    name: "Direction"
+    definition: "Whole-sign house: the Sun and Mars in the 10th; Mercury and Jupiter in the 1st; Saturn in the 7th; the Moon and Venus in the 4th. (The book measures from the middle of the house.)"
+    text: "the Sun and Mars are strong in the 10th, Mercury and Jupiter in the 1st, Saturn in the 7th, the Moon and Venus in the 4th"
+  ayana:
+    verse: "4.2"
+    name: "Declination"
+    definition: "North or south of the celestial equator by ecliptic longitude (latitude ignored): Mercury, Saturn and the Moon are strong when south; the Sun, Mars, Jupiter and Venus when north."
+    text: "Mercury, Saturn and the Moon are strong on the southern course, the rest on the northern"
+  sthana:
+    verse: "4.3, 4.7"
+    name: "Position"
+    definition: "In its exaltation, moolatrikona, own or a friend's sign, or in a kendra (1st, 4th, 7th, 10th). Not held when the planet is in its debilitation sign or combust (4.7: no positional strength then)."
+    text: "strength of position: in its exaltation, own or a friend's sign, or in a kendra; none if debilitated or combust"
+
+# Verse 4 (modifiers the bot reports):
+modifiers:
+  verse: "4.4"
+  retrograde_debilitated: "Even in its debilitation sign, a retrograde planet with full rays has full strength, the book says."
+  combust: "A planet whose rays are eclipsed by nearness to the Sun is weak even in an exaltation, own or friend's sign."
+# Verse 5:
+nodes:
+  verse: "4.5"
+  rahu_strong_in: [Cancer, Taurus, Aries, Aquarius, Scorpio]
+  ketu_strong_in: [Pisces, Virgo, Taurus]
+  ketu_note: "and the latter half of Sagittarius"
+  text_rahu: "Rahu is strong in Cancer, Taurus, Aries, Aquarius and Scorpio"
+  text_ketu: "Ketu is strong in Pisces, Virgo, Taurus and the latter half of Sagittarius"

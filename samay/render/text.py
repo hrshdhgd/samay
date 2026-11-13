@@ -12,6 +12,7 @@ from ..engine import (
     house_strength,
     house_timing,
     longevity,
+    planet_strength,
     upagrahas,
     women,
 )
@@ -344,6 +345,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:strength" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_STRENGTH
     if answer.topic == "chart:lagna" and not birth_known:
         return prompts.NEED_BIRTH_FOR_LAGNA
     if answer.topic == "chart:upagrahas" and not birth_known:
@@ -365,6 +368,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:strength":
+        blocks.append(render_strength(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:lagna":
         blocks.append(render_lagna(answer, who))
         blocks.append(DISCLAIMER)
@@ -532,6 +539,33 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_strength(answer, who=SELF, full: bool = False) -> str:
+    """Which of the book's six strengths each planet has: a bar per planet in plain words, the kinds named on More."""
+    title = f"💪 Which planets are strong in {who.your} chart"
+    rules = planet_strength.load_rules()
+    if not answer.strength_checked:
+        return f"{title}\n\n{prompts.STRENGTH_UNCHECKED}"
+    s = answer.strength
+    if s is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_STRENGTH}"
+    names = {k: d["name"].lower() for k, d in rules.kinds.items()}
+    lines = []
+    for ps in sorted(s.planets, key=lambda x: -x.total):
+        held = [names[k] for k, v in ps.held.items() if v >= 1.0] + [names[k] + " (half)" for k, v in ps.held.items() if 0 < v < 1.0]
+        bar = "█" * int(ps.total) + ("▌" if ps.total % 1 else "") + "░" * (6 - int(ps.total) - (1 if ps.total % 1 else 0))
+        lines.append(f"{PLANET_ICONS[ps.planet]} {ps.planet.title()} {bar} {ps.total:g} of 6" + (f": {', '.join(held)}" if held else ""))
+        if full:
+            lines += [f"   {n}" for n in ps.notes]
+    blocks = [title, rules.frame, "\n".join(lines),
+              f"Strongest by this count: {', '.join(p.title() for p in s.strongest)}. Weakest: {', '.join(p.title() for p in s.weakest)}."]
+    if full:
+        blocks += list(s.nodes)
+        blocks.append(rules.order_note)
+        blocks.append("\n".join(f"• {d['name']} ({d['verse']}): {d['definition']}" for d in rules.kinds.values()))
+    blocks.append("Source: Phaladeepika 4.1–8" + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_lagna(answer, who=SELF) -> str:
@@ -780,13 +814,13 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
         blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapter 6)")
     if view.ch7_checked:
         if view.ch7:
-            lines = ["Raja yogas and cancelled debilitations from Phaladeepika chapter 7:"]
+            lines = ["Raja yogas, cancelled debilitations and ascetic yogas from Phaladeepika chapters 7 and 27:"]
             lines += [f"• {f.detail}: {f.text[0].upper()}{f.text[1:]}." for f in view.ch7]
             lines.append(view.ch7_frame)
             lines.append("Source: Phaladeepika " + ", ".join(sorted({f.verse for f in view.ch7}, key=lambda v: int(v.split(".")[1].split("–")[0]))) + " · checked")
             blocks.append("\n".join(lines))
     else:
-        blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapter 7: raja yogas and Neechabhanga)")
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapters 7 and 27: raja, Neechabhanga and ascetic yogas)")
     if view.raja_checked:
         if view.raja:
             lines = ["Raja yogas of Brihat Jataka chapter 11:"]

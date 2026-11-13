@@ -1,7 +1,7 @@
 # Phaladeepika chapter 7 ("Raja yogas"): the combinations that make a king or a person of high standing, and the five Neechabhanga raja yogas that cancel a
 # planet's debilitation. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
 # printed pages 83-91 (PDF pages 82-90). PARAPHRASED. Conditions coded in samay/engine/phaladeepika_raja.py; `definition` says each in words.
-# Notes and what was left out: research/notes/phaladeepika-raja.md.
+# Notes and what was left out: research/notes/phaladeepika-raja.md. Verse 7.23 uses the relationship rule of chapter 2 (verses 21-23): natural plus temporary friend = adhimitra.
 #
 # UNCHECKED: nothing is shown until a person checks each row and its definition and sets level: translation-checked. Owner's decision 2026-11-12: nothing hidden.
 verification: {level: unchecked}
@@ -37,6 +37,13 @@ yogas:
   sun_own_navamsa_moon_own_sign: {verse: "7.21", definition: "The Sun is in a Leo navamsa and the Moon is in Cancer.", text: "a king with many horses and elephants"}
   moon_pisces_full: {verse: "7.22", definition: "The Moon is nearly full, in Pisces, and a friendly planet aspects her.", text: "a king of pre-eminent position, a delight to the world"}
   moon_exalted_full: {verse: "7.22", definition: "The Moon is nearly full and in Taurus (her exaltation sign).", text: "a very generous, charitable and praiseworthy king"}
+  moon_adhimitra_venus: {verse: "7.23", definition: "The Moon is in the navamsa of a planet that is her adhimitra (best friend: a natural friend of the Moon, and also a temporary friend, standing in the 2nd, 3rd, 4th, 10th, 11th or 12th sign from her, by Phaladeepika 2.21-23) and Venus aspects her fully.", text: "a very wealthy king"}
+  moon_adhimitra_jupiter: {verse: "7.23", definition: "As above, and Jupiter aspects the Moon fully.", text: "a king reigning over the entire earth"}
+  four_in_one_sign: {verse: "27.2", definition: "Four or more of the seven planets in one sign. The order is that of the strongest of them (by its standing in the sign: exaltation, moolatrikona, own, friendly, neutral, inimical, depression; ties are all named).", text: "an ascetic of the order of the strongest planet there", orders: {sun: "a chief among contemplative saints", moon: "a pilgrim travelling to holy places", mars: "an ascetic of the Buddhist order skilled in base spells", mercury: "a mendicant without knowledge of the schools of philosophy", jupiter: "a high-class ascetic who knows Vedanta", venus: "a hypocrite, an outcaste, a public dancer", saturn: "an outcaste or a heretic"}}
+  moon_saturn_decanate: {verse: "27.3", definition: "The Moon is in a decanate ruled by Saturn (by the usual decanate lords) and both Saturn and Mars aspect her.", text: "turns into an ascetic"}
+  moon_mars_navamsa_saturn: {verse: "27.3", definition: "The Moon is in the navamsa of Mars and Saturn aspects her.", text: "takes to the order of ascetics signified by Mars"}
+  moon_sign_lord_saturn: {verse: "27.4", definition: "The lord of the Moon's sign is aspected by Saturn and by no other planet.", text: "becomes an ascetic of the class the Moon's sign lord indicates"}
+  tenth_lord_four: {verse: "27.8", definition: "Four planets including the lord of the 10th stand in kendras or trikonas (1st, 4th, 5th, 7th, 9th, 10th).", text: "seeks admission to a holy order and becomes a successful ascetic (the order is revered if benefics predominate among them)"}
   malefics_3_6_11: {verse: "7.24", definition: "Malefics (Sun, Mars, Saturn) stand in each of the 3rd, 6th and 11th houses from the lagna (the book also names the Moon and the lagna lord's house as starting points; only the lagna is used).", text: "a raja yoga"}
   mars_mercury_second: {verse: "7.24", definition: "Mars and Mercury are both in the 2nd house.", text: "a raja yoga"}
   sun_venus_fourth: {verse: "7.24", definition: "The Sun and Venus are both in the 4th house.", text: "a raja yoga"}

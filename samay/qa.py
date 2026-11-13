@@ -33,6 +33,7 @@ from .engine import (
     phaladeepika_raja,
     phaladeepika_yogas,
     planet_houses,
+    planet_strength,
     raja_yogas,
     upagrahas,
     women,
@@ -73,6 +74,7 @@ CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
 YOGA_WORDS = ("yoga", "yogas", "combination", "combinations")
 UPAGRAHA_WORDS = ("gulika", "mandi", "upagraha", "upagrahas", "dhuma", "upaketu", "yamakantaka")
 DEATH_WORDS = ("die", "death", "dying")
+PLANET_STRENGTH_WORDS = ("strong", "strongest", "stronger", "weak", "weakest", "strength", "strengths")
 WOMEN_WORDS = ("woman", "women", "female", "feminine")
 STRENGTH_WORDS = ("strong", "weak", "strength", "houses")
 LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
@@ -121,7 +123,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -226,6 +228,8 @@ class Answer:
     upagrahas_checked: bool = False
     lagna: dict | None = None  # chart:lagna
     lagna_checked: bool = False
+    strength: planet_strength.Strengths | None = None  # chart:strength
+    strength_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -264,6 +268,8 @@ def sort_question(text: str) -> str | None:
         return "chart:death_timing"
     if not planets and any(w in WOMEN_WORDS for w in words) and {"horoscope", "chart", "husband"} & set(words):
         return "chart:women"
+    if not planets and {"planet", "planets"} & set(words) and any(w in PLANET_STRENGTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:strength"
     if not planets and {"strength", "houses"} & set(words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:houses"
     if not planets and (any(w in LONGEVITY_WORDS for w in words) or {"long", "live"} <= set(words)) and any(w in PERSONAL_WORDS for w in words):
@@ -305,6 +311,7 @@ TOPIC_HELP = {
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
+    "chart:strength": "which planets are strong or weak in the person's chart (the six strengths of a planet): 'which planet is strongest in my chart'",
     "chart:lagna": "what the person's rising sign (lagna, ascendant) says of their body and temperament: 'what is my rising sign like'",
     "chart:upagrahas": "the person's Gulika (Mandi) and the other upagrahas, the shadowy points of the chart, and what the old book says of them",
     "chart:women": "the old book's pointers about a woman's husband, marriage and children (a sensitive topic: the bot asks first)",
@@ -610,6 +617,10 @@ def answer_topic(
         area = topic[len(WHEN_PREFIX):]
         report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(topic, (), (), timing=report, timing_checked=house_timing.load_rules().servable, who=subject)
+    if topic == "chart:strength":
+        sr = planet_strength.load_rules()
+        found = service.strength_report(birth) if birth is not None else None
+        return Answer(topic, (), (), strength=found, strength_checked=sr.servable, who=subject)
     if topic == "chart:lagna":
         ar, nat = ascendants.load_rules(), moon_nature.load_rules()
         sign = sign_index(service.natal_report(birth).chart.ascendant) if birth is not None else None
@@ -741,6 +752,8 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += health_facts(answer.health, answer.who)
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
+    if answer.strength is not None:
+        verified += [f"Phaladeepika 4: {s.planet.title()} has {s.total:g} of the book's six strengths." for s in answer.strength.planets]
     if answer.lagna:
         verified += [f"Phaladeepika {answer.lagna['pd'][0]} on a rising sign of {SIGNS[answer.lagna['sign']]}: {answer.lagna['pd'][1]}."] if answer.lagna['pd'] else []
         verified += [f"Brihat Jataka XVII (also said of the rising sign): a person born with it {answer.lagna['bj'].text}"] if answer.lagna['bj'] else []

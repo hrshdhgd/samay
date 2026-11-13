@@ -1,4 +1,4 @@
-# Phaladeepika chapter 7: raja yogas and Neechabhanga
+# Phaladeepika chapters 7 and 27: raja yogas, Neechabhanga and ascetic yogas
 
 **Source:** Mantreswara's *Phala Deepika*, tr. G. S. Kapoor (in copyright), pp. 83-91, read in full. **File:** `data/rules/phaladeepika-ch7-raja.yaml`, **unchecked**, paraphrased.
 Shown inside `chart:yogas`, gated separately from the other yoga sources.
@@ -16,6 +16,10 @@ Each is coded; its `definition` field says in words what the code tests.
 
 ## Left out
 7.2 (a royal family without Duryoga or combust planets: the bot does not know a person's family), 7.14 and 7.16 (ambiguous in the translation), 7.15 (the translator calls it confusing and gives two readings),
-7.23 (the Moon in the navamsa of an *adhimitra*, which the book does not define for the bot). The "king" language is kept as the book's; the frame line says it means unusual standing.
+The "king" language is kept as the book's; the frame line says it means unusual standing.
 
 Owner's decision 2026-11-12: nothing hidden. **For the checker:** reply **"chapter 7 raja checked"**.
+
+## Added 2026-11-13
+- **7.23** (the Moon in an *adhimitra*'s navamsa, aspected by Venus or by Jupiter), using the relationship rule of chapter 2 (natural plus temporary friendship).
+- **Chapter 27 (ascetic yogas)**, read in full: four or more planets in one sign (the order is the strongest planet's, with the book's descriptions of each), the Moon in a Saturn decanate aspected by Saturn and Mars, the Moon in Mars's navamsa aspected by Saturn, the Moon-sign lord aspected by Saturn only, four planets with the 10th lord in kendras or trikonas. **Left out:** 27.1's second yoga (the end of a sign rising), 27.6-7 (a waning Moon aspected by the lagna lord) and 27.8's note on benefics.
