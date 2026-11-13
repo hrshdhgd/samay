@@ -121,14 +121,14 @@ async def test_a_story_about_two_children_is_read_checked_saved_and_the_question
     answers = [t for t in sent[3:] if t.startswith("👤")]
     assert [a.splitlines()[0] for a in answers] == ["👤 Maya (daughter)", "👤 Arjun (son)"]  # the question, for each
     assert all("current period of life" in a for a in answers) and "Maya's current period of life" in answers[0]
-    assert sum(t.startswith("🤖 AI says:") for t in sent) == 2  # and the model's own words after each
+    assert sum(t.startswith(("🤖 AI says:", "🔮🤖 AI prediction:")) for t in sent) == 2  # and the model's own words after each
     assert [(p.name, p.relation) for p in store.list_people(ME)] == [("Arjun", "son")]  # Maya was "just for now"
 
 
 @needs_kernel
 async def test_the_model_is_told_whom_the_question_is_about(ctx, ai, clock):
     await do_intake(ctx, ai)
-    prompts_to_ai = [c["prompt"] for c in ai["calls"] if c["system"] == qa.AI_SYSTEM]
+    prompts_to_ai = [c["prompt"] for c in ai["calls"] if c["system"] in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM)]
     assert any("The question is about Maya, the writer's daughter." in p for p in prompts_to_ai)
     assert any("The question is about Arjun, the writer's son." in p for p in prompts_to_ai)
 
@@ -382,13 +382,13 @@ async def test_answers_about_a_child_carry_the_adult_life_note_and_the_ai_is_tol
     update, msg = message(ME, "maya marriage")
     await bot.on_text(update, ctx)
     assert texts(msg)[0].splitlines()[:3] == ["👤 Maya (daughter)", "", prompts.MINOR_NOTE]
-    child_prompt = next(c["prompt"] for c in ai["calls"] if c["system"] == qa.AI_SYSTEM)
+    child_prompt = next(c["prompt"] for c in ai["calls"] if c["system"] in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM))
     assert "They are a child. Keep the reading gentle" in child_prompt
     ai["route"] = "life:marriage | Raj"
     update, msg = message(ME, "raj marriage")
     await bot.on_text(update, ctx)
     assert prompts.MINOR_NOTE not in texts(msg)[0]
-    adult_prompt = [c["prompt"] for c in ai["calls"] if c["system"] == qa.AI_SYSTEM][-1]
+    adult_prompt = [c["prompt"] for c in ai["calls"] if c["system"] in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM)][-1]
     assert "They are a child" not in adult_prompt
 
 
@@ -453,7 +453,7 @@ async def test_the_warning_is_the_same_even_when_the_model_is_on_and_the_ai_is_n
     update, msg = message(ME, "will I live long?")
     await bot.on_text(update, ctx)
     assert [c.args[0] for c in msg.reply_text.await_args_list] == [prompts.SENS_WARN]
-    assert all(call["system"] != qa.AI_SYSTEM for call in ai["calls"])
+    assert all(call["system"] not in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM) for call in ai["calls"])
 
 
 @needs_kernel

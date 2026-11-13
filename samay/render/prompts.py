@@ -196,6 +196,10 @@ DEATH_UNCHECKED = "The book's death-timing conditions are waiting for a check, s
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
+AI_PREDICTION_CAVEAT = (
+    "⚠️ This is a prediction written by an AI language model, not by the old books. It is a guess from the planet positions above, nobody can "
+    "know the future, and it is not advice. Please take it with a big grain of salt."
+)
 AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."
 AI_UNAVAILABLE = (
     "🤖 The AI helper was too slow this time and did not finish. It runs on a small home server, and everything above "

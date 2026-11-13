@@ -1016,3 +1016,26 @@ async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on
     assert len(sent) > 1 and all(len(s) <= 4096 for s in sent)
     assert all("reply_markup" not in c.kwargs for c in msg.reply_text.await_args_list[:-1])
     assert msg.reply_text.await_args_list[-1].kwargs["reply_markup"] == "BUTTONS"
+
+
+@needs_kernel
+async def test_a_question_that_looks_ahead_gets_a_labelled_ai_prediction_with_a_stronger_disclaimer(ctx, store, ai_on, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
+    _save_pune(store)
+    ai_on["sort"] = "future:week"
+    ai_on["ai"] = "This is a guess by an AI: the week may feel busy."
+    update, msg = message(ALLOWED, "what will my week be like")
+    await bot.on_text(update, ctx)
+    last = _texts(msg)[-1]
+    assert last.startswith("🔮🤖 AI prediction:") and prompts.AI_PREDICTION_CAVEAT in last and "grain of salt" in last
+    system = next(c["system"] for c in ai_on["calls"] if c["system"] != qa.MODEL_SYSTEM)
+    assert system == qa.AI_PREDICT_SYSTEM and "grain of salt" in system and "Never speak of death" in system
+
+
+def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reach_the_model():
+    from samay.subject import Subject
+    a = lambda topic, who=qa.SELF: qa.Answer(topic, (), (), who=who)
+    assert qa.is_prediction(a("future:week")) and qa.is_prediction(a("when:marriage")) and qa.is_prediction(a("life:career"))
+    assert not qa.is_prediction(a("planet:saturn")) and not qa.is_prediction(a(None))
+    assert not qa.is_prediction(a("chart:longevity")) and not qa.is_prediction(a("chart:death_timing"))
+    assert qa.is_prediction(a("life:career", Subject("Maya", "daughter", True)))      # a child's life area is still gentle, not gated

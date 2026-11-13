@@ -666,8 +666,26 @@ AI_SYSTEM = (
     "Verified facts may be supplied; never contradict them. Everything else you say is your own general "
     "knowledge, so if you are unsure, say so."
 )
+# Used instead of AI_SYSTEM when the question looks ahead (a week, a year, "when", a life area). The owner allowed a labelled prediction on
+# 2026-11-13: it may say what it thinks is likely, hedged, and must say it is a guess. It still never speaks of death or serious illness
+# and never gives medical, legal or financial advice; those topics are not sent to the model at all (see the consent gate).
+AI_PREDICT_SYSTEM = (
+    AI_SYSTEM.split("Never state that")[0]
+    + "The reader asked about the future, so give a short prediction: say what you think is likely in the coming period, in hedged words such as "
+      "'likely', 'may' and 'could', using the supplied facts about the planets, and you may name a rough stretch such as 'later in the month'. "
+      "Begin by saying plainly that this is a guess made by an AI language model from the facts given, and that it should be taken with a "
+      "grain of salt. Never speak of death, serious illness or accidents, never give exact dates, and do not give medical, legal or financial "
+      "advice. The facts may be about someone other than the writer, such as their child: refer to that person by name. "
+      "Verified facts are supplied; never contradict them. Everything else is your own general knowledge, so if you are unsure, say so."
+)
+PREDICTIVE_PREFIXES = ("future:", "when:", "life:", "dasha:current")
 MAX_QUESTION_CHARS = 500
 MAX_AI_CHARS = 1200
+
+
+def is_prediction(answer: Answer) -> bool:
+    """True when the AI's reply is a look ahead, so it is labelled a prediction. Sensitive topics never reach the model."""
+    return answer.topic is not None and answer.topic.startswith(PREDICTIVE_PREFIXES) and sensitivity(answer.topic, answer.who) is None
 
 
 def _ai_prompt(question: str, answer: Answer, history=()) -> str:
@@ -722,7 +740,7 @@ async def ai_answer(question: str, answer: Answer, client=None, history=()) -> s
     """The model's own answer to the question, shown apart from the sourced one and labelled as the AI's.
     It is given the checked entries and chart facts as verified context. None if the model is off or fails."""
     reply = await narrate.complete(
-        AI_SYSTEM, _ai_prompt(question, answer, history), client,
+        AI_PREDICT_SYSTEM if is_prediction(answer) else AI_SYSTEM, _ai_prompt(question, answer, history), client,
         model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS, max_tokens=narrate.AI_MAX_TOKENS,
     )
     if not reply:

@@ -495,7 +495,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
             reply = await qa.ai_answer(question, answer, history=history)
         if reply:
             _remember_turn(ctx, chat_id, None, question, reply)
-            await _say(update, render_ai(reply), MENU)
+            await _say(update, render_ai(reply, qa.is_prediction(answer)), MENU)
         else:
             await _say(update, prompts.NO_TOPIC, MENU)
         return
@@ -507,7 +507,7 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
             reply = await qa.ai_answer(question, answer, history=history)
         if reply:
             _remember_turn(ctx, chat_id, answer.topic, question, reply)
-        await _say(update, render_ai(reply) if reply else prompts.AI_UNAVAILABLE, MENU)
+        await _say(update, render_ai(reply, qa.is_prediction(answer)) if reply else prompts.AI_UNAVAILABLE, MENU)
 
 
 async def _sensitive_button(update: Update, ctx, chat_id: int, choice: str) -> None:

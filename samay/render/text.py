@@ -861,8 +861,10 @@ def render_second(v, who=SELF) -> str:
     return "\n".join(lines)
 
 
-def render_ai(reply: str) -> str:
+def render_ai(reply: str, prediction: bool = False) -> str:
     """The AI's own answer, labelled so it is never mistaken for a sourced one."""
+    if prediction:
+        return f"🔮🤖 AI prediction: “{reply}”\n\n{prompts.AI_PREDICTION_CAVEAT}"
     return f"🤖 AI says: “{reply}”\n\n{prompts.AI_CAVEAT}"
 
 
