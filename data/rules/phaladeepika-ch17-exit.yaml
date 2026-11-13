@@ -1,0 +1,117 @@
+# Phaladeepika chapter 17 ("Exit from the world"): the book's transit conditions for the end of the native's own life, as stretches of days. Source: Mantreswara's
+# Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 163-168 (PDF pages 162-167).
+# PARAPHRASED. Each rule names a moving planet and the signs it must be in; the points come from the book's own constructions (see samay/engine/death_transits.py).
+# Notes and what was left out: research/notes/phaladeepika-ch17.md.
+#
+# MOST SENSITIVE: shown only inside the death-timing answer, behind its warning and a tap. The book gives conditions, never dates. UNCHECKED: hidden until a
+# person checks each row and sets level: translation-checked. Owner's decision 2026-11-13: build death timing, behind a warning and approval.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "163-168"
+
+notes:
+  verse: "17.4 (note)"
+  text: "The translator reminds the reader that Saturn goes round the zodiac in about 30 years, Jupiter in 12 and the Sun in one, so these transits do not mean death at that time; the book's aim is to read them along with the dasha of a maraka planet."
+
+# Point expressions (longitudes, sidereal degrees):
+#   lord:N            natal position of the lord of the Nth house          natal:P   natal position of planet P
+#   lagna             the lagna                                            gulika, yamakantaka, dhuma, vyatipata, paridhi, indra_dhanus, upaketu
+#   lord22            the lord of the 22nd decanate counted from the lagna's decanate (natal position)
+#   lord22_moon       the same counted from the Moon's decanate
+#   lord_dec_lagna    the lord of the decanate the lagna is in (natal position)
+#   lordof:EXPR       the natal position of the lord of the sign EXPR falls in
+#   diff:A-B          A minus B          sum:A+B+C   the total          x9:A+B   nine times each, added
+#   nav:EXPR          the start of the navamsa sign of EXPR              dwa:EXPR  the start of the dwadasamsa sign of EXPR
+# A target {points, via, offsets}: the mover must be in the sign (via sign), or the sign or the navamsa sign (via sign_navamsa), of the point, plus any offsets
+# in signs (trine = 0, 4, 8). `when` limits a rule to day or night births.
+rules:
+  - {id: r2, verse: "17.2", mover: saturn, targets: [{points: [lord:8, gulika, natal:saturn, lord22], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Saturn, in transit, passes the sign or navamsa of the lord of the 8th, of Gulika, of Saturn at birth or of the lord of the 22nd decanate, or a trine from it",
+     definition: "Saturn is in the sign or navamsa sign of one of those four points, or in a trine from it."}
+  - {id: r3, verse: "17.3", mover: jupiter, targets: [{points: [lord_dec_lagna, lord:8, lord22], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Jupiter, in transit, passes the sign or navamsa of the lord of the rising decanate, of the lord of the 8th or of the lord of the 22nd decanate, or a trine from it",
+     definition: "Jupiter is in the sign or navamsa sign of one of those three points, or in a trine from it."}
+  - {id: r4_jupiter, verse: "17.4", mover: jupiter, targets: [{points: [dwa:natal:sun, nav:lord:8, nav:lord:1], via: sign, offsets: [0, 4, 8]}],
+     text: "Jupiter, in transit, passes the dwadasamsa sign of the Sun, the navamsa sign of the lord of the 8th or the navamsa sign of the lagna lord, or a trine from it",
+     definition: "Jupiter is in one of those three signs or a trine from it."}
+  - {id: r4_sun, verse: "17.4", mover: sun, targets: [{points: [dwa:natal:sun, nav:lord:8, nav:lord:1], via: sign, offsets: [0, 4, 8]}],
+     text: "the Sun, in transit, passes the same signs",
+     definition: "The Sun is in one of those three signs or a trine from it."}
+  - {id: r5, verse: "17.5", mover: moon, targets: [{points: [lord:8, natal:sun], via: sign, offsets: [0, 4, 8]}],
+     text: "the Moon, in transit, passes the sign of the lord of the 8th or of the Sun at birth, or a trine from it",
+     definition: "The Moon is in the sign of the 8th lord or the natal Sun, or a trine from it. (The book adds that all this is examined from the Moon sign too; only the lagna reading is used.)"}
+  - {id: r6, verse: "17.6", mover: jupiter, targets: [{points: ["diff:lord:1-yamakantaka", "diff:natal:moon-natal:saturn"], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Jupiter, in transit, passes the sign and navamsa of (the lagna lord minus Yamakantaka) or of (the Moon minus Saturn), or a trine from it",
+     definition: "Jupiter is in the sign or navamsa sign of either difference of longitudes, or in a trine from it."}
+  - {id: r9, verse: "17.9", mover: jupiter, targets: [{points: ["lordof:sum:lagna+natal:sun+gulika"], via: sign, offsets: [0, 4, 8]}],
+     text: "Jupiter, in transit, passes the sign where the lord of the sign given by adding the lagna, the Sun and Gulika stands, or a trine from it",
+     definition: "Jupiter is in the sign of that lord's position at birth, or in a trine from it."}
+  - {id: r10_saturn, verse: "17.10", mover: saturn, targets: [{points: ["diff:natal:mars-natal:saturn"], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Saturn, in transit, passes the sign or navamsa of (Mars minus Saturn), or a trine from it",
+     definition: "Saturn is in the sign or navamsa sign of that difference, or in a trine from it."}
+  - {id: r10_upagrahas, verse: "17.10", mover: saturn, targets: [{points: ["sum:dhuma+vyatipata+paridhi+indra_dhanus+upaketu"], via: sign, offsets: [0]}],
+     text: "Saturn, in transit, passes the sign given by adding the five upagrahas from Dhuma",
+     definition: "Saturn is in the sign of the sum of the longitudes of Dhuma, Vyatipata, Paridhi, Indra Dhanus and Upaketu. (The book says 'drekkana or sign'; the sign is used.)"}
+  - {id: r11_sun, verse: "17.11", mover: sun, targets: [{points: ["sum:lagna+gulika"], via: sign, offsets: [0]}],
+     text: "the Sun, in transit, is in the sign given by adding the lagna and Mandi: the book says this shows the month of the year",
+     definition: "The Sun is in the sign of the sum of the lagna and Gulika longitudes."}
+  - {id: r12_jupiter, verse: "17.12", mover: jupiter, targets: [{points: [gulika], via: navamsa, offsets: [0]}],
+     text: "Jupiter, in transit, passes the navamsa sign of Mandi",
+     definition: "Jupiter is in the navamsa sign of Gulika."}
+  - {id: r12_saturn, verse: "17.12", mover: saturn, targets: [{points: ["dwa:gulika"], via: sign, offsets: [0]}],
+     text: "Saturn, in transit, passes the dwadasamsa sign of Mandi",
+     definition: "Saturn is in the dwadasamsa sign of Gulika."}
+  - {id: r13, verse: "17.13", mover: saturn, targets: [{points: ["x9:gulika+natal:saturn"], via: sign_navamsa, offsets: [0]}],
+     text: "Saturn, in transit, passes the sign or navamsa of nine times Mandi plus nine times Saturn",
+     definition: "Saturn is in the sign or navamsa sign of 9 x Gulika + 9 x Saturn (mod 360 degrees)."}
+  - {id: r14, verse: "17.14", mover: jupiter, targets: [{points: ["diff:lagna-yamakantaka"], via: sign_navamsa, offsets: [0]}],
+     text: "Jupiter, in transit, passes the sign or navamsa of the lagna minus Yamakantaka; the book calls this definite",
+     definition: "Jupiter is in the sign or navamsa sign of that difference."}
+  - {id: r15, verse: "17.15", mover: saturn, targets: [{points: ["sum:lord:6+lord:8+lord:12"], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Saturn, in transit, passes the sign or navamsa given by adding the longitudes of the lords of the 6th, 8th and 12th, or a trine from it",
+     definition: "Saturn is in the sign or navamsa sign of that sum, or in a trine from it."}
+  - {id: r16, verse: "17.16", mover: jupiter, targets: [{points: [lord_dec_lagna], via: sign, offsets: [0, 4, 8]}],
+     text: "there is danger to life when Jupiter, in transit, passes the sign where the lord of the lagna's decanate stands, or a trine from it",
+     definition: "Jupiter is in the natal sign of the lord of the decanate the lagna is in, or in a trine from it."}
+  - {id: r19, verse: "17.19", mover: moon, targets: [{points: [lord22_moon], via: sign, offsets: [0, 4, 8]}, {points: [lagna], via: sign, offsets: [0, 7, 11]}],
+     text: "the Moon, in transit, passes the sign of the lord of the 22nd decanate counted from her own, a trine from it, the lagna sign, the 8th or the 12th",
+     definition: "The Moon is in the natal sign of the lord of the 22nd decanate from the Moon's decanate, or a trine from it, or the 1st, 8th or 12th sign from the lagna."}
+  - {id: r20_sun, verse: "17.20", mover: sun, targets: [{points: [lord:8], via: sign, offsets: [0]}],
+     text: "the Sun, in transit, passes the sign of the lord of the 8th",
+     definition: "The Sun is in the natal sign of the lord of the 8th."}
+  - {id: r20_moon, verse: "17.20", mover: moon, targets: [{points: [natal:sun], via: sign, offsets: [0]}],
+     text: "the Moon, in transit, passes the sign of the Sun at birth (the book adds the nakshatra of the 8th lord, which is not used)",
+     definition: "The Moon is in the natal sign of the Sun."}
+  - {id: r21_night, verse: "17.21", when: night, mover: saturn, targets: [{points: [gulika], via: sign, offsets: [4, 8]}],
+     text: "for a night birth, Saturn, in transit, passes a trine from Gulika's sign",
+     definition: "A night birth: Saturn is in the 5th or 9th sign from Gulika's sign."}
+  - {id: r21_day, verse: "17.21", when: day, mover: saturn, targets: [{points: [gulika], via: sign, offsets: [6]}],
+     text: "for a day birth, Saturn, in transit, passes the sign 7th from Gulika",
+     definition: "A day birth: Saturn is in the 7th sign from Gulika's sign."}
+  - {id: r22, verse: "17.22", mover: jupiter, targets: [{points: ["sum:natal:jupiter+natal:rahu"], via: sign, offsets: [0, 4, 8]}],
+     text: "there is danger of death when Jupiter, in transit, passes the sign given by adding the longitudes of Jupiter and Rahu, or a trine from it",
+     definition: "Jupiter is in the sign of that sum, or in a trine from it."}
+  - {id: r23, verse: "17.23", mover: saturn, targets: [{points: ["nav:lord:8"], via: sign, offsets: [0]}],
+     text: "Saturn, in transit, passes the navamsa sign occupied by the lord of the 8th",
+     definition: "Saturn is in the navamsa sign of the natal 8th lord."}
+  - {id: r24, verse: "17.24", mover: saturn, targets: [{points: [natal:saturn, "lordof:natal:moon", lord:6], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Saturn, in transit, passes the sign or navamsa of Saturn at birth, of the lord of the Moon's sign or of the lord of the 6th, or a trine from it",
+     definition: "Saturn is in the sign or navamsa sign of one of those three points, or in a trine from it."}
+  - {id: r25_night, verse: "17.25", when: night, mover: saturn, targets: [{points: [natal:moon, gulika], via: sign_navamsa, offsets: [0]}],
+     text: "for a night birth, Saturn, in transit, passes the sign or navamsa of the Moon or of Mandi",
+     definition: "A night birth: Saturn is in the sign or navamsa sign of the natal Moon or Gulika."}
+  - {id: r25_day, verse: "17.25", when: day, mover: saturn, targets: [{points: [natal:sun], via: sign, offsets: [0, 4, 6, 8]}],
+     text: "for a day birth, Saturn, in transit, passes the sign of the Sun or the 5th, 7th or 9th from it",
+     definition: "A day birth: Saturn is in the natal Sun's sign or the 5th, 7th or 9th sign from it."}
+  - {id: r27, verse: "17.27", mover: sun, targets: [{points: [natal:venus], via: sign, offsets: [5, 6, 11]}],
+     text: "the Sun, in transit, passes the 6th, 7th or 12th from Venus; the book says this is the preceptors' verdict that death will certainly take place",
+     definition: "The Sun is in the 6th, 7th or 12th sign from the natal Venus."}
+  - {id: r28_saturn, verse: "17.28", mover: saturn, targets: [{points: [lord:8, lord:12, lord:6, lord22, gulika], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Saturn, in transit, passes the sign or navamsa of the lord of the 8th, the 12th, the 6th, the 22nd decanate lord or Mandi, or a trine from it",
+     definition: "Saturn is in the sign or navamsa sign of one of those five points, or in a trine from it."}
+  - {id: r28_jupiter, verse: "17.28", mover: jupiter, targets: [{points: [lord:8, lord:12, lord:6, lord22, gulika], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "Jupiter, in transit, passes the same points",
+     definition: "Jupiter is in the sign or navamsa sign of one of those five points, or in a trine from it."}
+  - {id: r28_sun, verse: "17.28", mover: sun, targets: [{points: [lord:8, lord:12, lord:6, lord22, gulika], via: sign_navamsa, offsets: [0, 4, 8]}],
+     text: "the Sun, in transit, passes the same points",
+     definition: "The Sun is in the sign or navamsa sign of one of those five points, or in a trine from it."}

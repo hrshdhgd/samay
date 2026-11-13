@@ -15,6 +15,7 @@ from .engine import (
     ashtakavarga,
     daylight,
     death_timing,
+    death_transits,
     entries,
     ephemeris,
     geo,
@@ -295,14 +296,25 @@ def death_timing_report(birth: ResolvedBirth, now: datetime, tz: str | None = No
     times = [first + timedelta(days=d) for d in range(DEATH_TIMING_YEARS * 365 + 1)]
     track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
     found = death_timing.find(rules, natal.chart, natal.dashas, times, track)
-    return replace(found, tz=tz or birth.place.tz) if found else None
-
-
-def upagraha_report(birth: ResolvedBirth) -> upagrahas.Upagrahas | None:
-    """Gulika and the other upagrahas of this birth, by Phaladeepika chapter 25. None until the rules are checked."""
-    rules = upagrahas.load_rules()
-    if not rules.servable:
+    if not found:
         return None
+    exits = death_transits.load_rules()
+    if exits.servable:  # chapter 17 adds its transit rules, using Gulika and Yamakantaka when they can be worked out
+        ups = upagraha_report(birth, force=True)
+        longs = {p.key: p.longitude for p in ups.points} if ups else {}
+        night = None if not ups or not ups.when else ups.when == "night"
+        found = replace(found, results=found.results + death_transits.find(exits, natal.chart, times, track, longs, night))
+    return replace(found, tz=tz or birth.place.tz)
+
+
+def upagraha_report(birth: ResolvedBirth, force: bool = False) -> upagrahas.Upagrahas | None:
+    """Gulika and the other upagrahas of this birth, by Phaladeepika chapter 25. None until the rules are checked. `force` works the points out anyway,
+    for a rule (chapter 17) that needs a point but shows only its own result, never the upagraha texts."""
+    rules = upagrahas.load_rules()
+    if not rules.servable and not force:
+        return None
+    if not rules.servable:
+        rules = replace(rules, level="translation-checked", checked_by="internal")
     natal = natal_report(birth)
     profile = load_profile(birth.profile)
     p = birth.place

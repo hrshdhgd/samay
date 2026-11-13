@@ -2212,3 +2212,96 @@ def test_a_malformed_ascendant_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         ascendants.load_rules(path)
+
+
+# --- Phaladeepika 17: the death-transit rules (windows of days, behind the death-timing gate) ------------------------------------
+from samay.engine import death_transits
+
+D17 = death_transits.load_rules()
+D17_CHECKED = dataclasses.replace(D17, level="translation-checked", checked_by="test")
+
+
+def _d17(natal, track, ups=None, night=False, rule=None):
+    out = {r.id: r for r in death_transits.find(D17_CHECKED, natal, DAYS, track, ups or {}, night)}
+    return out if rule is None else out[rule]
+
+
+def test_chapter_17_has_30_rules_every_point_is_valid_and_it_waits_for_a_check():
+    assert len(D17.rules) == 30 and D17.level == "unchecked" and death_transits.find(D17, _full_sky(), DAYS, _track(), {}, False) == ()
+    ids = {r["id"] for r in D17.rules}
+    assert {"r21_night", "r21_day", "r25_night", "r25_day"} <= ids and all(r["definition"] for r in D17.rules)
+
+
+def test_a_point_the_book_names_is_resolved_by_its_own_construction():
+    nat = _full_sky(lagna=0, sun=(1, 10.0), moon=(2, 20.0), saturn=(3, 5.0), mars=(5, 5.0))
+    pts = death_transits.Points(nat, {"gulika": 100.0, "yamakantaka": 40.0})
+    assert pts.lon("diff:natal:mars-natal:saturn") == (5 * 30 + 5.0 - (3 * 30 + 5.0)) % 360.0
+    assert pts.lon("sum:natal:sun+natal:moon") == (1 * 30 + 10.0 + 2 * 30 + 20.0) % 360.0
+    assert pts.lon("x9:gulika+natal:saturn") == (9 * 100.0 + 9 * (3 * 30 + 5.0)) % 360.0
+    assert pts.lon("nav:gulika") == navamsa_sign_of(100.0) * 30.0 and pts.lon("dwa:gulika") == ((3 + int(10.0 // 2.5)) % 12) * 30.0
+    assert pts.lon("diff:lagna-yamakantaka") == (15.0 - 40.0) % 360.0
+    with pytest.raises(death_transits.Unavailable):
+        death_transits.Points(nat, {}).lon("gulika")
+
+
+def navamsa_sign_of(lon):
+    from samay.engine.vedic import navamsa_sign
+    return navamsa_sign(lon)
+
+
+def test_the_22nd_decanate_lord_counts_the_lagna_decanate_as_the_first():
+    # lagna 15 degrees Aries: the 2nd decanate of Aries (decanate number 1, 0-based); +21 = 22 -> the 1st decanate... of Scorpio (7*3+1 = 22 -> 0-based 22): Scorpio's 2nd decanate -> Pisces' lord Jupiter
+    pts = death_transits.Points(_full_sky(lagna=0, jupiter=(5, 15.0), mars=(1, 15.0)), {})
+    assert pts._lord22(pts.lagna) == "jupiter"           # 0-based decanate 1; (1 + 21) % 36 = 22 -> sign 7 (Scorpio), 2nd decanate -> Pisces, ruled by Jupiter
+    assert pts._decanate_lord(0 * 30 + 5.0) == "mars" and pts._decanate_lord(0 * 30 + 15.0) == "sun" and pts._decanate_lord(0 * 30 + 25.0) == "jupiter"
+
+
+def test_a_rule_marks_the_days_the_mover_is_in_a_matching_sign_and_offsets_mean_trines():
+    nat = _full_sky(lagna=0, natal_sun=0, sun=(0, 15.0), venus=(2, 15.0))          # Venus in Gemini
+    r27 = _d17(nat, _track(sun=[2, 7, 1, 1, 3, 7, 7, 2, 2, 2]), rule="r27")        # Venus in Gemini: its 6th, 7th and 12th are Scorpio (7), Sagittarius (8) and Taurus (1)
+    assert r27.days == 5 and _day_numbers(r27.windows) == [(1, 3), (5, 6)]
+    r5 = _d17(_full_sky(lagna=0, sun=(0, 15.0), mars=(0, 15.0)), _track(moon=[2, 4, 8, 3, 3, 0, 0, 4, 4, 4]), rule="r5")   # the 8th lord Mars in Aries and the Sun: Aries trines 0, 4, 8
+    assert r5.days == 7                                                             # Moon in Aries, Leo or Sagittarius: days 1, 2, 5, 6, 7, 8, 9
+
+
+def test_day_and_night_rules_run_only_for_the_births_kind_and_missing_points_say_so():
+    nat = _full_sky(lagna=0)
+    both = {r.id for r in death_transits.find(D17_CHECKED, nat, DAYS, _track(), {"gulika": 10.0}, True)}
+    assert "r21_night" in both and "r21_day" not in both
+    day = {r.id for r in death_transits.find(D17_CHECKED, nat, DAYS, _track(), {"gulika": 10.0}, False)}
+    assert "r21_day" in day and "r21_night" not in day
+    absent = death_transits.find(D17_CHECKED, nat, DAYS, _track(), {}, None)
+    assert any(r.note.startswith("does not apply") and r.id == "r2" for r in absent)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"][0].update(mover="venus"),
+    lambda r: r["rules"][0]["targets"][0].update(via="zodiac"),
+    lambda r: r["rules"][0]["targets"][0]["points"].append("lord:13"),
+    lambda r: r["rules"][0]["targets"][0]["points"].append("sum:lagna+sun"),
+    lambda r: r["rules"][1].update(id="r2"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_chapter_17_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(death_transits.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        death_transits.load_rules(path)
+
+
+@needs_kernel
+def test_the_death_timing_answer_adds_chapter_17_only_when_its_file_is_checked_and_names_no_date(monkeypatch):
+    import re
+    born = service.resolve_birth(BirthInput("1952-08-15", "06:30", "Pune"))
+    monkeypatch.setattr(death_timing, "load_rules", lambda path=None: DT_CHECKED)
+    assert len(qa.answer_topic("chart:death_timing", born, NOW).death.results) == 5
+    monkeypatch.setattr(death_transits, "load_rules", lambda path=None: D17_CHECKED)
+    answer = qa.answer_topic("chart:death_timing", born, NOW)
+    assert len(answer.death.results) > 25
+    text = render_answer(answer)
+    assert "names no date" in text and "17.2" in text and "does not narrow anything" in text
+    assert not re.search(r"will die on|is due to die", text)
+    from samay.render.text import split_message
+    assert all(len(p) <= 4096 for p in split_message(text))
