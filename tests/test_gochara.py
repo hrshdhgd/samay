@@ -3061,3 +3061,48 @@ def test_a_malformed_death_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         death_bj.load_rules(path)
+
+
+# --- Brihat Jataka XXVII: the figures of the 36 drekkanas, in chart:lagna -------------------------------------------------------------
+from samay.engine import drekkana_figures
+
+DF = drekkana_figures.load_rules()
+DF_CHECKED = dataclasses.replace(DF, level="translation-checked", checked_by="test")
+
+
+def test_the_figure_file_has_36_verses_in_order_and_is_gated():
+    assert DF.level == "unchecked" and drekkana_figures.find(DF, 15.0) is None
+    verses = [f["verse"] for row in DF.figures.values() for f in row]
+    assert verses == [f"27.{i}" for i in range(1, 37)]
+
+
+def test_a_longitude_gets_its_figure_and_the_lord_matches_the_translators_notes():
+    f = drekkana_figures.find(DF_CHECKED, 5.0)                # Aries 1st: Mars
+    assert f.lord == "mars" and f.verse == "27.1" and "axe" in f.text
+    assert drekkana_figures.find(DF_CHECKED, 15.0).lord == "sun" and drekkana_figures.find(DF_CHECKED, 25.0).lord == "jupiter"
+    assert drekkana_figures.find(DF_CHECKED, 330 + 25.0).verse == "27.36" and drekkana_figures.find(DF_CHECKED, 330 + 25.0).lord == "mars"
+    assert drekkana_figures.find(DF_CHECKED, 180 + 15.0).lord == "saturn"        # Libra 2nd, lord Saturn (the translator's note to 27.20)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["figures"].pop("Pisces"),
+    lambda r: r["figures"]["Aries"].pop(),
+    lambda r: r["figures"]["Aries"][0].update(text=""),
+    lambda r: r["verification"].update(level="translation-checked"),
+])
+def test_a_malformed_figure_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(drekkana_figures.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        drekkana_figures.load_rules(path)
+
+
+@needs_kernel
+def test_the_lagna_answer_shows_the_rising_drekkana_figure_once_checked(monkeypatch):
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    monkeypatch.setattr(drekkana_figures, "load_rules", lambda path=None: DF_CHECKED)
+    answer = qa.answer_topic("chart:lagna", born, NOW)
+    text = render_answer(answer)
+    assert "the figure of your rising drekkana" in text and "Brihat Jataka 27." in text and "Brihat Jataka XXVII" in qa._ai_prompt("my lagna", answer)

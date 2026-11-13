@@ -681,6 +681,11 @@ def render_lagna(answer, who=SELF) -> str:
     if v["bj"]:
         blocks.append(f"Brihat Jataka 17.{v['bj'].verse}, said of the Moon in {SIGNS[v['sign']]} and, the translator notes, of the rising sign as well:\n“A person born with it {v['bj'].text}”")
         refs.append(f"Brihat Jataka 17.{v['bj'].verse}")
+    d = v.get("drekkana")
+    if d:
+        shape = f" The translator: it is of the shape of {d.shape}." if d.shape else ""
+        blocks.append(f"Brihat Jataka {d.verse}, the figure of {who.your} rising drekkana (the {('1st', '2nd', '3rd')[d.number - 1]} of {SIGNS[d.sign]}, lord {d.lord.title()}):\n“It is {d.text}.”{shape}\n{v['drekkana_frame']}")
+        refs.append(f"Brihat Jataka {d.verse}")
     blocks.append(f"Source: {'; '.join(refs)} · checked")
     return "\n\n".join(blocks)
 

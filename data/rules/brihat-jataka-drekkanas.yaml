@@ -1,0 +1,141 @@
+# Brihat Jataka chapter XXVII ("On the Drekkanas"), verses 1-36: the figure of each of the 36 drekkanas (a sign's three 10-degree thirds), with the translator's note on its shape.
+# Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 225-233. QUOTED, lightly regularised (scan errors corrected, 'woman' for the
+# scan's 'womau' etc.). The lord of each drekkana is not stored: it is the lord of the sign itself, the 5th or the 9th from it (I.11), and the engine computes it (the translator's
+# notes name the same lords). Shown inside chart:lagna as the figure of the rising drekkana. The translator adds (from the Yogayatra) that an agreeable figure with fruits, flowers,
+# gems and pots, aspected by benefics, means success; a hideous, armed one aspected by malefics, disgrace and failure; one carrying serpents or fetters, delirium and imprisonment.
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden.
+verification:
+  level: unchecked
+edition: tr. N. Chidambaram Iyer, Madras 1885
+pages: 225-233
+frame: The old book pictures each third of a sign as a figure. It is a symbol, not a description of anyone; the translator adds that agreeable figures were read as success and hideous, armed or fettered
+  ones as trouble.
+figures:
+  Aries:
+  - verse: '27.1'
+    text: a man with a white cloth tied round his loins, black, facing a person as if able to protect him, of fearful appearance and of red eyes and holding an axe in his hand
+    shape: a man, armed
+  - verse: '27.2'
+    text: (according to Yavanacharya) a woman fond of ornaments and sweetmeats, with a pot-like belly, of the face of a horse, thirsty, and single-legged
+    shape: a woman and a quadruped (the face resembles a bird's also)
+  - verse: '27.3'
+    text: a man of a wicked nature, learned in the arts, of a brown colour, fond of work, failing in his attempts to carry out a work, holding up a stick in his hand, dressed in a red garment and angry
+    shape: a man, armed
+  Taurus:
+  - verse: '27.4'
+    text: a woman with hair cut and growing in curls, with a pot-like belly, dressed in a burnt garment, thirsty, and fond of food and ornaments
+    shape: a woman who carries fire
+  - verse: '27.5'
+    text: a man skilled in works connected with agriculture, grain, house, cows, music, dance, painting, writing and the like, skilled at the plough and in works connected with a conveyance, with a neck
+      bent like that of the bullock, thirsty, with a face like that of the ram and dressed in dirty garments
+    shape: a man and a quadruped
+  - verse: '27.6'
+    text: a man with a body resembling that of an elephant, with large teeth, with feet resembling those of the camel, of a brown colour, attached to the ram and to the animals of the forest
+    shape: human and quadruped
+  Gemini:
+  - verse: '27.7'
+    text: a woman fond of needle work, beautiful, fond of decoration, without children, with raised hands, having attained puberty and full of lustful thoughts
+    shape: a woman
+  - verse: '27.8'
+    text: a man residing in a flower garden, wearing a mail coat, holding a bow in his hand, fond of fight, carrying arrows, his face like that of a Garuda (Brahmani kite), his thoughts directed to play,
+      children, ornaments and wealth
+    shape: a man, armed, and also a bird
+  - verse: '27.9'
+    text: a man wearing ornaments, possessing many gems, wearing a mail coat and target, carrying a bow in his hand, learned in all the arts and a literary writer
+    shape: a man, armed
+  Cancer:
+  - verse: '27.10'
+    text: one who carries leaves, roots and fruits, has a body resembling that of the elephant, lives in a forest near sandal trees, has feet as large as those of the camel, a face like that of the hog
+      and a neck like that of a horse
+    shape: a quadruped
+  - verse: '27.11'
+    text: a woman wearing lotus flowers on her head, carrying a snake, hard-hearted, young, crying in a forest and holding a branch of the Palasa tree in her hand
+    shape: a woman
+  - verse: '27.12'
+    text: a man surrounded by a snake, sailing in a boat in the sea on account of procuring ornaments for his wife, wearing ornaments made of gold and with a flat face
+    shape: a man and a snake
+  Leo:
+  - verse: '27.13'
+    text: of the shape of a vulture and a jackal, seated on the top of a Salmali tree, resembling a dog in appearance and also of the shape of a man dressed in dirty garments, separated from his parents
+      and crying aloud
+    shape: a man, a quadruped and a bird
+  - verse: '27.14'
+    text: a man of the shape of a horse, wearing a slightly white garland of flowers on the head and covered with deer-skin and flannel, unapproachable like the lion, holding a bow in his hand and with
+      a bent nose
+    shape: a man, armed
+  - verse: '27.15'
+    text: a man with the face of a bear, the pranks of a monkey, with a club in his hand, carrying fruits and meats, with a long beard and whiskers and with curling hair
+    shape: a man and a quadruped, armed
+  Virgo:
+  - verse: '27.16'
+    text: a virgin girl carrying a pot filled with flowers, dressed in dirty garments and fond of cloths and wealth and proceeding to the house of her preceptor
+    shape: a woman
+  - verse: '27.17'
+    text: a man holding a pen in his hand, black, with a cloth tied round his head, examining items of receipt and expenditure, with a large bow in his hand and covered with hair all over his body
+    shape: a man, armed
+  - verse: '27.18'
+    text: a woman of yellow colour, dressed in white silk, carrying a pot and ladle in her hands, pure and proceeding to a temple
+    shape: a woman
+  Libra:
+  - verse: '27.19'
+    text: a man holding a balance in one hand, skilled in weighing and measuring, with articles in his hand to be weighed or measured and with his thoughts directed to the determination of the price of
+      such articles
+    shape: a man
+  - verse: '27.20'
+    text: a man with the face of a vulture, holding a pot in his hand, wishing to fall down, suffering from hunger and thirst and with his thoughts directed to his wife and children
+    shape: a man and a bird
+  - verse: '27.21'
+    text: a man with the face of a horse adorned with gems, scaring animals in the woods, carrying a golden quiver and wearing a mail coat, carrying fruits and meat, monkey-like in appearance and holding
+      a bow in his hand
+    shape: a man and a quadruped
+  Scorpio:
+  - verse: '27.22'
+    text: a beautiful woman, naked and without ornaments, quitting her place, landing after a long sea voyage and with a snake coiled round her legs
+    shape: a woman and a serpent
+  - verse: '27.23'
+    text: a woman with a body like that of a turtle or a pot, desiring the comfort of her place and with a serpent coiled round her body on account of another husband
+    shape: a woman and a serpent
+  - verse: '27.24'
+    text: a lion with a broad and flat face like that of a turtle, scaring dogs, deer, jackals and hogs in the woods and lording over a country abounding in sandal trees
+    shape: a quadruped
+  Sagittarius:
+  - verse: '27.25'
+    text: a man with the body of a horse, with a long bow in his hand, staying in his hermitage and watching over the several articles required for sacrificial rites
+    shape: a man and a quadruped, armed
+  - verse: '27.26'
+    text: a beautiful woman, bright as gold and the Champaka flower, seated on a throne of middle size, and picking up the gems of the sea
+    shape: a woman
+  - verse: '27.27'
+    text: a man with a long beard and whiskers, of the colour of gold and the Champaka flower, seated on a throne with a club in his hand and dressed in white silk and deer-skin
+    shape: a man, armed
+  Capricorn:
+  - verse: '27.28'
+    text: a man covered with hair, strong as the sea monster, with a body like that of a hog, wearing a nose string and fetters and with a deformed face
+    shape: a man loaded with fetters
+  - verse: '27.29'
+    text: a woman skilled in the arts, with eyes like the petals of the lotus, black, hankering after various things and wearing ear-ornaments made of iron
+    shape: a woman
+  - verse: '27.30'
+    text: of the shape of a Kinnara (a celestial being) covered with flannel, with a quiver, a bow and a mail coat and carrying on his shoulders a pot set with precious stones
+    shape: armed
+  Aquarius:
+  - verse: '27.31'
+    text: a man with the face of a vulture, with his thoughts directed towards the gain of oil, liquor, water and meals and dressed in flannel, silk and deer-skin
+    shape: a man
+  - verse: '27.32'
+    text: a woman in a car burnt with the wood of Salmali in it and collecting iron, living in a forest and dressed in dirty garments
+    shape: a woman who carries fire
+  - verse: '27.33'
+    text: a black man with hair in his ears, wearing a crown and carrying bark, leaves, the oil of bdellium, iron and pots from one place to another
+    shape: a man
+  Pisces:
+  - verse: '27.34'
+    text: a man with the vessels of sacrificial rites, pots, pearls, gems and conch shells in his hands, carrying ornaments and sailing in a boat in the sea for the purpose of decorating his wife
+    shape: null
+  - verse: '27.35'
+    text: a woman with a long flag-staff and banner, sailing in a boat to the other shore of the sea accompanied by her friends and with a face bright as the Champaka flower
+    shape: a woman
+  - verse: '27.36'
+    text: a man with a snake coiled round him, standing naked on the brink of a pit in a forest, suffering from thieves, from fire and from hunger and weeping
+    shape: a snake

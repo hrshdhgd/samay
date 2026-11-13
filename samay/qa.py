@@ -22,6 +22,7 @@ from .engine import (
     conjunctions,
     death_bj,
     death_timing,
+    drekkana_figures,
     ephemeris,
     health,
     house_effects,
@@ -688,7 +689,11 @@ def answer_topic(
         sign = sign_index(service.natal_report(birth).chart.ascendant) if birth is not None else None
         view = None if sign is None else {"sign": sign, "pd": ar.text(sign), "bj": nat.signs[sign] if nat.servable else None,
                                           "pd_frame": ar.frame, "moon_rule": ar.moon_rule["text"], "edition": ar.edition, "pages": ar.pages, "pd_checked": ar.servable}
-        return Answer(topic, (), (), lagna=view, lagna_checked=ar.servable or nat.servable, who=subject)
+        dr = drekkana_figures.load_rules()
+        if view is not None:
+            view["drekkana"] = drekkana_figures.find(dr, service.natal_report(birth).chart.ascendant)
+            view["drekkana_frame"] = dr.frame
+        return Answer(topic, (), (), lagna=view, lagna_checked=ar.servable or nat.servable or dr.servable, who=subject)
     if topic == "chart:upagrahas":
         ur = upagrahas.load_rules()
         found = service.upagraha_report(birth) if birth is not None else None
@@ -833,6 +838,9 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
         verified += [f"Brihat Jataka XXI.{f.verse.split('.')[1]}, {f.because}: {f.text}." for f in answer.vargas]
     if answer.strength is not None:
         verified += [f"Phaladeepika 4: {s.planet.title()} has {s.total:g} of the book's six strengths." for s in answer.strength.planets]
+    if answer.lagna and answer.lagna.get("drekkana"):
+        d = answer.lagna["drekkana"]
+        verified += [f"Brihat Jataka XXVII.{d.verse.split('.')[1]}: the rising drekkana (the {d.number} of {SIGNS[d.sign]}, lord {d.lord.title()}) is pictured as {d.text}."]
     if answer.lagna:
         verified += [f"Phaladeepika {answer.lagna['pd'][0]} on a rising sign of {SIGNS[answer.lagna['sign']]}: {answer.lagna['pd'][1]}."] if answer.lagna['pd'] else []
         verified += [f"Brihat Jataka XVII (also said of the rising sign): a person born with it {answer.lagna['bj'].text}"] if answer.lagna['bj'] else []
