@@ -1,0 +1,71 @@
+# Phaladeepika chapter 15 ("Assessment of houses"), verses 1-5, 9-10 and 18-19: whether each house of the chart is helped or harmed, from its occupants,
+# its lord and the aspects. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright), http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf,
+# printed pages 145-153 (PDF pages 144-152). PARAPHRASED. Conditions are coded in samay/engine/house_strength.py; `definition` says each in words.
+# Notes and what was left out: research/notes/phaladeepika-house-strength.md.
+#
+# UNCHECKED: nothing here is shown by the bot until a person compares each rule and its definition with the pages above and sets level:
+# translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "145-153"
+
+frame: "These are the book's tests of whether a house is helped or harmed in the chart. A house is not good or bad by itself; the book reads each one by who occupies it, who rules it and who looks at it."
+mixed: "The book says the effect is mixed when both benefics and malefics influence the house."
+
+rules:
+  helped_by_occupants:
+    verse: "15.2"
+    definition: "At least three of the 1st, 2nd, 4th, 5th, 7th, 9th and 10th houses counted from this house hold a benefic (Mercury, Jupiter, Venus, or the waxing Moon), and none holds a malefic (Sun, Mars, Saturn, Rahu, Ketu)."
+    text: "the house is sufficiently strong and beneficial when the houses 1st, 2nd, 4th, 5th, 7th, 9th and 10th from it are occupied by benefic planets"
+  harmed_by_occupants:
+    verse: "15.2"
+    definition: "At least three of those same seven houses hold a malefic and none holds a benefic."
+    text: "the house deteriorates when those houses are held by malefics and not by benefics"
+  destroyed_lord:
+    verse: "15.3"
+    definition: "The lord of the house is in the 8th house from the lagna, or combust, or in its debilitation sign, or in an enemy's sign, and no benefic (Mercury, Jupiter, Venus) joins it or aspects it."
+    text: "the effects of the house are totally destroyed when its lord is in the 8th house, eclipsed by the Sun's rays, in its sign of debilitation or in an enemy's sign, with no benefic joined or aspecting"
+  destroyed_occupant:
+    verse: "15.3"
+    definition: "A planet sits in the house that is combust, debilitated or in an enemy's sign, with no benefic joined or aspecting it. If it is a benefic, it destroys the good effects of the house it rules; if a malefic, it harms the house."
+    text: "a planet in the house that is debilitated, combust or in an enemy's sign, with no benefic joined or aspecting, harms the house"
+  malefic_in_dusthana:
+    verse: "15.4"
+    definition: "A malefic (Sun, Mars, Saturn, Rahu, Ketu) in the 6th, 8th or 12th house counted from this house."
+    text: "malefics in the 6th, 8th and 12th from the house cause its destruction"
+  lord_in_dusthana:
+    verse: "15.5"
+    definition: "The lord of the house is in the 6th, 8th or 12th house from the lagna, or the house is occupied by the lord of the 6th, 8th or 12th."
+    text: "the house is destroyed if its lord is in the 6th, 8th or 12th from the lagna, or if it is occupied by the lord of the 6th, 8th or 12th"
+  saved_by_benefic:
+    verse: "15.5"
+    definition: "A benefic (Mercury, Jupiter, Venus) aspects the house (full sights, Brihat Jataka II.13) or sits in it."
+    text: "the house will however flourish if a benefic aspects it"
+  lagna_lord_in_it:
+    verse: "15.9"
+    definition: "The lord of the lagna is in the house."
+    text: "the house in which the lord of the lagna stands gains in prosperity and well-being, and produces very good effects"
+  lagna_lord_with_lord:
+    verse: "15.9"
+    definition: "The lord of the house is joined with or aspected by the lord of the lagna."
+    text: "the good effects of a house are enhanced when its lord is joined with or aspected by the lord of the lagna"
+  lagna_lord_owns_dusthana:
+    verse: "15.10"
+    definition: "The lord of the lagna also rules the 6th, 8th or 12th house; the book says only his lagna lordship counts."
+    text: "if the lord of the lagna also owns a dusthana, the effects of the lagna lordship alone prevail"
+  occupied_benefic:
+    verse: "15.18"
+    definition: "A benefic (Mercury, Jupiter, Venus) is in the house (not in the 6th, 8th or 12th house; in those the book reverses this, below)."
+    text: "benefics in a house promote its growth"
+  occupied_malefic:
+    verse: "15.18"
+    definition: "A malefic (Sun, Mars, Saturn, Rahu, Ketu) is in the house (not in the 6th, 8th or 12th, below)."
+    text: "malefics in a house cause its decay"
+  dusthana_malefic:
+    verse: "15.19"
+    definition: "A malefic is in the 6th, 8th or 12th house from the lagna."
+    text: "malefics in the 6th, 8th or 12th intensify the evil effects of those houses"
+  dusthana_benefic:
+    verse: "15.19"
+    definition: "A benefic is in the 6th, 8th or 12th house from the lagna."
+    text: "benefics in the 6th, 8th or 12th destroy or lessen the evil effects of those houses (the translator adds: they themselves are afflicted, and harm the houses they own)"

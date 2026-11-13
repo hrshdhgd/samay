@@ -5,7 +5,7 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, health, house_timing, longevity
+from ..engine import conjunctions, health, house_strength, house_timing, longevity
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -335,6 +335,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:houses" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_HOUSES
     if answer.topic == "chart:longevity" and not birth_known:
         return prompts.NEED_BIRTH_FOR_LONGEVITY
     if view == "sanskrit":
@@ -346,6 +348,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:houses":
+        blocks.append(render_houses(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
         blocks.append(DISCLAIMER)
@@ -493,6 +499,32 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_houses(answer, who=SELF, full: bool = False) -> str:
+    """Each house with what helps or harms it by Phaladeepika chapter 15. Plain words first; the verse numbers come with More."""
+    title = f"🏠 Which houses of {who.your} chart are helped or harmed"
+    rules = house_strength.load_rules()
+    if not answer.houses_checked:
+        return f"{title}\n\n{prompts.HOUSES_UNCHECKED}"
+    if answer.houses is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_HOUSES}"
+    blocks = [title, rules.frame]
+    for h in answer.houses:
+        label = f"{ordinal(h.house)} house, {SIGNS[h.sign]} (lord {h.lord.title()})"
+        if not h.findings:
+            if full:
+                blocks.append(f"{label}: {prompts.HOUSES_NONE}")
+            continue
+        lines = [label + (f". {rules.mixed}" if h.mixed else "")]
+        icon = {"helps": "➕", "harms": "➖", "note": "•"}
+        lines += [f"{icon[f.kind]} {f.text[0].upper()}{f.text[1:]} ({f.detail})" + (f" [{f.verse}]" if full else "") for f in h.findings]
+        blocks.append("\n".join(lines))
+    if len(blocks) == 2:
+        blocks.append(prompts.HOUSES_NONE)
+    verses = sorted({f.verse for h in answer.houses for f in h.findings}, key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])))
+    blocks.append(f"Source: Phaladeepika {', '.join(verses)}" + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_longevity(answer, who=SELF) -> str:

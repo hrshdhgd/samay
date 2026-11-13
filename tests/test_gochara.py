@@ -1787,3 +1787,92 @@ def test_a_malformed_longevity_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises((ValueError, KeyError)):
         longevity.load_rules(path)
+
+
+# --- Phaladeepika 15: the strength of the houses -----------------------------------------------------------------------------
+from samay.engine import house_strength
+
+HS = house_strength.load_rules()
+HS_CHECKED = dataclasses.replace(HS, level="translation-checked", checked_by="test")
+
+
+def _hs(lagna=0, **where):
+    """A made-up chart; unnamed bodies sit in the 3rd house. Returns {house: {rule keys found}} and the readings."""
+    calm = {b: (lagna + 2) % 12 for b in house_strength.BODIES}
+    readings = house_strength.find(HS_CHECKED, _full_sky(lagna=lagna, **{**calm, **where}))
+    return {r.house: {f.key for f in r.findings} for r in readings}, {r.house: r for r in readings}
+
+
+def test_the_house_strength_file_is_complete_and_waits_for_a_check():
+    assert set(HS.rules) == set(house_strength.RULE_KEYS) and HS.level == "unchecked"
+    assert house_strength.find(HS, _full_sky()) is None and "mixed" in HS.mixed
+
+
+def test_a_house_is_helped_by_three_benefics_around_it_and_harmed_by_three_malefics():
+    # Aries lagna, the 1st house: its 1st, 2nd, 4th, 5th, 7th, 9th, 10th are Aries, Taurus, Cancer, Leo, Libra, Sagittarius, Capricorn
+    helped, _ = _hs(mercury=1, jupiter=3, venus=6, mars=2, saturn=2, sun=2)
+    assert "helped_by_occupants" in helped[1]
+    harmed, _ = _hs(mars=1, saturn=3, sun=4, mercury=2, jupiter=2, venus=2)
+    assert "harmed_by_occupants" in harmed[1]
+    mixed, _ = _hs(mercury=1, jupiter=3, venus=6, mars=4)
+    assert "helped_by_occupants" not in mixed[1]       # a malefic is among those houses
+
+
+def test_the_lord_in_the_8th_combust_or_in_an_enemy_sign_without_a_benefic_destroys_the_house():
+    # Aries lagna: Venus rules the 2nd and 7th. Venus in the 8th (Scorpio), an enemy's sign for Venus? Scorpio is Mars' sign: Venus-Mars neutral...
+    # use Mercury, lord of the 3rd and 6th, in the 8th (Scorpio) with no benefic near
+    got, _ = _hs(mercury=7)
+    assert "destroyed_lord" in got[3] and "destroyed_lord" in got[6]
+    saved, _ = _hs(mercury=7, jupiter=7)               # a benefic joins: not destroyed by this test
+    assert "destroyed_lord" not in saved[3]
+
+
+def test_a_malefic_in_the_6th_8th_or_12th_from_a_house_harms_it():
+    got, _ = _hs(saturn=5)         # Saturn in Virgo, the 6th from Aries: harms the 1st house
+    assert "malefic_in_dusthana" in got[1]
+    assert "malefic_in_dusthana" not in _hs(saturn=1)[0][1]
+
+
+def test_a_lord_in_a_dusthana_harms_and_a_benefic_aspect_saves():
+    got, _ = _hs(mars=5)    # Mars (lagna lord, 8th lord) in the 6th
+    assert "lord_in_dusthana" in got[1]
+    saved, _ = _hs(mars=5, jupiter=4)   # Jupiter in Leo sees Aries by its 9th sight
+    assert "saved_by_benefic" in saved[1]
+
+
+def test_the_lagna_lord_in_a_house_and_its_dusthana_rules():
+    got, _ = _hs(mars=4)           # the lagna lord Mars in Leo, the 5th house
+    assert "lagna_lord_in_it" in got[5]
+    assert "lagna_lord_owns_dusthana" in got[1]      # Mars rules Aries and Scorpio (the 8th)
+    assert "occupied_benefic" in _hs(jupiter=4)[0][5] and "occupied_malefic" in _hs(saturn=4)[0][5]
+    assert "dusthana_malefic" in _hs(saturn=5)[0][6] and "dusthana_benefic" in _hs(jupiter=5)[0][6]
+    assert "occupied_malefic" not in _hs(saturn=5)[0][6]        # in the 6th the book reverses it
+
+
+@needs_kernel
+def test_the_houses_answer_waits_then_shows_plain_findings_and_fits_messages(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.HOUSES_UNCHECKED in render_answer(qa.answer_topic("chart:houses", born, NOW))
+    monkeypatch.setattr(house_strength, "load_rules", lambda path=None: HS_CHECKED)
+    answer = qa.answer_topic("chart:houses", born, NOW)
+    compact, full = render_answer(answer), render_answer(answer, "full")
+    assert "Which houses of your chart are helped or harmed" in compact and "Source: Phaladeepika 15." in compact and "[15." not in compact
+    assert "[15." in full and all(len(p) <= 4096 for p in split_message(full))
+    assert "Phaladeepika 15." in qa._ai_prompt("how are my houses?", answer)
+    assert qa.sort_question("how strong are my houses") == "chart:houses"
+    assert render_answer(qa.answer_topic("chart:houses", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_HOUSES
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop("saved_by_benefic"),
+    lambda r: r["rules"]["lagna_lord_in_it"].update(definition=""),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_house_strength_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(house_strength.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        house_strength.load_rules(path)
