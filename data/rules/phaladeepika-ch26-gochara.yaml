@@ -7,7 +7,7 @@
 #
 # UNCHECKED: nothing in `effects` is shown by the bot until a person compares each row with the pages above and sets
 # level: translation-checked with checked_by and checked_on. Set `hidden: true` on a row to keep it from the family bot.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "246-251"
 

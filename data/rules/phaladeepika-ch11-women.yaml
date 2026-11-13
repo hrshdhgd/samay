@@ -5,7 +5,7 @@
 #
 # SENSITIVE: shown only after a warning and a tap. UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked.
 # Owner's decision 2026-11-12: nothing is hidden. One category was held back on purpose and is flagged to the owner (see the note).
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "116-118"
 

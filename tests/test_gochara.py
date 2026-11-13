@@ -60,7 +60,7 @@ def _write(tmp_path, change):
     lambda r: r["effects"].update(pluto={"verse": "1", "houses": {}}),
     lambda r: r["vedha"]["jupiter"]["pairs"].update({9: 9}),
     lambda r: r["vedha"]["jupiter"]["pairs"].update({1: 7}),  # the 1st is not a good house for Jupiter
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
     lambda r: r["favourable"]["sun"].append(13),
 ])
 def test_a_malformed_rules_file_is_rejected(tmp_path, change):
@@ -305,7 +305,7 @@ def test_the_unchecked_file_gives_nothing_and_the_checked_one_gives_text_and_ver
     lambda r: r["effects"]["sun"]["sun"].update(text=""),
     lambda r: r["effects"]["sun"]["sun"].update(verse="3"),
     lambda r: r["effects"]["sun"]["moon"].update(verse=3),  # a repeated verse
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_antardasha_file_is_rejected(tmp_path, change):
     raw = yaml.safe_load(antardasha.RULES_PATH.read_text(encoding="utf-8"))
@@ -394,7 +394,7 @@ def test_saturn_in_the_first_house_depends_on_the_sign_it_holds():
     lambda r: r["effects"]["sun"]["houses"].update({2: ""}),
     lambda r: r["effects"]["sun"]["houses"].update({1: [{"when_lagna": ["atlantis"], "text": "x"}]}),
     lambda r: r["effects"].update(pluto={"verse": "1", "houses": {}}),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_planet_house_file_is_rejected(tmp_path, change):
     raw = yaml.safe_load(planet_houses.RULES_PATH.read_text(encoding="utf-8"))
@@ -501,7 +501,7 @@ def test_the_differences_between_the_two_texts_are_recorded():
     lambda r: r["tables"]["sun"].pop("lagna"),
     lambda r: r["tables"].pop("saturn"),
     lambda r: r["tables"]["moon"].__setitem__("sun", [6, 3, 7, 8, 10, 11]),  # not sorted
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_table_that_does_not_add_up_is_refused(tmp_path, change):
     raw = yaml.safe_load(ashtakavarga.RULES_PATH.read_text(encoding="utf-8"))
@@ -609,7 +609,7 @@ def test_the_moon_longitude_picks_the_sign_nakshatra_and_pada():
     lambda r: r["signs"].reverse(),
     lambda r: r["nakshatras"].reverse(),
     lambda r: r["signs"][0].update(text=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_moon_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(moon_nature.RULES_PATH.read_text(encoding="utf-8"))
@@ -947,7 +947,7 @@ def test_nodes_do_not_count():
     lambda r: r["pairs"].pop("sun+moon"),
     lambda r: r["pairs"].update({"sun+rahu": r["pairs"]["sun+moon"]}),
     lambda r: r["pairs"]["sun+moon"].update(bj=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_conjunction_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(conjunctions.RULES_PATH.read_text(encoding="utf-8"))
@@ -1232,7 +1232,7 @@ def test_the_full_yogas_view_splits_into_messages_that_fit(monkeypatch):
 @pytest.mark.parametrize("path_change", [
     ("nabhasa", lambda r: r["yogas"].pop("rajju")),
     ("nabhasa", lambda r: r["akriti"].pop("chakra")),
-    ("nabhasa", lambda r: r["verification"].update(level="translation-checked")),
+    ("nabhasa", lambda r: r["verification"].update(level="translation-checked", checked_by=None)),
     ("p6", lambda r: r["yogas"].pop("amala")),
     ("p6", lambda r: r["yogas"]["amala"].update(definition="")),
     ("raja", lambda r: r["configs"][0].update(result="emperor")),
@@ -1289,7 +1289,7 @@ def test_the_texts_for_her_sign_and_her_navamsa_are_picked_by_planet():
     lambda r: r["signs"]["Aries"].pop("sun"),
     lambda r: r["navamsas"]["mars"].update(venus=""),
     lambda r: r["aspect_rule"]["full"]["sun"].remove(7),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_aspect_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(moon_aspects.RULES_PATH.read_text(encoding="utf-8"))
@@ -1479,7 +1479,7 @@ def test_every_when_answer_fits_in_messages_and_runs_quickly(monkeypatch):
     lambda r: r["marriage"].update(house=8),
     lambda r: r["general"][0].update(definition=""),
     lambda r: r["areas"].update(marriage=[13]),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_timing_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(house_timing.RULES_PATH.read_text(encoding="utf-8"))
@@ -1606,7 +1606,7 @@ def test_the_health_view_fits_in_messages(monkeypatch):
     lambda r: r["planets"]["sun"].update(items=[]),
     lambda r: r["combinations"].pop("ear"),
     lambda r: r["combinations"]["ear"].update(definition=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_health_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(health.RULES_PATH.read_text(encoding="utf-8"))
@@ -1781,7 +1781,7 @@ def test_every_real_chart_runs_the_longevity_rules_without_error(monkeypatch):
     lambda r: r["death_planets"].pop("ketu"),
     lambda r: r["moon_degrees"]["values"].pop(),
     lambda r: r["balarishta"]["rules"].pop("hemmed"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_longevity_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(longevity.RULES_PATH.read_text(encoding="utf-8"))
@@ -1870,7 +1870,7 @@ def test_the_houses_answer_waits_then_shows_plain_findings_and_fits_messages(mon
 @pytest.mark.parametrize("change", [
     lambda r: r["rules"].pop("saved_by_benefic"),
     lambda r: r["rules"]["lagna_lord_in_it"].update(definition=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_house_strength_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(house_strength.RULES_PATH.read_text(encoding="utf-8"))
@@ -1941,7 +1941,7 @@ def test_the_women_topic_is_gated_framed_by_the_translators_remark_and_never_a_f
 @pytest.mark.parametrize("change", [
     lambda r: r["rules"].pop("mars_in_seventh"),
     lambda r: r["rules"]["malefic_second"].update(text=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_women_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(women.RULES_PATH.read_text(encoding="utf-8"))
@@ -2080,7 +2080,7 @@ def test_chart_7_yogas_appear_in_the_yogas_answer_only_once_checked(monkeypatch)
     lambda r: r["yogas"].pop("digbala"),
     lambda r: r["yogas"]["digbala"].update(definition=""),
     lambda r: r["neechabhanga"]["conditions"].pop("mutual_kendras"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_chapter_7_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(phaladeepika_raja.RULES_PATH.read_text(encoding="utf-8"))
@@ -2162,7 +2162,7 @@ def test_the_upagraha_answer_is_hidden_until_checked_and_names_house_effects(mon
     lambda r: r["gulika_house"].pop(5),
     lambda r: r["gulika_with"].pop("ketu"),
     lambda r: r.pop("formulas"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_upagraha_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(upagrahas.RULES_PATH.read_text(encoding="utf-8"))
@@ -2204,7 +2204,7 @@ def test_the_lagna_answer_shows_both_books_once_checked_and_is_routed(monkeypatc
 @pytest.mark.parametrize("change", [
     lambda r: r["signs"].pop("Pisces"),
     lambda r: r["signs"]["Aries"].update(text=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_ascendant_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(ascendants.RULES_PATH.read_text(encoding="utf-8"))
@@ -2281,7 +2281,7 @@ def test_day_and_night_rules_run_only_for_the_births_kind_and_missing_points_say
     lambda r: r["rules"][0]["targets"][0]["points"].append("lord:13"),
     lambda r: r["rules"][0]["targets"][0]["points"].append("sum:lagna+sun"),
     lambda r: r["rules"][1].update(id="r2"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_chapter_17_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(death_transits.RULES_PATH.read_text(encoding="utf-8"))
@@ -2384,7 +2384,7 @@ def test_the_strength_answer_waits_then_ranks_planets_and_fits_messages(monkeypa
 @pytest.mark.parametrize("change", [
     lambda r: r["kinds"].pop("dik"),
     lambda r: r["kinds"]["kala"].update(definition=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_strength_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(planet_strength.RULES_PATH.read_text(encoding="utf-8"))
@@ -2481,7 +2481,7 @@ def test_the_signs_answer_waits_then_quotes_with_verse_numbers_and_the_texts_con
     lambda r: r["planets"].pop("venus"),
     lambda r: r["planets"]["sun"].pop("Pisces"),
     lambda r: r["planets"]["sun"]["Aries"].update(text=""),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_planets_in_signs_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(planets_in_signs.RULES_PATH.read_text(encoding="utf-8"))
@@ -2639,7 +2639,7 @@ def test_the_vargas_answer_waits_then_quotes_with_verse_numbers(monkeypatch):
     lambda r: r["moon_drekkana"]["kinds"].pop("pakshi"),
     lambda r: r["rising_navamsa"].pop("Pisces"),
     lambda r: r["trimsamsa_own"].pop("venus"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_vargas_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(vargas.RULES_PATH.read_text(encoding="utf-8"))
@@ -2719,7 +2719,7 @@ def test_the_yogas_answer_shows_chapter_22_once_checked(monkeypatch):
 @pytest.mark.parametrize("change", [
     lambda r: r["dasha_timing"]["both"]["signs"].clear(),
     lambda r: r["karakas"]["tenth"].pop("text"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_karakas_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(karakas.RULES_PATH.read_text(encoding="utf-8"))
@@ -2825,7 +2825,7 @@ def test_the_malefic_answer_waits_then_quotes_with_verse_numbers(monkeypatch):
     lambda r: r["rules"][0].update(definition=""),
     lambda r: r["rules"].append(dict(r["rules"][0])),
     lambda r: r["causes"].pop("sun"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_malefic_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(malefic_yogas.RULES_PATH.read_text(encoding="utf-8"))
@@ -2912,7 +2912,7 @@ def test_the_women_answer_shows_both_books_once_checked(monkeypatch):
     lambda r: r["rules"][0].update(definition=""),
     lambda r: r["trimsamsa"]["groups"].pop(),
     lambda r: r["setting"].pop("sun"),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_bj_women_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(women_bj.RULES_PATH.read_text(encoding="utf-8"))
@@ -3052,7 +3052,7 @@ def test_longevity_and_afterlife_answers_show_chapter_25_once_checked(monkeypatc
     lambda r: r["yogas"][0].update(definition=""),
     lambda r: r["humours"].pop("sun"),
     lambda r: r["limbs"].pop(),
-    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),  # without checked_by
 ])
 def test_a_malformed_death_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(death_bj.RULES_PATH.read_text(encoding="utf-8"))
@@ -3088,7 +3088,7 @@ def test_a_longitude_gets_its_figure_and_the_lord_matches_the_translators_notes(
     lambda r: r["figures"].pop("Pisces"),
     lambda r: r["figures"]["Aries"].pop(),
     lambda r: r["figures"]["Aries"][0].update(text=""),
-    lambda r: r["verification"].update(level="translation-checked"),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
 ])
 def test_a_malformed_figure_file_is_refused(tmp_path, change):
     raw = yaml.safe_load(drekkana_figures.RULES_PATH.read_text(encoding="utf-8"))

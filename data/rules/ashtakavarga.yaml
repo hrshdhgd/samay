@@ -5,7 +5,7 @@
 #
 # UNCHECKED: nothing from this file is shown until a person compares it with the sources and sets
 # level: translation-checked with checked_by and checked_on.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "Phala Deepika tr. G. S. Kapoor (Ranjan Publications), Brihat Jataka tr. N. Chidambaram Iyer (Madras 1885)"}
 edition: "Phala Deepika tr. G. S. Kapoor (Ranjan Publications), Brihat Jataka tr. N. Chidambaram Iyer (Madras 1885)"
 pages: "Phaladeepika 220-231 (PDF 219-230); Brihat Jataka ch. IX pp. 92-95"
 

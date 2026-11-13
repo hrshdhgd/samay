@@ -8,7 +8,7 @@
 # UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
 # level: translation-checked with checked_by and checked_on. Owner's decision 2026-11-12: nothing is hidden for being
 # unpleasant; a checker only confirms each row matches the text.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "197-207"
 

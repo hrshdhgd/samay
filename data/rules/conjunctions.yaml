@@ -4,7 +4,7 @@
 #
 # UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages and sets level: translation-checked
 # with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "BJ tr. N. Chidambaram Iyer, Madras 1885 (pp. 142-144); PD tr. G. S. Kapoor (pp. 169-170)"}
 edition: "BJ tr. N. Chidambaram Iyer, Madras 1885 (pp. 142-144); PD tr. G. S. Kapoor (pp. 169-170)"
 
 # Both texts: the planets that count are the seven from the Sun to Saturn; Rahu and Ketu are not named.

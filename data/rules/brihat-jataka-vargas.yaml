@@ -7,7 +7,7 @@
 #
 # Left out on purpose (research/notes/brihat-jataka-vargas.md): the rising dwadasamsa remark (21.7, "the same effects as the rising signs": too vague to code), the
 # Yavana/Vishnugupta dispute over an Aquarius dwadasamsa (21.3), and the case the translator says the author missed in 21.5 is coded as he infers it.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. N. Chidambaram Iyer, Madras 1885"}
 edition: "tr. N. Chidambaram Iyer, Madras 1885"
 pages: "186-191"
 

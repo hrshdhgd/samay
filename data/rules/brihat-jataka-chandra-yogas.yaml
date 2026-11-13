@@ -5,7 +5,7 @@
 #
 # UNCHECKED: nothing here is shown by the bot until a person compares each row with the pages above and sets
 # level: translation-checked with checked_by, checked_on and against. Owner's decision 2026-11-12: nothing is hidden.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. N. Chidambaram Iyer, Madras 1885"}
 edition: "tr. N. Chidambaram Iyer, Madras 1885"
 pages: "135-142"
 

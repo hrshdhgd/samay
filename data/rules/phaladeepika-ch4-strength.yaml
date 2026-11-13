@@ -3,7 +3,7 @@
 # printed pages 35-45 (PDF pages 34-44). PARAPHRASED. Conditions are coded in samay/engine/planet_strength.py. Notes and what was left out: research/notes/phaladeepika-strength.md.
 #
 # UNCHECKED: nothing is shown until a person checks each row and its definition and sets level: translation-checked. Owner's decision 2026-11-12: nothing hidden.
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "35-45"
 

@@ -10,7 +10,7 @@
 # THIS IS SENSITIVE. It is shown only after the person has read a warning and tapped to approve it (and, for a child, a stronger warning).
 # It is an old text's rules, not a forecast. UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked.
 # Owner's decision 2026-11-12: nothing is hidden; a warning and approval come first (a consent gate in the bot).
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "130-136, 140-143"
 

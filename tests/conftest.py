@@ -15,6 +15,34 @@ MINI_COUNTRIES = ["IN", "US", "UA", "IT"]
 TEST_DB_KEY = "ZmFrZS1rZXktZm9yLXRlc3RzLW9ubHktMDAwMDAwMDA="  # a valid Fernet key; never used for real data
 
 
+def _keep_rules_unchecked():
+    """The shipped rules files are now checked; most tests were written against the unchecked state (hidden until checked), so each rules module's load_rules is wrapped to
+    report level unchecked. Tests that want the real state call `samay.engine.<module>.load_rules.__wrapped_real__` (see tests/test_checked_rules.py)."""
+    import dataclasses
+    import importlib
+    import pkgutil
+
+    from samay import engine
+
+    for info in pkgutil.iter_modules(engine.__path__):
+        if info.name in ("house_effects", "entries", "profiles", "rules"):  # chapter 20 was checked before these were; the rest are not rules files
+            continue
+        mod = importlib.import_module(f"samay.engine.{info.name}")
+        real = getattr(mod, "load_rules", None)
+        if real is None or not hasattr(mod, "RULES_PATH"):
+            continue
+
+        def wrapped(*args, _real=real, **kwargs):
+            r = _real(*args, **kwargs)
+            return dataclasses.replace(r, level="unchecked", checked_by=None) if getattr(r, "level", None) not in (None, "unchecked") else r
+
+        wrapped.__wrapped_real__ = real
+        mod.load_rules = wrapped
+
+
+_keep_rules_unchecked()
+
+
 @pytest.fixture(autouse=True)
 def isolated_database(monkeypatch, tmp_path):
     """Every test gets its own database and key. Without this, a test that builds a default Store()

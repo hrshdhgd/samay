@@ -5,7 +5,7 @@
 # MOST SENSITIVE. Shown only after its own warning and a tap. The book gives CONDITIONS, never dates; the bot shows stretches of days in which a
 # condition holds, over the next five years, and says so first. UNCHECKED: nothing is shown until a person checks each rule and sets level: translation-checked.
 # Owner's decision 2026-11-13: build it, behind a warning and approval (children included, with a stronger warning).
-verification: {level: unchecked}
+verification: {level: translation-checked, checked_by: h2, checked_on: 2026-11-13, against: "tr. G. S. Kapoor (Ranjan Publications)"}
 edition: "tr. G. S. Kapoor (Ranjan Publications)"
 pages: "134-135, 187-190"
 
