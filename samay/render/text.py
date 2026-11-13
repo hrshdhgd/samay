@@ -887,6 +887,15 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
             blocks.append("\n".join(lines))
     else:
         blocks.append(prompts.YOGAS_UNCHECKED + " (Phaladeepika chapters 7 and 27: raja, Neechabhanga and ascetic yogas)")
+    if view.bj22_checked:
+        lines = ["Karaka (helping) planets, yogas of a happy life and when a dasha's effects fall, from Brihat Jataka chapter 22:"]
+        for f in view.bj22:
+            lines.append(f"• {f.detail[:1].upper() + f.detail[1:]}: “{f.text[:1].upper() + f.text[1:]}.”" + (f" [{f.verse}]" if full else "") + (f" ({f.note})" if f.note and full else ""))
+        lines.append(view.bj22_frame)
+        lines.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse.split(" ")[0] for f in view.bj22}, key=lambda v: int(v.split(".")[1]))) + " · checked")
+        blocks.append("\n".join(lines))
+    else:
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Brihat Jataka chapter 22: karakas, happiness yogas)")
     if view.raja_checked:
         if view.raja:
             lines = ["Raja yogas of Brihat Jataka chapter 11:"]

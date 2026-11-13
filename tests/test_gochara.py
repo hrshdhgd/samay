@@ -1202,13 +1202,14 @@ def test_three_exalted_planets_and_the_count_of_strong_planets():
 def test_the_yogas_answer_hides_each_source_until_it_is_checked_and_then_shows_all(monkeypatch):
     born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
     waiting = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert waiting.count(prompts.YOGAS_UNCHECKED) == 4 and "Source:" not in waiting
+    assert waiting.count(prompts.YOGAS_UNCHECKED) == 5 and "Source:" not in waiting
     monkeypatch.setattr(nabhasa, "load_rules", lambda path=None: NB_CHECKED)
     only_nabhasa = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 3 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
+    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 4 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
     monkeypatch.setattr(phaladeepika_yogas, "load_rules", lambda path=None: P6_CHECKED)
     monkeypatch.setattr(raja_yogas, "load_rules", lambda path=None: RJ_CHECKED)
     monkeypatch.setattr(phaladeepika_raja, "load_rules", lambda path=None: R7_CHECKED)
+    monkeypatch.setattr(karakas, "load_rules", lambda path=None: KK_CHECKED)
     answer = qa.answer_topic("chart:yogas", born, NOW)
     text = render_answer(answer)
     assert prompts.YOGAS_UNCHECKED not in text and "Yogas from Phaladeepika chapter 6" in text and "without blemish" in text
@@ -2647,3 +2648,83 @@ def test_a_malformed_vargas_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         vargas.load_rules(path)
+
+
+# --- Brihat Jataka XXII: karakas, happiness yogas, dasha timing ---------------------------------------------------------------------
+from samay.engine import karakas
+
+KK = karakas.load_rules()
+KK_CHECKED = dataclasses.replace(KK, level="translation-checked", checked_by="test")
+
+
+def _kk(**where):
+    return karakas.find(KK_CHECKED, _full_sky(**where))
+
+
+def _kk_has(findings, fragment):
+    return any(fragment in f.text or fragment in f.detail for f in findings)
+
+
+def test_the_karaka_file_is_gated_and_puts_every_sign_in_one_dasha_class():
+    assert KK.level == "unchecked" and karakas.find(KK, _full_sky()) is None
+    d = KK.raw["dasha_timing"]
+    assert sorted(s for c in karakas.CLASSES for s in d[c]["signs"]) == sorted(karakas.SIGNS)
+    assert KK.raw["karakas"]["from_lagna"]["verse"] == "22.2 (note)"
+
+
+def test_planets_in_dignity_in_kendras_are_karakas_to_each_other_and_a_tenth_is_special():
+    # Cancer lagna: the book's own example: Moon in Cancer (own), Jupiter... Mars in Capricorn (7th, exalted), Saturn in Libra (4th, exalted), Sun in Aries (10th, exalted)
+    got = _kk(lagna=3, moon=(3, 15.0), mars=(9, 15.0), saturn=(6, 15.0), sun=(0, 15.0), jupiter=(3, 20.0))
+    assert _kk_has(got, "are each in an own, exaltation or moolatrikona sign and in a kendra") and _kk_has(got, "special karaka")
+    assert _kk_has(got, "Sun is in the 10th from Moon")
+    assert _kk_has(_kk(lagna=0), "karaka planets are present") is False
+
+
+def test_planets_in_the_4th_and_10th_help_the_planet_in_the_rising_sign():
+    got = _kk(lagna=0, sun=(0, 15.0), moon=(3, 15.0), mars=(9, 15.0))
+    assert _kk_has(got, "Sun is in the rising sign; Moon, Mars in the 4th or 10th") and _kk_has(got, "reverse does not hold")
+
+
+def test_the_happy_yogas_count_kendras_and_the_moons_and_lagnas_vargottama():
+    got = _kk(lagna=0, moon=(1, 5.0))      # the Moon at 5 degrees Taurus is in the first navamsa of Capricorn: not vargottama; Aries 15 lagna: navamsa Leo
+    assert not _kk_has(got, "the Moon is vargottama") and not _kk_has(got, "rising navamsa is vargottama")
+    v = _kk(lagna=0, moon=(0, 1.0))        # Moon in the first navamsa of Aries: vargottama
+    assert _kk_has(v, "the Moon is vargottama")
+    assert _kk_has(_kk(lagna=10), "rising navamsa is vargottama")   # 15 degrees Aquarius: navamsa Aquarius
+    k = _kk(lagna=0, sun=(0, 5.0), jupiter=(3, 5.0), venus=(6, 5.0), mercury=(9, 5.0))
+    assert _kk_has(k, "4 kendra houses occupied")
+
+
+def test_jupiter_or_a_lord_in_a_kendra_is_happy_in_manhood_and_a_dasha_lords_sign_sets_when_it_acts():
+    got = _kk(lagna=0, jupiter=(3, 15.0))
+    assert _kk_has(got, "in a kendra: Jupiter") and _kk_has(got, "happy in his manhood")
+    assert _kk_has(_kk(lagna=0, saturn=(9, 15.0)), "Saturn is in Capricorn") and any("end of the period" in f.text for f in _kk(lagna=0, saturn=(9, 15.0)))
+    assert any("commencement of the period" in f.text and "Mars is in Scorpio" in f.detail for f in _kk(lagna=0, mars=(7, 15.0)))
+    assert any("middle of the period" in f.text and "Venus is in Pisces" in f.detail for f in _kk(lagna=0, venus=(11, 15.0)))
+
+
+@needs_kernel
+def test_the_yogas_answer_shows_chapter_22_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 22" in render_answer(qa.answer_topic("chart:yogas", born, NOW))
+    for mod, rules in ((nabhasa, NB_CHECKED), (phaladeepika_yogas, P6_CHECKED), (raja_yogas, RJ_CHECKED), (karakas, KK_CHECKED)):
+        monkeypatch.setattr(mod, "load_rules", lambda path=None, r=rules: r)
+    answer = qa.answer_topic("chart:yogas", born, NOW)
+    text, full = render_answer(answer), render_answer(answer, "full")
+    assert "from Brihat Jataka chapter 22:" in text and "Brihat Jataka 22." in qa._ai_prompt("which yogas do I have?", answer)
+    assert all(len(p) <= 4096 for p in split_message(full))
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["dasha_timing"]["both"]["signs"].clear(),
+    lambda r: r["karakas"]["tenth"].pop("text"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_karakas_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(karakas.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        karakas.load_rules(path)

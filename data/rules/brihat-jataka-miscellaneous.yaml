@@ -1,0 +1,60 @@
+# Brihat Jataka chapter XXII ("On Miscellaneous Yogas"), verses 1-6: karaka (helping) planets, the yogas of a happy life, when in a dasha its lord's effects fall, and when
+# in a sign a transiting planet's effects come. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 191-193. QUOTED, scan errors
+# corrected, the translator's notes applied where they define a term (research/notes/brihat-jataka-miscellaneous.md). Shown inside the yogas answer (chart:yogas).
+#
+# The scan of stanza 2 is missing; its content is taken from the translator's note, which restates it (verse "22.2 (note)").
+#
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "191-193"
+
+frame: "These are an old text's pointers, not a forecast; the book lists them as separate yogas, so they can overlap."
+
+karakas:
+  mutual:
+    verse: "22.1"
+    text: "Planets occupying their own signs or their exaltation or moolatrikona signs are said to be karaka (helping) planets to one another, if at the same time they occupy the kendras from the ascendant"
+  special:
+    verse: "22.1"
+    text: "a planet occupying the 10th house from another such planet is said to be the special karaka of that planet"
+  from_lagna:
+    verse: "22.2 (note)"
+    text: "to a planet occupying the rising sign, all planets occupying the 10th or the 4th house are karaka planets (the reverse does not hold)"
+  kendra_pair:
+    verse: "22.1 (note)"
+    text: "the commentator infers that planets in their own, exaltation or moolatrikona signs are also mutually karaka planets if they occupy kendra signs from one another, though not the kendra signs from the ascendant"
+  tenth:
+    verse: "22.3"
+    text: "a planet occupying its moolatrikona or exaltation sign (but not in a kendra from the ascendant) is a karaka planet to one that occupies the 10th house from such sign, and to the latter his atimitra (great friend) planet is also said to be a karaka planet"
+    note: "The planet in the 10th must be in its own, moolatrikona or exaltation sign (the translator's note). Atimitra is read as Phaladeepika 2.21-23 defines it (a natural friend that is also a temporary friend)."
+  effects:
+    verse: "22.3 (note)"
+    text: "The translator, from Varahamihira's Yogayatra: a prince who has lost his kingdom recovers it in the antardasha of a karaka planet; a man enjoys comfort, wealth and success when the Moon passes through the house of a karaka planet or through the 2nd house from the Sun; a journey begun then is successful, otherwise the traveller receives blows on his way."
+
+happy:
+  verse: "22.4"
+  lagna_vargottama: "A person born when the rising navamsa is a vargottama one will be happy and prosperous"
+  moon_vargottama: "A person born when the Moon occupies a vargottama position will be happy and prosperous"
+  benefics_second_from_sun: "A person at whose birth the 2nd house from the Sun is occupied by benefic planets will be happy and prosperous"
+  kendras: "A person at whose birth the kendra houses are occupied by planets will be happy and prosperous"
+  kendras_note: "If one kendra is occupied the person will be happy; if two or more, happier still; and if the planets are benefic, exceedingly happy and prosperous (the translator's note)."
+  karakas: "A person at whose birth there are karaka planets in the signs of the zodiac will be happy and prosperous"
+
+manhood:
+  verse: "22.5"
+  text: "If at the time of birth Jupiter, the lord of the sign occupied by the Moon, or the lord of the ascendant occupies a kendra house, the person will be happy in his manhood"
+
+dasha_timing:
+  verse: "22.5"
+  lead: "If at the commencement of a dasha period the lord of that period occupies"
+  prishtodaya: {signs: [Aries, Taurus, Cancer, Sagittarius, Capricorn], text: "a Prishtodaya sign, he will produce his effects at the end of the period"}
+  sirodaya: {signs: [Gemini, Leo, Virgo, Libra, Scorpio, Aquarius], text: "a Sirodaya sign, he will produce his effects at the commencement of the period"}
+  both: {signs: [Pisces], text: "a Sira-Prishtodaya sign, the effects will be felt in the middle of the period"}
+  note: "The dasha period is divided into three equal parts; the sign classes are those of Brihat Jataka I.10 (the translator's note)."
+
+transit_timing:
+  verse: "22.6"
+  text: "The Sun and Mars produce their effects immediately after entering a sign; Jupiter and Venus when passing through the middle of a sign; Saturn and the Moon before quitting a sign; and Mercury throughout his course."
+  note: "The sign is supposed divided into three equal parts of 10 degrees each (the translator's note)."
