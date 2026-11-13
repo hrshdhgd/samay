@@ -46,3 +46,16 @@ taken from Phaladeepika and the standard tables.
 
 Compare the 56 lists in `tables` with Brihat Jataka IX and Phaladeepika 23.3-9, and the meanings with 23.11 and 23.20. Reply
 **"ashtakavarga checked"**.
+
+## Correction, 2026-11-13 (after reading chapter 24)
+
+Above I wrote that Phaladeepika's own worked example "comes out only with its own printed lists". That rested on matching the **sorted twelve sign totals** of chapter 23's example, which is weak evidence
+(many lists give the same multiset). Chapter 24 prints the **full per-planet rows** of the same example (26 33 28 24 40 36 26 25 24 29 27 19 in total, and each planet's twelve values). I tested whether either
+table set reproduces those rows with the positions the text states (Sun and Venus in Scorpio, Jupiter in Virgo) and a search over the other four positions: **neither the Brihat Jataka / standard tables nor Phaladeepika's printed lists
+reproduce more than 1 of the 7 rows.** So the book's example cannot arbitrate between the tables; it is not self-consistent as printed in this translation. The tables stay as the cross-check chose them (Brihat Jataka and the standard
+modern tables, which agree). The example is no longer offered as support for Phaladeepika's printed lists; `test_phaladeepikas_worked_example_matches_only_its_own_printed_lists` tests only the weaker, true statement about the sign totals.
+
+## Chapter 24 (read in full, not built)
+Trikona and ekadhipatya reductions (shodhana) of each planet's table and the **sodhyapinda**, then uses: the father's, mother's and brothers' deaths and the native's own death by Saturn's or Jupiter's transit through a nakshatra
+found by multiplying the sodhyapinda by points and dividing by 27; the number of brothers, maternal relatives and children as point counts; longevity in years (sodhyapinda x the 8th house's points / 27). Several are about other people's deaths and
+many depend on the reductions, whose rules the translator says are disputed (Parasara's and others'). Not built; a candidate if the owner wants the reduction method.

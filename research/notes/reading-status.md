@@ -22,7 +22,7 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 | 19 dashas | yes | Vimshottari entries were already in (checked) |
 | 20 dasha by lordship, 21 antardasha | yes | built |
 | 22 Kalachakra dasha | **not yet** | not built |
-| 23 ashtakavarga | yes | built; 24 (reductions) **not yet** |
+| 23 ashtakavarga | yes | built; **24 (reductions, sodhyapinda, uses) read in full, not built** |
 | 25 upagrahas (Gulika/Mandi...) | **yes, now** | **not built** |
 | 26 transits | yes | built (vv.25-46 nakshatra rules not) |
 | 27 ascetic yogas | **yes, 2026-11-13** | built (with chapter 7) |
@@ -36,3 +36,5 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 3. **Ascendant descriptions** (Phaladeepika 9.1-12; Brihat Jataka has a parallel) as a `chart:lagna` answer.
 4. **Upagrahas** (Phaladeepika 25): Gulika/Mandi, Yamakantaka, Ardhaprahara, Kala by ghatikas from sunrise or sunset, and Dhuma..Upaketu from the Sun's longitude (exact, simple), with their effects in houses (25.8-17, 26).
 5. **Chapter 17's 28 transit rules** for death need Mandi/Gulika, Yamakantaka and the 22nd decanate: they follow once (4) exists. They are death-timing windows and would join the gated `chart:death_timing` answer.
+
+## Phaladeepika is now read in full (all 28 chapters), 2026-11-13. Brihat Jataka chapters I-VIII, X, XV, XVIII, XXI-XXVIII are still only skimmed.
