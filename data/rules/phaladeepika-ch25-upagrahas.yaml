@@ -1,0 +1,89 @@
+# Phaladeepika chapter 25 ("Gulika and the other upagrahas"): where the nine upagrahas fall in a chart (the book's formulas), and what the book says of
+# Gulika in each house, Gulika with each planet, and the others. Source: Mantreswara's Phala Deepika, tr. Dr. G. S. Kapoor (in copyright),
+# http://www.panchanga.lv/wp-content/uploads/2020/06/Phaladipika_Shri-Mantreswara.pdf, printed pages 241-246 (PDF pages 240-245). PARAPHRASED (the numbers are facts).
+# Computation is in samay/engine/upagrahas.py; notes and what was left out: research/notes/phaladeepika-upagrahas.md.
+#
+# UNCHECKED: nothing is shown until a person checks each row and sets level: translation-checked. Owner's decision 2026-11-12: nothing hidden.
+verification: {level: unchecked}
+edition: "tr. G. S. Kapoor (Ranjan Publications)"
+pages: "241-246"
+
+# Verses 2-4. Weekday order is Sunday first. Each number is the ghatika (of a 30-ghatika day or night) at whose END the upagraha stands, counted from
+# sunrise for day births and from sunset for night births; the book says to scale them in proportion when the day or night is longer or shorter than 30.
+# The point is the lagna (rising degree) at that moment ("fixed as in the case of the lagna", verse 4). The book gives night values only for Mandi.
+ghatikas:
+  verse: "25.2–4"
+  gulika_day:   [26, 22, 18, 14, 10, 6, 2]
+  gulika_night: [10, 6, 2, 26, 22, 18, 14]
+  yamakantaka_day: [18, 14, 10, 6, 2, 26, 22]
+  ardhaprahara_day: [14, 10, 6, 2, 26, 22, 18]
+  kala_day: [2, 26, 22, 18, 14, 10, 6]   # the translation prints "13" for the fourth, which is a misprint for 18 (the series falls by 4)
+
+# Verse 5: the five that come from the Sun's longitude, in degrees.
+formulas:
+  verse: "25.5"
+  dhuma_add: 133.3333333333   # 4 signs 13 degrees 20 minutes added to the Sun
+  upaketu_add: 16.6666666667  # 16 degrees 40 minutes added to Indra Dhanus
+  # Vyatipata = 360 - Dhuma; Paridhi = Vyatipata + 180; Indra Dhanus = 360 - Paridhi; Upaketu = Indra Dhanus + 16°40' (and Upaketu + 30° is the Sun)
+  # The book's worked example: Sun 7s 26° -> Dhuma 0s 9°20' -> Vyatipata 11s 20°40' -> Paridhi 5s 20°40' -> Indra Dhanus 6s 9°20' -> Upaketu 6s 26°.
+
+nature:
+  verse: "25.18–21"
+  general: "The company of Gulika always brings evil; where Yamakantaka is joined, good is to be expected. Gulika is the most powerful in evil; the other upagrahas have half its power. In their effects Gulika is like Saturn, Yamakantaka like Jupiter, Ardhaprahara like Mercury and Kala like Rahu. Gulika is likely to cause death and Yamakantaka to give benefit; Ardhaprahara does good in a house with many benefic points and harm in an unfavourable house."
+  ardhaprahara_good: "Ardhaprahara does good in a house with many ashtakavarga points"
+dhuma_group:
+  verse: "25.22–25"
+  frame: "According to Parasara, houses joined by these upagrahas along with their lords are destroyed. The book gives their nature, felt in the dasha of the lord of the house they are in."
+  dhuma: "trouble from heat, danger from fire and mental agony"
+  yamakantaka: "danger from horned animals, or death through four-footed animals"
+  paridhi: "fear of water, watery diseases and imprisonment"
+  indra_dhanus: "being hit by a stone, wounded by weapons, and humiliation"
+  upaketu: "blows, falls, loss in business and danger from thunder"
+
+# Verse 8-14: Gulika in each house from the lagna.
+gulika_house:
+  verse: "25.8–14"
+  1: "a thief, cruel and impolite, not very fat, with defective eyes, few children and little intelligence, uninterested in the Vedas and Shastras, eating much but unhappy, short-lived, angry, stupid, cowardly and lustful"
+  2: "unpleasant in speech and quarrelsome, always short of wealth and grain, mostly living away from home, not keeping his word and unable to discuss matters needing intellect"
+  3: "greedy and lonely, fond of liquor, getting little happiness from siblings, fearless and without sorrow, showing off in gaining wealth"
+  4: "without relatives and wealth, and without vehicles"
+  5: "badly disposed, fickle-minded and short-lived"
+  6: "interested in demonology, brave, defeating his enemies and blessed with a son of good qualities"
+  7: "quarrelsome, a public enemy, dull, somewhat angry and ungrateful, with many wives"
+  8: "short in stature, with a deformed face and impaired eyes"
+  9: "without elders or a teacher, and without children"
+  10: "does no auspicious or good deeds and is not charitable"
+  11: "happy, powerful and lustful, blessed with children"
+  12: "no liking for sexual pleasures, poor and heavy in expenses"
+# Verses 15-17: Gulika in the same sign as a planet.
+gulika_with:
+  verse: "25.15–17"
+  sun: "a father who causes the death of his own father"
+  moon: "the mother is in distress"
+  mars: "separation from brothers"
+  mercury: "insanity"
+  jupiter: "a blasphemous heretic"
+  venus: "the company of low-class women"
+  saturn: "leprosy and a short life"
+  rahu: "disease caused by poison"
+  ketu: "an accident (the translation's word is unclear)"
+# Verse 26: Upaketu in each house from the lagna.
+upaketu_house:
+  verse: "25.26"
+  1: "short life"
+  2: "ugliness"
+  3: "valour"
+  4: "unhappiness and distress"
+  5: "loss of children"
+  6: "disturbance of the mind caused by enemies"
+  7: "decay of sexual power"
+  8: "loss of life through sinful activities"
+  9: "opposition to a virtuous life"
+  10: "wanderings"
+  11: "gains"
+  12: "committing faults"
+# Verse 30.
+strong_lord:
+  verse: "25.30"
+  definition: "The lord of the house Gulika is in is in a kendra or trikona from the lagna, or in its own, exaltation or a friend's sign (the book also asks that it be strong)."
+  text: "extremely favourable results: good conveyances, elephants and horses, beauty like Cupid, great esteem and fame, rule over the world"

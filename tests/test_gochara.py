@@ -2088,3 +2088,85 @@ def test_a_malformed_chapter_7_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         phaladeepika_raja.load_rules(path)
+
+
+# --- Phaladeepika 25: Gulika and the other upagrahas ---------------------------------------------------------------------------
+from zoneinfo import ZoneInfo
+
+from samay.engine import upagrahas
+
+UG = upagrahas.load_rules()
+UG_CHECKED = dataclasses.replace(UG, level="translation-checked", checked_by="test")
+
+
+def test_the_upagraha_file_is_gated_and_the_tables_follow_the_pattern_the_book_describes():
+    assert UG.level == "unchecked" and upagrahas.find(UG, _full_sky(), datetime(2027, 1, 1, tzinfo=_UTC), 0, 0, "UTC", lambda m: 0.0) is None
+    g = UG.raw["ghatikas"]
+    assert g["gulika_day"] == [26 - 4 * i for i in range(7)] and g["kala_day"] == [2] + [26 - 4 * i for i in range(6)]   # the misprinted 13 is 18
+    assert g["gulika_night"] == [10, 6, 2, 26, 22, 18, 14] and len(g["yamakantaka_day"]) == len(g["ardhaprahara_day"]) == 7
+
+
+def test_dhuma_to_upaketu_reproduce_the_books_worked_example_exactly():
+    res = upagrahas.from_sun(UG_CHECKED, 7 * 30 + 26.0)
+    sign_degree = lambda x: (int(x // 30), round(x % 30, 4))
+    assert sign_degree(res["dhuma"]) == (0, 9.3333) and sign_degree(res["vyatipata"]) == (11, 20.6667)
+    assert sign_degree(res["paridhi"]) == (5, 20.6667) and sign_degree(res["indra_dhanus"]) == (6, 9.3333)
+    assert sign_degree(res["upaketu"]) == (6, 26.0) and abs((res["upaketu"] + 30.0) % 360.0 - (7 * 30 + 26.0)) < 1e-6   # Upaketu plus a sign is the Sun
+
+
+def test_a_ghatika_is_a_thirtieth_of_the_day_or_night():
+    start = datetime(2027, 3, 1, 6, 0, tzinfo=_UTC)
+    end = start + timedelta(hours=12)
+    assert upagrahas.moment_at(start, end, 30) == end and upagrahas.moment_at(start, end, 15) == start + timedelta(hours=6)
+    assert upagrahas.moment_at(start, end, 26) == start + timedelta(hours=12 * 26 / 30)
+    assert [upagrahas.book_weekday(w) for w in range(7)] == [1, 2, 3, 4, 5, 6, 0]    # Python Monday = 0; the book's Sunday = 0
+
+
+@needs_kernel
+def test_gulika_is_taken_from_the_sunrise_weekday_for_a_day_birth_and_from_sunset_for_a_night_birth():
+    # Pune, Monday 15 Aug 1990 (a day birth at 14:30) and the night of the same Monday
+    day = upagrahas.timed_moments(UG_CHECKED, datetime(1990, 8, 15, 14, 30, tzinfo=ZoneInfo("Asia/Kolkata")), 18.52, 73.86, "Asia/Kolkata")
+    assert day[0] == "day" and set(day[1]) == {"gulika", "yamakantaka", "ardhaprahara", "kala"}
+    from samay.engine import daylight
+    sun = daylight.sun_times(18.52, 73.86, "Asia/Kolkata", datetime(1990, 8, 15).date())
+    assert datetime(1990, 8, 15).weekday() == 2  # a Wednesday: the book's index 3
+    assert day[1]["gulika"] == sun.sunrise + (sun.sunset - sun.sunrise) * (UG.raw["ghatikas"]["gulika_day"][3] / 30)
+    night = upagrahas.timed_moments(UG_CHECKED, datetime(1990, 8, 15, 21, 0, tzinfo=ZoneInfo("Asia/Kolkata")), 18.52, 73.86, "Asia/Kolkata")
+    assert night[0] == "night" and set(night[1]) == {"gulika"} and night[1]["gulika"] > sun.sunset
+    before_dawn = upagrahas.timed_moments(UG_CHECKED, datetime(1990, 8, 15, 3, 0, tzinfo=ZoneInfo("Asia/Kolkata")), 18.52, 73.86, "Asia/Kolkata")
+    assert before_dawn[0] == "night" and before_dawn[1]["gulika"] < sun.sunrise      # still the night of Tuesday: Gulika falls before sunrise
+
+
+@needs_kernel
+def test_the_upagraha_answer_is_hidden_until_checked_and_names_house_effects(monkeypatch):
+    born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
+    assert prompts.UPAGRAHAS_UNCHECKED in render_answer(qa.answer_topic("chart:upagrahas", born, NOW))
+    monkeypatch.setattr(upagrahas, "load_rules", lambda path=None: UG_CHECKED)
+    answer = qa.answer_topic("chart:upagrahas", born, NOW)
+    text = render_answer(answer)
+    u = answer.upagrahas
+    assert [p.key for p in u.points] == ["gulika", "yamakantaka", "ardhaprahara", "kala", "dhuma", "vyatipata", "paridhi", "indra_dhanus", "upaketu"]
+    assert all(0 <= p.longitude < 360 and 1 <= p.house <= 12 for p in u.points)
+    assert "Gulika (Mandi):" in text and "Source: Phaladeepika 25." in text and "Upaketu in the" in text
+    assert qa.sort_question("where is my gulika") == "chart:upagrahas" and qa.sort_question("show mandi") == "chart:upagrahas"
+    from samay.subject import Subject
+    assert qa.sensitivity("chart:upagrahas", Subject("Maya", None, True)) == "child" and qa.sensitivity("chart:upagrahas", qa.SELF) is None
+    assert "Phaladeepika 25." in qa._ai_prompt("where is my gulika", answer)
+    night = service.resolve_birth(BirthInput("1990-08-15", "22:00", "Pune"))
+    assert "night birth" in render_answer(qa.answer_topic("chart:upagrahas", night, NOW))
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["ghatikas"]["gulika_day"].pop(),
+    lambda r: r["gulika_house"].pop(5),
+    lambda r: r["gulika_with"].pop("ketu"),
+    lambda r: r.pop("formulas"),
+    lambda r: r["verification"].update(level="translation-checked"),  # without checked_by
+])
+def test_a_malformed_upagraha_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(upagrahas.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises((ValueError, KeyError)):
+        upagrahas.load_rules(path)

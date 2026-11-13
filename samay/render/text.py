@@ -5,7 +5,16 @@ import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from ..engine import conjunctions, death_timing, health, house_strength, house_timing, longevity, women
+from ..engine import (
+    conjunctions,
+    death_timing,
+    health,
+    house_strength,
+    house_timing,
+    longevity,
+    upagrahas,
+    women,
+)
 from ..engine.daylight import RahuKaala
 from ..engine.entries import SERVABLE_LEVELS
 from ..engine.ephemeris import GRAHAS
@@ -335,6 +344,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_WHEN
     if answer.topic == "chart:health" and not birth_known:
         return prompts.NEED_BIRTH_FOR_HEALTH
+    if answer.topic == "chart:upagrahas" and not birth_known:
+        return prompts.NEED_BIRTH_FOR_UPAGRAHAS
     if answer.topic == "chart:death_timing" and not birth_known:
         return prompts.NEED_BIRTH_FOR_DEATH
     if answer.topic == "chart:women" and not birth_known:
@@ -352,6 +363,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(prompts.MINOR_NOTE)
     if answer.topic == "future:overview":
         blocks.append(prompts.FUTURE_TITLE.format(Your=who.Your))
+    if answer.topic == "chart:upagrahas":
+        blocks.append(render_upagrahas(answer, who, full))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
     if answer.topic == "chart:death_timing":
         blocks.append(render_death_timing(answer, who))
         blocks.append(DISCLAIMER)
@@ -511,6 +526,31 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
+
+
+def render_upagrahas(answer, who=SELF, full: bool = False) -> str:
+    """Where Gulika and the other upagrahas fall, by the book's formulas, and what the book says of them."""
+    title = f"🌑 {who.Your} Gulika and the other upagrahas"
+    rules = upagrahas.load_rules()
+    if not answer.upagrahas_checked:
+        return f"{title}\n\n{prompts.UPAGRAHAS_UNCHECKED}"
+    u = answer.upagrahas
+    if u is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_UPAGRAHAS}"
+    lines = []
+    for p in u.points:
+        deg = p.longitude % 30
+        lines.append(f"• {p.name}: {int(deg)}°{round((deg % 1) * 60):02d}′ {SIGNS[p.sign]} ({RASHIS[p.sign]}), the {ordinal(p.house)} house")
+    blocks = [title, "\n".join(lines)]
+    if not u.when:
+        blocks.append(prompts.UPAGRAHAS_NO_SUN)
+    elif u.when == "night":
+        blocks.append("This was a night birth, so only Gulika is worked out from the time; the book gives the night values for no other point.")
+    blocks.append("\n".join(f"• {h}: {t[0].upper()}{t[1:]}." + (f" [{v}]" if full else "") for v, h, t in u.effects))
+    verses = sorted({v for v, _, _ in u.effects} | {rules.raw["ghatikas"]["verse"], rules.raw["formulas"]["verse"]},
+                    key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
+    blocks.append(f"Source: Phaladeepika {', '.join(verses)}" + (f" ({rules.edition}, pp. {rules.pages})" if full else "") + " · checked")
+    return "\n\n".join(blocks)
 
 
 def render_death_timing(answer, who=SELF) -> str:

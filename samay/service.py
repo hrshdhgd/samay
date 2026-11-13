@@ -22,6 +22,7 @@ from .engine import (
     house_effects,
     house_timing,
     timestd,
+    upagrahas,
 )
 from .engine.daylight import RahuKaala
 from .engine.errors import InvalidInput, PlaceNotFound
@@ -295,3 +296,19 @@ def death_timing_report(birth: ResolvedBirth, now: datetime, tz: str | None = No
     track = ephemeris.sidereal_track(times, profile.ayanamsa, profile.node)
     found = death_timing.find(rules, natal.chart, natal.dashas, times, track)
     return replace(found, tz=tz or birth.place.tz) if found else None
+
+
+def upagraha_report(birth: ResolvedBirth) -> upagrahas.Upagrahas | None:
+    """Gulika and the other upagrahas of this birth, by Phaladeepika chapter 25. None until the rules are checked."""
+    rules = upagrahas.load_rules()
+    if not rules.servable:
+        return None
+    natal = natal_report(birth)
+    profile = load_profile(birth.profile)
+    p = birth.place
+
+    def ascendant_at(moment: datetime) -> float:
+        return ephemeris.compute_chart(moment, p.latitude, p.longitude, profile.ayanamsa, profile.node).ascendant
+
+    local = birth.utc.astimezone(ZoneInfo(p.tz))
+    return upagrahas.find(rules, natal.chart, local, p.latitude, p.longitude, p.tz, ascendant_at)
