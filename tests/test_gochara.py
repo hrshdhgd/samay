@@ -2452,7 +2452,7 @@ def _pis(**where):
 def test_each_planet_gets_the_row_for_its_sign_and_its_standing():
     got = _pis(sun=(3, 15.0), mars=(9, 15.0), jupiter=(3, 15.0), saturn=(6, 15.0))
     assert "independent, fierce" in got["sun"].text and got["mars"].strength == "exaltation" and "very rich, with many sons" in got["mars"].text
-    assert got["jupiter"].strength == "exaltation" and "gems" in got["jupiter"].text and "wealthy" in got["saturn"].text or True
+    assert got["jupiter"].strength == "exaltation" and "gems" in got["jupiter"].text
     assert got["saturn"].strength == "exaltation"
 
 
