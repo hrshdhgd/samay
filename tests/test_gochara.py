@@ -3433,3 +3433,69 @@ def test_a_malformed_ayurdaya_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         ayurdaya_bj.load_rules(path)
+
+
+# --- Brihat Jataka VIII: the Kendradi life-periods (inside chart:longevity, most sensitive) --------------------------------------------------
+from samay.engine import ayurdasa_bj
+
+AD = ayurdasa_bj.load_rules()
+AD_CHECKED = dataclasses.replace(AD, level="translation-checked", checked_by="test")
+
+
+def _ad(**where):
+    return ayurdasa_bj.find(AD_CHECKED, _full_sky(**where))
+
+
+def test_the_ayurdasa_file_is_gated_and_complete():
+    assert AD.level == "unchecked" and ayurdasa_bj.find(AD, _full_sky()) is None
+    assert set(AD.raw["names"]) == set(ayurdasa_bj.NAMES) and AD.raw["names"]["sampoorna"]["nature"] == "good" and AD.raw["names"]["rikta"]["nature"] == "bad"
+
+
+def test_the_periods_start_with_the_most_powerful_of_lagna_sun_moon_and_run_end_to_end():
+    got = _ad(lagna=0, sun=(0, 10.0), moon=(1, 3.0), jupiter=(3, 5.0))      # the Sun exalted in its exaltation degree is the most powerful
+    assert got[0].who == "sun" and got[0].name == "sampoorna" and got[0].nature == "good" and got[0].start == 0.0
+    assert [p.who for p in got].count("sun") == 1 and len(got) == 7
+    assert all(abs(b.start - (a.start + a.years)) < 1e-9 for a, b in itertools.pairwise(got))
+
+
+def test_the_names_by_dignity_and_the_results_follow_nature():
+    got = {p.who: p for p in _ad(lagna=0, sun=(0, 10.0), moon=(1, 3.0), jupiter=(3, 5.0), saturn=(0, 20.0))}      # Saturn in Aries is depressed
+    assert got["jupiter"].name == "sampoorna" and got["saturn"].name in ("rikta", "anishta", "misraphala")
+    assert got["jupiter"].result.startswith("In the benefic period of Jupiter") and "malefic" not in got["jupiter"].result
+    if got["saturn"].nature == "bad":
+        assert "malefic period of Saturn" in got["saturn"].result
+
+
+def test_a_lagna_period_is_named_by_the_rising_drekkana_and_its_lords_results():
+    chart = _full_sky(lagna=0, sun=(10, 5.0), moon=(7, 3.0))      # Sun inimical, Moon depressed, so the lagna (lord Mars in own Scorpio) leads
+    chart.ascendant = 5.0       # the 1st drekkana of a movable sign: Uttama
+    got = ayurdasa_bj.find(AD_CHECKED, chart)
+    assert got[0].who == "lagna" and got[0].name == "uttama" and got[0].nature == "good" and "Mars" in got[0].result
+
+
+@needs_kernel
+def test_the_longevity_answer_shows_chapter_8_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 8" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    monkeypatch.setattr(ayurdasa_bj, "load_rules", lambda path=None: AD_CHECKED)
+    answer = qa.answer_topic("chart:longevity", born, NOW)
+    text = render_answer(answer)
+    assert "life-periods in its own system" in text and "Source: Brihat Jataka 8.1–19" in text and all(len(p) <= 4096 for p in split_message(text))
+    assert "Brihat Jataka VIII" in qa._ai_prompt("my life periods", answer)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["names"].pop("rikta"),
+    lambda r: r["results"].pop("sun"),
+    lambda r: r["lagna_period"]["fixed"].pop(),
+    lambda r: r["names"]["poorna"].update(nature="great"),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
+])
+def test_a_malformed_ayurdasa_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(ayurdasa_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ayurdasa_bj.load_rules(path)

@@ -1,0 +1,55 @@
+# Brihat Jataka chapter VIII ("On Planetary Divisions and Sub-divisions of Life known as Dasas and Antardasas"), verses 1-19: the order and length of the life-periods of the Kendradi dasa system,
+# the names that show whether a period is good or bad, and what each planet's good and bad period brings. Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain,
+# pp. 77-88. QUOTED, scan errors corrected, the translator's notes applied. Conditions are coded in samay/engine/ayurdasa_bj.py; research/notes/brihat-jataka-ayurdasa.md lists judgment calls and what was left out.
+#
+# MOST SENSITIVE: it hangs on the span of life (chapter VII). Shown inside chart:longevity only after a warning and a tap (a stronger warning for a child). It is an old text's rules, not a forecast.
+# UNCHECKED: hidden until a person checks each row and sets level: translation-checked.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "77-88"
+frame: "This is the old book's second system of life-periods, laid over the span of chapter VII. It is not the Vimshottari dasha the rest of this bot uses, nothing here is a forecast, and the book says each period's name shows only whether it is good, bad or mixed."
+order:
+  verse: "8.1–2"
+  text: "Determine first which of the rising sign, the Sun and the Moon is the most powerful: its period comes first. Then follow the periods of the planets in the kendra houses from it, then those in the panaphara houses, and last those in the apoklima houses; within each group the most powerful planet first, then the one whose period is longer"
+  lengths: "The lengths of the periods are the planets' years of the last chapter (7.2)."
+names:   # 8.5-7: what each name of a period means (the translator's note)
+  sampoorna: {nature: good, text: "the period of the most powerful planet in its exaltation degree: vast prosperity"}
+  poorna: {nature: good, text: "the period of a planet in its exaltation sign and not very powerful: prosperity"}
+  rikta: {nature: bad, text: "the period of a weak planet in its depression sign or degree: misery and poverty"}
+  anishta: {nature: bad, text: "the period of a planet in an inimical navamsa and in the depression degree of its depression sign: misery"}
+  avarohini: {nature: mixed, text: "the period of a planet that has left its exaltation degree and moves towards its depression sign"}
+  madhyama: {nature: mixed, text: "the Avarohini period of a planet that is in a friendly or exaltation navamsa (or its own): a mixture of good and evil"}
+  arohini: {nature: mixed, text: "the period of a planet that has left its depression degree and moves towards its exaltation sign"}
+  adhama: {nature: bad, text: "the Arohini period of a planet in an inimical or depression navamsa: misery, destruction and very little prosperity"}
+  misraphala: {nature: mixed, text: "the period of a planet in a depression or inimical navamsa that is in a good position, or in an inimical or depression sign but in its own, friendly, moolatrikona or exaltation navamsa or vargottama: good and evil together"}
+lagna_period:   # 8.8
+  verse: "8.8"
+  common: [Adhama, Madhyama, Uttama]
+  movable: [Uttama, Madhyama, Adhama]
+  fixed: [Adhama, Uttama, Madhyama]
+  text: "The lagna period is known by the rising drekkana: for a common sign Adhama, Madhyama or Uttama as it is the 1st, 2nd or 3rd; for a movable sign Uttama, Madhyama or Adhama; for a fixed sign Adhama, Uttama or Madhyama (Uttama is prosperous, Adhama miserable)"
+results:   # 8.12-18: the period of each planet, good and bad
+  verse: "8.12–18"
+  sun:
+    good: "In the benefic period of the Sun a person will acquire wealth by dealing in perfumes, nails, tusks of elephants and the like animals, in tiger skin and the like, in gold, by means of roads, by the king and by battle; he will become cruel, courageous, persevering, renowned and valorous"
+    bad: "In the malefic period of the Sun he will get into trouble through his wife, son, money, enemy, weapons, fire or the king, will become liberal in gifts and addicted to sinful deeds, will quarrel with his servants and become afflicted in mind and suffer from chest pain and the like"
+  moon:
+    good: "In the benefic period of the Moon the person will derive benefit by dealing in mantras, the Brahmins, sugar-cane, milk, ghee and the like, cloth, flower, play, sesamum seed and food; he will respect virtuous Brahmins and the Devas, get daughters and acquire an increase of wisdom, wealth and renown"
+    bad: "In the malefic period of the Moon the person will indulge in sleep and idleness, will lose his wisdom, wealth and renown and will quarrel with powerful men and with kinsmen"
+  mars:
+    good: "In the benefic period of Mars the person will fight with his enemies and acquire wealth through his brother, the king, lands, woollen goods and goats"
+    bad: "In the malefic period of Mars the person will hate his sons, friends, wife, brothers, learned men and preceptors; he will suffer from diseases caused by or connected with thirst, blood, fever, bile, loss of limbs or sexual intercourse with other women; he will associate with men doing wicked deeds and become vicious, harsh in speech and cruel"
+  mercury:
+    good: "In the benefic period of Mercury the person will acquire wealth by acts of message and through friends, preceptors and Brahmins; he will attain renown among learned men, get brass and the like mixed metals, gold, horns, lands, popularity, comfort and ease, ridicule others and serve under other men, and get an increase of wisdom and successfully do deeds of virtue"
+    bad: "In the malefic period of Mercury the person will become harsh in his speech and will suffer from grief, imprisonment, pain of mind and diseases arising from an affection of the three dhatus, vata, pitta and sleshma"
+  jupiter:
+    good: "In the benefic period of Jupiter the person will acquire wealth by acts of worship, by his learning, valour, ingenuity, bright personal appearance, military fame, mantras, the king and the Vedas; he will have an increase of gold, horses, precious stones and elephants and acquire the friendship of good kings"
+    bad: "In the malefic period of Jupiter the person will learn things requiring much ingenuity, will suffer from foot journeys and pain in the ear and will quarrel with wicked men"
+  venus:
+    good: "In the benefic period of Venus the person will enjoy sweet music, various pleasures, perfumes, sumptuous meals, alcohol, fine cloths, women and precious stones; he will be of fine appearance, valorous, learned in the Sastras, will obtain the object of his desire, acquire friends, become skilled in trade and agriculture and get hidden treasures and wealth"
+    bad: "In the malefic period of Venus the person will quarrel with crowds of people, with the king, hunters and wicked men and will suffer much from his own friends"
+  saturn:
+    good: "In the benefic period of Saturn the person will get asses, camels, birds, buffaloes and old women, will rule over hamlets, villages or towns and thereby become renowned and get grain of inferior quality"
+    bad: "In the malefic period of Saturn the person will suffer from phlegmatic and windy complaints, will be jealous, angry, distracted in mind, dirty, exposed to danger, idle, suffer from grief and be much troubled; his servants, sons, daughters and wife will exercise authority over him and he will suffer from defective organs"
+  mixed: "If the period is of a mixed nature, the effects will be both good and bad; the effects for the lagna period are those for the period of the lord of the rising sign (8.19)"
+left_out: "Not coded: the sub-periods (8.3-4: the lord's own, a planet with it, in the 5th or 9th, the 7th, the 4th or 8th, in the proportion 1, 1/2, 1/3, 1/7, 1/4), the Naisargika periods (8.9), the conditions of 8.10, the Moon's sign at the start of a period (8.11) and the metals, elements and complexions of 8.20-21."

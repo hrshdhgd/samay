@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ..engine import (
+    ayurdasa_bj,
     ayurdaya_bj,
     balarishta_bj,
     birth_bj,
@@ -438,6 +439,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(render_longevity(answer, who))
         blocks.append(render_balarishta(answer, who))
         blocks.append(render_ayurdaya(answer, who))
+        blocks.append(render_ayurdasa(answer, who))
         blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
@@ -883,6 +885,22 @@ def _ym(years: float) -> str:
     y = int(years)
     m = int((years - y) * 12)
     return f"{y} years" + (f" {m} months" if m else "")
+
+
+def render_ayurdasa(answer, who=SELF) -> str:
+    """Brihat Jataka chapter VIII: the Kendradi life-periods in the book's order with their names and quoted results. Sensitive; only after the warning and a tap."""
+    rules = ayurdasa_bj.load_rules()
+    if not answer.ayurdasa_bj_checked:
+        return prompts.LONGEVITY_UNCHECKED + " (Brihat Jataka chapter 8)"
+    if answer.ayurdasa_bj is None:
+        return prompts.NEED_BIRTH_FOR_LONGEVITY
+    lines = ["The book's life-periods in its own system (not Vimshottari), from Brihat Jataka chapter 8:", rules.frame, rules.raw["order"]["text"] + ".", ""]
+    for p in answer.ayurdasa_bj:
+        who_name = "the rising sign" if p.who == "lagna" else p.who.title()
+        lines.append(f"• {_ym(p.start)} to {_ym(p.start + p.years)}: {who_name}, {p.name.title()} ({p.nature}): “{p.result[:1].upper() + p.result[1:]}.” [{rules.raw['results']['verse']}]")
+    lines.append(rules.raw["left_out"])
+    lines.append(f"Source: Brihat Jataka 8.1–19 ({rules.edition}, pp. {rules.pages}) · checked")
+    return "\n".join(lines)
 
 
 def render_ayurdaya(answer, who=SELF) -> str:
