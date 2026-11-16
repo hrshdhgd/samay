@@ -804,7 +804,11 @@ AI_PREDICT_SYSTEM = (
     AI_SYSTEM
     + " The reader asks about a future period. Describe only source and chart facts as traditional ideas for "
     "reflection; do not present anything as likely, expected, or a prediction. Never calculate or invent dates. "
-    "Do not mention death, serious illness or accidents."
+    "Do not mention death, serious illness or accidents. FORMAT, which overrides the instruction above to keep every item: "
+    "write only a short plain-language summary of three to five short sentences, with no heading and no list. Say what the "
+    "text describes for the period as a whole (the main moods and themes, one sentence each for the good and the hard ones), "
+    "in everyday words. Never mention planet or Moon positions, houses, signs, sub-chapters, running periods or dates, and do not "
+    "repeat the list. Do not use the words 'house' or 'sign'."
 )
 AI_CAREER_EXAMPLES_SYSTEM = (
     "Translate historical occupations into a few specific, closely related present-day examples. "
