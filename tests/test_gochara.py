@@ -1202,14 +1202,15 @@ def test_three_exalted_planets_and_the_count_of_strong_planets():
 def test_the_yogas_answer_hides_each_source_until_it_is_checked_and_then_shows_all(monkeypatch):
     born = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
     waiting = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert waiting.count(prompts.YOGAS_UNCHECKED) == 5 and "Source:" not in waiting
+    assert waiting.count(prompts.YOGAS_UNCHECKED) == 6 and "Source:" not in waiting
     monkeypatch.setattr(nabhasa, "load_rules", lambda path=None: NB_CHECKED)
     only_nabhasa = render_answer(qa.answer_topic("chart:yogas", born, NOW))
-    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 4 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
+    assert only_nabhasa.count(prompts.YOGAS_UNCHECKED) == 5 and "Nabhasa yogas (Brihat Jataka chapter 12)" in only_nabhasa
     monkeypatch.setattr(phaladeepika_yogas, "load_rules", lambda path=None: P6_CHECKED)
     monkeypatch.setattr(raja_yogas, "load_rules", lambda path=None: RJ_CHECKED)
     monkeypatch.setattr(phaladeepika_raja, "load_rules", lambda path=None: R7_CHECKED)
     monkeypatch.setattr(karakas, "load_rules", lambda path=None: KK_CHECKED)
+    monkeypatch.setattr(ascetic_bj, "load_rules", lambda path=None: AB_CHECKED)
     answer = qa.answer_topic("chart:yogas", born, NOW)
     text = render_answer(answer)
     assert prompts.YOGAS_UNCHECKED not in text and "Yogas from Phaladeepika chapter 6" in text and "without blemish" in text
@@ -2698,7 +2699,7 @@ def test_a_malformed_vargas_file_is_refused(tmp_path, change):
 
 
 # --- Brihat Jataka XXII: karakas, happiness yogas, dasha timing ---------------------------------------------------------------------
-from samay.engine import karakas
+from samay.engine import ascetic_bj, karakas
 
 KK = karakas.load_rules()
 KK_CHECKED = dataclasses.replace(KK, level="translation-checked", checked_by="test")
@@ -3242,3 +3243,54 @@ def test_a_malformed_birth_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         birth_bj.load_rules(path)
+
+
+# --- Brihat Jataka XV: ascetic yogas (fifth-to-sixth source of chart:yogas) -----------------------------------------------------------
+AB = ascetic_bj.load_rules()
+AB_CHECKED = dataclasses.replace(AB, level="translation-checked", checked_by="test")
+
+
+def _ab(**where):
+    return ascetic_bj.find(AB_CHECKED, _full_sky(**where))
+
+
+def test_the_ascetic_file_is_gated_and_complete():
+    assert AB.level == "unchecked" and ascetic_bj.find(AB, _full_sky()) is None
+    assert set(AB.rules) == set(ascetic_bj.IDS) and set(AB.orders) == set(ascetic_bj.SEVEN) and AB.orders["saturn"]["name"] == "Nirgrandha"
+
+
+def test_four_planets_in_a_sign_give_the_order_of_the_strongest_and_combustion_is_noted():
+    got = _ab(lagna=0, sun=(0, 10.0), mars=(0, 15.0), saturn=(0, 5.0), jupiter=(0, 20.0), moon=(1, 5.0), mercury=(5, 15.0), venus=(11, 15.0))   # Sun exalted + Mars own + Saturn, Jupiter in Aries
+    order = [f for f in got if "order of the most powerful" in f.text]
+    assert order and "Vanyasana" in order[0].detail and "Sun, Mars, Jupiter, Saturn are together in Aries" in order[0].detail
+    assert any("combust" in f.detail for f in got) is False        # the Sun itself is never combust
+    assert not any("order of the most powerful" in f.text for f in _ab(lagna=0, sun=(0, 10.0), mars=(0, 15.0), saturn=(0, 5.0), moon=(1, 5.0), mercury=(2, 5.0), jupiter=(3, 5.0), venus=(4, 5.0)))
+
+
+def test_the_moons_sign_lord_and_saturn_rules():
+    # Moon in Aries (lord Mars); Mars in Aries aspects Saturn in Cancer (4th); only Saturn may aspect Aries
+    got = _ab(lagna=0, moon=(0, 15.0), mars=(0, 5.0), saturn=(3, 15.0), sun=(2, 15.0), mercury=(2, 15.0), jupiter=(2, 15.0), venus=(2, 15.0))
+    assert any("aspects Saturn and only Saturn" in f.detail for f in got)
+
+
+def test_the_author_and_king_ascetic_need_a_raja_yoga(monkeypatch):
+    base = {"lagna": 0, "saturn": (8, 15.0), "jupiter": (8, 20.0)}
+    assert not any("scientific author" in f.text or "king and an ascetic" in f.text for f in _ab(**base))
+    monkeypatch.setattr(ascetic_bj.raja_yogas, "find", lambda rules, chart: (object(),))
+    got = _ab(**base)
+    assert any("king and an ascetic" in f.text for f in got) or any("scientific author" in f.text for f in got)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop(0),
+    lambda r: r["rules"][0].update(definition=""),
+    lambda r: r["orders"].pop("sun"),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
+])
+def test_a_malformed_ascetic_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(ascetic_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ascetic_bj.load_rules(path)

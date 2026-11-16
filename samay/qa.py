@@ -17,6 +17,7 @@ from . import narrate, service
 from .engine import (
     antardasha,
     ascendants,
+    ascetic_bj,
     ashtakavarga,
     birth_bj,
     chandra_yogas,
@@ -174,6 +175,9 @@ class YogasView:
     bj22: tuple = ()  # Brihat Jataka 22: karaka planets, happiness yogas, dasha timing
     bj22_checked: bool = False
     bj22_frame: str = ""
+    bj15: tuple = ()  # Brihat Jataka 15: ascetic yogas
+    bj15_checked: bool = False
+    bj15_frame: str = ""
 
 
 @dataclass(frozen=True)
@@ -523,10 +527,11 @@ def _yogas_view(birth: ResolvedBirth | None) -> YogasView | None:
         return None
     chart = service.natal_report(birth).chart
     nab, pd6, raja = nabhasa.load_rules(), phaladeepika_yogas.load_rules(), raja_yogas.load_rules()
-    ch7, bj22 = phaladeepika_raja.load_rules(), karakas.load_rules()
+    ch7, bj22, bj15 = phaladeepika_raja.load_rules(), karakas.load_rules(), ascetic_bj.load_rules()
     return YogasView(nabhasa.find(nab, chart), phaladeepika_yogas.find(pd6, chart), pd6.servable, pd6.blemish_note,
                      raja_yogas.find(raja, chart), raja.servable, raja.family["verse"] + ": " + raja.family["anyone"],
-                     phaladeepika_raja.find(ch7, chart), ch7.servable, ch7.frame, karakas.find(bj22, chart) or (), bj22.servable, bj22.frame)
+                     phaladeepika_raja.find(ch7, chart), ch7.servable, ch7.frame, karakas.find(bj22, chart) or (), bj22.servable, bj22.frame,
+                      ascetic_bj.find(bj15, chart) or (), bj15.servable, bj15.frame)
 
 
 def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
@@ -1049,6 +1054,7 @@ def yoga_facts(view: YogasView, who: Subject = SELF) -> list[str]:
     out += [f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja]
     out += [f"Phaladeepika {f.verse} ({f.detail}): {f.text}." for f in view.ch7]
     out += [f"Brihat Jataka {f.verse} ({f.detail}): {f.text}." for f in view.bj22]
+    out += [f"Brihat Jataka {f.verse} ({f.detail}): {f.text}." for f in view.bj15]
     return out
 
 

@@ -1,0 +1,26 @@
+# Brihat Jataka chapter XV ("On Ascetic Yogas"), verses 1-4: who becomes an ascetic, of which order, and the author and king-and-ascetic combinations.
+# Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 155-157. QUOTED, scan errors corrected, the translator's notes applied where they define a term.
+# Conditions are coded in samay/engine/ascetic_bj.py (research/notes/brihat-jataka-ascetic.md lists the judgment calls and what was left out). Shown inside the yogas answer (chart:yogas).
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "155-157"
+frame: "These are an old text's pointers about a life of renunciation, not a forecast. Several are very rare, and the book says they can be outweighed by raja yogas."
+
+orders:   # 15.1: the order, by the most powerful planet of the group
+  mars: {name: "Sakya", note: "a Buddhist ascetic dressed in red robes"}
+  mercury: {name: "Ajivika", note: "a Jain ascetic (the term includes Vaishnava ascetics)"}
+  jupiter: {name: "Bhikshuka", note: "a Brahmin who abandons his house and family and lives on alms"}
+  moon: {name: "Vridhasravaka", note: "a Kapalika, a follower of Siva"}
+  venus: {name: "Chakra", note: "a Chakradhara, who wears a discus"}
+  saturn: {name: "Nirgrandha", note: "a naked ascetic"}
+  sun: {name: "Vanyasana", note: "an ascetic who lives on the roots of the forest and is engaged in divine meditation"}
+rules:
+  - {id: order, verse: "15.1", text: "A person born when four or more powerful planets occupy a single sign becomes an ascetic of the order of the most powerful planet of the group", definition: "Four or more of the seven planets stand in one sign; the most powerful of them (best standing in the sign: exaltation, moolatrikona, own, friendly, neutral, inimical, depression; a tie names each) gives the order. 'Powerful' is read this way, as Phaladeepika 27.2 does, since four planets each in dignity in one sign cannot happen; the translator's note reads 'four or more' as five, six or seven, the text's four is used."}
+  - {id: combust, verse: "15.2", text: "If the most powerful planet of the group is an astangata (combust) planet, a person will not become a deekshita (one of the holy order) but will be attached to persons who are such", definition: "The most powerful planet of the group above is within the Sun's limit."}
+  - {id: lord_aspects_saturn, verse: "15.3", text: "If the lord of the sign occupied by the Moon aspects Saturn and is not aspected by any other planet, a person will become an ascetic (the translator: of the order of that lord or of Saturn, whichever is powerful)", definition: "The lord of the Moon's sign (not Saturn itself) aspects Saturn, and no planet other than Saturn aspects the sign it stands in."}
+  - {id: saturn_aspects_lord, verse: "15.3", text: "If Saturn aspects the lord of the sign occupied by the Moon when such lord is not powerful, a person will become an ascetic (the translator: of the order of Saturn)", definition: "Saturn aspects the sign of the lord of the Moon's sign, and that lord is not in an own, moolatrikona or exaltation sign."}
+  - {id: moon_saturn_drekkana, verse: "15.3", text: "If the Moon occupies the drekkana of Saturn and the navamsa of Saturn or Mars and is aspected by Saturn, a person will become an ascetic (the translator: of the order of Saturn; and not aspected by any other planet)", definition: "The Moon is in a drekkana ruled by Saturn and in a navamsa of Saturn or Mars; Saturn aspects her and no other planet does."}
+  - {id: author, verse: "15.4", text: "A person born when Jupiter, the Moon and the rising sign are aspected by Saturn, when Jupiter occupies the 9th house from the ascendant and under one of the raja yogas, becomes a scientific author", definition: "Saturn aspects the signs of Jupiter, the Moon and the lagna; Jupiter is in the 9th house; and the chart has at least one raja yoga (chapter 11 of this book or chapter 7 of Phaladeepika)."}
+  - {id: king_ascetic, verse: "15.4", text: "A person born when Saturn occupies the 9th house from the ascendant and is not aspected by other planets and under a raja yoga will become both a king and an ascetic", definition: "Saturn in the 9th house, no other planet aspecting it, and at least one raja yoga in the chart."}
+raja_note: "The translator adds: if the chart has a raja yoga and an ascetic yoga the former will not take effect but the latter will (as in the lives of Varahamihira, Kanada, Buddha, Panchasikha and Brahmagupta); with two raja yogas and an ascetic yoga the person will become a king (Janaka and others); with no raja yoga and only the ascetic yoga the person will be an ascetic."
