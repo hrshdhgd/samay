@@ -154,7 +154,7 @@ def test_chat_today_is_short_and_plain_with_no_planet_positions():
     text = render_today(_today(), technical=False, extras=("⚠ Rahu Kaala today: X",))
     lines = text.splitlines()
     assert lines[0] == "🌙 Today, Monday 09 November 2026"
-    assert "You are in a Jupiter period of life, which runs until Feb 2033. Within it you are in a Venus phase, until 02 Sep 2027." in text
+    assert "You are in a Jupiter period of life that runs until Feb 2033, and within it a Venus phase until 02 Sep 2027." in text
     assert "⚠ Rahu Kaala today: X" in lines and "Technical details" not in text and "sign from your Moon" not in text and "Transiting" not in text
 
 
@@ -214,3 +214,16 @@ def test_a_paragraph_longer_than_the_limit_is_cut_at_lines_and_then_at_words():
 def test_a_word_longer_than_the_limit_is_cut_hard_rather_than_looping():
     from samay.render.text import split_message
     assert all(len(p) <= 100 for p in split_message("y" * 250, limit=100))
+
+
+def test_today_gives_the_books_meaning_only_when_it_is_kind(monkeypatch):
+    import dataclasses
+
+    from samay.engine import antardasha
+    from samay.render import text as T
+    rules = dataclasses.replace(antardasha.load_rules(), level="translation-checked", checked_by="test")
+    monkeypatch.setattr(antardasha, "load_rules", lambda path=None: rules)
+    kind = [k for k, (t, _) in rules.effects.items() if not any(w in t.lower() for w in T.HARSH_WORDS)]
+    hard = [k for k, (t, _) in rules.effects.items() if any(w in t.lower() for w in T.HARSH_WORDS)]
+    assert kind and hard
+    assert "is about" in T._gentle_phase(*kind[0]) and "mixed phase" in T._gentle_phase(*hard[0]) and rules.effects[hard[0]][0] not in T._gentle_phase(*hard[0])

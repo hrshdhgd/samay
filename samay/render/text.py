@@ -238,12 +238,29 @@ def today_facts(report: TodayReport) -> list[str]:
     return facts
 
 
+HARSH_WORDS = ("loss", "lose", "death", "die", "illness", "disease", "danger", "fear", "enmity", "enemies", "calamity", "quarrel", "imprison", "misery", "separation", "trouble",
+               "harass", "sorrow", "grief", "poverty", "wound", "dishonour", "disgrace", "stomach", "headache", "leprosy", "piles", "mental")
+
+
+def _gentle_phase(maha: str, antar: str) -> str:
+    """The book's own words for this phase when they are kind; for a hard phase only a gentle line, never the harsh list. The full text stays in the dasha and outlook answers."""
+    from ..engine import antardasha
+    found = antardasha.load_rules().result(maha, antar)
+    if found is None:
+        return ""
+    text = found[0]
+    if any(w in text.lower() for w in HARSH_WORDS):
+        return " The old book calls this a mixed phase; it is a tradition's idea, not a forecast, and the whole stretch is long."
+    return f" The old book says this phase is about {text}. A tradition's reading, not a forecast."
+
+
 def plain_today(report: TodayReport) -> list[str]:
-    """Today in everyday words for chat: only the life chapter now running. Positions of the slow planets stay in the technical (CLI) view."""
+    """Today in everyday words for chat: the life period now running and, when the book is kind, what it says of it. Positions of the slow planets stay in the technical (CLI) view."""
     if not report.current_dasha:
         return []
     maha, antar = report.current_dasha
-    return [f"You are in a {maha.lord.title()} period of life, which runs until {maha.end:%b %Y}. Within it you are in a {antar.lord.title()} phase, until {antar.end:%d %b %Y}."]
+    return [f"You are in a {maha.lord.title()} period of life that runs until {maha.end:%b %Y}, and within it a {antar.lord.title()} phase until {antar.end:%d %b %Y}."
+            + _gentle_phase(maha.lord, antar.lord)]
 
 
 def render_today(
