@@ -3363,3 +3363,73 @@ def test_a_malformed_balarishta_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         balarishta_bj.load_rules(path)
+
+
+# --- Brihat Jataka VII: Ayurdaya, the book's arithmetic (inside chart:longevity, most sensitive) -----------------------------------------------
+from samay.engine import ayurdaya_bj
+
+AY = ayurdaya_bj.load_rules()
+AY_CHECKED = dataclasses.replace(AY, level="translation-checked", checked_by="test")
+
+
+def _ay(lagna=0, **where):
+    chart = _full_sky(lagna=lagna, **where)
+    return ayurdaya_bj.find(AY_CHECKED, chart)
+
+
+def test_the_ayurdaya_file_is_gated_and_complete():
+    assert AY.level == "unchecked" and ayurdaya_bj.find(AY, _full_sky()) is None
+    assert AY.raw["max_years"] == {"sun": 19, "moon": 25, "mars": 15, "mercury": 12, "jupiter": 15, "venus": 21, "saturn": 20}
+
+
+def test_a_planet_gives_its_full_years_at_exaltation_and_half_at_depression_and_the_translators_example_matches():
+    r = AY.raw
+    assert ayurdaya_bj._pinda_years(r, "sun", 10.0) == 19 and ayurdaya_bj._pinda_years(r, "sun", 190.0) == 9.5
+    # the translator's example: Mars 28 degrees of Aquarius (30 degrees past exaltation) gives 13 years 9 months; Mercury at depression gives 6; Jupiter 7.5 before the 12th-house halving
+    assert round(ayurdaya_bj._pinda_years(r, "mars", 10 * 30 + 28.0), 2) == 13.75
+    assert ayurdaya_bj._pinda_years(r, "mercury", 11 * 30 + 15.0) == 6.0 and ayurdaya_bj._pinda_years(r, "jupiter", 9 * 30 + 5.0) == 7.5
+
+
+def test_the_translators_worked_example_two_methods_and_the_krurodaya_reduction():
+    chart = _full_sky(lagna=10, sun=(0, 10.0), moon=(1, 3.0), venus=(11, 27.0), mercury=(11, 15.0), jupiter=(9, 5.0), saturn=(6, 20.0), mars=(10, 28.0))
+    chart.ascendant = 10 * 30 + 0.5
+    a = ayurdaya_bj.find(AY_CHECKED, chart)
+    pinda, satya = a.methods
+    rows = {w: (b, af) for w, b, af, _ in pinda.rows}
+    assert rows["Jupiter"] == (7.5, 3.75) and round(rows["Mars"][1], 2) == 13.75 and rows["Mercury"][1] == 6.0       # Jupiter in the 12th loses half
+    assert any("Krurodaya" in n for n in pinda.reductions) and 10 < pinda.total < 25 and satya.total > pinda.total
+    assert not any("Krurodaya" in n for n in satya.reductions)
+
+
+def test_the_beyond_calculation_horoscope_of_stanza_14():
+    chart = _full_sky(lagna=3, moon=(3, 15.0), jupiter=(3, 20.0), mercury=(0, 15.0), venus=(6, 15.0), sun=(1, 15.0), mars=(8, 15.0), saturn=(5, 15.0))   # Sun 11th, Mars 6th, Saturn 3rd
+    assert "far exceeds" in ayurdaya_bj.find(AY_CHECKED, chart).beyond
+    plain = ayurdaya_bj.find(AY_CHECKED, _full_sky(lagna=0))
+    assert plain.beyond is None and len(plain.methods) == 2
+
+
+@needs_kernel
+def test_the_longevity_answer_shows_the_arithmetic_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 7" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    monkeypatch.setattr(ayurdaya_bj, "load_rules", lambda path=None: AY_CHECKED)
+    answer = qa.answer_topic("chart:longevity", born, NOW)
+    text = render_answer(answer)
+    assert "Pindayurdaya: about" in text and "Satyacharya's method: about" in text and "first eight years" in text and all(len(p) <= 4096 for p in split_message(text))
+    assert "Brihat Jataka VII, Pindayurdaya" in qa._ai_prompt("how long will I live", answer)
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["max_years"].pop("sun"),
+    lambda r: r["exaltation_degree"].pop("moon"),
+    lambda r: r["pinda"].pop("verse"),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
+])
+def test_a_malformed_ayurdaya_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(ayurdaya_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        ayurdaya_bj.load_rules(path)

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ..engine import (
+    ayurdaya_bj,
     balarishta_bj,
     birth_bj,
     conjunctions,
@@ -436,6 +437,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
         blocks.append(render_balarishta(answer, who))
+        blocks.append(render_ayurdaya(answer, who))
         blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
@@ -875,6 +877,31 @@ def render_death_bj(answer, who=SELF, sections=("cause", "place", "body")) -> st
     verses = sorted({f.verse for f in answer.death_bj}, key=lambda v: int(v.split(".")[1]))
     blocks.append(f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
     return "\n\n".join(blocks)
+
+
+def _ym(years: float) -> str:
+    y = int(years)
+    m = int((years - y) * 12)
+    return f"{y} years" + (f" {m} months" if m else "")
+
+
+def render_ayurdaya(answer, who=SELF) -> str:
+    """Brihat Jataka chapter VII: the two methods' totals with the working, quoted rules and verse numbers. Sensitive; only after the warning and a tap."""
+    rules = ayurdaya_bj.load_rules()
+    if not answer.ayur_bj_checked:
+        return prompts.LONGEVITY_UNCHECKED + " (Brihat Jataka chapter 7)"
+    a = answer.ayur_bj
+    if a is None:
+        return prompts.NEED_BIRTH_FOR_LONGEVITY
+    lines = ["The book's arithmetic for a span of life, from Brihat Jataka chapter 7:", rules.frame]
+    for m in a.methods:
+        lines.append(f"• {m.name}: about {_ym(min(m.total, 120.0))} for {who.your} chart [{m.verse}]")
+        lines.append("   " + "; ".join(f"{w} {_ym(af)}" for w, _, af, _ in m.rows if af) + (f". {'; '.join(m.reductions)}." if m.reductions else "."))
+    if a.beyond:
+        lines.append(f"• “{a.beyond[:1].upper() + a.beyond[1:]}.” [{rules.raw['beyond']['verse']}]")
+    lines.append(rules.raw["under_eight"])
+    lines.append(f"Source: Brihat Jataka {rules.raw['pinda']['verse']}, {rules.raw['satyacharya']['verse']} ({rules.edition}, pp. {rules.pages}) · checked")
+    return "\n".join(lines)
 
 
 def render_balarishta(answer, who=SELF) -> str:

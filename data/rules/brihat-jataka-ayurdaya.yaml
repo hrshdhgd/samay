@@ -1,0 +1,31 @@
+# Brihat Jataka chapter VII ("On Ayurdaya, the Determination of the Length of Life"), verses 1-14: Pindayurdaya (stanzas 1-4) and Satyacharya's method (9-13), which the text calls the best,
+# and the horoscope beyond calculation (14). Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 60-71. QUOTED, with the translator's notes and worked
+# examples applied (the scan lost the 'one-fourth' in stanza 3; the worked examples fix it). Conditions are coded in samay/engine/ayurdaya_bj.py; research/notes/brihat-jataka-ayurdaya.md lists the judgment calls.
+#
+# MOST SENSITIVE: a number of years of life. Shown inside chart:longevity only after a warning and a tap (a stronger one for a child). It is an old text's arithmetic, not a forecast: the book itself
+# excludes the first eight years and the translator shows its two methods disagree. UNCHECKED: hidden until a person checks each row and sets level: translation-checked.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "60-71"
+frame: "This is the old book's arithmetic for a span of life: several steps, each a judgment of the old authors, and the book itself says the first eight years cannot be judged and that some births lie beyond any calculation. It is not a forecast; the two methods below usually give different numbers."
+max_years: {sun: 19, moon: 25, mars: 15, mercury: 12, jupiter: 15, venus: 21, saturn: 20}   # 7.1: years given by a planet in its exaltation degree (Maya, Yavanacharya, Manittha, Parasara)
+exaltation_degree: {sun: 10, moon: 33, mars: 298, mercury: 165, jupiter: 95, venus: 357, saturn: 200}   # longitude of the exaltation point (I.13): Aries 10, Taurus 3, Capricorn 28, Virgo 15, Cancer 5, Pisces 27, Libra 20
+life_cap: "The maximum length of human life is 120 years and 5 days (7.5)."
+pinda:
+  verse: "7.1–4"
+  planet: "A planet gives its full years in its exaltation degree and half of them in its depression degree, and in any other place the years in proportion (7.2)"
+  lagna: "The rising sign gives as many years as the number of navamsas of it that have risen (the translator: 9 years for the whole sign, so a tenth of a degree gives 0.3 of a year) (7.2)"
+  enemy_sign: "A planet in an inimical sign loses a third of its years; Mars is not reduced (7.2 and the translator's note)"
+  combust: "A planet within the Sun's limit (an astangata planet) loses a half of its years; Saturn and Venus are not reduced (7.2)"
+  chakrapata: "If malefic planets occupy the 12th, 11th, 10th, 9th, 8th or 7th house from the rising sign, a reduction of the whole, one-half, one-third, one-fourth, one-fifth and one-sixth of that planet's years respectively is made; for benefic planets in these houses it is half as much (7.3, the translator's note and worked examples). If several planets stand in one sign the reduction is made for the most powerful one only (Satyacharya, 7.3)"
+  krurodaya: "If a malefic planet occupies the rising sign, the total is multiplied by the number of navamsas from the first point of Aries to the rising navamsa and divided by 108, and that is subtracted; if the malefic is aspected by a benefic only half of it is subtracted (7.4)"
+satyacharya:
+  verse: "7.9–13"
+  planet: "The years of each planet are the number of navamsas it has passed over counted from the preceding navamsa of Aries (so never more than 12), with the fraction (7.9–10)"
+  lagna: "The lagna gives the same, or if the rising sign is powerful the number of signs passed over (7.12)"
+  multiply: "A planet in its exaltation sign or retrograde has its years trebled; one in its own vargottama navamsa, own sign or own drekkana has them doubled; where several multipliers apply only the largest is used, and a tripling beats a doubling (7.11, 7.13)"
+  reductions: "The reductions of Pindayurdaya apply to these years, except Krurodaya (7.11–12)"
+beyond:
+  verse: "7.14"
+  text: "The life of a person born when Cancer is rising, Jupiter and the Moon occupy the rising sign, Mercury and Venus occupy kendras and the other planets the 11th, 6th and 3rd houses is not subject to ordinary calculation, but far exceeds the maximum period of normal human existence"
+under_eight: "The book says its calculation does not apply to the first eight years, the period of balarishta (the translator, 7.7 note)."
