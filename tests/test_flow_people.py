@@ -6,7 +6,6 @@ from samay.models import BirthInput
 from samay.narrative import Extraction, Mentioned
 from samay.render import prompts
 
-PUNE = geo.find_places("Pune, India")[0].id
 MAYA = Mentioned("Maya", "daughter", "2015-03-14", "06:30", None, "Pune, India")
 ARJUN = Mentioned("Arjun", "son", "", "", (9, 0), "Mumbai")  # no date; "9" with no am/pm
 
@@ -47,7 +46,7 @@ def test_asking_step_by_step_names_the_person_in_every_question():
     done = tap(o, "💾 Yes, save Maya")
     assert done.draft is None and done.done is None and done.then is None  # not the user's own details
     assert done.person == flow.PersonResult("Maya", "daughter", BirthInput(
-        "2015-03-14", "06:30", "Pune, India", PUNE, None, "parashari-lahiri", None), True)
+        "2015-03-14", "06:30", "Pune, India", geo.find_places("Pune, India")[0].id, None, "parashari-lahiri", None), True)
     assert done.reply.text == prompts.PERSON_DONE.format(name="Maya")
 
 
