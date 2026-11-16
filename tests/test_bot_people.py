@@ -80,7 +80,7 @@ def ai(monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
     cfg = {"route": "none", "extract": json.dumps(EXTRACTED), "ai": "A thoughtful reading.", "calls": []}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
         cfg["calls"].append({"system": system, "prompt": prompt})
         if system == qa.MODEL_SYSTEM:
             return cfg["route"](prompt) if callable(cfg["route"]) else cfg["route"]
@@ -120,8 +120,10 @@ async def test_a_story_about_two_children_is_read_checked_saved_and_the_question
     assert sent[2] == prompts.PERSON_DONE.format(name="Arjun") + "\n" + prompts.PEOPLE_SAVED_LIST.format(names="Arjun")
     answers = [t for t in sent[3:] if t.startswith("👤")]
     assert [a.splitlines()[0] for a in answers] == ["👤 Maya (daughter)", "👤 Arjun (son)"]  # the question, for each
-    assert all("current period of life" in a for a in answers) and "Maya's current period of life" in answers[0]
-    assert sum(t.startswith(("🤖 AI says:", "🔮🤖 AI prediction:")) for t in sent) == 2  # and the model's own words after each
+    assert all("A thoughtful reading." in a for a in answers)
+    assert all("chapter (dasha)" in prompt for prompt in
+               [c["prompt"] for c in ai["calls"] if c["system"] in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM)])
+    assert sum("A thoughtful reading." in t for t in sent) == 2  # one model-generated answer for each person
     assert [(p.name, p.relation) for p in store.list_people(ME)] == [("Arjun", "son")]  # Maya was "just for now"
 
 
@@ -152,10 +154,13 @@ async def test_follow_ups_move_between_the_people_and_back_to_the_user(ctx, stor
         update, msg = message(ME, f"follow-up number {i}")  # distinct texts: an identical repeat is ignored
         await bot.on_text(update, ctx)
         headings.append(texts(msg))
-    assert headings[0][0].startswith("👤 Arjun (son)") and "On marriage and partnership" in headings[0][0]
-    assert headings[1][0].startswith("👤 Maya (daughter)") and "On work and career" in headings[1][0]
+    assert headings[0][0].startswith("👤 Arjun (son)") and "A thoughtful reading." in headings[0][0]
+    assert headings[1][0].startswith("👤 Maya (daughter)") and "A thoughtful reading." in headings[1][0]
     assert headings[2][0] == prompts.SWITCHED_SELF and not headings[2][1].startswith("👤")  # back to the user's own
     assert not headings[3][0].startswith("👤")  # and it stays there
+    answer_prompts = [c["prompt"] for c in ai["calls"] if c["system"] in (qa.AI_SYSTEM, qa.AI_PREDICT_SYSTEM)]
+    assert any("marriage and partnership" in p for p in answer_prompts)
+    assert any("work and career" in p for p in answer_prompts)
 
 
 @needs_kernel

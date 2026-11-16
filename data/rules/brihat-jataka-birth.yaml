@@ -1,0 +1,96 @@
+# Brihat Jataka chapter V ("On Matters connected with Birth-time"), verses 1-23: the circumstances of the birth (the father and mother, twins, the cord, where it happened, the
+# delivery room and lamp, the midwives). Source: N. Chidambaram Iyer (tr.), Brihat Jataka of Varaha Mihira, Madras 1885, public domain, pp. 39-50. QUOTED, scan errors corrected, the
+# translator's notes applied where they define a term. Conditions are coded in samay/engine/birth_bj.py; every rule has a `definition` for the checker.
+# Notes and what was left out: research/notes/brihat-jataka-birth.md.
+#
+# Two groups. group "birth" is shown as chart:birth. group "parents" (illegitimacy, a child deserted by its mother) is SENSITIVE: chart:birth_parents, shown only after a warning and a
+# tap (a stronger warning for a child). It is an old text's rules, not a forecast about anyone, and these are about the past (the day of the birth).
+# UNCHECKED: nothing is shown until a person compares each row with the pages and sets level: translation-checked with checked_by, checked_on and against.
+# Owner's decision 2026-11-12: nothing is hidden.
+verification: {level: unchecked}
+edition: "tr. N. Chidambaram Iyer, Madras 1885"
+pages: "39-50"
+
+frame: "The old book pictures the circumstances of a birth: who was near, where it happened, what the room was like. Many of these cannot be checked against anything and some fire in many charts; they are the book's imagery, not a record of anyone's birth."
+parents_frame: "These rules are about a child's parents and a mother's care in the old book's world. They are not a statement about anyone's family: many fire in a large share of charts, the book itself is divided on some, and no one can read a family from a chart."
+
+# Signs: biped = Gemini, Libra, Virgo, first half of Sagittarius and Aquarius; aquatic = Cancer, first half of Capricorn, Pisces; quadruped = Aries, Taurus, Leo, second half of
+# Sagittarius and Capricorn (the translator's note to I.17); the centiped is Scorpio.
+places:   # V.13 note: what each sign represents
+  Aries: "the abodes (caves) of sheep, mountains, the residence of an army, a fire place, metal mines and mines where precious stones are found"
+  Taurus: "forests, the bottom of hills, places frequented by elephants and cattle, and the dwelling places of farmers"
+  Gemini: "places frequented by women learned in music and painting, for play or to carry love messages"
+  Cancer: "rice fields, tanks, sand banks and places frequented by nymphs"
+  Leo: "forests, inaccessible places, caves, mountains covered with forests and places frequented by forest-men"
+  Virgo: "places overgrown with grass, women's sleeping apartments and female schools"
+  Libra: "customs houses, middle streets, bazaars, roads leading to towns, market places, high ground and places where crops grow"
+  Scorpio: "caves, fortified towns, ditches, places where there are poisonous stones, hills, snake holes and scorpion holes"
+  Sagittarius: "good and even places where there are horses, cavalry men or armed men, places of sacrificial fire ceremonies or where vehicles are kept"
+  Capricorn: "rivers, gardens, forests, tanks and water banks"
+  Aquarius: "places frequented by birds, by women, by dealers in liquor or by gamblers"
+  Pisces: "temples, places frequented by Brahmins, holy waters, rivers and seas"
+limbs: [head, face, breast, heart, belly, navel, abdomen, genital organ, thighs, knees, ankles, feet]
+directions:   # V.20: the delivery room, by the rising sign or navamsa, whichever is powerful
+  east: [Aries, Cancer, Libra, Scorpio, Aquarius]
+  north: [Sagittarius, Pisces, Gemini, Virgo]
+  west: [Taurus]
+  south: [Capricorn, Leo]
+bed:   # V.21: the bed of the woman in labour, by the rising sign
+  Aries: east
+  Taurus: east
+  Gemini: south-east
+  Cancer: south
+  Leo: south
+  Virgo: south-west
+  Libra: west
+  Scorpio: west
+  Sagittarius: north-west
+  Capricorn: north
+  Aquarius: north
+  Pisces: north-east
+house_of_planet:   # V.19: the house if this planet is the most powerful
+  saturn: "a house which, having become old, has been rebuilt"
+  mars: "a house partly burnt"
+  moon: "a newly built house"
+  sun: "a house built of wood but weak"
+  mercury: "a house built by several builders"
+  venus: "a beautiful new house adorned with pictures"
+  jupiter: "a strong house"
+room_of_planet:    # V.19 note (Saravali): the room, if the Sun, Moon... stand in the sign of the most powerful planet
+  sun: "the room set apart for the worship of the Devas"
+  moon: "the bath or water room"
+  mars: "the kitchen or the Agnihotra hall"
+  mercury: "the bed room"
+  jupiter: "the treasure room"
+  venus: "the play ground"
+  saturn: "the place where sweepings are deposited"
+
+rules:
+  - {id: father_away_moon, group: birth, verse: "5.1", text: "If the rising sign is not aspected by the Moon, the father will not be near when the child is born", definition: "The Moon is not in the 7th house from the lagna (the only sign that she aspects the lagna from)."}
+  - {id: father_abroad, group: birth, verse: "5.1", text: "If in such a case the Sun occupies the 9th or the 8th house, the father would be in a foreign country if the house is a movable sign, in his own country if a fixed sign, and would be returning to his country if a common sign", definition: "The Moon does not aspect the lagna and the Sun is in the 8th or the 9th house; the kind of that sign gives the place."}
+  - {id: father_away_planets, group: birth, verse: "5.2", text: "If Saturn is in the rising sign or Mars in the setting sign, or the Moon between Mercury and Venus, the father will not be near", definition: "Saturn in the lagna, or Mars in the 7th, or the Moon with Mercury and Venus in the sign before and the sign after hers or in her own sign."}
+  - {id: serpent_issue, group: birth, verse: "5.3", text: "If the Moon is in a drekkana of Mars and benefic planets are in the 2nd and 11th houses from the rising sign, the issue will be a serpent", definition: "The Moon in the 1st drekkana of Aries, 2nd of Cancer, 3rd of Leo, 1st of Scorpio, 2nd of Sagittarius or 3rd of Pisces; and Mercury, Jupiter or Venus in each of the 2nd and the 11th houses."}
+  - {id: serpent_coiled, group: birth, verse: "5.3", text: "If the sign of a malefic planet is the ascendant and the drekkana of Mars is then rising, the issue will be a child born with a serpent coiled round its body", definition: "The lagna is Aries, Leo or Scorpio (or Cancer with the Moon waning) and the rising drekkana is one of those of Mars named above."}
+  - {id: cord, group: birth, verse: "5.5", text: "If Aries, Leo or Taurus is the rising sign and Saturn or Mars is in it, the issue will be a child born with the umbilical cord twined round the part of the body indicated by the rising navamsa", definition: "Lagna Aries, Taurus or Leo with Mars or Saturn in it; the part is that of the rising navamsa's sign counted from Aries (head, face, breast...), the translator's note."}
+  - {id: father_custody, group: birth, verse: "5.7", text: "If two malefic planets (Mars and Saturn) occupy one of the malefic signs and such sign is the 5th, 7th or 9th house from the Sun, the father of the child will be in custody at the time; in foreign lands if the Sun is in a movable sign, in his own country if fixed, and on his way to his native country if common", definition: "Mars and Saturn in the same sign; that sign is Aries, Leo, Scorpio, Capricorn or Aquarius (or Cancer with the Moon waning, or Gemini or Virgo with Mercury also in it) and is the 5th, 7th or 9th from the Sun; the Sun's sign gives the place."}
+  - {id: boat_cancer, group: birth, verse: "5.8", text: "If the Moon is full and in Cancer, Mercury in the rising sign and Jupiter in the 4th house, the birth will occur in a boat", definition: "The Moon within 36 degrees of the Sun's opposition (nearly full) in Cancer, Mercury in the lagna, Jupiter in the 4th."}
+  - {id: boat_watery, group: birth, verse: "5.8", text: "If the watery signs begin to rise and the Moon is in the 7th house, then too the birth will occur in a boat", definition: "The lagna is Cancer, Pisces or the first half of Capricorn (the translator's aquatic signs) and the Moon is in the 7th."}
+  - {id: water_bank, group: birth, verse: "5.9", text: "If a watery sign begins to rise, the birth will certainly occur on the banks of waters, if the Moon is also in a watery sign, or the Moon is full and aspects the rising sign, or the Moon is in the 10th or 4th house or in the lagna", definition: "The lagna is a watery sign (as above) and the Moon is in a watery sign, or nearly full in the 7th, or in the 10th, 4th or 1st house."}
+  - {id: prison_birth, group: birth, verse: "5.10", text: "If the Moon occupies the rising sign and Saturn occupies the 12th house and is aspected by a malefic planet, the birth will occur in a prison", definition: "The Moon in the lagna, Saturn in the 12th, and the Sun or Mars aspecting Saturn."}
+  - {id: ditch, group: birth, verse: "5.10", text: "If either Scorpio or Cancer begins to rise and is occupied by Saturn and aspected by the Moon, the birth will occur in a ditch", definition: "The lagna is Scorpio or Cancer, Saturn is in it and the Moon is in the 7th."}
+  - {id: watery_saturn, group: birth, verse: "5.11", text: "If a watery sign begins to rise and Saturn occupies it and is aspected by Mercury, the Sun or the Moon, the birth will occur respectively in a pleasure house, a temple or sterile ground", definition: "The lagna is a watery sign with Saturn in it; Mercury, the Sun or the Moon in the 7th gives the place."}
+  - {id: biped_saturn, group: birth, verse: "5.12", text: "If a biped sign is rising and Saturn occupies it and is aspected by Mars, the birth will be in a cremation ground; if aspected by Venus and the Moon, in some beautiful and agreeable spot; by Jupiter, in the Agnihotra hall; by the Sun, in the King's palace or a temple or a cow shed; by Mercury, in an artist's working room", definition: "The lagna is a biped sign (Gemini, Libra, Virgo, the first half of Sagittarius or Aquarius) with Saturn in it; the planet aspecting Saturn gives the place."}
+  - {id: place_of_sign, group: birth, verse: "5.13", text: "The birth will occur in the places represented by the rising sign or navamsa, whichever is powerful; if such sign or navamsa is a movable one the birth will occur on roads, if fixed, within a building; if the rising navamsa is a vargottama one the house will be the mother's own property", definition: "Compare the lord of the lagna sign with the lord of the rising navamsa sign by standing; the stronger gives the sign; a movable sign: roads, fixed: within a building, common: the outer verandah (the translator's note); vargottama lagna: the mother's own property."}
+  - {id: dark_spot, group: birth, verse: "5.17", text: "If the Moon occupies the navamsa of Saturn or the 4th house from the lagna, or is aspected by Saturn, or occupies a watery navamsa or the same house as Saturn, the birth will occur in a dark spot", definition: "The Moon in a navamsa of Capricorn or Aquarius, or in the 4th house, or Saturn in the 7th from her, or in a navamsa of Cancer or Pisces, or in the sign of Saturn (the translator adds: not if the Sun is powerful and aspected by Mars)."}
+  - {id: bare_ground, group: birth, verse: "5.17", text: "If three or more planets are in their neecha (depression) signs, the birth will occur on the bare ground", definition: "Three or more of the seven planets each in the sign of its depression."}
+  - {id: travail, group: birth, verse: "5.17", text: "If malefic planets occupy the 4th or 7th house, the mother will suffer much from travail", definition: "The Sun, Mars or Saturn in the 4th or the 7th house."}
+  - {id: house_state, group: birth, verse: "5.19", text: "The birth will occur in a house of the kind of the most powerful planet", definition: "The planet with the best standing in its sign among the seven; a tie names each."}
+  - {id: delivery_room, group: birth, verse: "5.20", text: "The delivery room will be in the portion of the house of the rising sign or navamsa, whichever is powerful", definition: "As place_of_sign, the direction by the stronger of the lagna sign and the rising navamsa sign."}
+  - {id: bed, group: birth, verse: "5.21", text: "The bed of the woman in labour will be in the portion of the room of the rising sign", definition: "The direction given for the lagna sign."}
+  - {id: midwives, group: birth, verse: "5.22", text: "The number of midwives will be the number of the planets between the rising sign and the Moon; of these, the number in the visible hemisphere will be the number of midwives outside the room, and in the invisible hemisphere the number inside (some reverse this); the translator adds that the number given by an exalted or retrograde planet is trebled and by one in its own sign doubled", definition: "Count planets in the signs from the lagna up to but not including the Moon's, forward; the visible hemisphere is the 7th to the 12th house."}
+  - {id: lamp_oil, group: birth, verse: "5.18", text: "The oil of the lamp in the delivery room shall be determined from the Moon: full if she is at the beginning of a sign, one-half in the middle, none at the end", definition: "The Moon in the first, second or last 10 degrees of her sign."}
+  - {id: lamp_wick, group: birth, verse: "5.18", text: "The wick shall be determined from the rising sign: long and unburnt if the beginning of the sign begins to rise, half burnt in the middle, nearly wholly burnt at the end", definition: "The lagna in the first, second or last 10 degrees of its sign."}
+  - {id: lamp_kind, group: birth, verse: "5.18", text: "The nature of the lamp shall be determined from the sign occupied by the Sun: fixed in some place if the sign is fixed, carried by someone in the hand if movable, a swinging lamp if common", definition: "The kind of the Sun's sign."}
+  - {id: illegitimate, group: parents, verse: "5.6", text: "If Jupiter at the time of birth fails to aspect both the ascendant sign and the Moon, or the Moon when in conjunction with the Sun, or if the Moon is in conjunction with the Sun when he is accompanied by a malefic planet, the issue will be an illegitimate child", definition: "Jupiter neither aspects the lagna sign nor the Moon's sign (nor, when the Moon is with the Sun, that sign); or the Moon is with the Sun and Mars or Saturn is in that sign. Cancelled (the translator's notes: Yavaneswara, Garga) if the rising navamsa or the Moon's navamsa is Jupiter's, or the Moon is in a sign of Jupiter or with Jupiter or in his drekkana."}
+  - {id: deserted, group: parents, verse: "5.14", text: "If Mars and Saturn occupy a single sign and the Sun or the Moon occupies the 5th or the 9th house from them, the child will be deserted by its mother; but if the Sun or the Moon is aspected by Jupiter, the child though abandoned by its mother will live long and in comfort", definition: "Mars and Saturn in one sign; the Sun or the Moon in the 5th or the 9th from it; Jupiter aspecting that luminary is the favourable case."}
+  - {id: deserted_dies, group: parents, verse: "5.15", text: "If a malefic planet aspects the Moon in the rising sign, Mars occupying the 7th house, or if Mars and Saturn occupy the 11th house from the Moon when she is in the rising sign, the child deserted by its mother will die; if the Moon is also aspected by a powerful benefic planet the deserted child will fall into the hands of the class of men represented by that planet and will live; if the aspecting malefic is powerful, into the hands of others, and will perish (if Jupiter aspects the Moon none of these evils will befall, the translator's note)", definition: "The Moon in the lagna, with Mars in the 7th and Saturn or Mars aspecting her; or Mars and Saturn in the 11th from the Moon. Jupiter aspecting the Moon cancels it."}

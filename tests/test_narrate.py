@@ -59,6 +59,27 @@ async def test_complete_uses_the_model_and_timeout_it_is_given(on):
     assert "llama3.2:3b" in seen["body"]
 
 
+async def test_incomplete_model_response_is_rejected_and_logged(on, caplog):
+    def handler(request):
+        return httpx.Response(200, json={"response": "A partial answer", "done_reason": "length"})
+
+    assert await narrate.complete("s", "p", _client(handler), max_tokens=123) is None
+    assert "model response exceeded its generation limit" in caplog.text
+
+
+async def test_thinking_is_disabled_for_gemma4(on, monkeypatch):
+    import json
+
+    seen = {}
+
+    def handler(request):
+        seen.update(json.loads(request.read()))
+        return httpx.Response(200, json={"response": "A complete answer."})
+
+    assert await narrate.complete("s", "p", _client(handler), model="gemma4:e4b") == "A complete answer."
+    assert seen["think"] is False
+
+
 def test_rewording_needs_its_own_switch(monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
     monkeypatch.delenv("OLLAMA_NARRATE", raising=False)

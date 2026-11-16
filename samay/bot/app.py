@@ -403,7 +403,7 @@ def answer_markup(
                                             callback_data=f"{QA_PREFIX}{'en' if view == 'full' else 'full'}{tag}:{answer.topic}"))
         elif view == "full":
             row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None or answer.houses is not None or answer.women is not None or answer.death is not None or answer.upagrahas is not None or answer.strength is not None or answer.signs is not None or answer.vargas is not None or answer.malefic is not None or answer.death_bj is not None:
+        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None or answer.houses is not None or answer.women is not None or answer.death is not None or answer.upagrahas is not None or answer.strength is not None or answer.signs is not None or answer.vargas is not None or answer.malefic is not None or answer.death_bj is not None or answer.birth_bj is not None:
             row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
         if any(e.shows_verse for e in answer.entries):
             row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))
@@ -445,10 +445,9 @@ async def _answer_intake(update: Update, ctx, chat_id: int, question: str, about
 
 
 async def _answer_question(update: Update, ctx, chat_id: int, question: str, allow_intake: bool = True) -> None:
-    """Understand the message: whom it is about, and what is asked. Answer from checked entries and that person's chart
-    facts and, when the local model is on, follow with its own labelled answer. A message that describes someone starts
-    the intake instead. Only a topic key is counted when nothing sourced exists; the words are kept in memory for a few
-    turns so follow-ups work, and nowhere else."""
+    """Understand the message and give one source-grounded AI answer when the local model is on.
+    Otherwise show the checked answer. A message describing someone starts intake instead. Only a topic key is
+    counted when nothing sourced exists; question words stay in memory briefly for follow-ups, never on disk."""
     ai = narrate.enabled()
     state = _session(ctx, chat_id)
     people = await _people(ctx, chat_id)
@@ -482,6 +481,8 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
             warning = prompts.SENS_WARN_DEATH_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN_DEATH
         elif route.topic == "chart:afterlife" and level != "child":
             warning = prompts.SENS_WARN_AFTERLIFE
+        elif route.topic == "chart:birth_parents":
+            warning = prompts.SENS_WARN_PARENTS_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN_PARENTS
         else:
             warning = prompts.SENS_WARN_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN
         await _say(update, warning, InlineKeyboardMarkup([[
@@ -492,24 +493,26 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
     answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
     if answer.topic is not None and not answer.topic.startswith(qa.COMPUTED_PREFIXES) and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
-    if ai and answer.topic is None:  # small talk, or nothing in the topics: just the model, labelled as such
-        async with typing(update):
-            reply = await qa.ai_answer(question, answer, history=history)
-        if reply:
-            _remember_turn(ctx, chat_id, None, question, reply)
-            await _say(update, render_ai(reply, qa.is_prediction(answer)), MENU)
-        else:
-            await _say(update, prompts.NO_TOPIC, MENU)
-        return
     sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
-    await _say(update, sourced, answer_markup(answer, pid=pid))
     if ai:
-        # A second message, so the sourced answer is never delayed by the (slower) model.
         async with typing(update):
-            reply = await qa.ai_answer(question, answer, history=history)
+            reply = await qa.ai_answer(question, answer, history=history, source_answer=sourced)
         if reply:
             _remember_turn(ctx, chat_id, answer.topic, question, reply)
-        await _say(update, render_ai(reply, qa.is_prediction(answer)) if reply else prompts.AI_UNAVAILABLE, MENU)
+            source_line = next(
+                (line for line in sourced.splitlines() if line.startswith(("Source:", "Sources:"))), None
+            )
+            note = prompts.MINOR_NOTE if answer.who.minor else None
+            if answer.topic is not None and source_line is None:
+                note = "\n\n".join(part for part in (note, prompts.NO_SOURCE_AI) if part)
+            text = render_ai(reply, qa.is_prediction(answer), source_line, answer.who.heading, note)
+        elif answer.topic is None:
+            text = prompts.NO_TOPIC + "\n\n" + prompts.AI_UNAVAILABLE
+        else:
+            text = sourced + "\n\n" + prompts.AI_UNAVAILABLE
+        await _say(update, text, answer_markup(answer, pid=pid))
+        return
+    await _say(update, sourced, answer_markup(answer, pid=pid))
 
 
 async def _sensitive_button(update: Update, ctx, chat_id: int, choice: str) -> None:

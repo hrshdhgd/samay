@@ -213,17 +213,26 @@ MALEFIC_UNCHECKED = "What Brihat Jataka says of the malefic yogas is waiting for
 MALEFIC_NONE = "None of the afflictions in Brihat Jataka chapter XXIII applies to this chart."
 NEED_BIRTH_FOR_AFTERLIFE = "To read what the old book says of a past and a next life I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
 AFTERLIFE_UNCHECKED = "What Brihat Jataka says of the worlds before and after this life is waiting for a check, so I can't show it yet."
+NEED_BIRTH_FOR_BIRTH = "To read the old book's picture of a birth I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
+BIRTH_UNCHECKED = "What Brihat Jataka says of the circumstances of a birth is waiting for a check, so I can't show it yet."
+BIRTH_NONE = "None of the statements in Brihat Jataka chapter V on this applies to this chart."
+SENS_WARN_PARENTS = (
+    "⚠️ Before I show this\n\nThe next answer gives an old book's rules about a child's parents: whether a child was a parents' own, and a child left by its mother. "
+    "They are old rules, not facts about anyone's family, and they can be upsetting to read. Would you like to see them?"
+)
+SENS_WARN_PARENTS_CHILD = (
+    "⚠️ Before I show this — about {name}, a child\n\nThe old book's rules about a child's parents speak of legitimacy and of a child left by its mother. "
+    "They are not facts about {name}'s family and can be very upsetting. Please only continue if you are sure. Would you like to see them?"
+)
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
 AI_PREDICTION_CAVEAT = (
-    "⚠️ This is a prediction written by an AI language model, not by the old books. It is a guess from the planet positions above, nobody can "
-    "know the future, and it is not advice. Please take it with a big grain of salt."
+    "Traditional Jyotish interpretation, for reflection and fun — not a forecast or guarantee of events."
 )
-AI_CAVEAT = "This is a small AI model's own answer from general knowledge, not from a checked source, and it may be wrong."
+AI_CAVEAT = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
 AI_UNAVAILABLE = (
-    "🤖 The AI helper was too slow this time and did not finish. It runs on a small home server, and everything above "
-    "comes from the books and does not depend on it."
+    "🤖 The local AI helper is unavailable right now; this is Samay's non-AI fallback."
 )
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."

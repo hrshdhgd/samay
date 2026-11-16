@@ -8,13 +8,16 @@ services:
     image: samay:latest
     restart: unless-stopped
     env_file: .env
+    environment:
+      OLLAMA_URL: ${OLLAMA_URL-http://host.docker.internal:11434}
     # Shares a 4-core box with other projects; the bot idles at ~100 MB.
     mem_limit: 512m
     cpus: 1.0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - samay-data:/var/lib/samay
-    # Narration is off unless OLLAMA_URL is set in .env. On the Oracle server the host Ollama is
-    # reached at the docker0 gateway (http://172.17.0.1:11434); there is no Ollama sidecar.
+    # Ollama runs on the host; set OLLAMA_URL in .env to override the host-gateway default.
 
 volumes:
   samay-data:

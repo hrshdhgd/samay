@@ -646,7 +646,7 @@ async def test_strangers_cannot_ask(ctx, store):
     assert store.top_misses() == []
 
 
-# --- "AI says:" answers, separate from the sourced ones ---------------------------------------------
+# --- One source-grounded, plain-language AI answer -------------------------------------------------
 
 from samay import narrate, qa
 
@@ -657,8 +657,10 @@ def ai_on(monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
     cfg = {"sort": "planet:saturn", "ai": "Saturn is linked with discipline and patience in Jyotish.", "calls": []}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
-        cfg["calls"].append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
+        cfg["calls"].append(
+            {"system": system, "prompt": prompt, "model": model, "timeout": timeout, "temperature": temperature}
+        )
         return cfg["sort"] if system == qa.MODEL_SYSTEM else cfg["ai"]
 
     monkeypatch.setattr(narrate, "complete", fake)
@@ -669,41 +671,57 @@ def _texts(msg):
     return [c.args[0] for c in msg.reply_text.await_args_list]
 
 
-async def test_sourced_answer_comes_first_then_the_ai_in_its_own_labelled_message(ctx, ai_on):
+async def test_ai_answer_uses_the_sources_as_context_and_is_the_only_response(ctx, ai_on):
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
-    first, second = _texts(msg)
-    assert "Source: Brihat Jataka 2.1 · checked" in first and "AI says" not in first
-    assert second == f"🤖 AI says: “Saturn is linked with discipline and patience in Jyotish.”\n\n{prompts.AI_CAVEAT}"
+    (only,) = _texts(msg)
+    assert only == (
+        "Saturn is linked with discipline and patience in Jyotish.\n\n"
+        "Source: Brihat Jataka 2.1 · checked\n\n"
+        "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
+    )
     call = next(c for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM)
-    assert "Verified facts:" in call["prompt"] and "sorrow of the cosmic person" in call["prompt"]
+    assert "Verified facts:" in call["prompt"]
+    assert "Checked source Brihat Jataka 2.1" in call["prompt"] and "sorrow of the cosmic person" in call["prompt"]
     assert call["model"] == narrate.AI_MODEL and call["timeout"] == narrate.AI_TIMEOUT_SECONDS
+
+
+async def test_long_ai_answer_is_delivered_complete_with_its_source(ctx, ai_on):
+    ai_on["ai"] = "The text describes a period for reflection. " * 45 + "This is the complete conclusion."
+    update, msg = message(ALLOWED, "What does Shani stand for?")
+    await bot.on_text(update, ctx)
+    (only,) = _texts(msg)
+    assert only.startswith(ai_on["ai"] + "\n\n")
+    assert "Source: Brihat Jataka 2.1 · checked" in only
+    assert only.endswith(prompts.AI_CAVEAT)
 
 
 async def test_the_ai_answers_what_the_sources_cannot(ctx, store, ai_on):
     ai_on["sort"], ai_on["ai"] = "none", "A nakshatra is one of 27 divisions of the Moon's path."
     update, msg = message(ALLOWED, "what is a nakshatra?")
     await bot.on_text(update, ctx)
-    (only,) = _texts(msg)  # nothing to source, so just the model, labelled as the AI's
-    assert only.startswith("🤖 AI says: “A nakshatra is one of 27") and prompts.AI_CAVEAT in only
+    (only,) = _texts(msg)
+    assert only.startswith("A nakshatra is one of 27") and prompts.AI_CAVEAT in only
     assert store.top_misses() == []  # nothing was sorted into a topic, so nothing is counted
 
 
 async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(ctx, store, ai_on, empty_entries):
     ai_on["sort"] = "dasha:venus"
+    ai_on["ai"] = "This is a general explanation."
     update, msg = message(ALLOWED, "what does my venus dasha mean")
     await bot.on_text(update, ctx)
-    first, second = _texts(msg)
-    assert prompts.NO_SOURCE_AI in first and "won't guess" not in first and second.startswith("🤖 AI says")
+    (only,) = _texts(msg)
+    assert only.startswith(prompts.NO_SOURCE_AI + "\n\nThis is a general explanation.")
+    assert only.endswith(prompts.AI_CAVEAT) and "AI says" not in only
     assert store.top_misses() == [("dasha:venus", 1)]
 
 
-async def test_when_the_ai_fails_the_person_is_told_and_keeps_the_sourced_answer(ctx, ai_on):
+async def test_when_the_ai_fails_the_person_gets_one_source_based_fallback(ctx, ai_on):
     ai_on["ai"] = None
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
-    first, second = _texts(msg)
-    assert "Brihat Jataka 2.1" in first and second == prompts.AI_UNAVAILABLE
+    (only,) = _texts(msg)
+    assert "Brihat Jataka 2.1" in only and prompts.AI_UNAVAILABLE in only
 
 
 async def test_without_the_model_there_is_one_message_in_the_original_wording(ctx):
@@ -825,6 +843,7 @@ async def test_a_follow_up_is_routed_with_the_previous_topic_and_the_ai_sees_the
     await bot.on_text(update, ctx)
     clock["t"] += 10
     ai_on["sort"] = "planet:jupiter"
+    ai_on["ai"] = "Jupiter is associated with wisdom."
     update, msg = message(ALLOWED, "and the other big one?")  # no keyword for the code to match
     await bot.on_text(update, ctx)
     assert "Previous topic: planet:saturn" in _router_prompts(ai_on)[1]
@@ -838,14 +857,14 @@ async def test_small_talk_gets_only_the_models_reply_and_is_not_counted_as_a_mis
     update, msg = message(ALLOWED, "hello, how are you?")
     await bot.on_text(update, ctx)
     (only,) = _texts(msg)
-    assert only.startswith("🤖 AI says: “Namaste!") and store.top_misses() == []
+    assert only.startswith("Namaste!") and store.top_misses() == []
 
 
 async def test_small_talk_when_the_model_is_down_gets_the_plain_decline(ctx, ai_on, clock):
     ai_on["sort"], ai_on["ai"] = "none", None
     update, msg = message(ALLOWED, "hello")
     await bot.on_text(update, ctx)
-    assert _texts(msg) == [prompts.NO_TOPIC]
+    assert _texts(msg) == [prompts.NO_TOPIC + "\n\n" + prompts.AI_UNAVAILABLE]
 
 
 async def test_the_conversation_is_remembered_for_a_few_turns_then_forgotten(ctx, ai_on, clock):
@@ -936,15 +955,17 @@ async def test_the_chat_shows_typing_while_the_model_thinks(ctx, ai_on, clock, m
     update.effective_chat = _chat_with_actions()
     real = ai_on["calls"]
 
-    async def slow(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
-        real.append({"system": system, "prompt": prompt, "model": model, "timeout": timeout})
+    async def slow(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
+        real.append({"system": system, "prompt": prompt, "model": model, "timeout": timeout, "temperature": temperature})
         await asyncio.sleep(0.05)
         return "planet:saturn" if system == qa.MODEL_SYSTEM else "A slow answer."
 
     monkeypatch.setattr(narrate, "complete", slow)
     await bot.on_text(update, ctx)
     assert update.effective_chat.send_action.await_count >= 2
-    assert _texts(msg)[-1].startswith("🤖 AI says: “A slow answer.”")
+    assert _texts(msg) == [
+        "A slow answer.\n\nSource: Brihat Jataka 2.1 · checked\n\n" + prompts.AI_CAVEAT
+    ]
 
 
 async def test_no_typing_is_shown_when_the_model_is_off(ctx, clock):
@@ -1019,17 +1040,18 @@ async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on
 
 
 @needs_kernel
-async def test_a_question_that_looks_ahead_gets_a_labelled_ai_prediction_with_a_stronger_disclaimer(ctx, store, ai_on, monkeypatch):
+async def test_a_question_that_looks_ahead_gets_one_reflective_ai_answer(ctx, store, ai_on, monkeypatch):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
     _save_pune(store)
     ai_on["sort"] = "future:week"
     ai_on["ai"] = "This is a guess by an AI: the week may feel busy."
     update, msg = message(ALLOWED, "what will my week be like")
     await bot.on_text(update, ctx)
-    last = _texts(msg)[-1]
-    assert last.startswith("🔮🤖 AI prediction:") and prompts.AI_PREDICTION_CAVEAT in last and "grain of salt" in last
+    (last,) = _texts(msg)
+    assert prompts.NO_SOURCE_AI in last and "This is a guess by an AI:" in last
+    assert prompts.AI_PREDICTION_CAVEAT in last
     system = next(c["system"] for c in ai_on["calls"] if c["system"] != qa.MODEL_SYSTEM)
-    assert system == qa.AI_PREDICT_SYSTEM and "grain of salt" in system and "Never speak of death" in system
+    assert system == qa.AI_PREDICT_SYSTEM and "do not present anything as likely, expected, or a prediction" in system
 
 
 def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reach_the_model():

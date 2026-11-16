@@ -44,6 +44,13 @@ class Livelihood:
     conditions: tuple[tuple[str, str], ...]  # (verse, text): verse 4 for each yoga planet and the benefics rule
     notes: tuple[str, ...]
 
+    def grouped_work(self) -> tuple[tuple[str, tuple[str, ...], str], ...]:
+        """Group identical interpretations while preserving every chart route."""
+        groups: dict[tuple[str, str], list[str]] = {}
+        for verse, route, text in self.work:
+            groups.setdefault((verse, text), []).append(route)
+        return tuple((verse, tuple(routes), text) for (verse, text), routes in groups.items())
+
 
 @lru_cache(maxsize=4)
 def load_rules(path: Path = RULES_PATH) -> LivelihoodRules:

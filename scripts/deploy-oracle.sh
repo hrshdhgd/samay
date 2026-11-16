@@ -7,7 +7,7 @@
 #   scripts/deploy-oracle.sh --go       deploy
 #
 # Settings (environment): SAMAY_DEPLOY_HOST (ssh alias, default "stockbro"), SAMAY_DEPLOY_DIR
-# (default "~/samay"), SAMAY_TELEGRAM_BOT_TOKEN (only for --init-env), SAMAY_ALLOW_DIRTY=1.
+# (default "~/samay"), SAMAY_TELEGRAM_BOT_TOKEN (only for --init-env).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -30,10 +30,14 @@ die() { printf 'STOP: %s\n' "$*" >&2; exit 1; }
 
 # ---- local checks (nothing leaves this machine) ---------------------------------------------------
 say "== local checks"
-[[ -z "$(git status --porcelain --untracked-files=no)" || "${SAMAY_ALLOW_DIRTY:-}" == 1 ]] \
-  || die "uncommitted changes: commit them first so the server runs a known commit (or SAMAY_ALLOW_DIRTY=1)"
-SHA="$(git rev-parse --short HEAD)"
-say "commit to deploy: $SHA"
+BASE_SHA="$(git rev-parse --short HEAD)"
+if [[ -n "$(git status --porcelain --untracked-files=all)" ]]; then
+  SHA="${BASE_SHA}-dirty"
+  say "source: $BASE_SHA plus local working-tree changes (they will be deployed; image stamp: $SHA)"
+else
+  SHA="$BASE_SHA"
+  say "commit to deploy: $SHA"
+fi
 uv run python scripts/build_gazetteer.py --verify >/dev/null || die "data/gazetteer.sqlite does not match data/gazetteer.lock"
 say "place database matches its lock"
 [[ -f data/de440s.bsp ]] && scripts/fetch-ephemeris.sh >/dev/null && say "ephemeris checksum ok"
@@ -80,6 +84,8 @@ if (( INIT )); then
     grep '^ALLOWED_CHAT_IDS=' .env
     printf 'SAMAY_DB_KEY=%s\n' "$(cat "$SERVER_KEY_COPY")"
     printf 'OLLAMA_URL=%s\n' "http://172.17.0.1:11434"   # the host's Ollama, as stockbro uses it
+    printf 'OLLAMA_MODEL=%s\n' "llama3.2:3b"
+    printf 'OLLAMA_QA_MODEL=%s\n' "gemma4:e4b"
   } | ssh "$HOST" "umask 077; cat > $DIR/.env"
   say "created $DIR/.env on the server (mode 600)"
 fi

@@ -57,21 +57,22 @@ created at `data/samay.key`. **Back the key up separately**: without it the data
 `uv run samay backup --out FILE` copies the database; the copy stays encrypted and needs the same key.
 
 ### Questions
-Relatives can type a question or tap **❓ Ask a question**. The reply has up to two parts, always in separate messages:
-1. **The sourced answer**: checked entries from `data/entries/` quoted word for word with their citation, plus
-   facts from the person's own chart (and, with a saved birth, what Brihat Jataka chapter 20 says about each planet).
-   It is sent first.
-2. **"AI says:"** (only when `OLLAMA_URL` is set): the local model's own answer, labelled as such, with a line saying
-   it is not from a checked source and may be wrong. The model is told to avoid predicting events and giving
-   medical, legal or financial advice, and is given the verified facts as context.
+Relatives can type a question or tap **❓ Ask a question**. With Ollama available, Samay gives one answer in plain,
+everyday language. The model receives the checked source text and the person's chart facts as context; Samay appends
+the source citation and a reminder that this is a traditional interpretation, not a guarantee. For questions about
+the future, it describes traditional themes for reflection rather than predicting events. For career readings with
+checked occupational descriptions, it can give clearly labelled modern illustrations; these are not claims from the
+old text or career predictions. If Ollama is unavailable, Samay falls back to the checked, source-based answer.
 
 **Conversation.** With the model on, the bot reads each message with the model, so any wording works (the code does
 not pattern-match questions): it picks a topic, answers a follow-up such as "and Jupiter?" using the previous topic,
-and replies to small talk with just the labelled AI message. Plain answers are short by default (one lead statement,
-your chart facts and one "Source" line) with a **➕ More** button for the rest and **📜 Show Sanskrit** where a verse
-exists. "What is my future?" gets a reading of the period of life you are in: your running dasha and what the checked
-text lists for it, where that planet sits in your chart, and where Jupiter and Saturn are now; the AI adds its own words
-in a separate message. To make follow-ups work, the last 4 turns per chat are kept **in memory only** for 15 minutes
+and replies to small talk directly. Answers retain a **Source** line and a **➕ More** button for the source details,
+with **📜 Show Sanskrit** where a verse exists. "What is my future?" gives the AI the period of life you are in, what
+the checked text says for it, where that planet sits in your chart, and where Jupiter and Saturn are now. To use the
+local models, run Ollama on the host and pull the configured routing and answer models (`ollama pull llama3.2:3b`
+and `ollama pull qwen2.5:14b`); Docker Compose connects to `host.docker.internal:11434` by default. Set
+`OLLAMA_URL`, `OLLAMA_MODEL`, or `OLLAMA_QA_MODEL` in `.env` to override the defaults. To make
+follow-ups work, the last 4 turns per chat are kept **in memory only** for 15 minutes
 (never on disk, never logged, cleared by "Forget me" and by a restart).
 
 **Asking about other people** (children, a spouse, parents). Send one message describing them, in your own words:

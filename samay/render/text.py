@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ..engine import (
+    birth_bj,
     conjunctions,
     death_bj,
     death_timing,
@@ -289,7 +290,7 @@ def _ref(e) -> tuple[int, int, str]:
     return int(c["chapter"]), first, f"{c['chapter']}.{head.replace('-', '–')}{note}"
 
 
-def sources_line(entries, reading=None, full: bool = False, second=(), lordship=()) -> str | None:
+def sources_line(entries, reading=None, full: bool = False, second=(), lordship=(), facts=(), livelihood=None) -> str | None:
     """One line naming every source an answer used, in place of a citation after each entry."""
     groups: dict[str, set[tuple[int, int, str]]] = {}
     editions: dict[str, str] = {}
@@ -307,6 +308,18 @@ def sources_line(entries, reading=None, full: bool = False, second=(), lordship=
     for v in lordship:
         for verse in [*(r[2] for r in v.rows), *(n[0] for n in v.nature), *(n[0] for n in v.troublesome)]:
             groups.setdefault("Phaladeepika", set()).add((20, verse, f"20.{verse}"))
+    if livelihood is not None:
+        verses = {v for v, _, _ in (*livelihood.wealth, *livelihood.work)} | {v for v, _ in livelihood.conditions}
+        if livelihood.work:
+            verses.add("10.1")
+        for verse in verses:
+            chapter, number = verse.split(".", 1)
+            groups.setdefault("Brihat Jataka", set()).add((int(chapter), int(re.match(r"\d+", number).group()), verse))
+    for fact in facts:
+        for text, chapter, verse in re.findall(
+            r"\b(Phaladeepika|Brihat Jataka)\s+(?:chapter\s+)?(\d+)\.(\d+)\b", fact
+        ):
+            groups.setdefault(text, set()).add((int(chapter), int(verse), f"{chapter}.{verse}"))
     if not groups:
         return None
     parts = []
@@ -370,6 +383,8 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return prompts.NEED_BIRTH_FOR_HOUSES
     if answer.topic == "chart:longevity" and not birth_known:
         return prompts.NEED_BIRTH_FOR_LONGEVITY
+    if answer.topic in ("chart:birth", "chart:birth_parents") and not birth_known:
+        return prompts.NEED_BIRTH_FOR_BIRTH
     if answer.topic == "chart:afterlife" and not birth_known:
         return prompts.NEED_BIRTH_FOR_AFTERLIFE
     if view == "sanskrit":
@@ -420,6 +435,10 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
         blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
+    if answer.topic in ("chart:birth", "chart:birth_parents"):
+        blocks.append(render_birth(answer, who))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic == "chart:afterlife":
@@ -489,7 +508,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     if not birth_known:
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
     source = sources_line(shown, answer.reading or (answer.more_readings[0][0] if answer.more_readings else None), full,
-                          answer.second, answer.lordship)
+                          answer.second, answer.lordship, answer.facts, answer.livelihood)
     if source:
         blocks.append(source)
     blocks.append(DISCLAIMER)
@@ -577,11 +596,16 @@ def render_livelihood(lv, who=SELF, full: bool = False) -> str:
     """Brihat Jataka chapter X: where wealth comes from and the kind of work, quoted, with the text's conditions."""
     lines = [f"On {who.your} source of wealth and work (Brihat Jataka chapter 10):"]
     lines += [f"• {w}: “{t}.” [{v}]" if full else f"• {w}: “{t}.”" for v, w, t in lv.wealth]
-    lines += [f"• {w}: “{t}.” [{v}]" if full else f"• {t}." for v, w, t in lv.work]
+    if full:
+        lines += [f"• {w}: “{t}.” [{v}]" for v, w, t in lv.work]
+    elif lv.work:
+        lines.append(
+            "With no classical planet in the 10th from the rising sign or Moon, the text uses the 10th "
+            "from the rising sign, Moon and Sun for its work associations."
+        )
+        lines += [f"• {'; '.join(routes)}: “{t}.”" for _, routes, t in lv.grouped_work()]
     lines += [f"• {t}" for _, t in lv.conditions]
     lines += [n for n in lv.notes if full]
-    verses = sorted({v for v, _, _ in (*lv.wealth, *lv.work)} | {v for v, _ in lv.conditions}, key=lambda x: int(x.split(".")[1].split("–")[0]))
-    lines.append("Source: Brihat Jataka " + ", ".join(verses) + " · checked")
     return "\n".join(lines)
 
 
@@ -851,6 +875,23 @@ def render_death_bj(answer, who=SELF, sections=("cause", "place", "body")) -> st
     return "\n\n".join(blocks)
 
 
+def render_birth(answer, who=SELF) -> str:
+    """Brihat Jataka chapter V for the chart, quoted: the circumstances of the birth, or (the gated topic) a child's parents. Verse numbers are on every line."""
+    parents = answer.topic == "chart:birth_parents"
+    title = f"{'👪' if parents else '🍼'} What Brihat Jataka chapter 5 says of {'the parents in' if parents else 'the birth in'} {who.your} chart"
+    rules = birth_bj.load_rules()
+    if not answer.birth_bj_checked:
+        return f"{title}\n\n{prompts.BIRTH_UNCHECKED}"
+    if answer.birth_bj is None:
+        return f"{title}\n\n{prompts.NEED_BIRTH_FOR_BIRTH}"
+    lines = [f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]" for f in answer.birth_bj]
+    blocks = [title, rules.parents_frame if parents else rules.frame, "\n\n".join(lines) if lines else prompts.BIRTH_NONE]
+    if answer.birth_bj:
+        verses = sorted({f.verse for f in answer.birth_bj}, key=lambda v: int(v.split(".")[1]))
+        blocks.append(f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
+    return "\n\n".join(blocks)
+
+
 def render_health(answer, who=SELF, full: bool = False) -> str:
     """The sources of disease in the chart by Phaladeepika 14.1, what each stands for, where they agree, and the specific combinations."""
     title = f"🩺 What Phaladeepika's disease rules point to in {who.your} chart"
@@ -1115,11 +1156,13 @@ def render_second(v, who=SELF) -> str:
     return "\n".join(lines)
 
 
-def render_ai(reply: str, prediction: bool = False) -> str:
-    """The AI's own answer, labelled so it is never mistaken for a sourced one."""
-    if prediction:
-        return f"🔮🤖 AI prediction: “{reply}”\n\n{prompts.AI_PREDICTION_CAVEAT}"
-    return f"🤖 AI says: “{reply}”\n\n{prompts.AI_CAVEAT}"
+def render_ai(
+    reply: str, prediction: bool = False, source_line: str | None = None, heading: str | None = None,
+    note: str | None = None,
+) -> str:
+    """One direct AI answer, with the checked citation and the appropriate traditional-reading caveat."""
+    caveat = prompts.AI_PREDICTION_CAVEAT if prediction else prompts.AI_CAVEAT
+    return "\n\n".join(part for part in (heading, note, reply, source_line, caveat) if part)
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:

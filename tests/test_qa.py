@@ -54,7 +54,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 83
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 85
 
 
 def _client(reply):
@@ -213,37 +213,114 @@ def test_planet_answer_with_a_birth_adds_the_entries_for_its_house(tmp_path):
 
 def test_the_ai_is_told_the_guardrails():
     for phrase in ("not science", "medical, legal or financial advice",
-                   "never contradict them", "no markdown", "at most 150 words",
-                   "Never state that a specific event will or will not happen", "talk naturally"):
+                   "your factual draft", "no markdown",
+                   "never add astrological meanings from your general knowledge",
+                   "Do not include book or verse citations", "Start with the answer"):
         assert phrase in qa.AI_SYSTEM, phrase
+
+
+def test_prediction_prompt_uses_sources_and_refuses_to_make_event_predictions():
+    assert "source and chart facts as traditional ideas" in qa.AI_PREDICT_SYSTEM
+    assert "do not present anything as likely, expected, or a prediction" in qa.AI_PREDICT_SYSTEM
+    assert "Do not mention death, serious illness or accidents." in qa.AI_PREDICT_SYSTEM
+
+
+def test_current_dasha_prompt_requires_plain_language_without_dropping_source_items():
+    prompt = qa._ai_prompt("What is my current period?", qa.Answer("future:overview", (), ()))
+    assert "translate every listed effect into ordinary words" in prompt
+    assert "Do not copy the source list verbatim" in prompt
+    assert "loss or serious harm involving a spouse or children" in prompt
+    assert "Count the source's semicolon-separated items and include the same number." in prompt
+    assert "translate every sub-chapter effect into ordinary words" in prompt
+    assert "Name weapons separately from enemies, and wounds separately from poison" in prompt
+    assert "without explaining house or sign meanings" in prompt
 
 
 def test_the_ai_prompt_carries_verified_facts_and_a_bounded_question():
     a = qa.answer_topic("planet:moon", None, NOW)
     prompt = qa._ai_prompt("x" * 2000, a)
-    assert prompt.startswith("Verified facts:\n- Varahamihira describes the Moon as the mind")
-    assert prompt.count("x") == qa.MAX_QUESTION_CHARS
+    assert prompt.startswith("Verified facts:\n- Checked source Brihat Jataka 2.1: Varahamihira describes the Moon as the mind")
+    assert "Answer using these checked sources and chart facts as the authority." in prompt
+    assert prompt.endswith(f"Question: {'x' * qa.MAX_QUESTION_CHARS}")
     assert qa._ai_prompt("what is a nakshatra?", qa.Answer(None, (), ())) == "Question: what is a nakshatra?"
 
 
-async def test_a_long_ai_reply_is_cut_at_a_word_with_an_ellipsis(model_on, monkeypatch):
+async def test_a_complete_long_ai_reply_is_not_cut_mid_sentence(model_on, monkeypatch):
+    reply = "The text describes a period of reflection. " * 180 + "The final sentence is complete."
+
     async def long_reply(*args, **kwargs):
-        return "word " * 1000
+        return reply
 
     monkeypatch.setattr(narrate, "complete", long_reply)
-    out = await qa.ai_answer("q", qa.Answer(None, (), ()))
-    assert len(out) <= qa.MAX_AI_CHARS + 1 and out.endswith("word…")
+    assert await qa.ai_answer("q", qa.Answer("future:week", (), ())) == reply
+
+
+def test_the_ai_prompt_includes_the_entire_long_sourced_answer():
+    source = "A checked fact. " * 400 + "The last checked fact."
+    prompt = qa._ai_prompt("How is my week?", qa.Answer("future:week", (), ()), source_answer=source)
+    assert source in prompt
 
 
 async def test_ai_answer_is_none_when_the_model_says_nothing(model_on):
     assert await qa.ai_answer("q", qa.Answer(None, (), ()), _client("")) is None
 
 
-def test_render_ai_labels_the_answer_and_adds_the_caveat():
+async def test_career_modern_examples_are_separate_from_the_sourced_reading(model_on, monkeypatch):
+    from samay.engine.livelihood import Livelihood
+
+    answer = qa.Answer(
+        "life:career", (), (), livelihood=Livelihood(
+            (), (("10.2–3", "Mercury", "Writing and accounting"),), (), ()
+        )
+    )
+    calls = []
+
+    async def complete(system, prompt, *args, **kwargs):
+        calls.append((system, prompt))
+        return "The text associates this with writing and accounting." if len(calls) == 1 else "Technical writing, bookkeeping."
+
+    monkeypatch.setattr(narrate, "complete", complete)
+    source = "Checked source: writing and accounting."
+    reply = await qa.ai_answer("How is my career?", answer, source_answer=source)
+    assert reply == (
+        "The text associates this with writing and accounting.\n\n"
+        "Modern examples (illustrations, not from the old text): Technical writing, bookkeeping."
+    )
+    assert len(calls) == 2
+    assert source in calls[0][1] and source in calls[1][1]
+    assert "Writing and accounting" in calls[1][1]
+    assert calls[0][0] != calls[1][0]
+
+
+async def test_career_does_not_present_partial_ai_answer_if_modern_examples_fail(model_on, monkeypatch):
+    from samay.engine.livelihood import Livelihood
+
+    answer = qa.Answer(
+        "life:career", (), (), livelihood=Livelihood((), (("10.2–3", "Mercury", "Writing"),), (), ())
+    )
+    replies = iter(["The text mentions writing.", None])
+
+    async def complete(*args, **kwargs):
+        return next(replies)
+
+    monkeypatch.setattr(narrate, "complete", complete)
+    assert await qa.ai_answer("How is my career?", answer, source_answer="The text mentions writing.") is None
+
+
+def test_render_ai_is_one_direct_answer_with_source_and_caveat():
     from samay.render.text import render_ai
 
-    out = render_ai("Some words.")
-    assert out.startswith("🤖 AI says: “Some words.”") and out.endswith("may be wrong.")
+    out = render_ai("Some words.", source_line="Source: Phaladeepika 19.21 · checked")
+    assert out == (
+        "Some words.\n\nSource: Phaladeepika 19.21 · checked\n\n"
+        "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
+    )
+
+
+def test_render_ai_keeps_the_person_heading():
+    from samay.render.text import render_ai
+
+    assert render_ai("A reading.", heading="👤 Maya (daughter)").startswith("👤 Maya (daughter)\n\nA reading.")
 
 
 def test_wording_changes_only_when_an_ai_answer_follows(empty_entries):
@@ -343,7 +420,7 @@ async def test_the_router_prompt_lists_the_topics_and_the_previous_one(model_on)
 async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_facts(model_on, monkeypatch):
     captured = {}
 
-    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None):
+    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
         captured["prompt"] = prompt
         return "ok"
 

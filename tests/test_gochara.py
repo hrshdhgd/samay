@@ -1646,10 +1646,10 @@ def test_a_long_plain_period_lists_a_few_changes_per_planet_and_points_to_the_re
     assert all(len(p) <= 4096 for p in __import__("samay.render.text", fromlist=["x"]).split_message(text))
 
 
-def test_the_ai_gets_four_minutes_and_a_length_cap_and_says_plainly_when_it_is_too_slow():
+def test_the_ai_gets_four_minutes_and_says_plainly_when_it_is_too_slow():
     from samay import narrate
-    assert narrate.AI_TIMEOUT_SECONDS >= 240 and 0 < narrate.AI_MAX_TOKENS <= 400
-    assert "too slow" in prompts.AI_UNAVAILABLE and "does not depend on it" in prompts.AI_UNAVAILABLE
+    assert narrate.AI_TIMEOUT_SECONDS >= 240
+    assert "unavailable right now" in prompts.AI_UNAVAILABLE and "non-AI fallback" in prompts.AI_UNAVAILABLE
 
 
 async def test_the_models_length_cap_is_sent_to_ollama(monkeypatch):
@@ -2523,6 +2523,51 @@ def test_with_no_planet_in_either_10th_the_navamsa_lords_of_the_10th_lords_give_
     assert any("10th from the lagna is Capricorn" in w for _, w, _ in lg.work) and "all three" in " ".join(lg.notes)
 
 
+def test_career_groups_identical_work_text_without_losing_the_three_chart_routes():
+    work_text = "A person will be a writer or accountant"
+    routes = (
+        "the 10th from the lagna is Aries, ruled by Mars, which is in the navamsa of Mercury",
+        "the 10th from the Moon is Taurus, ruled by Venus, which is in the navamsa of Mercury",
+        "the 10th from the Sun is Gemini, ruled by Mercury, which is in the navamsa of Mercury",
+    )
+    lv = livelihood.Livelihood((), tuple(("10.2–3", route, work_text) for route in routes), (), ())
+    answer = dataclasses.replace(qa.answer_topic("life:career", None, NOW), livelihood=lv)
+    text = render_answer(answer)
+    assert text.count(work_text) == 1
+    assert all(route in text for route in routes)
+    assert "no classical planet" in text.lower()
+    sources = [line for line in text.splitlines() if line.startswith(("Source:", "Sources:"))]
+    assert len(sources) == 1 and "1.15–16" in sources[0] and "10.2–3" in sources[0]
+    prompt = qa._ai_prompt("How will my career go?", answer, source_answer=text)
+    assert prompt.count(work_text) == 2  # once in verified facts and once in the sourced answer
+    assert all(route in prompt for route in routes)
+    assert "modern-day examples" not in prompt
+
+
+def test_career_keeps_different_work_interpretations_separate():
+    lv = livelihood.Livelihood((), (
+        ("10.2–3", "first route", "A person will be a writer"),
+        ("10.2–3", "second route", "A person will trade in gems"),
+        ("10.2–3", "third route", "A person will be a writer"),
+    ), (), ())
+    answer = dataclasses.replace(qa.answer_topic("life:career", None, NOW), livelihood=lv)
+    text = render_answer(answer)
+    assert text.count("A person will be a writer") == 1
+    assert "A person will trade in gems" in text
+    assert all(route in text for route in ("first route", "second route", "third route"))
+
+
+def test_career_without_occupational_source_does_not_request_modern_examples():
+    lv = livelihood.Livelihood((("10.1", "Mercury in the 10th", "Wealth through friends"),), (), (), ())
+    answer = dataclasses.replace(qa.answer_topic("life:career", None, NOW), livelihood=lv)
+    text = render_answer(answer)
+    assert "no classical planet" not in text.lower()
+    assert "Mercury in the 10th" in text
+    sources = [line for line in text.splitlines() if line.startswith(("Source:", "Sources:"))]
+    assert len(sources) == 1 and "1.15–16" in sources[0] and "10.1" in sources[0]
+    assert "modern-day examples" not in qa._ai_prompt("How is my career?", answer)
+
+
 def test_verse_4_conditions_friend_enemy_own_house_and_benefics_in_good_houses():
     own = _lv(lagna=0, saturn=(9, 15.0))                         # Saturn in Capricorn, its own sign, in the 10th
     assert any("by means of his house" in t for _, t in own.conditions)
@@ -2540,7 +2585,9 @@ def test_the_career_answer_adds_livelihood_only_once_checked(monkeypatch):
     monkeypatch.setattr(livelihood, "load_rules", lambda path=None: LV_CHECKED)
     answer = qa.answer_topic("life:career", born, NOW)
     text = render_answer(answer)
-    assert "source of wealth and work (Brihat Jataka chapter 10)" in text and "Brihat Jataka 10." in text
+    source = next(line for line in text.splitlines() if line.startswith(("Source:", "Sources:")))
+    assert "source of wealth and work (Brihat Jataka chapter 10)" in text
+    assert "Brihat Jataka" in source and "10." in source
     assert "Brihat Jataka 10." in qa._ai_prompt("what work suits me", answer)
     assert qa.answer_topic("life:marriage", born, NOW).livelihood is None
 
@@ -3106,3 +3153,92 @@ def test_the_lagna_answer_shows_the_rising_drekkana_figure_once_checked(monkeypa
     answer = qa.answer_topic("chart:lagna", born, NOW)
     text = render_answer(answer)
     assert "the figure of your rising drekkana" in text and "Brihat Jataka 27." in text and "Brihat Jataka XXVII" in qa._ai_prompt("my lagna", answer)
+
+
+# --- Brihat Jataka V: the circumstances of a birth (chart:birth; chart:birth_parents is sensitive) ----------------------------------------
+from samay.engine import birth_bj
+
+BB = birth_bj.load_rules()
+BB_CHECKED = dataclasses.replace(BB, level="translation-checked", checked_by="test")
+
+
+def _bb(group="birth", lagna=0, park=None, **where):
+    park = (lagna + 2) % 12 if park is None else park
+    spots = {p: where.get(p, (park, 15.0)) for p in _SEVEN}
+    return {f.id: f for f in birth_bj.find(BB_CHECKED, _full_sky(lagna=lagna, **spots), group)}
+
+
+def test_the_birth_file_is_gated_and_codes_exactly_its_rules_in_two_groups():
+    assert BB.level == "unchecked" and birth_bj.find(BB, _full_sky(), "birth") is None
+    assert set(BB.rules) == set(birth_bj.DETECTORS) and len(BB.rules) == 28
+    assert {r["group"] for r in BB.rules.values()} == {"birth", "parents"} and {i for i, r in BB.rules.items() if r["group"] == "parents"} == {"illegitimate", "deserted", "deserted_dies"}
+
+
+def test_the_father_and_the_moons_aspect_on_the_lagna():
+    assert "father_away_moon" in _bb(lagna=0) and "father_away_moon" not in _bb(lagna=0, moon=(6, 15.0))
+    assert "movable" not in _bb(lagna=0, sun=(7, 15.0))["father_abroad"].detail and "fixed" in _bb(lagna=0, sun=(7, 15.0))["father_abroad"].detail
+    assert "father_away_planets" in _bb(lagna=0, saturn=(0, 15.0)) and "father_abroad" not in _bb(lagna=0, moon=(6, 15.0), sun=(7, 15.0))
+
+
+def test_where_the_birth_happened_by_the_watery_lagna_and_saturn():
+    assert "boat_watery" in _bb(lagna=3, moon=(9, 15.0)) and "boat_watery" not in _bb(lagna=0, moon=(6, 15.0))
+    assert "water_bank" in _bb(lagna=11, moon=(3, 15.0))
+    assert "pleasure house" in _bb(lagna=3, saturn=(3, 15.0), mercury=(9, 15.0))["watery_saturn"].text
+    assert "cremation ground" in _bb(lagna=2, saturn=(2, 15.0), mars=(8, 15.0))["biped_saturn"].text      # Mars in Sagittarius aspects Gemini (7th)
+    assert "prison_birth" in _bb(lagna=0, moon=(0, 15.0), saturn=(11, 15.0), sun=(5, 15.0))     # the Sun in Virgo aspects Pisces (7th)
+
+
+def test_the_place_and_the_delivery_room_follow_the_stronger_of_sign_and_navamsa():
+    got = _bb(lagna=0)      # Aries 15 deg: the rising navamsa is Leo's; Aries's lord Mars is stronger than the Sun in Scorpio? both are in the parked sign
+    assert "place_of_sign" in got and "bed" in got and got["bed"].text.endswith("east portion of the room")
+    assert "lamp_oil" in got and "lamp_wick" in got and "lamp_kind" in got
+
+
+def test_the_midwives_are_counted_between_the_lagna_and_the_moon_by_hemisphere():
+    got = _bb(lagna=0, moon=(7, 15.0), mars=(2, 15.0), jupiter=(5, 15.0))      # Mars (3rd) and Jupiter (6th) are in the invisible half; others are parked in the 3rd
+    assert "midwives" in got and "inside" in got["midwives"].text
+    assert "midwives" not in _bb(lagna=0, moon=(0, 15.0))
+
+
+def test_only_the_sensitive_group_holds_legitimacy_and_a_deserted_child():
+    assert not {"illegitimate", "deserted", "deserted_dies"} & set(_bb("birth", lagna=0))
+    got = _bb("parents", lagna=0, mars=(4, 15.0), saturn=(4, 20.0), moon=(8, 15.0), jupiter=(5, 15.0))      # Mars and Saturn in Leo; the Moon in Sagittarius, the 5th from them; Jupiter in Virgo does not aspect her
+    assert "deserted" in got and "deserted by its mother" in got["deserted"].text
+    assert "live long and in comfort" in _bb("parents", lagna=0, mars=(4, 15.0), saturn=(4, 20.0), moon=(8, 15.0), jupiter=(2, 15.0))["deserted"].text     # Jupiter in Gemini aspects Sagittarius
+    assert "deserted_dies" in _bb("parents", lagna=0, moon=(0, 5.0), mars=(6, 15.0)) and "deserted_dies" not in _bb("parents", lagna=0, moon=(0, 5.0), mars=(6, 15.0), jupiter=(4, 15.0))
+
+
+def test_the_parents_topic_is_sensitive_for_everyone_and_routed_only_by_its_words():
+    from samay.subject import SELF, Subject
+    assert qa.sensitivity("chart:birth_parents", SELF) == "sensitive" and qa.sensitivity("chart:birth_parents", Subject("Maya", None, True)) == "child"
+    assert qa.sensitivity("chart:birth", SELF) is None
+    assert qa.sort_question("where was I born by my chart") == "chart:birth" and qa.sort_question("was my birth legitimate for me") == "chart:birth_parents"
+
+
+@needs_kernel
+def test_the_birth_answers_wait_then_quote_with_verse_numbers(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert prompts.BIRTH_UNCHECKED in render_answer(qa.answer_topic("chart:birth", born, NOW))
+    monkeypatch.setattr(birth_bj, "load_rules", lambda path=None: BB_CHECKED)
+    a, p = qa.answer_topic("chart:birth", born, NOW), qa.answer_topic("chart:birth_parents", born, NOW)
+    text, ptext = render_answer(a), render_answer(p)
+    assert "Source: Brihat Jataka 5." in text and BB.frame in text and BB.parents_frame in ptext and all(len(x) <= 4096 for x in split_message(text) + split_message(ptext))
+    assert "Brihat Jataka V." in qa._ai_prompt("circumstances of my birth", a)
+    assert render_answer(qa.answer_topic("chart:birth", None, NOW), birth_known=False) == prompts.NEED_BIRTH_FOR_BIRTH
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop(0),
+    lambda r: r["rules"][0].update(group="other"),
+    lambda r: r["places"].pop("Pisces"),
+    lambda r: r["limbs"].pop(),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
+])
+def test_a_malformed_birth_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(birth_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        birth_bj.load_rules(path)

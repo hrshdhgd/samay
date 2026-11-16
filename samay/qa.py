@@ -18,6 +18,7 @@ from .engine import (
     antardasha,
     ascendants,
     ashtakavarga,
+    birth_bj,
     chandra_yogas,
     conjunctions,
     death_bj,
@@ -89,6 +90,8 @@ MALEFIC_WORDS = ("malefic", "inauspicious", "afflictions", "anishta", "aristha")
 VARGAS_WORDS = ("vargas", "varga", "horas", "hora", "drekkana", "drekkanas", "trimsamsa", "trimsamsas", "dignity", "dignities")
 WOMEN_WORDS = ("woman", "women", "female", "feminine")
 STRENGTH_WORDS = ("strong", "weak", "strength", "houses")
+BIRTH_PHRASES = ("circumstances of my birth", "birth circumstances", "how was i born", "where was i born", "where i was born", "my birth circumstances", "place of my birth")
+PARENTS_WORDS = ("illegitimate", "deserted", "abandoned", "legitimate")
 AFTERLIFE_WORDS = ("afterlife", "rebirth", "reborn", "reincarnation", "moksha", "salvation", "liberation")
 LONGEVITY_WORDS = ("longevity", "lifespan", "die", "death", "dying", "longlived")
 HEALTH_WORDS = ("disease", "diseases", "ailment", "ailments", "sickness", "sick")
@@ -136,7 +139,7 @@ TOPICS = frozenset(
     [f"planet:{p}" for p in GRAHAS] + [f"dasha:{p}" for p in GRAHAS] + [f"house:{n}" for n in range(1, 13)]
     + [f"when:{a}" for a in LIFE_AREAS]
     + ["dasha:current", "concept:kalapurusha", "concept:dasha", "future:overview", *OUTLOOK_TOPICS, "chart:ashtakavarga",
-    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs", "chart:vargas", "chart:malefic", "chart:afterlife"]
+    "chart:moon", "chart:conjunctions", "chart:yogas", "chart:health", "chart:longevity", "chart:houses", "chart:women", "chart:death_timing", "chart:upagrahas", "chart:lagna", "chart:strength", "chart:signs", "chart:vargas", "chart:malefic", "chart:afterlife", "chart:birth", "chart:birth_parents"]
 )
 _WORD = re.compile(r"[a-z]+")
 
@@ -257,6 +260,8 @@ class Answer:
     malefic_checked: bool = False
     death_bj: tuple | None = None  # Brihat Jataka 25: inside chart:longevity (cause, place, body) and chart:afterlife (past, next)
     death_bj_checked: bool = False
+    birth_bj: tuple | None = None  # chart:birth and chart:birth_parents (Brihat Jataka 5)
+    birth_bj_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -305,6 +310,10 @@ def sort_question(text: str) -> str | None:
         return "chart:strength"
     if not planets and {"strength", "houses"} & set(words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:houses"
+    if any(w in PARENTS_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
+        return "chart:birth_parents"
+    if any(p in " ".join(words) for p in BIRTH_PHRASES):
+        return "chart:birth"
     if any(w in AFTERLIFE_WORDS for w in words) or any(f"{a} {b}" in " ".join(words) for a in ("past", "previous", "former", "next", "last") for b in ("life", "lives", "birth", "births")):
         return "chart:afterlife"
     if not planets and (any(w in LONGEVITY_WORDS for w in words) or {"long", "live"} <= set(words)) and any(w in PERSONAL_WORDS for w in words):
@@ -346,6 +355,8 @@ TOPIC_HELP = {
     "chart:moon": "the person's nature, character or personality, from the sign and the nakshatra their Moon is in",
     "when:<area>": "WHEN something may happen in an area of the person's life (when:marriage for 'when will I get married', also career, children, wealth, home, health, travel...): the book's timing conditions over the next years",
     "chart:death_timing": "WHEN the old book links the end of life to a transit or dasha, as stretches of days (the most sensitive topic: the bot asks first; asked as 'when will I die')",
+    "chart:birth": "the circumstances of the person's birth by the old book: who was near, the place, the delivery room (Brihat Jataka V): 'where was I born by my chart'",
+    "chart:birth_parents": "what the old book says of a child's legitimacy and of a child deserted by its mother (Brihat Jataka V; a sensitive topic: the bot asks first)",
     "chart:afterlife": "what the old book says of the world the person came from (past life) and the one they go to after death, and of moksha (Brihat Jataka XXV; a sensitive topic: the bot asks first): 'what was my past life'",
     "chart:malefic": "the old book's list of ill omens in the person's chart: marriage, wife and sons, disease, disability, servitude, imprisonment (Brihat Jataka XXIII; a sensitive topic: the bot asks first): 'what malefic yogas do I have'",
     "chart:vargas": "how the planets stand in their own, friendly and hostile signs, horas, drekkanas, the rising navamsa and trimsamsas (Brihat Jataka XXI): 'what do my vargas say', 'my planets\' dignity'",
@@ -533,7 +544,7 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
                     (asp_rules.aspect_text, asp_rules.degree_text, asp_rules.degree_rising))
 
 
-SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women", "chart:death_timing", "chart:malefic", "chart:afterlife"})
+SENSITIVE_TOPICS = frozenset({"chart:longevity", "chart:women", "chart:death_timing", "chart:malefic", "chart:afterlife", "chart:birth_parents"})
 CHILD_SENSITIVE_TOPICS = SENSITIVE_TOPICS | {"chart:health", "chart:upagrahas"}
 
 
@@ -718,6 +729,10 @@ def answer_topic(
         drules = death_bj.load_rules()
         return Answer(topic, (), (), longevity=found, longevity_checked=lrules.servable, death_bj=_death_bj(drules, birth, ("cause", "place", "body")),
                       death_bj_checked=drules.servable, who=subject)
+    if topic in ("chart:birth", "chart:birth_parents"):
+        br = birth_bj.load_rules()
+        found = birth_bj.find(br, service.natal_report(birth).chart, "birth" if topic == "chart:birth" else "parents") if birth is not None else None
+        return Answer(topic, (), (), birth_bj=found, birth_bj_checked=br.servable, who=subject)
     if topic == "chart:afterlife":
         drules = death_bj.load_rules()
         return Answer(topic, (), (), death_bj=_death_bj(drules, birth, ("past", "next")), death_bj_checked=drules.servable, who=subject)
@@ -768,43 +783,49 @@ def answer_topic(
 
 
 AI_SYSTEM = (
-    "You are samay, a warm, friendly guide to Vedic astrology (Jyotish) in a family chat, and you talk naturally. "
-    "For greetings or small talk reply briefly and kindly, and mention that you can explain planets, houses and "
-    "dashas and read the current period of life. "
-    "Answer in plain English in at most 150 words, as plain text with no markdown. "
-    "Be honest that Jyotish is a traditional belief system and not science. "
-    "If asked about the future, give a warm, thoughtful reading of the themes and tendencies of the current "
-    "period, using the facts supplied, the way a thoughtful astrologer would, and keep it hopeful and grounded. "
-    "Never state that a specific event will or will not happen, never give dates for events, and do not give "
-    "medical, legal or financial advice. "
-    "The facts may be about someone other than the writer, such as their child: refer to that person by name. "
-    "Verified facts may be supplied; never contradict them. Everything else you say is your own general "
-    "knowledge, so if you are unsure, say so."
+    "You are Samay, a thoughtful Jyotish pandit speaking warmly and naturally in a family chat. "
+    "Give one direct answer in plain, everyday English, concise but complete, plain text with no markdown. "
+    "Explain Sanskrit and technical terms briefly. The sourced answer supplied in the prompt is your factual draft: "
+    "simplify it without adding, omitting, changing or extrapolating any astrological claim. Keep every item in a "
+    "list, in order, and do not infer causes, examples or consequences; never add astrological meanings from your "
+    "general knowledge. Treat its chart "
+    "placements as positions only unless the checked source interprets them. Do not calculate or introduce dates "
+    "or periods absent from that draft. Do not claim that anyone has experienced, is experiencing, or will "
+    "experience an event. Do not say that listed events might or may happen; say only that the old text lists or "
+    "describes them. Make clear when a text gives a general traditional list rather than a personal forecast. "
+    "Do not include book or verse citations in your prose; the app adds checked sources. Do not give medical, "
+    "legal or financial advice. Jyotish is a "
+    "traditional belief system, not science. The question may be about someone else: refer to them by name, and "
+    "keep a child's reading gentle and age-appropriate. If there are no verified facts, answer briefly from "
+    "general knowledge and say when you are unsure. Start with the answer, not an AI label or disclaimer."
 )
-# Used instead of AI_SYSTEM when the question looks ahead (a week, a year, "when", a life area). The owner allowed a labelled prediction on
-# 2026-11-13: it may say what it thinks is likely, hedged, and must say it is a guess. It still never speaks of death or serious illness
-# and never gives medical, legal or financial advice; those topics are not sent to the model at all (see the consent gate).
+# Used instead of AI_SYSTEM when the question looks ahead (a week, a year, "when", a life area).
 AI_PREDICT_SYSTEM = (
-    AI_SYSTEM.split("Never state that")[0]
-    + "The reader asked about the future, so give a short prediction: say what you think is likely in the coming period, in hedged words such as "
-      "'likely', 'may' and 'could', using the supplied facts about the planets, and you may name a rough stretch such as 'later in the month'. "
-      "Begin by saying plainly that this is a guess made by an AI language model from the facts given, and that it should be taken with a "
-      "grain of salt. Never speak of death, serious illness or accidents, never give exact dates, and do not give medical, legal or financial "
-      "advice. The facts may be about someone other than the writer, such as their child: refer to that person by name. "
-      "Verified facts are supplied; never contradict them. Everything else is your own general knowledge, so if you are unsure, say so."
+    AI_SYSTEM
+    + " The reader asks about a future period. Describe only source and chart facts as traditional ideas for "
+    "reflection; do not present anything as likely, expected, or a prediction. Never calculate or invent dates. "
+    "Do not mention death, serious illness or accidents."
+)
+AI_CAREER_EXAMPLES_SYSTEM = (
+    "Translate historical occupations into a few specific, closely related present-day examples. "
+    "Respond with only a short comma-separated list, no introduction, markdown or citations. "
+    "Do not repeat the old occupations as examples, invent astrological claims, or make predictions or "
+    "personal career recommendations. These examples are illustrations, not claims from the old text."
 )
 PREDICTIVE_PREFIXES = ("future:", "when:", "life:", "dasha:current")
 MAX_QUESTION_CHARS = 500
-MAX_AI_CHARS = 1200
 
 
 def is_prediction(answer: Answer) -> bool:
-    """True when the AI's reply is a look ahead, so it is labelled a prediction. Sensitive topics never reach the model."""
+    """True when the AI's reply concerns a future period. Sensitive topics never reach the model."""
     return answer.topic is not None and answer.topic.startswith(PREDICTIVE_PREFIXES) and sensitivity(answer.topic, answer.who) is None
 
 
-def _ai_prompt(question: str, answer: Answer, history=()) -> str:
-    verified = [e.english for e in answer.entries] + list(answer.facts) + list(answer.notes)
+def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | None = None) -> str:
+    verified = [
+        f"Checked source {e.citation['text']} {e.citation['chapter']}.{e.citation['verse']}: {e.english}"
+        for e in answer.entries
+    ] + list(answer.facts) + list(answer.notes)
     if answer.reading is not None:
         r = answer.reading
         verified.append(f"Brihat Jataka, chapter 20, on {r.planet.title()} in house {r.house}: "
@@ -825,11 +846,16 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     if answer.health is not None:
         verified += health_facts(answer.health, answer.who)
     if answer.livelihood is not None:
-        verified += [f"Brihat Jataka {v}, {w}: {t}." for v, w, t in (*answer.livelihood.wealth, *answer.livelihood.work)] + [f"Brihat Jataka {v}: {t}." for v, t in answer.livelihood.conditions]
+        verified += [f"Brihat Jataka {v}, {w}: {t}." for v, w, t in answer.livelihood.wealth]
+        verified += [f"Brihat Jataka {v}, {'; '.join(routes)}: {t}."
+                     for v, routes, t in answer.livelihood.grouped_work()]
+        verified += [f"Brihat Jataka {v}: {t}." for v, t in answer.livelihood.conditions]
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:
         verified += [f"Brihat Jataka XVIII, {r.planet.title()} in {SIGNS[r.sign]}: a person born with it is {r.text}." for r in answer.signs]
+    if answer.birth_bj:
+        verified += [f"Brihat Jataka V.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.birth_bj]
     if answer.death_bj:
         verified += [f"Brihat Jataka XXV.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.death_bj]
     if answer.malefic:
@@ -859,31 +885,92 @@ def _ai_prompt(question: str, answer: Answer, history=()) -> str:
     if answer.moon is not None and (answer.moon.checked or answer.moon.yogas_checked):
         verified += moon_facts(answer.moon, answer.who)
     parts = []
+    if verified:
+        parts.append("Verified facts:\n" + "\n".join(f"- {f}" for f in verified))
+        parts.append(
+            "Answer using these checked sources and chart facts as the authority. Explain them in plain language; "
+            "do not contradict them or add unsupported astrological claims."
+        )
+    if source_answer:
+        parts.append(
+            "Sourced answer to rewrite (authoritative factual draft; preserve its facts and limits, but use "
+            "everyday words):\n" + source_answer
+        )
+    if answer.topic is not None:
+        parts.append(f"Selected answer topic: {answer.topic}.")
+        if answer.topic.startswith("life:"):
+            houses, label = LIFE_AREAS[answer.topic.split(":")[1]]
+            which = " and ".join(_ordinal(h) for h in houses)
+            parts.append(f"The question is about {label}, read from the {which} house of the chart.")
+            if answer.topic == "life:career":
+                parts.append(
+                    "Explain the checked career reading conversationally in short paragraphs, not a list. "
+                    "First connect the interpretation to its supplied chart basis. If several chart routes give the same "
+                    "interpretation, say which reference points lead to it and name the planet if supplied. If all "
+                    "three routes name the same planet, say so in one sentence; do not list intermediate signs, "
+                    "rulers or navamsa calculations unless asked. If explaining why the calculation is used, say "
+                    "'no classical planet' rather than 'no planet'. Second, start 'The text associates this with' "
+                    "and explain each historical occupation once. Never say a person 'will', 'may' or 'might' do a "
+                    "job. The book's "
+                    "old occupational examples are traditional associations, not a guaranteed job or career outcome. "
+                    "End: 'This does not predict how the career will unfold.'"
+                )
+        elif answer.topic == "future:overview":
+            parts.append(
+                "For this current dasha answer, use exactly three short paragraphs and no introduction: (1) say "
+                "'The text gives this general list for the [planet] chapter:' and translate every listed effect "
+                "into ordinary words, keeping each item in order. Count the source's semicolon-separated items and "
+                "include the same number. Do not copy the source list verbatim: say 'bad behavior' for 'wicked "
+                "disposition', 'loss or serious harm involving a spouse or children' for 'destruction of wife and "
+                "children', and 'conflict' for 'hostility'. Do not omit any item. Then say this is not a forecast and "
+                "how much applies depends on the planet's strength and placement. (2) Repeat only the chapter "
+                "dates/status and current sub-chapter end date, but translate every sub-chapter effect into ordinary "
+                "words and keep each distinct item in source order. Name weapons separately from enemies, and wounds "
+                "separately from poison when those items are present. Do not list other sub-chapters or calculate "
+                "dates. (3) Repeat the supplied chart placements as positions only, without explaining house or sign "
+                "meanings. Do not say that anything might happen."
+            )
     if not answer.who.is_self:
         relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
         parts.append(f"The question is about {answer.who.name}{relation}.")
         if answer.who.minor:
             parts.append("They are a child. Keep the reading gentle and about learning, character and growth; do not "
                          "mention marriage, wealth or career as expectations.")
-    if verified:
-        parts.append("Verified facts:\n" + "\n".join(f"- {f}" for f in verified))
     if history:
         parts.append("Recent conversation:\n" + "\n".join(f"Person: {q}\nYou: {r}" for q, r in history))
     parts.append(f"Question: {question[:MAX_QUESTION_CHARS]}")
     return "\n\n".join(parts)
 
 
-async def ai_answer(question: str, answer: Answer, client=None, history=()) -> str | None:
-    """The model's own answer to the question, shown apart from the sourced one and labelled as the AI's.
-    It is given the checked entries and chart facts as verified context. None if the model is off or fails."""
+async def ai_answer(
+    question: str, answer: Answer, client=None, history=(), source_answer: str | None = None
+) -> str | None:
+    """A plain-language answer grounded in checked entries and chart facts, or None if the model is off or fails."""
     reply = await narrate.complete(
-        AI_PREDICT_SYSTEM if is_prediction(answer) else AI_SYSTEM, _ai_prompt(question, answer, history), client,
+        AI_PREDICT_SYSTEM if is_prediction(answer) else AI_SYSTEM,
+        _ai_prompt(question, answer, history, source_answer),
+        client,
         model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS, max_tokens=narrate.AI_MAX_TOKENS,
+        temperature=0.0,
     )
     if not reply:
         return None
-    if len(reply) > MAX_AI_CHARS:
-        reply = reply[:MAX_AI_CHARS].rsplit(" ", 1)[0].rstrip() + "…"
+    if answer.topic == "life:career" and answer.livelihood is not None and answer.livelihood.work:
+        occupations = "\n".join(f"- {text}" for _, _, text in answer.livelihood.grouped_work())
+        prompt = (
+            f"Checked historical occupations:\n{occupations}\n\n"
+            f"Full sourced answer for context:\n{source_answer or ''}\n\n"
+            "Give modern examples directly related to these occupations. For example, writing and accounting "
+            "can be illustrated by technical writing and bookkeeping, and gem trading by jewelry retail or "
+            "gemstone appraisal. Use examples only when they relate to the checked occupations."
+        )
+        examples = await narrate.complete(
+            AI_CAREER_EXAMPLES_SYSTEM, prompt, client, model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS,
+            max_tokens=256, temperature=0.0,
+        )
+        if not examples:
+            return None
+        reply += f"\n\nModern examples (illustrations, not from the old text): {examples}"
     return reply
 
 
