@@ -865,7 +865,7 @@ def render_longevity(answer, who=SELF, full: bool = False) -> str:
                       key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
         blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
     else:
-        blocks.append("Source: Phaladeepika 13, Brihat Jataka 7 · checked")
+        blocks.append("Source: Phaladeepika 13" + (", Brihat Jataka 7" if ay is not None else "") + " · checked")
     return "\n\n".join(blocks)
 
 
