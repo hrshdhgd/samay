@@ -3513,3 +3513,12 @@ def test_the_compact_longevity_answer_keeps_the_brihat_jataka_sections_behind_mo
     from samay.bot import app as bot_app
     kb = bot_app.answer_markup(answer)
     assert prompts.BTN_MORE in [b.text for row in kb.inline_keyboard for b in row]
+
+
+@needs_kernel
+def test_the_more_button_shows_on_the_longevity_answer_even_while_the_brihat_jataka_files_are_unchecked(monkeypatch):
+    from samay.bot import app as bot_app
+    monkeypatch.setattr(longevity, "load_rules", lambda path=None: LG_CHECKED)
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    answer = qa.answer_topic("chart:longevity", born, NOW)
+    assert prompts.BTN_MORE in [b.text for row in bot_app.answer_markup(answer).inline_keyboard for b in row]
