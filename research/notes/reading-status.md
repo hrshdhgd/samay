@@ -39,3 +39,13 @@ The owner asked for complete knowledge of both texts. This is the honest state. 
 
 ## Phaladeepika is now read in full (all 28 chapters), 2026-11-13. Brihat Jataka chapters I-VIII, X, XV, XVIII, XXI-XXVIII are still only skimmed.
 Update 2026-11-13: Brihat Jataka X (livelihood), XVIII (planets in signs) and XXI (vargas) and XXII (miscellaneous yogas) are now read in full and built. Still only skimmed: I-VIII, XV, XXIII-XXVIII.
+
+## Brihat Jataka read in full, 2026-11-16
+All 28 chapters are now read. Built from them: V (birth circumstances), VI (balarishta), VII (Ayurdaya), VIII (Kendradi life-periods), IX (ashtakavarga, earlier), X (livelihood), XI-XIV, XV (ascetic yogas), XVI-XX, XXI-XXVII; XXVIII is only a table of contents of the author's other works.
+Read but **not buildable for this bot**, and why:
+- **I and II** (definitions and the nature of the planets): used as the engine's primitives (signs, houses, navamsa, friendships) and already in checked entries (`data/entries/brihat-jataka-ch1-houses.yaml`, `-ch2.yaml`). Nothing further to compute.
+- **III** (animal and vegetable horoscope): about the birth of animals and trees by the Moon's dwadasamsa; not a reading of a person.
+- **IV** (Nisheka, the time of conception): every rule needs a conception chart; the bot has only a birth time. Would need a new input, and the family cannot give it.
+- **XXVI** (lost horoscopes): finds a birth time from the time of a question (Prasna Lagna); a different feature, not a chart reading.
+- **VII, left out:** the animal lifespans (7.5), the translator's list of 28 horoscopes beyond calculation (only stanza 14's is coded). **VIII, left out:** sub-periods (8.3-4), Naisargika periods (8.9), 8.10-11 and 8.20-21.
+- **IX, left out** (from the earlier note): the Sarvashtakavarga life reading and Parasara's 32 longevity methods, which need printed tables.
