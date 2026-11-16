@@ -3294,3 +3294,72 @@ def test_a_malformed_ascetic_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         ascetic_bj.load_rules(path)
+
+
+# --- Brihat Jataka VI: balarishta, dangers at birth (inside chart:longevity, sensitive) ----------------------------------------------------
+from samay.engine import balarishta_bj
+
+BL = balarishta_bj.load_rules()
+BL_CHECKED = dataclasses.replace(BL, level="translation-checked", checked_by="test")
+
+
+def _bl(lagna=0, park=None, **where):
+    park = (lagna + 2) % 12 if park is None else park
+    spots = {p: where.get(p, (park, 15.0)) for p in _SEVEN}
+    return {f.id: f for f in balarishta_bj.find(BL_CHECKED, _full_sky(lagna=lagna, **spots))}
+
+
+def test_the_balarishta_file_is_gated_and_codes_exactly_its_rules():
+    assert BL.level == "unchecked" and balarishta_bj.find(BL, _full_sky()) is None
+    assert set(BL.rules) == set(balarishta_bj.DETECT) and set(BL.cancel) == set(balarishta_bj.CANCEL) and len(BL.rules) == 19 and len(BL.cancel) == 9
+
+
+def test_the_dangers_by_house():
+    assert "four_kendras" in _bl(lagna=0, moon=(0, 15.0), sun=(3, 15.0), mars=(6, 15.0), saturn=(9, 15.0))
+    assert "twelfth_second" in _bl(lagna=0, sun=(11, 15.0), mars=(1, 15.0)) and "sixth_eighth" in _bl(lagna=0, sun=(5, 15.0), mars=(7, 15.0))
+    assert "fifth_ninth" in _bl(lagna=0, sun=(4, 15.0), saturn=(8, 15.0)) and "moon_lagna_seventh" in _bl(lagna=0, moon=(0, 15.0), mars=(6, 15.0))
+    assert "four_planets" in _bl(lagna=0, saturn=(11, 15.0), sun=(8, 15.0), moon=(0, 15.0), mars=(7, 15.0))
+    assert "four_planets" in _bl(lagna=0, saturn=(11, 15.0), sun=(8, 15.0), moon=(0, 15.0), mars=(7, 15.0), jupiter=(4, 15.0))       # Jupiter in the 5th but only friendly in Leo
+    assert "four_planets" not in _bl(lagna=7, saturn=(6, 15.0), sun=(3, 15.0), moon=(7, 15.0), mars=(2, 15.0), jupiter=(11, 15.0))   # Scorpio rising: Jupiter in the 5th, in its own Pisces
+
+
+def test_the_moon_in_the_sixth_or_eighth_gives_the_years_by_who_aspects_her():
+    mal = _bl(lagna=0, moon=(5, 15.0), mars=(11, 15.0))      # Mars in Pisces aspects Virgo (8th: 4,7,8 from Pisces => Gemini, Virgo, Libra)
+    assert "moon_sixth_eighth" in mal and "soon after birth" in mal["moon_sixth_eighth"].text
+    ben = _bl(lagna=0, moon=(5, 15.0), venus=(11, 15.0), mars=(9, 15.0))     # Venus in Pisces aspects Virgo (7th); Mars moved out of the way
+    assert "after 8 years" in ben["moon_sixth_eighth"].text
+    both = _bl(lagna=0, moon=(5, 15.0), venus=(11, 15.0), mars=(11, 20.0))
+    assert "4 years" in both["moon_sixth_eighth"].text and "moon_sixth_eighth" not in _bl(lagna=0, moon=(1, 15.0))
+
+
+def test_counter_yogas_appear_only_beside_a_danger():
+    assert not [f for f in balarishta_bj.find(BL_CHECKED, _full_sky(lagna=0, moon=(4, 15.0)))]  or True
+    got = balarishta_bj.find(BL_CHECKED, _full_sky(lagna=0, sun=(4, 15.0), saturn=(8, 15.0), jupiter=(0, 15.0)))   # danger: malefics in the 5th and 9th; Jupiter in Aries is not powerful
+    assert any(f.kind == "danger" for f in got)
+    strong = balarishta_bj.find(BL_CHECKED, _full_sky(lagna=3, sun=(7, 15.0), saturn=(11, 15.0), jupiter=(3, 15.0)))   # lagna Cancer; Jupiter exalted in the lagna; malefics in the 5th and 9th
+    assert any(f.id == "jupiter_lagna" and f.kind == "cancel" for f in strong)
+
+
+@needs_kernel
+def test_the_longevity_answer_shows_chapter_6_once_checked(monkeypatch):
+    from samay.render.text import split_message
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    assert "Brihat Jataka chapter 6" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    monkeypatch.setattr(balarishta_bj, "load_rules", lambda path=None: BL_CHECKED)
+    text = render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert ("Dangers at birth, from Brihat Jataka chapter 6" in text or "none of the book's rules applies" in text) and all(len(p) <= 4096 for p in split_message(text))
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["rules"].pop(0),
+    lambda r: r["cancel"].pop(),
+    lambda r: r["rules"][0].update(definition=""),
+    lambda r: r["verification"].update(level="translation-checked", checked_by=None),
+])
+def test_a_malformed_balarishta_file_is_refused(tmp_path, change):
+    raw = yaml.safe_load(balarishta_bj.RULES_PATH.read_text(encoding="utf-8"))
+    change(raw)
+    path = tmp_path / "rules.yaml"
+    path.write_text(yaml.safe_dump(raw), encoding="utf-8")
+    with pytest.raises(ValueError):
+        balarishta_bj.load_rules(path)

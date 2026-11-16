@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from ..engine import (
+    balarishta_bj,
     birth_bj,
     conjunctions,
     death_bj,
@@ -434,6 +435,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return "\n\n".join(blocks)
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
+        blocks.append(render_balarishta(answer, who))
         blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
@@ -873,6 +875,25 @@ def render_death_bj(answer, who=SELF, sections=("cause", "place", "body")) -> st
     verses = sorted({f.verse for f in answer.death_bj}, key=lambda v: int(v.split(".")[1]))
     blocks.append(f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
     return "\n\n".join(blocks)
+
+
+def render_balarishta(answer, who=SELF) -> str:
+    """Brihat Jataka chapter VI: dangers to a baby at birth, quoted, then any counter-yogas that also hold. Empty when nothing applies or the file is waiting."""
+    rules = balarishta_bj.load_rules()
+    if not answer.bala_bj_checked:
+        return prompts.LONGEVITY_UNCHECKED + " (Brihat Jataka chapter 6)"
+    if not answer.bala_bj:
+        return "Dangers at birth by Brihat Jataka chapter 6: none of the book's rules applies to this chart."
+    lines = ["Dangers at birth, from Brihat Jataka chapter 6:", rules.frame]
+    for f in answer.bala_bj:
+        if f.kind == "danger":
+            lines.append(f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]")
+    mercy = [f for f in answer.bala_bj if f.kind == "cancel"]
+    if mercy:
+        lines.append("What the commentator says cancels such dangers, and holds here:")
+        lines += [f"• “{f.text[:1].upper() + f.text[1:]}.”" for f in mercy]
+    lines.append("Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in answer.bala_bj if f.verse}, key=lambda v: int(v.split(".")[1]))) + f" ({rules.edition}, pp. {rules.pages}) · checked")
+    return "\n".join(lines)
 
 
 def render_birth(answer, who=SELF) -> str:

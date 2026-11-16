@@ -19,6 +19,7 @@ from .engine import (
     ascendants,
     ascetic_bj,
     ashtakavarga,
+    balarishta_bj,
     birth_bj,
     chandra_yogas,
     conjunctions,
@@ -266,6 +267,8 @@ class Answer:
     death_bj_checked: bool = False
     birth_bj: tuple | None = None  # chart:birth and chart:birth_parents (Brihat Jataka 5)
     birth_bj_checked: bool = False
+    bala_bj: tuple | None = None  # Brihat Jataka 6, inside chart:longevity
+    bala_bj_checked: bool = False
     lordship: tuple[lordship.Verdict, ...] = ()  # Phaladeepika 20: the dasha through the houses its lord rules
 
 
@@ -563,6 +566,10 @@ def sensitivity(topic: str | None, subject: Subject) -> str | None:
     return "sensitive" if topic in SENSITIVE_TOPICS else None
 
 
+def _bala_bj(birth: ResolvedBirth | None) -> tuple | None:
+    return balarishta_bj.find(balarishta_bj.load_rules(), service.natal_report(birth).chart) if birth is not None else None
+
+
 def _death_bj(rules, birth: ResolvedBirth | None, sections: tuple[str, ...]) -> tuple | None:
     """Brihat Jataka XXV for a birth, only the given sections; None without a birth or until the rules are checked."""
     if birth is None or not rules.servable:
@@ -733,7 +740,7 @@ def answer_topic(
         found = longevity.find(lrules, service.natal_report(birth).chart) if birth is not None else None
         drules = death_bj.load_rules()
         return Answer(topic, (), (), longevity=found, longevity_checked=lrules.servable, death_bj=_death_bj(drules, birth, ("cause", "place", "body")),
-                      death_bj_checked=drules.servable, who=subject)
+                      death_bj_checked=drules.servable, bala_bj=_bala_bj(birth), bala_bj_checked=balarishta_bj.load_rules().servable, who=subject)
     if topic in ("chart:birth", "chart:birth_parents"):
         br = birth_bj.load_rules()
         found = birth_bj.find(br, service.natal_report(birth).chart, "birth" if topic == "chart:birth" else "parents") if birth is not None else None
@@ -865,6 +872,8 @@ def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | N
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:
         verified += [f"Brihat Jataka XVIII, {r.planet.title()} in {SIGNS[r.sign]}: a person born with it is {r.text}." for r in answer.signs]
+    if answer.bala_bj:
+        verified += [f"Brihat Jataka VI{'.' + f.verse.split('.')[1] if f.verse else ''} ({f.detail}): {f.text}." for f in answer.bala_bj]
     if answer.birth_bj:
         verified += [f"Brihat Jataka V.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.birth_bj]
     if answer.death_bj:
