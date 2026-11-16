@@ -17,3 +17,4 @@ research/sources/
 data/*.key
 *.key
 .DS_Store
+.vscode/settings.json
