@@ -3083,11 +3083,11 @@ def test_the_afterlife_topic_is_sensitive_and_routed_only_by_its_own_phrases():
 def test_longevity_and_afterlife_answers_show_chapter_25_once_checked(monkeypatch):
     from samay.render.text import split_message
     born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
-    assert "Brihat Jataka chapter 25" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert "Brihat Jataka chapter 25" in render_answer(qa.answer_topic("chart:longevity", born, NOW), "full")
     assert prompts.AFTERLIFE_UNCHECKED in render_answer(qa.answer_topic("chart:afterlife", born, NOW))
     monkeypatch.setattr(death_bj, "load_rules", lambda path=None: DB_CHECKED)
     lon, aft = qa.answer_topic("chart:longevity", born, NOW), qa.answer_topic("chart:afterlife", born, NOW)
-    lt, at = render_answer(lon), render_answer(aft)
+    lt, at = render_answer(lon, "full"), render_answer(aft)
     assert "Cause and manner of death:" in lt and "Place of death" in lt and "What becomes of the body:" in lt and "world the person came from" not in lt
     assert "The world the person came from (25.14):" in at and "Cause and manner" not in at and DB.afterlife_frame in at
     assert "hours" in lt and all(len(p) <= 4096 for p in split_message(lt) + split_message(at))
@@ -3344,9 +3344,9 @@ def test_counter_yogas_appear_only_beside_a_danger():
 def test_the_longevity_answer_shows_chapter_6_once_checked(monkeypatch):
     from samay.render.text import split_message
     born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
-    assert "Brihat Jataka chapter 6" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert "Brihat Jataka chapter 6" in render_answer(qa.answer_topic("chart:longevity", born, NOW), "full")
     monkeypatch.setattr(balarishta_bj, "load_rules", lambda path=None: BL_CHECKED)
-    text = render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    text = render_answer(qa.answer_topic("chart:longevity", born, NOW), "full")
     assert ("Dangers at birth, from Brihat Jataka chapter 6" in text or "none of the book's rules applies" in text) and all(len(p) <= 4096 for p in split_message(text))
 
 
@@ -3412,10 +3412,10 @@ def test_the_beyond_calculation_horoscope_of_stanza_14():
 def test_the_longevity_answer_shows_the_arithmetic_once_checked(monkeypatch):
     from samay.render.text import split_message
     born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
-    assert "Brihat Jataka chapter 7" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert "Brihat Jataka chapter 7" in render_answer(qa.answer_topic("chart:longevity", born, NOW), "full")
     monkeypatch.setattr(ayurdaya_bj, "load_rules", lambda path=None: AY_CHECKED)
     answer = qa.answer_topic("chart:longevity", born, NOW)
-    text = render_answer(answer)
+    text = render_answer(answer, "full")
     assert "Pindayurdaya: about" in text and "Satyacharya's method: about" in text and "first eight years" in text and all(len(p) <= 4096 for p in split_message(text))
     assert "Brihat Jataka VII, Pindayurdaya" in qa._ai_prompt("how long will I live", answer)
 
@@ -3477,10 +3477,10 @@ def test_a_lagna_period_is_named_by_the_rising_drekkana_and_its_lords_results():
 def test_the_longevity_answer_shows_chapter_8_once_checked(monkeypatch):
     from samay.render.text import split_message
     born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
-    assert "Brihat Jataka chapter 8" in render_answer(qa.answer_topic("chart:longevity", born, NOW))
+    assert "Brihat Jataka chapter 8" in render_answer(qa.answer_topic("chart:longevity", born, NOW), "full")
     monkeypatch.setattr(ayurdasa_bj, "load_rules", lambda path=None: AD_CHECKED)
     answer = qa.answer_topic("chart:longevity", born, NOW)
-    text = render_answer(answer)
+    text = render_answer(answer, "full")
     assert "life-periods in its own system" in text and "Source: Brihat Jataka 8.1–19" in text and all(len(p) <= 4096 for p in split_message(text))
     assert "Brihat Jataka VIII" in qa._ai_prompt("my life periods", answer)
 
@@ -3499,3 +3499,17 @@ def test_a_malformed_ayurdasa_file_is_refused(tmp_path, change):
     path.write_text(yaml.safe_dump(raw), encoding="utf-8")
     with pytest.raises(ValueError):
         ayurdasa_bj.load_rules(path)
+
+
+@needs_kernel
+def test_the_compact_longevity_answer_keeps_the_brihat_jataka_sections_behind_more(monkeypatch):
+    for mod, rules in ((death_bj, DB_CHECKED), (balarishta_bj, BL_CHECKED), (ayurdaya_bj, AY_CHECKED), (ayurdasa_bj, AD_CHECKED)):
+        monkeypatch.setattr(mod, "load_rules", lambda path=None, r=rules: r)
+    born = service.resolve_birth(BirthInput("1989-08-14", "12:00", "Mumbai, India"))
+    answer = qa.answer_topic("chart:longevity", born, NOW)
+    compact, full = render_answer(answer), render_answer(answer, "full")
+    assert prompts.LONGEVITY_MORE in compact and "Brihat Jataka chapter" not in compact and "life-periods in its own system" not in compact
+    assert prompts.LONGEVITY_MORE not in full and "life-periods in its own system" in full and "Dangers at birth" in full or "none of the book's rules applies" in full
+    from samay.bot import app as bot_app
+    kb = bot_app.answer_markup(answer)
+    assert prompts.BTN_MORE in [b.text for row in kb.inline_keyboard for b in row]

@@ -437,10 +437,13 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         return "\n\n".join(blocks)
     if answer.topic == "chart:longevity":
         blocks.append(render_longevity(answer, who))
-        blocks.append(render_balarishta(answer, who))
-        blocks.append(render_ayurdaya(answer, who))
-        blocks.append(render_ayurdasa(answer, who))
-        blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
+        if full:
+            blocks.append(render_balarishta(answer, who))
+            blocks.append(render_ayurdaya(answer, who))
+            blocks.append(render_ayurdasa(answer, who))
+            blocks.append(render_death_bj(answer, who, ("cause", "place", "body")))
+        else:
+            blocks.append(prompts.LONGEVITY_MORE)
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic in ("chart:birth", "chart:birth_parents"):

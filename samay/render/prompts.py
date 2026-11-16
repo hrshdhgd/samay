@@ -224,6 +224,7 @@ SENS_WARN_PARENTS_CHILD = (
     "⚠️ Before I show this — about {name}, a child\n\nThe old book's rules about a child's parents speak of legitimacy and of a child left by its mother. "
     "They are not facts about {name}'s family and can be very upsetting. Please only continue if you are sure. Would you like to see them?"
 )
+LONGEVITY_MORE = "Brihat Jataka also has a long section on dangers at birth, the arithmetic of a span of life, its own life-periods, and the cause and place of death. Tap ➕ More to read it."
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
