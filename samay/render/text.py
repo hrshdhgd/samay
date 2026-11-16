@@ -142,7 +142,27 @@ def _footer(report: NatalReport, technical: bool = True) -> list[str]:
     return lines
 
 
+def _plain_chart(report: NatalReport) -> str:
+    """The chat version: where each planet stood at birth in plain words, and the yogas without codes or citations. Houses, degrees and nakshatras stay in the technical view."""
+    c = report.chart
+    rise = sign_index(c.ascendant)
+    lines = [f"Your rising sign (the sign coming up on the eastern horizon at your birth) is {SIGNS[rise]} ({RASHIS[rise]}).", "", "Where the planets stood when you were born:"]
+    for g in GRAHAS:
+        pl = c.planets[g]
+        sign = sign_index(pl.longitude)
+        back = " (moving backwards)" if pl.retrograde and g not in ("rahu", "ketu") else ""
+        lines.append(f"• {g.title()} in {SIGNS[sign]} ({RASHIS[sign]}){back}")
+    if report.yogas:
+        lines += ["", "Special combinations (yogas) in your chart:"]
+        lines += [f"• {r.name}: {r.effect[:1].upper() + r.effect[1:]}" for r in report.yogas]
+        if any(not r.source.get("verified") for r in report.yogas):
+            lines.append(YOGA_SOURCES_PENDING)
+    return "\n".join(lines + _footer(report, False))
+
+
 def render_chart(report: NatalReport, technical: bool = True) -> str:
+    if not technical:
+        return _plain_chart(report)
     c = report.chart
     lagna = sign_index(c.ascendant)
     lines = [f"Lagna: {fmt_longitude(c.ascendant)}", ""]
@@ -219,26 +239,11 @@ def today_facts(report: TodayReport) -> list[str]:
 
 
 def plain_today(report: TodayReport) -> list[str]:
-    """Today's facts in everyday words: where the slow planets are, counted from the birth Moon
-    sign, and which life chapter is running. No meanings, only computed facts."""
-    moon_sign = sign_index(report.natal.chart.planets["moon"].longitude)
-    lines = [
-        (f"Your birth Moon sign is {SIGNS[moon_sign]} ({RASHIS[moon_sign]}). Jyotish counts signs "
-        "from it: that sign is the 1st, the next is the 2nd, and so on."),
-        "",
-    ]
-    for g, house in report.transit_houses:
-        sign = sign_index(report.sky.planets[g].longitude)
-        lines.append(f"{g.title()} is in {SIGNS[sign]} ({RASHIS[sign]}), the {ordinal(house)} sign from your Moon sign.")
-    if report.current_dasha:
-        maha, antar = report.current_dasha
-        lines += [
-            "",
-            (f"You are in your {maha.lord.title()} life chapter (dasha), which lasts {DASHA_YEARS[maha.lord]} "
-            f"years in all and runs until {maha.end:%b %Y}. Inside it you are in the {antar.lord.title()} "
-            f"sub-chapter, until {antar.end:%d %b %Y}."),
-        ]
-    return lines
+    """Today in everyday words for chat: only the life chapter now running. Positions of the slow planets stay in the technical (CLI) view."""
+    if not report.current_dasha:
+        return []
+    maha, antar = report.current_dasha
+    return [f"You are in a {maha.lord.title()} period of life, which runs until {maha.end:%b %Y}. Within it you are in a {antar.lord.title()} phase, until {antar.end:%d %b %Y}."]
 
 
 def render_today(
@@ -253,7 +258,7 @@ def render_today(
     head = f"🌙 Today, {report.now:%A %d %B %Y}"
     if reading is not None:
         return "\n".join([head, reading, *extras, *_footer(report.natal, technical)])
-    lines = [head, *plain_today(report), "", *extras, "", "Technical details", *today_facts(report)]
+    lines = [head, *plain_today(report), *extras]
     return "\n".join([*lines, *_footer(report.natal, technical)])
 
 

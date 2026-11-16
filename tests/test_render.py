@@ -148,19 +148,14 @@ def _today(now=datetime(2026, 11, 9, tzinfo=UTC)):
     return service.today_report(birth, now)
 
 
-def test_chat_today_explains_in_plain_words_then_shows_the_technical_details():
+def test_chat_today_is_short_and_plain_with_no_planet_positions():
     from samay.render.text import render_today
 
     text = render_today(_today(), technical=False, extras=("⚠ Rahu Kaala today: X",))
     lines = text.splitlines()
     assert lines[0] == "🌙 Today, Monday 09 November 2026"
-    assert "Your birth Moon sign is Taurus (Vrishabha)" in text
-    assert "Saturn is in Pisces (Meena), the 11th sign from your Moon sign." in text  # counted from Taurus
-    assert "Jupiter is in Leo (Simha), the 4th sign from your Moon sign." in text
-    assert "You are in your Jupiter life chapter (dasha), which lasts 16 years in all and runs until Feb 2033." in text
-    assert "Inside it you are in the Venus sub-chapter, until 02 Sep 2027." in text
-    assert lines.index("⚠ Rahu Kaala today: X") < lines.index("Technical details")
-    assert "Transiting Saturn is in house 11 from your Moon." in lines[lines.index("Technical details"):]
+    assert "You are in a Jupiter period of life, which runs until Feb 2033. Within it you are in a Venus phase, until 02 Sep 2027." in text
+    assert "⚠ Rahu Kaala today: X" in lines and "Technical details" not in text and "sign from your Moon" not in text and "Transiting" not in text
 
 
 def test_plain_today_has_no_meanings_only_computed_facts():

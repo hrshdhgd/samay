@@ -143,7 +143,7 @@ async def test_full_conversation_saves_birth_and_shows_the_chart(ctx, store):
     assert (saved.date_text, saved.time_text) == ("1952-08-15", "06:30")
     assert store.get_draft(ALLOWED) is None
     texts = [c.args[0] for c in msg.reply_text.await_args_list]
-    assert texts[0] == prompts.SAVED and texts[1].startswith("Lagna:")
+    assert texts[0] == prompts.SAVED and texts[1].startswith("Your rising sign")
     assert "Bombay Time" in texts[1]  # the caution that matters for a 1952 Indian birth
     assert "samay dev" not in texts[1] and "confidence:" not in texts[1] and "Profile:" not in texts[1]
 
@@ -320,7 +320,7 @@ async def test_my_chart_sends_the_south_picture_first_then_the_text(ctx, store):
     photo = msg.reply_photo.await_args
     assert photo.kwargs["photo"][:8] == b"\x89PNG\r\n\x1a\n"
     assert buttons_of(photo.kwargs["reply_markup"]) == buttons_of(bot.chart_markup("south", False))
-    assert last_reply(msg).startswith("Lagna:")  # the text comes as its own message
+    assert last_reply(msg).startswith("Your rising sign")  # the text comes as its own message
 
 
 @needs_kernel
@@ -408,7 +408,7 @@ async def test_today_shows_rahu_kaala_for_the_home_city_or_asks_for_one(ctx, sto
     store.save_home(ALLOWED, "Maplewood", MAPLEWOOD().id)
     update, msg = message(ALLOWED, "/today")
     await bot._command("today")(update, ctx)
-    assert "Rahu Kaala today: 8:" in last_reply(msg) and "Transiting Saturn" in last_reply(msg)
+    assert "Rahu Kaala today: 8:" in last_reply(msg) and "Transiting Saturn" not in last_reply(msg)
 
 
 async def test_brief_without_a_home_city_asks_for_it_first(ctx, store):
@@ -756,7 +756,7 @@ async def test_the_model_does_not_replace_the_plain_today_unless_rewording_is_sw
     update, msg = message(ALLOWED, "/today")
     await bot._command("today")(update, ctx)
     text = last_reply(msg)
-    assert "Your birth Moon sign is" in text and "Technical details" in text
+    assert "period of life" in text and "Technical details" not in text
     assert not any(c["system"] == narrate.SYSTEM for c in ai_on["calls"])
 
 
