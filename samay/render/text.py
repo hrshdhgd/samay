@@ -436,7 +436,7 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic == "chart:longevity":
-        blocks.append(render_longevity(answer, who))
+        blocks.append(render_longevity(answer, who, full))
         if full:
             blocks.append(render_balarishta(answer, who))
             blocks.append(render_ayurdaya(answer, who))
@@ -831,31 +831,41 @@ def render_houses(answer, who=SELF, full: bool = False) -> str:
     return "\n\n".join(blocks)
 
 
-def render_longevity(answer, who=SELF) -> str:
-    """The book's rules on length of life, dangers at birth and the cause of death, as they apply to the chart. Shown only after the
-    reader has been warned and has tapped to see it; never a date, never a window."""
-    title = f"🕯 What Phaladeepika's rules say about length of life in {who.your} chart"
+def render_longevity(answer, who=SELF, full: bool = False) -> str:
+    """How long a life the book's rules point to. Compact: a plain answer first (the book's own arithmetic when available, the pointers, dangers and what wards them off). The
+    framing, the cause and manner of death and the verse numbers come with More. Shown only after the warning and a tap; never a date, never a window."""
+    title = f"🕯 What the old books' rules say about length of life in {who.your} chart"
     rules = longevity.load_rules()
     if not answer.longevity_checked:
         return f"{title}\n\n{prompts.LONGEVITY_UNCHECKED}"
     lg = answer.longevity
     if lg is None:
         return f"{title}\n\n{prompts.NEED_BIRTH_FOR_LONGEVITY}"
-    blocks = [title, lg.caution, "\n".join(f"• {i.text}" for i in lg.framing)]
-    parts = (("Dangers at birth that the chart meets", lg.dangers), ("Pointers to a long, middle or short life", lg.class_signs),
-             ("What the book says wards it off", lg.protections), ("Cause and manner of death, by the 8th and 12th houses", lg.cause))
-    shown = False
+    blocks = [title, lg.caution]
+    if full:
+        blocks.append("\n".join(f"• {i.text}" for i in lg.framing))
+    ay = answer.ayur_bj
+    if ay is not None:
+        lo, hi = sorted(min(m.total, 120.0) for m in ay.methods)
+        blocks.append(f"The book's own arithmetic (Brihat Jataka chapter 7) gives {_ym(lo)} by one method and {_ym(hi)} by the other. The two disagree, and the book says it cannot judge the first eight years.")
+    if lg.class_signs:
+        blocks.append("What points to a long, middle or short life in this chart:\n" + "\n".join(f"• {i.text}" + (f" [{i.verse}]" if full else "") for i in lg.class_signs))
+    else:
+        blocks.append("None of the book's pointers to a long, middle or short life applies clearly to this chart.")
+    parts = [("Dangers at birth that the chart meets", lg.dangers), ("What the book says wards it off", lg.protections)]
+    if full:
+        parts.append(("Cause and manner of death, by the 8th and 12th houses", lg.cause))
     for head, items in parts:
         if items:
-            shown = True
-            blocks.append(head + ":\n" + "\n".join(f"• {i.text} ({i.detail}) [{i.verse}]" for i in items))
+            blocks.append(head + ":\n" + "\n".join(f"• {i.text}" + (f" ({i.detail}) [{i.verse}]" if full else "") for i in items))
     if lg.cancelled:
         blocks.append(lg.cancelled)
-    if not shown:
-        blocks.append(prompts.LONGEVITY_NONE)
-    refs = sorted({i.verse for _, items in parts for i in items} | {i.verse for i in lg.framing},
-                  key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
-    blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
+    if full:
+        refs = sorted({i.verse for _, items in parts for i in items} | {i.verse for i in lg.framing} | {i.verse for i in lg.class_signs},
+                      key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])))
+        blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
+    else:
+        blocks.append("Source: Phaladeepika 13, Brihat Jataka 7 · checked")
     return "\n\n".join(blocks)
 
 
