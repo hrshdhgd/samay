@@ -851,14 +851,14 @@ def render_longevity(answer, who=SELF, full: bool = False) -> str:
     if lg.class_signs:
         blocks.append("What points to a long, middle or short life in this chart:\n" + "\n".join(f"• {i.text}" + (f" [{i.verse}]" if full else "") for i in lg.class_signs))
     else:
-        blocks.append("None of the book's pointers to a long, middle or short life applies clearly to this chart.")
-    parts = [("Dangers at birth that the chart meets", lg.dangers), ("What the book says wards it off", lg.protections)]
+        blocks.append("The old books give no clear answer for this chart: none of their pointers to a long, middle or short life applies clearly, and they say no one can say how long a life will be.")
+    parts = [("Dangers at birth that the chart meets", lg.dangers), ("What the book says wards it off", lg.protections)] if full or who.minor else []
     if full:
         parts.append(("Cause and manner of death, by the 8th and 12th houses", lg.cause))
     for head, items in parts:
         if items:
             blocks.append(head + ":\n" + "\n".join(f"• {i.text}" + (f" ({i.detail}) [{i.verse}]" if full else "") for i in items))
-    if lg.cancelled:
+    if lg.cancelled and (full or who.minor):
         blocks.append(lg.cancelled)
     if full:
         refs = sorted({i.verse for _, items in parts for i in items} | {i.verse for i in lg.framing} | {i.verse for i in lg.class_signs},
