@@ -22,6 +22,21 @@ devotional compilations and must be checked against a text before any entry is w
 | Bharani | Muhurta Chintamani; Brihat Samhita | ugra/krura class; modern sites only so far |
 | Krittika | same classification puts it in the mixed (mishra) group | "avoid both" rests on modern pages and a southern saying; no primary basis found |
 
+## Cross-reference pass (2026-11-21, public-domain route)
+- archive.org `wg1077` (Kern, 1865) is the **Sanskrit edition** with an English introduction, not a
+  translation; chapters are garbled Devanagari OCR. Not usable as a translation. (Kern's translation ran in
+  JRAS 1870-75; not yet located.)
+- Located in the Subrahmanya Sastri translation (Bangalore, 1946-47; CC BY-NC-ND, so locate and paraphrase
+  only), **Brihat Samhita ch. 98, "On the Functions and Properties of the Asterisms", slokas 6-11**:
+  - Bharani is one of five *Ugra* ("dreadful") asterisms (with the three Purvas and Magha), said to suit
+    ruining enemies, destruction, deceit, imprisonment, poisoning, setting fire, striking with weapons.
+  - Krittika, with Visakha, is "tender-sharp" (mixed results).
+  - **The passage does not say to avoid either day for auspicious work.** It classes them by what they
+    suit. The "avoid Bharani and Krittika" guidance is a later muhurta-tradition inference (Yama/Agni
+    deities, verse 4-5 lists Yama for Bharani, Agni for Krittika) and is not in this chapter.
+- Still unverified at `translation-checked` (no public-domain translation in hand), so nothing ships.
+  A second independent text (Muhurta Chintamani, Sanskrit) would still need a Sanskrit reader.
+
 ## Day-selection rule
 Sunrise tithi governs the day (Dharmasindhu, Nirnaya Sindhu; English summary at
 https://www.kamakoti.org/kamakoti/dharmasindhu/bookview.php?chapnum=3). Smarta/Vaishnava difference noted.
