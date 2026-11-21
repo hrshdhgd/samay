@@ -33,7 +33,7 @@ Out of scope: festivals, lunar-month names, personal timing, morning-brief push,
 | Decision | Choice |
 |---|---|
 | Ekadashi day selection | Smarta rule: the tithi prevailing at local sunrise. Stored in `data/profiles/*.yaml`. Vaishnava rules can be added later as a profile option. |
-| Sourcing | Only observances whose explanation can be verified against an openly available text ship. Entries below `translation-checked` are never shown. |
+| Sourcing | Only observances whose explanation was read against an openly available translation ship a "why". Entries below `translation-checked` are never shown. Copyright is not a constraint for checking (private use); verbatim quotes stay public-domain only. |
 | Surface | Natural-language Q&A only; routing through `qa.py`. |
 | Rules storage | Explanations as `data/entries/` YAML; observance detection in the engine. Not `data/rules/` (those are chart conditions). |
 
@@ -105,13 +105,19 @@ Before committing: `uv run ruff check` and `uv run pytest -q`.
 
 ## 9. Risks
 
-- **Sources are thin (survey done: `research/notes/panchang-sources.md`).** No public-domain English
-  translation exists for the Puranic passages, and no Sanskrit reader is available (owner, 2026-11-21).
-  So **v1 ships computed facts only**: tithi (including its name, e.g. Shukla Ekadashi), nakshatra, karana,
-  yoga, times, and `find_next` dates. No observance "why" is shown, and no auspicious or inauspicious label.
-  The entry machinery and verified gate are still built and tested with fixture entries, so a verified entry
-  later lights up its explanation with no code change. Krittika has no primary basis for a care-day label;
-  Sankashti is deferred (weak sourcing, needs moonrise).
+- **Sourcing (survey: `research/notes/panchang-sources.md`).** Owner decision 2026-11-21: any openly
+  available translation may be used to check an entry (private family use, as in `data/entries/README.md`);
+  no Sanskrit reader is available. An entry is `translation-checked` against such a translation, and is
+  paraphrased, never quoted verbatim unless the work is public domain (the repo is public).
+  - Computed facts (tithi name, nakshatra, karana, yoga, times, `find_next`) always ship.
+  - A "why" ships only for observances whose entry was actually read against a located passage. Located so
+    far: Bharani and Krittika (Brihat Samhita ch. 98, slokas 6-11, Sastri translation) and Pradosha
+    (Skanda Purana, Brahma Khanda, vv. 5-14, 74-78, Tagare translation). Ekadashi (Hari Bhakti Vilasa,
+    Padma Purana) and Purnima/Amavasya still need a passage read.
+  - **Bharani and Krittika wording follows the text:** Bharani is classed *ugra* (fierce, suits harsh work),
+    Krittika *mixed*. The text gives no instruction to avoid either; the "avoid" guidance is a later
+    tradition and is shown, if at all, only as a separately labelled traditional saying with its own source.
+  - Sankashti is deferred (weak sourcing, needs moonrise).
 - **Sankashti needs moonrise.** `daylight.py` has no Moon rise function, and the Moon can fail to rise on
   some dates. If this proves hard, Sankashti moves out of v1 and this spec is updated.
 - **Regional disagreement.** Some dates differ by tradition even under the Smarta rule (a tithi split around
