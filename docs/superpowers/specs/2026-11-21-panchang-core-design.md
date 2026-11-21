@@ -105,9 +105,13 @@ Before committing: `uv run ruff check` and `uv run pytest -q`.
 
 ## 9. Risks
 
-- **Sources may be thin.** Ekadashi, Purnima and Amavasya are likely well sourced. Pradosha, Sankashti and the
-  Bharani and Krittika guidance are uncertain. The first plan task is a source survey; the launch set is
-  whatever passes, possibly three or four observances.
+- **Sources are thin (survey done: `research/notes/panchang-sources.md`).** No public-domain English
+  translation exists for the Puranic passages, and no Sanskrit reader is available (owner, 2026-11-21).
+  So **v1 ships computed facts only**: tithi (including its name, e.g. Shukla Ekadashi), nakshatra, karana,
+  yoga, times, and `find_next` dates. No observance "why" is shown, and no auspicious or inauspicious label.
+  The entry machinery and verified gate are still built and tested with fixture entries, so a verified entry
+  later lights up its explanation with no code change. Krittika has no primary basis for a care-day label;
+  Sankashti is deferred (weak sourcing, needs moonrise).
 - **Sankashti needs moonrise.** `daylight.py` has no Moon rise function, and the Moon can fail to rise on
   some dates. If this proves hard, Sankashti moves out of v1 and this spec is updated.
 - **Regional disagreement.** Some dates differ by tradition even under the Smarta rule (a tithi split around
