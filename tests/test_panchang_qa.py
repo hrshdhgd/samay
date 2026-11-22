@@ -108,15 +108,44 @@ def test_an_observance_named_with_a_day_gets_that_days_facts():
 
 
 @pytestmark_engine
-def test_a_next_question_without_a_verified_rule_does_not_name_a_day():
+def test_a_next_question_names_the_day_from_the_shipped_profile():
     reply = pq.answer(pq.sort("when is the next Ekadashi"), PUNE, NOW)
-    assert "not set up" in reply
+    assert "Friday, 04 December 2026" in reply and "not set up" not in reply
+
+
+@pytestmark_engine
+def test_a_next_question_without_a_verified_rule_does_not_name_a_day(tmp_path, monkeypatch):
+    import yaml
+
+    from samay import service
+    from samay.engine import panchang_profile
+    from samay.engine.paths import PROFILES_DIR
+
+    raw = yaml.safe_load((PROFILES_DIR / "panchang-family.yaml").read_text())
+    for spec in raw["observances"].values():
+        spec["verified"] = False
+    (tmp_path / "panchang-family.yaml").write_text(yaml.safe_dump(raw))
+    monkeypatch.setattr(service, "PANCHANG_PROFILES_DIR", tmp_path)
+    panchang_profile.load_panchang_profile.cache_clear()
+    try:
+        reply = pq.answer(pq.sort("when is the next Ekadashi"), PUNE, NOW)
+    finally:
+        panchang_profile.load_panchang_profile.cache_clear()
+    assert "not set up" in reply and "2026" not in reply
 
 
 @pytestmark_engine
 def test_an_about_question_without_a_checked_entry_says_so():
     reply = pq.answer(pq.sort("what is Ekadashi"), PUNE, NOW)
     assert "no checked source" in reply.lower()
+
+
+@pytestmark_engine
+def test_an_about_question_with_a_checked_entry_gives_its_text():
+    from samay.engine import entries
+
+    reply = pq.answer(pq.sort("what is Pradosha"), PUNE, NOW)
+    assert reply == entries.answers_for("observance:pradosha")[0].english
 
 
 @pytestmark_engine

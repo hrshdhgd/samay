@@ -13,17 +13,28 @@ def write(tmp_path, **changes):
     return tmp_path
 
 
-def test_shipped_profile_loads_and_has_no_default_tradition():
+def test_shipped_profile_loads_with_the_smarta_tradition():
     p = load_panchang_profile()
-    assert p.sampradaya is None
+    assert p.sampradaya == "smarta"
     assert set(p.observances) == {"ekadashi", "pradosha", "purnima", "amavasya"}
     assert p.observances["ekadashi"].rules["madhva"].viddha is not None
     assert p.observances["pradosha"].rules["all"].anchor == "sunset"
+    assert p.observances["pradosha"].rules["all"].end_minutes == 144
     assert p.margin_minutes >= 0 and p.sunrise_definition in ("upper_limb", "disc_centre")
 
 
-def test_every_shipped_rule_is_marked_unverified_until_sourced():
-    assert not any(o.verified for o in load_panchang_profile().observances.values())
+def test_every_shipped_rule_is_verified_and_names_its_source():
+    for name, spec in load_panchang_profile().observances.items():
+        assert spec.verified, name
+        assert spec.source.get("text") and spec.source.get("locus"), name
+
+
+def test_a_profile_can_still_be_unverified_and_without_a_tradition(tmp_path):
+    raw = yaml.safe_load((PROFILES_DIR / "panchang-family.yaml").read_text())
+    for spec in raw["observances"].values():
+        spec["verified"] = False
+    p = load_panchang_profile(directory=write(tmp_path, observances=raw["observances"], sampradaya=None))
+    assert p.sampradaya is None and not any(o.verified for o in p.observances.values())
 
 
 @pytest.mark.parametrize("field, value", [("sampradaya", "zoroastrian"), ("ayanamsa", "fagan"),

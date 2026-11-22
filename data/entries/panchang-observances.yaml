@@ -17,3 +17,17 @@
     a nature of both kinds. It is a description of the star's character, not a forecast.
   citation: {text: Brihat Samhita, chapter: 98, verse: "11", edition: "tr. V. Subrahmanya Sastri and M. Ramakrishna Bhat (Bangalore, 1946-47)"}
   verification: {level: unchecked}
+- id: panchang-pradosha-skanda-brahma-6-5
+  topic: observance:pradosha
+  system: any
+  english: >-
+    In the Skanda Purana, the dusk of the thirteenth lunar day (tithi) is called Pradosha. The text names it as the
+    time to worship Shiva: it says the gods gather around him then, and that worship, chanting, offerings into the
+    fire and telling or hearing his stories are what people do at that hour. It treats the time as one of special
+    merit. This describes a tradition of devotion, not a forecast of anything that will happen to you.
+  citation: {text: Skanda Purana (Brahma Khanda, Dharmottara), chapter: 6, verse: "5-8", edition: "tr. G. V. Tagare (Motilal Banarsidass), read on wisdomlib"}
+  verification:
+    level: translation-checked
+    checked_by: "Claude, at the owner's direction (no Sanskrit reader)"
+    checked_on: 2026-11-22
+    against: "tr. G. V. Tagare, Skanda Purana, as published on wisdomlib.org (the English translation itself, not Sanskrit)"

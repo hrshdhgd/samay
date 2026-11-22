@@ -1,22 +1,27 @@
 # Panchang conventions for the family. Every disputed choice lives here, not in code.
-# `sampradaya` has NO default: until it is set (smarta | madhva | vaishnava) the bot gives tithis and nakshatras
-# but names no observance day. Set it after Task 0 identifies the family's printed panchang.
+# `sampradaya` picks which tradition's day is the PRIMARY one (the other tradition's day is always shown as a named
+# alternate). Set to smarta on 2026-11-22 (owner: family calendar unavailable, use credible online sources): this follows
+# the Tulu Panchanga app for Mangaluru/Udupi, which gives the Smarta day with the Madhwa variant noted. Change it to
+# madhva if the family's printed panchang follows the Madhwa (arunodaya) reckoning.
 id: panchang-family
 name: Family panchang conventions
-sampradaya: null
+sampradaya: smarta
 ayanamsa: lahiri_mean
 sunrise_definition: upper_limb      # upper_limb | disc_centre (standard 34' refraction)
-# Measured 2026-11-21 by scripts/measure_margin.py (sunrise definition 2.27 min + 1' elongation 2.23 min + 18" nutation 0.61 min).
-# Do not tune it to make a calendar comparison pass.
+# Measured 2026-11-21 by scripts/measure_margin.py (sunrise definition 2.27 min + 1' elongation 2.23 min + nutation 0.61 min,
+# rounded up). Calculation spread only. Do not tune it to make a calendar comparison pass.
 ambiguity_margin_minutes: 6
+# `verified: true` means the rule was read against the located source below, and what the source does NOT say is stated.
 observances:
   ekadashi:
     label: Ekadashi
-    # Every value below is UNVERIFIED. Smarta: the tithi current at local sunrise governs the day (Dharmasindhu, per the
-    # Kamakoti English summary, ch. 3). Madhva: as Smarta but a day is rejected when Dashami touches the 96 minutes
-    # (4 ghatikas) before sunrise (arunodaya). Task 13 reads the texts and sets verified: true or changes these.
-    verified: false
-    source: {text: "Dharmasindhu; Nirnaya Sindhu", locus: null}
+    # Read 2026-11-22. Dharmasindhu (English summary, Kamakoti, chapter 3, "Tithi Nirnaya") reckons every tithi from
+    # sunrise (a full tithi is one lasting 60 ghatikas after sunrise; vedha is measured from sunrise) and gives Ekadashi
+    # a Dashami vedha of 15 ghatikas. NOT in that summary, taken instead from the Tulu Panchanga app's documented
+    # convention (docs/VERIFY.md rows 12 and 15; 149 dates agree with this engine for 2026-27): the kshaya and vriddhi
+    # tie-breaks, and the Madhva rule that a day is rejected when Dashami touches arunodaya (96 minutes before sunrise).
+    verified: true
+    source: {text: "Dharmasindhu, English summary (Kamakoti); Tulu Panchanga app docs/VERIFY.md", locus: "ch. 3 Tithi Nirnaya; VERIFY rows 12, 15"}
     rules:
       smarta: {tithis: [11, 26], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
       madhva:
@@ -29,21 +34,24 @@ observances:
         viddha: {tithis: [10, 25], anchor: sunrise, start_minutes: -96, end_minutes: 0}
   pradosha:
     label: Pradosha
-    # UNVERIFIED window: dusk on Trayodashi. 72 minutes (3 ghatikas) after sunset is one common reading; some texts
-    # give a longer span. Task 13 fixes it from the Skanda Purana passage (Brahma Khanda vv. 5-14) and a digest.
-    verified: false
-    source: {text: "Skanda Purana, Brahma Khanda", locus: "vv. 5-14"}
+    # Read 2026-11-22. Skanda Purana, Brahma Khanda (Dharmottara), chapter 6, v. 5 (tr. G. V. Tagare, wisdomlib): "the dusk
+    # on the thirteenth lunar day is called Pradosha". Dharmasindhu (Kamakoti summary, ch. 3): the pradosha time is the three
+    # muhurtas (3 x 48 = 144 minutes) following sunset. The Tulu Panchanga app uses sunset + 1/5 of the night (about 137 min).
+    verified: true
+    source: {text: "Skanda Purana, Brahma Khanda; Dharmasindhu English summary (Kamakoti)", locus: "Skanda ch. 6 v. 5; Dharmasindhu ch. 3"}
     rules:
-      all: {tithis: [13, 28], anchor: sunset, start_minutes: 0, end_minutes: 72, on_kshaya: start_day, on_vriddhi: first}
+      all: {tithis: [13, 28], anchor: sunset, start_minutes: 0, end_minutes: 144, on_kshaya: start_day, on_vriddhi: first}
   purnima:
     label: Purnima
-    verified: false
-    source: {text: "Dharmasindhu", locus: null}
+    # Read 2026-11-22: same sunrise reckoning as Ekadashi (Dharmasindhu summary, ch. 3, which gives Purnima a Chaturdashi
+    # vedha of 18 ghatikas, not applied here). Tie-breaks from the Tulu Panchanga app as above.
+    verified: true
+    source: {text: "Dharmasindhu, English summary (Kamakoti); Tulu Panchanga app docs/VERIFY.md", locus: "ch. 3 Tithi Nirnaya"}
     rules:
       all: {tithis: [15], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
   amavasya:
     label: Amavasya
-    verified: false
-    source: {text: "Dharmasindhu", locus: null}
+    verified: true
+    source: {text: "Dharmasindhu, English summary (Kamakoti); Tulu Panchanga app docs/VERIFY.md", locus: "ch. 3 Tithi Nirnaya"}
     rules:
       all: {tithis: [30], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}

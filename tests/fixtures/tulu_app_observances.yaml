@@ -5,8 +5,11 @@ source: Tulu Panchanga app festivals_mangaluru_2026.csv and _2027.csv (downloade
 tradition: smarta
 place: {name: Mangaluru, latitude: 12.9141, longitude: 74.856, tz: Asia/Kolkata}
 known_divergences:
-  - {observance: pradosha, date: 2027-05-04, cause: "window length: the app takes sunset + 1/5 of the night (137 min on this day), the engine's provisional rule 72 min; Trayodashi begins 20:04 on 3 May, 79 min after sunset"}
-  - {observance: pradosha, date: 2027-05-03, cause: "same as above (the app's date)"}
+  # Both days touch the 144-minute window; the engine takes the first (on_vriddhi: first), the app the day with more Trayodashi in its window.
+  - {observance: pradosha, date: 2026-01-15, cause: "Trayodashi (Mangaluru) runs 15 Jan 20:17 to 16 Jan 22:22, sunset 18:23: it touches the 15th's window for 30 of 144 min and covers the 16th's whole window; the engine takes the first touched day (on_vriddhi: first), the app the 16th"}
+  - {observance: pradosha, date: 2026-01-16, cause: "same as 15 Jan (the app's date)"}
+  - {observance: pradosha, date: 2026-02-28, cause: "Trayodashi runs 28 Feb 20:43 to 1 Mar 19:09, sunset 18:39: it touches the 28th's window for 20 of 144 min and the 1st's for 30 min; the engine takes the first touched day, the app the 1st (more overlap, apparently; the app's rule is not documented)"}
+  - {observance: pradosha, date: 2026-03-01, cause: "same as 28 Feb (the app's date)"}
 dates:
   - {observance: pradosha, date: 2026-01-01}
   - {observance: purnima, date: 2026-01-03}

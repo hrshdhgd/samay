@@ -39,34 +39,54 @@ def test_report_has_local_facts_and_the_tulu_date():
     assert (r.tulu.month, r.tulu.day) == ("Jarde", 5)
 
 
-def test_unverified_rules_make_no_day_claim_and_say_so():
+def _edit_rules(profile_dir, *, verified=None, **top):
+    """Edit the temporary copy of the shipped profile: set every observance's verified flag, plus top-level fields."""
+    import yaml
+
+    raw = yaml.safe_load((service.PANCHANG_PROFILES_DIR / "panchang-family.yaml").read_text())
+    if verified is not None:
+        for spec in raw["observances"].values():
+            spec["verified"] = verified
+    profile_dir(observances=raw["observances"], **top)
+
+
+def test_the_shipped_profile_names_days_end_to_end():
+    r = service.panchang_report(PUNE, date(2026, 11, 20))
+    assert not r.claims_withheld and not r.needs_sampradaya
+    (o,) = r.observances  # Ekadashi only: no Pradosha, Purnima or Amavasya on this day
+    assert o.name == "ekadashi" and o.primary == date(2026, 11, 20) and o.kind == "kshaya"
+    assert (date(2026, 11, 21), "kshaya and madhva convention") in o.alternates
+    assert o.explanation is None  # no checked Ekadashi entry
+    # The 21st is only an alternate of the 20th's Ekadashi, never a primary day of its own.
+    assert all(x.primary != date(2026, 11, 21) for x in service.panchang_report(PUNE, date(2026, 11, 21)).observances)
+
+
+def test_the_shipped_pradosha_window_is_the_one_the_profile_states():
+    rule = panchang_profile.load_panchang_profile().observances["pradosha"].rules["all"]
+    assert (rule.anchor, rule.start_minutes, rule.end_minutes) == ("sunset", 0, 144)
+
+
+def test_unverified_rules_make_no_day_claim_and_say_so(profile_dir):
+    _edit_rules(profile_dir, verified=False)
     r = service.panchang_report(PUNE, date(2026, 11, 20))
     assert r.observances == () and r.claims_withheld
 
 
 def test_a_verified_rule_with_no_tradition_asks_for_one(profile_dir):
-    import yaml
-
-    raw = yaml.safe_load((service.PANCHANG_PROFILES_DIR / "panchang-family.yaml").read_text())
-    raw["observances"]["ekadashi"]["verified"] = True
-    profile_dir(observances=raw["observances"])
+    _edit_rules(profile_dir, verified=True, sampradaya=None)
     r = service.panchang_report(PUNE, date(2026, 11, 20))
     assert r.needs_sampradaya and r.observances == ()
 
 
 def test_a_verified_rule_and_a_set_tradition_name_the_day_with_its_alternate(profile_dir):
-    import yaml
-
-    raw = yaml.safe_load((service.PANCHANG_PROFILES_DIR / "panchang-family.yaml").read_text())
-    raw["observances"]["ekadashi"]["verified"] = True
-    profile_dir(observances=raw["observances"], sampradaya="smarta")
+    _edit_rules(profile_dir, verified=True, sampradaya="smarta")
     r = service.panchang_report(PUNE, date(2026, 11, 20))
     (o,) = [x for x in r.observances if x.name == "ekadashi"]
     assert o.primary == date(2026, 11, 20) and o.kind == "kshaya"
     # The 21st is both the kshaya alternate and the Madhva day: shown once, with both reasons.
     assert (date(2026, 11, 21), "kshaya and madhva convention") in o.alternates
     assert len({d for d, _ in o.alternates}) == len(o.alternates)
-    assert o.explanation is None  # no checked explanation exists yet
+    assert o.explanation is None  # no checked Ekadashi entry exists
 
 
 def test_an_alternate_day_named_for_several_reasons_is_listed_once():
@@ -81,9 +101,29 @@ def test_an_alternate_day_named_for_several_reasons_is_listed_once():
     assert day.alternates == ((first, "kshaya and madhva convention"), (second, "calculation"))
 
 
-def test_next_observance_reports_why_it_cannot_name_a_day():
+def test_next_observance_reports_why_it_cannot_name_a_day(profile_dir):
+    _edit_rules(profile_dir, verified=False)
     n = service.next_observance_report(PUNE, "ekadashi", date(2026, 11, 6))
     assert n.found is None and not n.claim_available
+    _edit_rules(profile_dir, verified=True, sampradaya=None)
+    n = service.next_observance_report(PUNE, "ekadashi", date(2026, 11, 6))
+    assert n.found is None and n.needs_sampradaya
+
+
+def test_next_observance_names_the_day_from_the_shipped_profile():
+    n = service.next_observance_report(PUNE, "ekadashi", date(2026, 11, 6))
+    assert n.claim_available and n.found.primary == date(2026, 11, 20) and n.found.explanation is None
+    p = service.next_observance_report(PUNE, "pradosha", date(2026, 11, 6))
+    assert p.found.primary == date(2026, 11, 6)
+    (checked,) = entries.answers_for("observance:pradosha")
+    assert p.found.explanation == checked.english
+
+
+def test_shipped_pradosha_entry_is_servable_and_bharani_is_not():
+    (e,) = entries.answers_for("observance:pradosha")
+    assert e.servable and e.id == "panchang-pradosha-skanda-brahma-6-5"
+    assert not any(w in e.english.lower() for w in ("avoid", "inauspicious", "good fortune", "will bring"))
+    assert service.nakshatra_explanation("bharani") == []
 
 
 def test_reference_place_comes_from_the_environment(monkeypatch):

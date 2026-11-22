@@ -2,11 +2,14 @@ from samay import service
 from samay.engine import entries
 
 
-def test_shipped_panchang_entries_load_and_are_hidden_until_checked():
-    found = [e for e in entries.load_entries() if e.id.startswith("panchang-")]
-    assert {e.topic for e in found} == {"nakshatra:bharani", "nakshatra:krittika"}
-    assert all(e.citation["text"] == "Brihat Samhita" and e.citation["chapter"] == 98 for e in found)
-    assert all(not e.servable for e in found)  # unchecked until Task 13
+def test_shipped_panchang_entries_load_and_only_checked_ones_are_servable():
+    found = {e.id: e for e in entries.load_entries() if e.id.startswith("panchang-")}
+    assert {e.topic for e in found.values()} == {"nakshatra:bharani", "nakshatra:krittika", "observance:pradosha"}
+    nakshatra = [e for e in found.values() if e.topic.startswith("nakshatra:")]
+    assert all(e.citation["text"] == "Brihat Samhita" and e.citation["chapter"] == 98 for e in nakshatra)
+    assert all(not e.servable for e in nakshatra)  # still unchecked: hidden
+    assert found["panchang-pradosha-skanda-brahma-6-5"].servable  # translation-checked
+    assert {e.id for e in found.values() if e.servable} == {"panchang-pradosha-skanda-brahma-6-5"}
     assert service.nakshatra_explanation("bharani") == []
 
 
