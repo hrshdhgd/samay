@@ -40,3 +40,7 @@ class GazetteerMissing(SamayError):
 
 class TooManyPeople(SamayError):
     pass
+
+
+class SampradayaNotSet(SamayError):
+    """The family's tradition is not chosen, so no observance day can be named."""
