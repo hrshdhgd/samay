@@ -13,14 +13,14 @@ DASHA_WORD = re.compile(r"\b(maha|antar)?dasha\b", re.IGNORECASE)  # a word, so 
 
 
 class El:
-    def __init__(self, name, end):
-        self.name, self.end = name, end
+    def __init__(self, name, end, number=1):
+        self.name, self.end, self.number = name, end, number
 
 
 class Facts:
     sunrise = datetime(2026, 11, 21, 6, 44, tzinfo=IST)
     sunset = datetime(2026, 11, 21, 17, 56, tzinfo=IST)
-    tithi = El("Shukla Dwadashi", datetime(2026, 11, 21, 23, 27, tzinfo=UTC))  # 04:57 on 22 Nov in Pune
+    tithi = El("Shukla Dwadashi", datetime(2026, 11, 21, 23, 27, tzinfo=UTC), 12)  # 04:57 on 22 Nov in Pune
     nakshatra = El("Uttara Bhadrapada", datetime(2026, 11, 21, 1, 20, tzinfo=UTC))  # 06:50 the same day
     karana = El("Bava", datetime(2026, 11, 21, 12, 20, tzinfo=UTC))
     yoga = El("Siddhi", datetime(2026, 11, 21, 21, 0, tzinfo=UTC))
@@ -55,7 +55,7 @@ def test_day_answer_uses_plain_words_and_local_times():
 
 def test_clock_times_are_the_places_own_time():
     text = words.render_day(report(tz="Europe/London"), date(2026, 11, 21))
-    assert "Shukla Dwadashi, until 23:27." in text and "Uttara Bhadrapada, until 01:20." in text
+    assert "Shukla Dwadashi, until 23:27, then Shukla Trayodashi from 23:27." in text and "Uttara Bhadrapada, until 01:20." in text
 
 
 def test_unverified_rules_say_plainly_that_no_observance_day_is_named():
@@ -176,3 +176,18 @@ def test_a_nakshatra_note_does_not_hide_that_observance_days_are_withheld():
 
 def test_a_dated_observance_does_not_add_the_withheld_line():
     assert words.NO_CLAIM not in words.render_day(report(observances=(ekadashi(),)), date(2026, 11, 20))
+
+
+def test_a_tithi_that_ends_the_same_day_says_which_one_follows():
+    import datetime as dt
+
+    from samay import service
+    from samay.engine.geo import Place
+
+    # Pune, 20 Nov 2026: Dashami at sunrise, Ekadashi from 07:16.
+    place = Place("pune", "Pune", "IN", "Maharashtra", None, 18.5196, 73.8553, "Asia/Kolkata", 3124458)
+    text = words.render_day(service.panchang_report(place, dt.date(2026, 11, 20)), dt.date(2026, 11, 20))
+    assert "Shukla Dashami, until 07:16, then Shukla Ekadashi from 07:16." in text
+    # 21 Nov: Dwadashi runs past midnight, so nothing is added.
+    later = words.render_day(service.panchang_report(place, dt.date(2026, 11, 21)), dt.date(2026, 11, 21))
+    assert "then" not in later.splitlines()[1]

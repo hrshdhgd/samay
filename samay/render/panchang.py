@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from ..engine.panchang import tithi_name
 from ..models import NextObservanceReport, ObservanceDay, PanchangReport
 
 NOTE_LOCAL = "A local panchang may differ, because traditions count this day differently."
@@ -38,6 +39,15 @@ def _until(element, tz: str, day: date) -> str:
     return f"until {_clock(element.end, tz, day)}"
 
 
+def _then(tithi, tz: str, day: date) -> str:
+    """", then <next tithi> from HH:MM" when the next tithi begins later on the same local day, else nothing. It
+    explains a day such as Dashami at sunrise but Ekadashi by the afternoon."""
+    end = tithi.end.astimezone(ZoneInfo(tz))
+    if end.date() != day:
+        return ""
+    return f", then {tithi_name(tithi.number % 30 + 1)} from {end:%H:%M}"
+
+
 def _observance_lines(o: ObservanceDay, day: date | None = None) -> list[str]:
     """`day` is the day being described (None for "when is the next one"): on it the observance is kept by this
     calendar, by some calendars only, or not at all."""
@@ -66,7 +76,7 @@ def render_day(report: PanchangReport, day: date) -> str:
     if report.cutoff in CUTOFF_WORDS:
         rule += f": {CUTOFF_WORDS[report.cutoff]}"
     lines = [f"{_day(day)} in {report.place_label}",
-             f"Tithi (the Moon's lunar day): {f.tithi.name}, {_until(f.tithi, tz, day)}.",
+             f"Tithi (the Moon's lunar day): {f.tithi.name}, {_until(f.tithi, tz, day)}{_then(f.tithi, tz, day)}.",
              f"Nakshatra (the Moon's star): {f.nakshatra.name}, {_until(f.nakshatra, tz, day)}.",
              f"Karana (half of the lunar day): {f.karana.name}. Yoga (the Sun and Moon taken together): {f.yoga.name}.",
              f"Sunrise {_clock(f.sunrise, tz)}, sunset {_clock(f.sunset, tz)}.",
