@@ -155,7 +155,7 @@ def test_day_answer_from_a_real_report():
     text = words.render_day(service.panchang_report(pune, date(2026, 11, 21)), date(2026, 11, 21))
     assert "Tithi (the Moon's lunar day): Shukla Dwadashi, until 04:57 on 22 Nov." in text
     assert "Nakshatra (the Moon's star): Uttara Bhadrapada, until 06:50." in text
-    assert "Sunrise 06:44, sunset 17:56." in text and "Tulu date: Jaarde 5" in text
+    assert "Sunrise 06:45, sunset 17:55." in text and "Tulu date: Jaarde 5" in text
     before = words.render_day(service.panchang_report(pune, date(2026, 11, 20)), date(2026, 11, 20))
     assert "Shukla Dashami" in before and not DASHA_WORD.search(before) and "Rahu" not in before
 

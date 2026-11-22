@@ -34,7 +34,9 @@ def test_engine_agrees_with_the_tulu_panchanga_app_or_every_difference_is_explai
     problems, occurred = [], set()
     for year in sorted({d.year for _, d in theirs}):
         for name, rule in RULES.items():
-            found = ob.observances_between(rule, site, date(year, 1, 1), date(year, 12, 31), margin_minutes=6)
+            profile = load_panchang_profile()
+            found = ob.observances_between(rule, site, date(year, 1, 1), date(year, 12, 31), profile.ayanamsa,
+                                           profile.margin_minutes, profile.sunrise_definition)
             ours = {(name, o.primary) for o in found if o.primary and o.primary.year == year}
             listed = {(n, d) for n, d in theirs if n == name and d.year == year}
             differing = ours ^ listed

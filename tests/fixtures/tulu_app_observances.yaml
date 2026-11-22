@@ -5,6 +5,11 @@ source: Tulu Panchanga app festivals_mangaluru_2026.csv and _2027.csv (downloade
 tradition: smarta
 place: {name: Mangaluru, latitude: 12.9141, longitude: 74.856, tz: Asia/Kolkata}
 known_divergences:
+  # The shipped profile takes sunrise at the Sun's centre (06:32:52 at Mangaluru on 21 Nov 2026); the app uses the upper limb
+  # (06:31:42). The Ekadashi tithi ends at 06:32:01, between the two. The family's printed calendar says 20 Nov, so the
+  # profile follows it and the app is the one that differs.
+  - {observance: ekadashi, date: 2026-11-20, cause: "family calendar and disc-centre sunrise give 20 Nov; the app (upper-limb sunrise) gives 21 Nov: Ekadashi ends 06:32:01, between the two sunrises"}
+  - {observance: ekadashi, date: 2026-11-21, cause: "the app's date; see 20 Nov"}
   # Both days touch the 144-minute window; the engine takes the first (on_vriddhi: first), the app the day with more Trayodashi in its window.
   - {observance: pradosha, date: 2026-01-15, cause: "Trayodashi (Mangaluru) runs 15 Jan 20:17 to 16 Jan 22:22, sunset 18:23: it touches the 15th's window for 30 of 144 min and covers the 16th's whole window; the engine takes the first touched day (on_vriddhi: first), the app the 16th"}
   - {observance: pradosha, date: 2026-01-16, cause: "same as 15 Jan (the app's date)"}

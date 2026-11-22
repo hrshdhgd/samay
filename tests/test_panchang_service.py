@@ -35,7 +35,7 @@ def profile_dir(tmp_path, monkeypatch):
 
 def test_report_has_local_facts_and_the_tulu_date():
     r = service.panchang_report(PUNE, date(2026, 11, 21))
-    assert r.facts.tithi.name == "Shukla Dwadashi" and r.facts.sunrise.strftime("%H:%M") == "06:44"
+    assert r.facts.tithi.name == "Shukla Dwadashi" and r.facts.sunrise.strftime("%H:%M") == "06:45"
     assert (r.tulu.month, r.tulu.day) == ("Jaarde", 5)
 
 

@@ -7,7 +7,7 @@ id: panchang-family
 name: Family panchang conventions
 sampradaya: smarta
 ayanamsa: lahiri_mean
-sunrise_definition: upper_limb      # upper_limb | disc_centre (standard 34' refraction)
+sunrise_definition: disc_centre   # upper_limb | disc_centre. Set 2026-11-22 to match the family calendar (Ekadashi 20 Nov 2026 at Mangaluru: tithi ends 06:32:01, centre sunrise 06:32:52, upper-limb 06:31:42). One date only; revisit when the other Ekadashi dates arrive.
 # Measured 2026-11-21 by scripts/measure_margin.py (sunrise definition 2.27 min + 1' elongation 2.23 min + nutation 0.61 min,
 # rounded up). Calculation spread only. Do not tune it to make a calendar comparison pass.
 ambiguity_margin_minutes: 6

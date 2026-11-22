@@ -51,3 +51,11 @@ The one difference, Pradosha 3 vs 4 May 2027, is the window: the app uses sunset
 the engine's placeholder is 72 min. The app's other definitions match ours: arunodaya = two night-muhurtas (96 min)
 before sunrise; Ekadashi Smarta at sunrise, Madhwa variant when Dashami touches arunodaya. Caveat: the app is a
 computation, not a printed almanac. Open: the Pradosha window should be a fraction of the night, not fixed minutes.
+
+## Sunrise definition follows the family calendar (2026-11-22)
+Family Bunts calendar (owner): Ekadashi 20 Nov 2026. At Mangaluru the Ekadashi tithi ends 06:32:01 on 21 Nov; sunrise that
+day is 06:31:42 at the Sun's upper limb and 06:32:52 at its centre. Upper-limb sunrise (the Tulu Panchanga app's choice) gives
+21 Nov; disc-centre gives 20 Nov, matching the family. Profile switched to disc_centre. Everything else the family gave
+(Bharani 23 Nov, Krittika 24 Nov, Sankashti 27 Nov) matches either way. One date decides this; revisit when the rest of the
+year's Ekadashi dates arrive. Known side effect: the Tulu date still uses the default upper-limb sunrise only in its
+aparahna cutoff (the shipped cutoff is sunset, which does not use it).
