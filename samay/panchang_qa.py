@@ -22,6 +22,9 @@ OBSERVANCES = {
 }
 LABELS = {"ekadashi": "Ekadashi", "pradosha": "Pradosha", "purnima": "Purnima", "amavasya": "Amavasya"}
 DAY_WORDS = ("tithi", "panchang", "panchanga", "panchangam")
+# A day only when one is named ("nakshatra tomorrow"); alone ("what is a nakshatra") qa.py answers from its sources.
+# Not "yoga": too often the exercise.
+TIMED_DAY_WORDS = ("nakshatra", "nakshatras", "karana")
 SPECIAL_WORDS = ("special", "auspicious", "inauspicious", "festival", "fasting", "vrat", "vratam")
 NEXT_WORDS = ("when", "next", "upcoming")
 ABOUT_WORDS = ("what", "why", "mean", "meaning", "important", "importance", "significance", "about", "explain")
@@ -105,7 +108,7 @@ def sort(text: str) -> Asked | None:
         if any(w in ABOUT_WORDS for w in found):
             return Asked("about", observance, when)
         return Asked("next", observance, when)
-    if any(w in DAY_WORDS for w in found) or (timed and any(w in SPECIAL_WORDS for w in found)):
+    if any(w in DAY_WORDS for w in found) or (timed and any(w in SPECIAL_WORDS or w in TIMED_DAY_WORDS for w in found)):
         return Asked("day", None, when)
     return None
 

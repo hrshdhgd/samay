@@ -29,6 +29,10 @@ NOW = datetime(2026, 11, 21, 4, 0, tzinfo=UTC)
     ("when is the next full moon", "next", "purnima"),  # two words joined make a compact alias
     ("next new moon", "next", "amavasya"),
     ("tell me about pradosha", "about", "pradosha"),
+    ("what is the nakshatra today", "day", None),
+    ("today's karana", "day", None),
+    ("nakshatra tomorrow", "day", None),
+    ("which nakshatras are there on 2026-12-04", "day", None),
 ])
 def test_questions_are_sorted(text, kind, observance):
     asked = pq.sort(text)
@@ -42,6 +46,8 @@ def test_questions_are_sorted(text, kind, observance):
     "where is Saturn on ekadashi", "is the moon special today", "is today auspicious for jupiter",
     "is tomorrow bad for a wedding",
     "is today special for my chart",
+    "my star", "which nakshatra was I born under", "what is my karana", "yoga today",
+    "what is a nakshatra?", "what is a karana", "list the nakshatras",  # the idea, not a day: qa.py
 ])
 def test_everything_else_is_left_to_the_existing_router(text):
     assert pq.sort(text) is None
@@ -130,3 +136,13 @@ def test_the_edges_of_the_engines_range(day, answered):
     assert (reply != words.TOO_FAR) is answered
     if answered:
         assert "Tulu date" in reply
+
+
+def test_a_nakshatra_question_is_asked_for_the_right_day():
+    assert pq.resolve_when(pq.sort("nakshatra tomorrow").when, TODAY) == date(2026, 11, 22)
+
+
+@pytestmark_engine
+def test_a_nakshatra_question_gets_the_days_facts():
+    reply = pq.answer(pq.sort("what is the nakshatra today"), PUNE, NOW)
+    assert "Nakshatra (the Moon's star)" in reply and "Karana" in reply and "Tulu date" in reply
