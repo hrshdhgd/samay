@@ -1,7 +1,10 @@
+import os
+import time
 from datetime import date
 
 import pytest
 
+from samay.engine import observances
 from samay.engine.errors import SampradayaNotSet
 from samay.engine.observances import Rule, Viddha, find_next, observances_between, observances_for
 from samay.engine.panchang import Site
@@ -108,3 +111,18 @@ def test_find_next_returns_the_first_upcoming_day():
     nxt = find_next({"all": EKADASHI}, None, PUNE, date(2026, 11, 6))
     assert nxt.primary == date(2026, 11, 20)
     assert find_next({"all": Rule(tithis=(11, 26), on_kshaya="none")}, None, PUNE, date(2026, 11, 6)).primary == date(2026, 12, 4)
+
+
+@pytest.mark.skipif(os.environ.get("SAMAY_SLOW_CI") == "1", reason="timing guard skipped on slow CI")
+def test_observance_search_is_fast_enough_for_a_chat_answer():
+    # Cold caches, so this measures the search itself and not lookups left behind by the tests above.
+    observances._tithi_at.cache_clear()
+    observances._sun.cache_clear()
+    started = time.perf_counter()
+    observances_between(EKADASHI, PUNE, *NOV_DEC)
+    assert time.perf_counter() - started < 5.0
+    observances._tithi_at.cache_clear()
+    observances._sun.cache_clear()
+    started = time.perf_counter()
+    find_next({"all": EKADASHI}, None, PUNE, date(2026, 11, 6))
+    assert time.perf_counter() - started < 3.0

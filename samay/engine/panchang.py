@@ -18,6 +18,8 @@ NAK_DEG = YOGA_DEG = 360.0 / 27.0
 COARSE_STEP = timedelta(hours=2)
 SEARCH_LIMIT = timedelta(hours=48)
 RESOLUTION = timedelta(seconds=1)
+# How far the true boundary may be from the interpolated guess and still be found in the batched call.
+GUESS_SLACK = timedelta(seconds=20)
 
 TITHI_NAMES = ("Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami",
                "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi")
@@ -79,26 +81,60 @@ def _longitudes(times: list[datetime], ayanamsa: str) -> list[tuple[float, float
     return list(zip(track["sun"], track["moon"], strict=True))
 
 
-def _edge(kind: str, t0: datetime, forward: bool, ayanamsa: str) -> datetime:
-    """The instant the element holding t0 begins (forward=False) or ends (forward=True), to a second."""
-    angle, width = QUANTITIES[kind]
-    sign = 1 if forward else -1
-    grid = [t0 + sign * COARSE_STEP * i for i in range(int(SEARCH_LIMIT / COARSE_STEP) + 1)]
-    values = [angle(s, m) for s, m in _longitudes(grid, ayanamsa)]
-    base = int(values[0] // width)
+def _bracket(kind: str, grid: list[datetime], values: list[float], base: int) -> int:
+    """Index of the first grid instant past cell `base`; the one before it is still inside."""
+    width = QUANTITIES[kind][1]
     for i in range(1, len(grid)):
         if int(values[i] // width) != base:
-            inside, outside = grid[i - 1], grid[i]
-            break
+            return i
+    raise RuntimeError(f"no {kind} boundary within {SEARCH_LIMIT} of {grid[0]}")
+
+
+def _guess(kind: str, inside: datetime, outside: datetime, a_in: float, a_out: float, base: int,
+           forward: bool) -> datetime:
+    """Where the boundary between two grid instants should be, by linear interpolation of the angle."""
+    width = QUANTITIES[kind][1]
+    if forward:
+        span, part = (a_out - a_in) % 360.0, ((base + 1) * width - a_in) % 360.0
     else:
-        raise RuntimeError(f"no {kind} boundary within {SEARCH_LIMIT} of {t0}")
+        span, part = (a_in - a_out) % 360.0, (a_in - base * width) % 360.0
+    fraction = min(max(part / span, 0.0), 1.0) if span else 0.5
+    return inside + (outside - inside) * fraction
+
+
+def _plan(inside: datetime, outside: datetime, guess: datetime, forward: bool, into: list[datetime]) -> None:
+    """Every midpoint the bisection below can visit if the boundary is within GUESS_SLACK of `guess`."""
     while abs(outside - inside) > RESOLUTION:
         mid = inside + (outside - inside) / 2
-        if int(angle(*_longitudes([mid], ayanamsa)[0]) // width) == base:
+        into.append(mid)
+        if abs(mid - guess) <= GUESS_SLACK:
+            _plan(mid, outside, guess, forward, into)
+            outside = mid
+        elif (mid < guess) == forward:
+            inside = mid
+        else:
+            outside = mid
+
+
+def _bisect(kind: str, inside: datetime, outside: datetime, base: int, forward: bool, known: dict[datetime, int],
+            ayanamsa: str) -> datetime:
+    """Bisect to a second. Cells already computed in `known` are reused; any other midpoint is computed here,
+    so the answer is the plain bisection's whatever the guess was."""
+    while abs(outside - inside) > RESOLUTION:
+        mid = inside + (outside - inside) / 2
+        cell = known.get(mid)
+        if cell is None:
+            cell = _cells(kind, [mid], ayanamsa)[0]
+        if cell == base:
             inside = mid
         else:
             outside = mid
     return outside if forward else inside
+
+
+def _cells(kind: str, times: list[datetime], ayanamsa: str) -> list[int]:
+    angle, width = QUANTITIES[kind]
+    return [int(angle(s, m) // width) for s, m in _longitudes(times, ayanamsa)]
 
 
 def _name(kind: str, cell: int) -> str:
@@ -112,9 +148,29 @@ def _name(kind: str, cell: int) -> str:
 
 
 def element_at(kind: str, utc: datetime, ayanamsa: str = "lahiri_mean") -> Element:
+    """The element holding `utc`, with its start and end to a second.
+
+    Two ephemeris calls cover the usual case: one for the 2-hour grids either side, one for every midpoint the
+    bisections can visit near the interpolated boundaries. Any midpoint the guess missed is computed on its own."""
     angle, width = QUANTITIES[kind]
-    cell = int(angle(*_longitudes([utc], ayanamsa)[0]) // width)
-    return Element(kind, cell + 1, _name(kind, cell), _edge(kind, utc, False, ayanamsa), _edge(kind, utc, True, ayanamsa))
+    steps = range(1, int(SEARCH_LIMIT / COARSE_STEP) + 1)
+    back = [utc] + [utc - COARSE_STEP * i for i in steps]
+    ahead = [utc] + [utc + COARSE_STEP * i for i in steps]
+    values = [angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)]
+    back_values, ahead_values = values[:len(back)], values[:1] + values[len(back):]
+    cell = int(values[0] // width)
+    edges = []
+    for forward, grid, vals in ((False, back, back_values), (True, ahead, ahead_values)):
+        i = _bracket(kind, grid, vals, cell)
+        inside, outside = grid[i - 1], grid[i]
+        edges.append((forward, inside, outside, _guess(kind, inside, outside, vals[i - 1], vals[i], cell, forward)))
+    candidates: list[datetime] = []
+    for forward, inside, outside, guess in edges:
+        _plan(inside, outside, guess, forward, candidates)
+    known = dict(zip(candidates, _cells(kind, candidates, ayanamsa), strict=True))
+    start, end = (_bisect(kind, inside, outside, cell, forward, known, ayanamsa)
+                  for forward, inside, outside, _ in edges)
+    return Element(kind, cell + 1, _name(kind, cell), start, end)
 
 
 @dataclass(frozen=True)
