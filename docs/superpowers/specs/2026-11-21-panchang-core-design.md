@@ -60,8 +60,8 @@ logic (sub-project 2), Sankashti (weak sourcing, needs moonrise), any prediction
 - Dates outside DE440s (1849-2150) get a plain "I can't compute that far" reply.
 
 ### Tulu date: `samay/engine/tulu.py`
-- Month from the Sun's sidereal sign (Mesha = Paggu, Vrushabha = Besha, Mithuna = Kaarthel, Karkataka = Aati,
-  Simha = Sona, Kanya = Nirnala, Thula = Bonthel, Vrushchika = Jarde, Dhanu = Perarde, Makara = Ponni,
+- Month from the Sun's sidereal sign (Mesha = Paggu, Vrushabha = Beshe, Mithuna = Kartel, Karkataka = Aati,
+  Simha = Sona, Kanya = Nirnal, Thula = Bontel, Vrushchika = Jaarde, Dhanu = Perarde, Makara = Ponni,
   Kumbha = Mayi, Meena = Suggi).
 - **Day 1 is not "days since ingress".** Which civil day starts a month when the ingress falls late in the day
   is a disputed setting: `sankranti_cutoff` in `data/profiles/tulu.yaml` (sunrise, sunset, midnight,

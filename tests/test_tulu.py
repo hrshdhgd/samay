@@ -33,12 +33,12 @@ def test_next_day_cutoff_moves_every_month_start_by_one_civil_day():
 
 def test_an_ingress_after_sunset_starts_the_month_the_next_civil_day():
     # The Sun entered Vrischika on 16 Nov 2026 at about 19:40 local, after sunset.
-    assert (at(date(2026, 11, 16)).month, at(date(2026, 11, 17)).month) == ("Bonthel", "Jarde")
+    assert (at(date(2026, 11, 16)).month, at(date(2026, 11, 17)).month) == ("Bontel", "Jaarde")
     assert at(date(2026, 11, 17)).day == 1 and at(date(2026, 11, 21)).day == 5
 
 
 def test_pattanaje_is_besha_10():
-    assert (at(date(2026, 5, 24)).month, at(date(2026, 5, 24)).day) == ("Besha", 10)
+    assert (at(date(2026, 5, 24)).month, at(date(2026, 5, 24)).day) == ("Beshe", 10)
 
 
 def test_the_reference_app_spells_the_tenth_and_eleventh_months_puyintel_and_maayi():
@@ -86,3 +86,9 @@ def test_the_day_count_advances_by_one_across_the_chicago_clock_change():
     days = [tulu.tulu_date(d, *CHICAGO, "sunset") for d in (date(2026, 10, 31), date(2026, 11, 1), date(2026, 11, 2))]
     assert len({t.month for t in days}) == 1
     assert [t.day - days[0].day for t in days] == [0, 1, 2]
+
+
+def test_month_names_follow_the_mangaluru_reference_app_in_sign_order():
+    # Spelling as published by the Tulu Panchanga app's Mangaluru file (Mesha first).
+    assert tulu.MONTHS == ("Paggu", "Beshe", "Kartel", "Aati", "Sona", "Nirnal", "Bontel", "Jaarde", "Perarde",
+                           "Puyintel", "Maayi", "Suggi")

@@ -21,13 +21,13 @@ from .paths import PROFILES_DIR
 
 MONTHS = (
     "Paggu",
-    "Besha",
-    "Kaarthel",
+    "Beshe",
+    "Kartel",
     "Aati",
     "Sona",
-    "Nirnala",
-    "Bonthel",
-    "Jarde",
+    "Nirnal",
+    "Bontel",
+    "Jaarde",
     "Perarde",
     "Puyintel",
     "Maayi",

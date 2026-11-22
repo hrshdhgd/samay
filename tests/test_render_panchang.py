@@ -27,7 +27,7 @@ class Facts:
 
 
 class Tulu:
-    month, day = "Jarde", 5
+    month, day = "Jaarde", 5
     month_starts = date(2026, 11, 17)
     ingress = datetime(2026, 11, 16, 19, 39, tzinfo=IST)
 
@@ -49,7 +49,7 @@ def test_day_answer_uses_plain_words_and_local_times():
     assert "Tithi (the Moon's lunar day): Shukla Dwadashi, until 04:57 on 22 Nov." in text
     assert "Nakshatra (the Moon's star): Uttara Bhadrapada, until 06:50." in text
     assert "06:44" in text and "17:56" in text
-    assert "Tulu date: Jarde 5" in text and "sunset rule" in text
+    assert "Tulu date: Jaarde 5" in text and "sunset rule" in text
     assert "Rahu" not in text and not DASHA_WORD.search(text)
 
 
@@ -121,7 +121,7 @@ def test_brief_is_plain_language_with_no_dasha_and_no_jargon():
     assert text.startswith("🌅 Good morning! Today is Saturday, 21 November 2026.")
     assert ("At sunrise: the Moon's lunar day (tithi) Shukla Dwadashi, until 04:57 on 22 Nov; "
             "the Moon's star (nakshatra) Uttara Bhadrapada, until 06:50.") in text
-    assert "Tulu date: Jarde 5" in text
+    assert "Tulu date: Jaarde 5" in text
     assert not DASHA_WORD.search(text) and "Rahu Kaala" not in text
 
 
@@ -155,7 +155,7 @@ def test_day_answer_from_a_real_report():
     text = words.render_day(service.panchang_report(pune, date(2026, 11, 21)), date(2026, 11, 21))
     assert "Tithi (the Moon's lunar day): Shukla Dwadashi, until 04:57 on 22 Nov." in text
     assert "Nakshatra (the Moon's star): Uttara Bhadrapada, until 06:50." in text
-    assert "Sunrise 06:44, sunset 17:56." in text and "Tulu date: Jarde 5" in text
+    assert "Sunrise 06:44, sunset 17:56." in text and "Tulu date: Jaarde 5" in text
     before = words.render_day(service.panchang_report(pune, date(2026, 11, 20)), date(2026, 11, 20))
     assert "Shukla Dashami" in before and not DASHA_WORD.search(before) and "Rahu" not in before
 
