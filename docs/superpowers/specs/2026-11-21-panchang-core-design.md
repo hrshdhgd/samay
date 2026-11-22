@@ -29,8 +29,10 @@ In scope:
 - Natural-language Q&A only (no new command): "is today special?", "when is the next Ekadashi?", "what is
   Ekadashi?".
 
-Out of scope: festivals, lunar-month names, personal timing, push alerts, Sankashti (weak sourcing, needs
-moonrise), any prediction.
+- **Plain-language morning brief** (wording and content only; see 6a).
+
+Out of scope: festivals, lunar-month names, personal timing, the evening-before heads-up and any new push
+logic (sub-project 2), Sankashti (weak sourcing, needs moonrise), any prediction.
 
 ## 3. Decisions (all owner-confirmed)
 
@@ -89,6 +91,20 @@ assembly. New topic keys: `panchang:day`, `panchang:next:<observance>`, `observa
 from the family reference location, or the saved home. All user-facing wording is in `render/`; a local
 model may reword but never add facts. Outcome questions ("will Ekadashi bring me luck?") still get the
 existing "outside known topics" reply.
+
+### 6a. Retrieval for the local model (owner decision)
+The model's context is **verified entries plus computed facts only**, the same pattern `qa.py` already uses.
+No retrieval over the spec, `research/notes/` or any unverified passage: those hold unchecked text and
+commentary, and the model could present them as sourced. The model may reword, never add facts.
+
+### 6b. Morning brief wording (owner decision)
+`render_brief` is rewritten in plain words, with no jargon and no meanings:
+- Date; the avoid-window in plain words ("Avoid starting new things between 9:12 and 10:38", not "Rahu
+  Kaala"); today's tithi and nakshatra as facts (for example "Shukla Ekadashi, a day many families fast"
+  only when that observance has a verified entry); the Tulu date.
+- **The dasha line is dropped.** It implied meaning without saying any, and it is still available in Today.
+- Only the wording and content change here. Scheduling, the evening heads-up and per-person versus
+  per-family delivery stay in sub-project 2.
 
 ## 7. Explanations: a separate, non-blocking track
 
