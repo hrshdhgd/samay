@@ -66,3 +66,16 @@ def test_returns_timezone_aware_local_times():
     r = daylight.rahu_kaala(18.5196, 73.8553, "Asia/Kolkata", date(2026, 11, 9))
     assert r.start.utcoffset() == timedelta(hours=5, minutes=30)
     assert r.start.astimezone(UTC).tzinfo is UTC
+
+
+def test_disc_centre_sunrise_is_later_and_sunset_earlier_than_upper_limb():
+    day = date(2026, 11, 21)
+    upper = daylight.sun_times(18.5196, 73.8553, "Asia/Kolkata", day, definition="upper_limb")
+    centre = daylight.sun_times(18.5196, 73.8553, "Asia/Kolkata", day, definition="disc_centre")
+    assert timedelta(seconds=30) < centre.sunrise - upper.sunrise < timedelta(seconds=120)
+    assert timedelta(seconds=30) < upper.sunset - centre.sunset < timedelta(seconds=120)
+
+
+def test_unknown_sunrise_definition_is_rejected():
+    with pytest.raises(ValueError, match="sunrise definition"):
+        daylight.sun_times(18.5196, 73.8553, "Asia/Kolkata", date(2026, 11, 21), definition="moonlight")

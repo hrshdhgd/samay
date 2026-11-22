@@ -22,6 +22,11 @@ from . import ephemeris
 RAHU_KAALA_PART = {0: 2, 1: 7, 2: 5, 3: 6, 4: 4, 5: 3, 6: 8}
 PARTS = 8
 
+# Altitude of the Sun's centre at the moment a rule counts rise and set.
+# upper_limb: top edge on the horizon, standard refraction (34' + 16' semidiameter).
+# disc_centre: centre on the horizon, 34' refraction only.
+HORIZON_DEGREES = {"upper_limb": -0.8333, "disc_centre": -0.5667}
+
 
 @dataclass(frozen=True)
 class SunTimes:
@@ -38,13 +43,22 @@ class RahuKaala:
     sunset: datetime
 
 
-def sun_times(latitude: float, longitude: float, tz: str, day: date) -> SunTimes | None:
+def sun_times(
+    latitude: float, longitude: float, tz: str, day: date, definition: str = "upper_limb"
+) -> SunTimes | None:
     """Sunrise and sunset on a local calendar day, or None when the Sun does not both rise and set
     that day (polar summer and winter)."""
+    if definition not in HORIZON_DEGREES:
+        raise ValueError(f"unknown sunrise definition {definition!r}")
     zone = ZoneInfo(tz)
     start = datetime(day.year, day.month, day.day, tzinfo=zone)
     ts = ephemeris._timescale()
-    is_up = almanac.sunrise_sunset(ephemeris._kernel(), wgs84.latlon(latitude, longitude))
+    kernel = ephemeris._kernel()
+    topos = wgs84.latlon(latitude, longitude)
+    if definition == "upper_limb":
+        is_up = almanac.sunrise_sunset(kernel, topos)
+    else:
+        is_up = almanac.risings_and_settings(kernel, kernel["sun"], topos, horizon_degrees=HORIZON_DEGREES[definition])
     times, events = almanac.find_discrete(
         ts.from_datetime(start.astimezone(UTC)), ts.from_datetime((start + timedelta(days=1)).astimezone(UTC)), is_up
     )
