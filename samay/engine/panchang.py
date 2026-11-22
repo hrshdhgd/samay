@@ -7,9 +7,9 @@ place; the day a tithi counts for does (see observances.py). Searches go 2 hours
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
-from . import ephemeris
+from . import daylight, ephemeris
 from .vedic import NAKSHATRAS
 
 TITHI_DEG = 12.0
@@ -115,3 +115,23 @@ def element_at(kind: str, utc: datetime, ayanamsa: str = "lahiri_mean") -> Eleme
     angle, width = QUANTITIES[kind]
     cell = int(angle(*_longitudes([utc], ayanamsa)[0]) // width)
     return Element(kind, cell + 1, _name(kind, cell), _edge(kind, utc, False, ayanamsa), _edge(kind, utc, True, ayanamsa))
+
+
+@dataclass(frozen=True)
+class DayFacts:
+    day: date  # local calendar day
+    sunrise: datetime  # local, timezone-aware
+    sunset: datetime
+    tithi: Element  # the elements prevailing at local sunrise
+    nakshatra: Element
+    karana: Element
+    yoga: Element
+
+
+def day_facts(site: Site, day: date, ayanamsa: str = "lahiri_mean", definition: str = "upper_limb") -> DayFacts | None:
+    """What prevails at the place's own sunrise on a local calendar day; None when the Sun does not rise and set."""
+    sun = daylight.sun_times(site.latitude, site.longitude, site.tz, day, definition)
+    if sun is None:
+        return None
+    at = sun.sunrise.astimezone(UTC)
+    return DayFacts(day, sun.sunrise, sun.sunset, *(element_at(k, at, ayanamsa) for k in ("tithi", "nakshatra", "karana", "yoga")))

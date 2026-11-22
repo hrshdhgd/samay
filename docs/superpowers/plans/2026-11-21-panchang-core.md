@@ -344,7 +344,7 @@ def test_day_facts_use_local_sunrise_and_name_the_prevailing_elements():
     assert facts.sunrise.tzinfo is not None and facts.sunrise.utcoffset() == IST
     assert facts.sunrise.strftime("%H:%M") == "06:44" and facts.sunset.strftime("%H:%M") == "17:56"
     assert facts.tithi.name == "Shukla Dwadashi"
-    assert facts.nakshatra.name == "Revati"
+    assert facts.nakshatra.name == "Uttara Bhadrapada"  # Revati only begins at 06:50, six minutes after this sunrise
 
 
 def test_ekadashi_is_at_no_sunrise_on_20_or_21_nov_in_pune():

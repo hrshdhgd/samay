@@ -1,5 +1,5 @@
 import itertools
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
@@ -8,6 +8,7 @@ from samay.engine.paths import EPHEMERIS_PATH
 
 pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 IST = timedelta(hours=5, minutes=30)
+PUNE = panchang.Site(18.5196, 73.8553, "Asia/Kolkata")
 
 
 def ist(day: int, hour: int, minute: int) -> datetime:
@@ -64,3 +65,38 @@ def test_outside_the_ephemeris_range_is_a_plain_error():
 
     with pytest.raises(OutOfEphemerisRange):
         panchang.element_at("tithi", datetime(2200, 1, 1, tzinfo=UTC))
+
+
+def test_day_facts_use_local_sunrise_and_name_the_prevailing_elements():
+    facts = panchang.day_facts(PUNE, date(2026, 11, 21))
+    assert facts.sunrise.tzinfo is not None and facts.sunrise.utcoffset() == IST
+    assert facts.sunrise.strftime("%H:%M") == "06:44" and facts.sunset.strftime("%H:%M") == "17:56"
+    assert facts.tithi.name == "Shukla Dwadashi"
+    assert facts.nakshatra.name == "Uttara Bhadrapada"  # Revati only begins at 06:50, six minutes after this sunrise
+
+
+def test_ekadashi_is_at_no_sunrise_on_20_or_21_nov_in_pune():
+    assert panchang.day_facts(PUNE, date(2026, 11, 20)).tithi.number == 10
+    assert panchang.day_facts(PUNE, date(2026, 11, 21)).tithi.number == 12
+
+
+def test_the_sunrise_definition_comes_from_the_caller():
+    upper = panchang.day_facts(PUNE, date(2026, 11, 21))
+    centre = panchang.day_facts(PUNE, date(2026, 11, 21), definition="disc_centre")
+    assert centre.sunrise > upper.sunrise
+
+
+def test_dst_changes_the_local_offset_of_the_sunrise_across_the_clock_change():
+    chicago = panchang.Site(44.953, -93.023, "America/Chicago")  # US clocks went back on 1 Nov 2026
+    assert panchang.day_facts(chicago, date(2026, 10, 31)).sunrise.utcoffset() == timedelta(hours=-5)
+    assert panchang.day_facts(chicago, date(2026, 11, 2)).sunrise.utcoffset() == timedelta(hours=-6)
+
+
+def test_southern_hemisphere_place_works():
+    sydney = panchang.Site(-33.8688, 151.2093, "Australia/Sydney")
+    facts = panchang.day_facts(sydney, date(2026, 11, 21))
+    assert facts.sunrise.utcoffset() == timedelta(hours=11) and 5 <= facts.sunrise.hour <= 6
+
+
+def test_polar_day_without_a_sunrise_gives_none():
+    assert panchang.day_facts(panchang.Site(69.65, 18.96, "Europe/Oslo"), date(2026, 12, 21)) is None
