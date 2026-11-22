@@ -19,7 +19,9 @@ from samay.render import prompts
 from samay.store import Store
 
 ALLOWED, STRANGER = 111, 999
-needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
+needs_kernel = pytest.mark.skipif(
+    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
+)
 
 
 @pytest.fixture
@@ -29,7 +31,9 @@ def store(tmp_path):
 
 @pytest.fixture
 def ctx(store):
-    application = SimpleNamespace(bot_data={bot.STORE_KEY: store, bot.ALLOWED_KEY: frozenset({ALLOWED})})
+    application = SimpleNamespace(
+        bot_data={bot.STORE_KEY: store, bot.ALLOWED_KEY: frozenset({ALLOWED})}
+    )
     return SimpleNamespace(application=application, error=None, args=[])
 
 
@@ -38,15 +42,30 @@ _update_ids = itertools.count(1)
 
 def message(chat_id: int, text: str):
     msg = SimpleNamespace(text=text, reply_text=AsyncMock(), reply_photo=AsyncMock())
-    return SimpleNamespace(update_id=next(_update_ids), effective_chat=SimpleNamespace(id=chat_id),
-                           effective_message=msg, callback_query=None), msg
+    return (
+        SimpleNamespace(
+            update_id=next(_update_ids),
+            effective_chat=SimpleNamespace(id=chat_id),
+            effective_message=msg,
+            callback_query=None,
+        ),
+        msg,
+    )
 
 
 def tap(chat_id: int, data: str):
     msg = SimpleNamespace(text=None, reply_text=AsyncMock(), reply_photo=AsyncMock())
-    query = SimpleNamespace(data=data, answer=AsyncMock(), edit_message_media=AsyncMock())
-    return SimpleNamespace(effective_chat=SimpleNamespace(id=chat_id), effective_message=msg,
-                           callback_query=query), msg
+    query = SimpleNamespace(
+        data=data, answer=AsyncMock(), edit_message_media=AsyncMock()
+    )
+    return (
+        SimpleNamespace(
+            effective_chat=SimpleNamespace(id=chat_id),
+            effective_message=msg,
+            callback_query=query,
+        ),
+        msg,
+    )
 
 
 def last_reply(msg) -> str:
@@ -82,15 +101,22 @@ def test_missing_token_refuses_to_start(monkeypatch, no_token_or_env_file):
         bot.main()
 
 
-def test_env_file_supplies_settings_but_never_overrides_the_environment(monkeypatch, tmp_path):
+def test_env_file_supplies_settings_but_never_overrides_the_environment(
+    monkeypatch, tmp_path
+):
     env = tmp_path / ".env"
-    env.write_text("# comment\nALLOWED_CHAT_IDS=5, 6\nSAMAY_TEST_KEY='quoted'\nSAMAY_TEST_SET=from-file\n\nbad line\n")
+    env.write_text(
+        "# comment\nALLOWED_CHAT_IDS=5, 6\nSAMAY_TEST_KEY='quoted'\nSAMAY_TEST_SET=from-file\n\nbad line\n"
+    )
     monkeypatch.delenv("ALLOWED_CHAT_IDS", raising=False)
     monkeypatch.delenv("SAMAY_TEST_KEY", raising=False)
     monkeypatch.setenv("SAMAY_TEST_SET", "from-env")
     bot.load_env_file(env)
     assert bot.parse_allowed(os.environ["ALLOWED_CHAT_IDS"]) == frozenset({5, 6})
-    assert os.environ["SAMAY_TEST_KEY"] == "quoted" and os.environ["SAMAY_TEST_SET"] == "from-env"
+    assert (
+        os.environ["SAMAY_TEST_KEY"] == "quoted"
+        and os.environ["SAMAY_TEST_SET"] == "from-env"
+    )
     for name in ("ALLOWED_CHAT_IDS", "SAMAY_TEST_KEY"):
         monkeypatch.delenv(name, raising=False)
     bot.load_env_file(tmp_path / "missing.env")  # a missing file is fine
@@ -99,14 +125,23 @@ def test_env_file_supplies_settings_but_never_overrides_the_environment(monkeypa
 def test_alternative_token_variable_is_accepted(monkeypatch, no_token_or_env_file):
     monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
     monkeypatch.setenv("SAMAY_TELEGRAM_BOT_TOKEN", "123:abc")
-    monkeypatch.setattr(bot, "build_application", lambda *a: (_ for _ in ()).throw(RuntimeError("reached")))
+    monkeypatch.setattr(
+        bot,
+        "build_application",
+        lambda *a: (_ for _ in ()).throw(RuntimeError("reached")),
+    )
     with pytest.raises(RuntimeError, match="reached"):
         bot.main()
 
 
 def test_application_registers_every_command(store):
     app = bot.build_application("123:abc", frozenset({1}), store)
-    commands = {c for group in app.handlers.values() for h in group for c in getattr(h, "commands", ())}
+    commands = {
+        c
+        for group in app.handlers.values()
+        for h in group
+        for c in getattr(h, "commands", ())
+    }
     assert commands == set(prompts.COMMANDS)
 
 
@@ -145,7 +180,11 @@ async def test_full_conversation_saves_birth_and_shows_the_chart(ctx, store):
     texts = [c.args[0] for c in msg.reply_text.await_args_list]
     assert texts[0] == prompts.SAVED and texts[1].startswith("Your rising sign")
     assert "Bombay Time" in texts[1]  # the caution that matters for a 1952 Indian birth
-    assert "samay dev" not in texts[1] and "confidence:" not in texts[1] and "Profile:" not in texts[1]
+    assert (
+        "samay dev" not in texts[1]
+        and "confidence:" not in texts[1]
+        and "Profile:" not in texts[1]
+    )
 
 
 async def test_draft_survives_a_restart(ctx, store):
@@ -154,8 +193,14 @@ async def test_draft_survives_a_restart(ctx, store):
     update, _ = message(ALLOWED, "15-08-1952")
     await bot.on_text(update, ctx)
 
-    restarted = SimpleNamespace(application=SimpleNamespace(
-        bot_data={bot.STORE_KEY: Store(store.path), bot.ALLOWED_KEY: frozenset({ALLOWED})}))
+    restarted = SimpleNamespace(
+        application=SimpleNamespace(
+            bot_data={
+                bot.STORE_KEY: Store(store.path),
+                bot.ALLOWED_KEY: frozenset({ALLOWED}),
+            }
+        )
+    )
     update, msg = message(ALLOWED, "18:30")
     await bot.on_text(update, restarted)
     assert last_reply(msg) == prompts.ASK_PLACE
@@ -177,7 +222,10 @@ async def test_text_without_a_conversation_is_treated_as_a_question(ctx):
 async def test_asking_for_a_chart_without_details_starts_the_conversation(ctx, store):
     update, msg = message(ALLOWED, prompts.MENU_CHART)
     await bot.on_text(update, ctx)
-    assert last_reply(msg).startswith(prompts.NEED_BIRTH) and store.get_draft(ALLOWED) is not None
+    assert (
+        last_reply(msg).startswith(prompts.NEED_BIRTH)
+        and store.get_draft(ALLOWED) is not None
+    )
 
 
 async def test_forget_asks_first_then_deletes_everything(ctx, store):
@@ -211,7 +259,9 @@ async def test_error_handler_logs_type_not_details_and_apologises(ctx, caplog):
     assert last_reply(msg) == prompts.GENERIC_ERROR
 
 
-def test_main_silences_loggers_that_print_the_bot_token(monkeypatch, no_token_or_env_file):
+def test_main_silences_loggers_that_print_the_bot_token(
+    monkeypatch, no_token_or_env_file
+):
     monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
     with pytest.raises(SystemExit):
         bot.main()
@@ -224,7 +274,9 @@ def test_main_silences_loggers_that_print_the_bot_token(monkeypatch, no_token_or
 
 def _live_commands(store):
     app = bot.build_application("123:abc", frozenset({1}), store)
-    return app, {c for h in app.handlers[0] if hasattr(h, "commands") for c in h.commands}
+    return app, {
+        c for h in app.handlers[0] if hasattr(h, "commands") for c in h.commands
+    }
 
 
 def test_every_registered_command_has_a_description_and_vice_versa(store):
@@ -235,7 +287,9 @@ def test_every_registered_command_has_a_description_and_vice_versa(store):
 
 async def test_menu_is_registered_from_live_handlers_in_the_defined_order(store):
     app, _ = _live_commands(store)
-    fake = SimpleNamespace(handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock()))
+    fake = SimpleNamespace(
+        handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock())
+    )
     await bot._register_commands(fake)
     menu = fake.bot.set_my_commands.await_args.args[0]
     assert [c.command for c in menu] == list(prompts.COMMANDS)
@@ -246,7 +300,9 @@ async def test_a_command_without_a_description_stops_start_up(store):
     app, _ = _live_commands(store)
     handler = next(h for h in app.handlers[0] if hasattr(h, "commands"))
     handler.commands = frozenset({*handler.commands, "mystery"})
-    fake = SimpleNamespace(handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock()))
+    fake = SimpleNamespace(
+        handlers=app.handlers, bot=SimpleNamespace(set_my_commands=AsyncMock())
+    )
     with pytest.raises(RuntimeError, match="mystery"):
         await bot._register_commands(fake)
 
@@ -267,7 +323,9 @@ async def test_help_is_silent_for_strangers(ctx):
     msg.reply_text.assert_not_awaited()
 
 
-def test_a_rejected_token_exits_cleanly_without_printing_it(monkeypatch, no_token_or_env_file, capsys):
+def test_a_rejected_token_exits_cleanly_without_printing_it(
+    monkeypatch, no_token_or_env_file, capsys
+):
     from unittest.mock import MagicMock
 
     from telegram.error import InvalidToken
@@ -275,15 +333,24 @@ def test_a_rejected_token_exits_cleanly_without_printing_it(monkeypatch, no_toke
     monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
     monkeypatch.setenv("TELEGRAM_TOKEN", "123:SECRETTOKEN")
     fake = MagicMock()
-    fake.run_polling.side_effect = InvalidToken("The token `123:SECRETTOKEN` was rejected by the server.")
+    fake.run_polling.side_effect = InvalidToken(
+        "The token `123:SECRETTOKEN` was rejected by the server."
+    )
     monkeypatch.setattr(bot, "build_application", lambda *a: fake)
     with pytest.raises(SystemExit) as exit_info:
         bot.main()
-    assert "rejected the bot token" in str(exit_info.value) and "SECRETTOKEN" not in str(exit_info.value)
-    assert exit_info.value.__cause__ is None and "SECRETTOKEN" not in capsys.readouterr().err
+    assert "rejected the bot token" in str(
+        exit_info.value
+    ) and "SECRETTOKEN" not in str(exit_info.value)
+    assert (
+        exit_info.value.__cause__ is None
+        and "SECRETTOKEN" not in capsys.readouterr().err
+    )
 
 
-def test_start_up_keeps_retrying_when_telegram_is_unreachable(monkeypatch, no_token_or_env_file):
+def test_start_up_keeps_retrying_when_telegram_is_unreachable(
+    monkeypatch, no_token_or_env_file
+):
     from unittest.mock import MagicMock
 
     monkeypatch.setenv("ALLOWED_CHAT_IDS", "1")
@@ -303,9 +370,13 @@ def buttons_of(markup):
 
 def test_chart_markup_offers_the_other_style_and_the_opposite_degrees_setting():
     assert buttons_of(bot.chart_markup("south", False)) == {
-        "🔄 North Indian": "img:north:0", "🔢 Show degrees": "img:south:1"}
+        "🔄 North Indian": "img:north:0",
+        "🔢 Show degrees": "img:south:1",
+    }
     assert buttons_of(bot.chart_markup("north", True)) == {
-        "🔄 South Indian": "img:south:1", "🔢 Hide degrees": "img:north:0"}
+        "🔄 South Indian": "img:south:1",
+        "🔢 Hide degrees": "img:north:0",
+    }
 
 
 def _save_pune(store):
@@ -319,8 +390,12 @@ async def test_my_chart_sends_the_south_picture_first_then_the_text(ctx, store):
     await bot.on_text(update, ctx)
     photo = msg.reply_photo.await_args
     assert photo.kwargs["photo"][:8] == b"\x89PNG\r\n\x1a\n"
-    assert buttons_of(photo.kwargs["reply_markup"]) == buttons_of(bot.chart_markup("south", False))
-    assert last_reply(msg).startswith("Your rising sign")  # the text comes as its own message
+    assert buttons_of(photo.kwargs["reply_markup"]) == buttons_of(
+        bot.chart_markup("south", False)
+    )
+    assert last_reply(msg).startswith(
+        "Your rising sign"
+    )  # the text comes as its own message
 
 
 @needs_kernel
@@ -332,7 +407,9 @@ async def test_buttons_redraw_the_picture_in_place(ctx, store):
     await bot.on_button(update, ctx)
     edit = update.callback_query.edit_message_media.await_args
     assert isinstance(edit.kwargs["media"], InputMediaPhoto)
-    assert buttons_of(edit.kwargs["reply_markup"]) == buttons_of(bot.chart_markup("north", True))
+    assert buttons_of(edit.kwargs["reply_markup"]) == buttons_of(
+        bot.chart_markup("north", True)
+    )
     msg.reply_text.assert_not_awaited()  # edited in place, no new message
 
 
@@ -343,7 +420,11 @@ async def test_the_four_pictures_differ(ctx, store):
     for choice in ("south:0", "south:1", "north:0", "north:1"):
         update, _ = tap(ALLOWED, f"img:{choice}")
         await bot.on_button(update, ctx)
-        pictures.add(update.callback_query.edit_message_media.await_args.kwargs["media"].media.input_file_content)
+        pictures.add(
+            update.callback_query.edit_message_media.await_args.kwargs[
+                "media"
+            ].media.input_file_content
+        )
     assert len(pictures) == 4
 
 
@@ -353,14 +434,20 @@ async def test_double_tap_on_a_switch_is_ignored_but_other_errors_are_not(ctx, s
 
     _save_pune(store)
     update, _ = tap(ALLOWED, "img:north:0")
-    update.callback_query.edit_message_media.side_effect = BadRequest("Message is not modified")
+    update.callback_query.edit_message_media.side_effect = BadRequest(
+        "Message is not modified"
+    )
     await bot.on_button(update, ctx)  # swallowed
-    update.callback_query.edit_message_media.side_effect = BadRequest("Message to edit not found")
+    update.callback_query.edit_message_media.side_effect = BadRequest(
+        "Message to edit not found"
+    )
     with pytest.raises(BadRequest):
         await bot.on_button(update, ctx)
 
 
-async def test_bad_switch_data_is_ignored_and_missing_details_start_the_conversation(ctx, store):
+async def test_bad_switch_data_is_ignored_and_missing_details_start_the_conversation(
+    ctx, store
+):
     for data in ("img:round:0", "img:south:2", "img:south", "img:"):
         update, msg = tap(ALLOWED, data)
         await bot.on_button(update, ctx)
@@ -381,12 +468,13 @@ async def test_strangers_cannot_use_the_chart_switches(ctx, store):
 # --- where I live, Rahu Kaala, and the morning message ---------------------------------------------
 
 
-
 MAPLEWOOD = lambda: geo.find_places("Maplewood, MN")[0]
 
 
 @needs_kernel
-async def test_home_conversation_saves_the_city_and_shows_todays_rahu_kaala(ctx, store, monkeypatch):
+async def test_home_conversation_saves_the_city_and_shows_todays_rahu_kaala(
+    ctx, store, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
     update, msg = message(ALLOWED, "/home")
     await bot.cmd_home(update, ctx)
@@ -394,12 +482,21 @@ async def test_home_conversation_saves_the_city_and_shows_todays_rahu_kaala(ctx,
     update, msg = message(ALLOWED, "Maplewood, Minnesota")
     await bot.on_text(update, ctx)
     texts = [c.args[0] for c in msg.reply_text.await_args_list]
-    assert "Maplewood" in texts[0] and texts[1].startswith("⚠ Rahu Kaala today: 8:") and "(Maplewood" in texts[1]
-    assert store.get_home(ALLOWED).place_id == MAPLEWOOD().id and store.get_draft(ALLOWED) is None
+    assert (
+        "Maplewood" in texts[0]
+        and texts[1].startswith("⚠ Rahu Kaala today: 8:")
+        and "(Maplewood" in texts[1]
+    )
+    assert (
+        store.get_home(ALLOWED).place_id == MAPLEWOOD().id
+        and store.get_draft(ALLOWED) is None
+    )
 
 
 @needs_kernel
-async def test_today_shows_rahu_kaala_for_the_home_city_or_asks_for_one(ctx, store, monkeypatch):
+async def test_today_shows_rahu_kaala_for_the_home_city_or_asks_for_one(
+    ctx, store, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
     _save_pune(store)
     update, msg = message(ALLOWED, prompts.MENU_TODAY)
@@ -408,13 +505,18 @@ async def test_today_shows_rahu_kaala_for_the_home_city_or_asks_for_one(ctx, sto
     store.save_home(ALLOWED, "Maplewood", MAPLEWOOD().id)
     update, msg = message(ALLOWED, "/today")
     await bot._command("today")(update, ctx)
-    assert "Rahu Kaala today: 8:" in last_reply(msg) and "Transiting Saturn" not in last_reply(msg)
+    assert "Rahu Kaala today: 8:" in last_reply(
+        msg
+    ) and "Transiting Saturn" not in last_reply(msg)
 
 
 async def test_brief_without_a_home_city_asks_for_it_first(ctx, store):
     update, msg = message(ALLOWED, "/brief")
     await bot.cmd_brief(update, ctx)
-    assert last_reply(msg).startswith(prompts.BRIEF_NEED_HOME) and store.get_draft(ALLOWED)["purpose"] == "home"
+    assert (
+        last_reply(msg).startswith(prompts.BRIEF_NEED_HOME)
+        and store.get_draft(ALLOWED)["purpose"] == "home"
+    )
 
 
 async def test_brief_buttons_turn_the_message_on_off_and_ignore_bad_choices(ctx, store):
@@ -422,15 +524,19 @@ async def test_brief_buttons_turn_the_message_on_off_and_ignore_bad_choices(ctx,
     update, msg = message(ALLOWED, prompts.MENU_BRIEF)
     await bot.on_text(update, ctx)
     assert prompts.BRIEF_STATUS_OFF in last_reply(msg)
-    assert list(buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]).values()) == [
-        "brief:6", "brief:7", "brief:8", "brief:9", "brief:off"]
+    assert list(
+        buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]).values()
+    ) == ["brief:6", "brief:7", "brief:8", "brief:9", "brief:off"]
     update, msg = tap(ALLOWED, "brief:7")
     await bot.on_button(update, ctx)
-    assert store.get_home(ALLOWED).brief_hour == 7 and last_reply(msg) == prompts.BRIEF_ON.format(
-        time="7 am", place="Maplewood")
+    assert store.get_home(ALLOWED).brief_hour == 7 and last_reply(
+        msg
+    ) == prompts.BRIEF_ON.format(time="7 am", place="Maplewood")
     update, msg = message(ALLOWED, "/brief")
     await bot.cmd_brief(update, ctx)
-    assert prompts.BRIEF_STATUS_ON.format(time="7 am", place="Maplewood") in last_reply(msg)
+    assert prompts.BRIEF_STATUS_ON.format(time="7 am", place="Maplewood") in last_reply(
+        msg
+    )
     for bad in ("brief:3", "brief:x", "brief:"):
         update, msg = tap(ALLOWED, bad)
         await bot.on_button(update, ctx)
@@ -438,7 +544,10 @@ async def test_brief_buttons_turn_the_message_on_off_and_ignore_bad_choices(ctx,
     assert store.get_home(ALLOWED).brief_hour == 7
     update, msg = tap(ALLOWED, "brief:off")
     await bot.on_button(update, ctx)
-    assert store.get_home(ALLOWED).brief_hour is None and last_reply(msg) == prompts.BRIEF_OFF
+    assert (
+        store.get_home(ALLOWED).brief_hour is None
+        and last_reply(msg) == prompts.BRIEF_OFF
+    )
 
 
 async def test_brief_switches_are_closed_to_strangers(ctx, store):
@@ -461,7 +570,9 @@ async def test_morning_job_sends_once_a_day_at_the_local_hour(ctx, store, monkey
     store.set_brief(ALLOWED, 7)
     _save_pune(store)
 
-    clock = {"now": datetime(2026, 11, 9, 12, 5, tzinfo=UTC)}  # 6:05 am in Minnesota: too early
+    clock = {
+        "now": datetime(2026, 11, 9, 12, 5, tzinfo=UTC)
+    }  # 6:05 am in Minnesota: too early
     monkeypatch.setattr(bot, "_now", lambda: clock["now"])
     await bot._brief_job(ctx)
     ctx.bot.send_message.assert_not_awaited()
@@ -469,9 +580,18 @@ async def test_morning_job_sends_once_a_day_at_the_local_hour(ctx, store, monkey
     clock["now"] = datetime(2026, 11, 9, 13, 5, tzinfo=UTC)  # 7:05 am
     await bot._brief_job(ctx)
     chat, text = ctx.bot.send_message.await_args.args
-    assert chat == ALLOWED and "Good morning! Today is Monday, 09 November 2026." in text
-    assert "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood" in text
-    assert "Shukla Pratipada" in text and "Tulu date:" in text and "dasha" not in text.lower()
+    assert (
+        chat == ALLOWED and "Good morning! Today is Monday, 09 November 2026." in text
+    )
+    assert (
+        "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood"
+        in text
+    )
+    assert (
+        "Shukla Pratipada" in text
+        and "Tulu date:" in text
+        and "dasha" not in text.lower()
+    )
     assert store.get_home(ALLOWED).brief_last == "2026-11-09"
 
     clock["now"] = datetime(2026, 11, 9, 13, 50, tzinfo=UTC)  # same morning: no repeat
@@ -483,7 +603,9 @@ async def test_morning_job_sends_once_a_day_at_the_local_hour(ctx, store, monkey
 
 
 @needs_kernel
-async def test_morning_job_works_without_saved_birth_details_and_skips_people_off_the_allowlist(ctx, store, monkeypatch):
+async def test_morning_job_works_without_saved_birth_details_and_skips_people_off_the_allowlist(
+    ctx, store, monkeypatch
+):
     ctx = job_ctx(ctx)
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
     for chat in (ALLOWED, STRANGER):
@@ -492,11 +614,17 @@ async def test_morning_job_works_without_saved_birth_details_and_skips_people_of
     await bot._brief_job(ctx)
     assert ctx.bot.send_message.await_count == 1
     chat, text = ctx.bot.send_message.await_args.args
-    assert chat == ALLOWED and "dasha" not in text.lower() and "(called Rahu Kaala)" in text
+    assert (
+        chat == ALLOWED
+        and "dasha" not in text.lower()
+        and "(called Rahu Kaala)" in text
+    )
 
 
 @needs_kernel
-async def test_one_failed_delivery_does_not_stop_the_others_or_leak_details(ctx, store, monkeypatch, caplog):
+async def test_one_failed_delivery_does_not_stop_the_others_or_leak_details(
+    ctx, store, monkeypatch, caplog
+):
     other = 222
     ctx = job_ctx(ctx, allowed=(ALLOWED, other))
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
@@ -508,12 +636,17 @@ async def test_one_failed_delivery_does_not_stop_the_others_or_leak_details(ctx,
         await bot._brief_job(ctx)
     assert ctx.bot.send_message.await_count == 2
     assert "RuntimeError" in caplog.text and "secret" not in caplog.text
-    assert store.get_home(ALLOWED).brief_last is None and store.get_home(other).brief_last == "2026-11-09"
+    assert (
+        store.get_home(ALLOWED).brief_last is None
+        and store.get_home(other).brief_last == "2026-11-09"
+    )
 
 
 def test_a_job_is_scheduled_when_the_scheduler_is_available(store):
     app = bot.build_application("123:abc", frozenset({1}), store)
-    assert app.job_queue is not None and [j.name for j in app.job_queue.jobs()] == ["morning_brief"]
+    assert app.job_queue is not None and [j.name for j in app.job_queue.jobs()] == [
+        "morning_brief"
+    ]
 
 
 # --- grounded questions and answers ----------------------------------------------------------------
@@ -524,44 +657,74 @@ from samay.engine import entries as entry_store
 
 
 @needs_kernel
-async def test_question_about_a_planet_quotes_the_checked_entry_and_adds_chart_facts(ctx, store, monkeypatch):
+async def test_question_about_a_planet_quotes_the_checked_entry_and_adds_chart_facts(
+    ctx, store, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, tzinfo=UTC))
     _save_pune(store)
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert "Varahamihira describes Saturn as the sorrow of the cosmic person (Kalapurusha)." in text
-    assert "Sources: Brihat Jataka 2.1, 20.1, 20.11 · checked" in text and "(translation-checked)" not in text
-    assert "In your birth chart, Saturn is in Sagittarius (Dhanu), the 2nd house" in text
+    assert (
+        "Varahamihira describes Saturn as the sorrow of the cosmic person (Kalapurusha)."
+        in text
+    )
+    assert (
+        "Sources: Brihat Jataka 2.1, 20.1, 20.11 · checked" in text
+        and "(translation-checked)" not in text
+    )
+    assert (
+        "In your birth chart, Saturn is in Sagittarius (Dhanu), the 2nd house" in text
+    )
     assert store.top_misses() == []  # answered, so nothing to research
 
 
 @needs_kernel
-async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_topic(ctx, store, monkeypatch, empty_entries):
+async def test_question_with_no_source_says_so_shows_facts_and_counts_only_the_topic(
+    ctx, store, monkeypatch, empty_entries
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, tzinfo=UTC))
     _save_pune(store)
-    update, msg = message(ALLOWED, "what does my current dasha mean for me and my son's marriage?")
+    update, msg = message(
+        ALLOWED, "what does my current dasha mean for me and my son's marriage?"
+    )
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert prompts.NO_SOURCE in text and "Your Jupiter chapter (dasha) lasts 16 years" in text and "you are in it now" in text
+    assert (
+        prompts.NO_SOURCE in text
+        and "Your Jupiter chapter (dasha) lasts 16 years" in text
+        and "you are in it now" in text
+    )
     assert store.top_misses() == [("dasha:jupiter", 1)]
     with sqlite3.connect(store.path) as c:
         dump = "\n".join(c.iterdump())
-    assert "marriage" not in dump and "son's" not in dump and "current dasha mean" not in dump
+    assert (
+        "marriage" not in dump
+        and "son's" not in dump
+        and "current dasha mean" not in dump
+    )
 
 
-async def test_a_question_about_the_future_with_no_topic_is_declined_and_not_recorded(ctx, store):
+async def test_a_question_about_the_future_with_no_topic_is_declined_and_not_recorded(
+    ctx, store
+):
     update, msg = message(ALLOWED, "will I win the lottery")
     await bot.on_text(update, ctx)
     assert last_reply(msg) == prompts.NO_TOPIC and store.top_misses() == []
 
 
-async def test_without_birth_details_the_entry_is_still_shown_and_the_person_is_invited(ctx, store):
+async def test_without_birth_details_the_entry_is_still_shown_and_the_person_is_invited(
+    ctx, store
+):
     update, msg = message(ALLOWED, "/ask")
     ctx.args = ["what", "is", "mars?"]
     await bot.cmd_ask(update, ctx)
     text = last_reply(msg)
-    assert "Mars as the strength" in text and prompts.NEED_BIRTH_FOR_FACTS in text and "From your chart" not in text
+    assert (
+        "Mars as the strength" in text
+        and prompts.NEED_BIRTH_FOR_FACTS in text
+        and "From your chart" not in text
+    )
 
 
 async def test_ask_menu_and_bare_command_prompt_for_a_question(ctx):
@@ -578,13 +741,20 @@ async def test_rahu_question_gets_its_sourced_names_and_the_astronomy_note(ctx, 
     update, msg = message(ALLOWED, "what is rahu")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert "Moon's ascending node" in text and "Source: Brihat Jataka 2.3 · checked" in text
-    assert "Moon's path crosses the Sun's path" in text and prompts.NO_SOURCE not in text
+    assert (
+        "Moon's ascending node" in text
+        and "Source: Brihat Jataka 2.3 · checked" in text
+    )
+    assert (
+        "Moon's path crosses the Sun's path" in text and prompts.NO_SOURCE not in text
+    )
     assert store.top_misses() == []
 
 
 async def test_answer_has_no_sanskrit_button_without_a_checked_verse(ctx):
-    update, msg = message(ALLOWED, "what does my venus dasha mean")  # Phaladeepika entries carry no verse text
+    update, msg = message(
+        ALLOWED, "what does my venus dasha mean"
+    )  # Phaladeepika entries carry no verse text
     await bot.on_text(update, ctx)
     assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
 
@@ -593,23 +763,38 @@ async def test_planet_answers_offer_the_sanskrit_view_and_label_the_typed_text(c
     update, msg = message(ALLOWED, "what is venus")
     await bot.on_text(update, ctx)
     assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {
-        prompts.BTN_MORE: "qa:full:planet:venus", prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+        prompts.BTN_MORE: "qa:full:planet:venus",
+        prompts.BTN_SANSKRIT: "qa:sa:planet:venus",
+    }
     update, msg = tap(ALLOWED, "qa:sa:planet:venus")
     update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(update, ctx)
     text = update.callback_query.edit_message_text.await_args.args[0]
     assert "मदनो" in text and "madano" in text  # verse 2.1: Venus is desire (madana)
-    assert text.count(prompts.VERSE_UNPROOFREAD) == 1  # one note under all the verses shown (2.1 and 2.3)
-    assert "Varahamihira describes Venus as the desire" not in text  # the English is swapped out, not added to
+    assert (
+        text.count(prompts.VERSE_UNPROOFREAD) == 1
+    )  # one note under all the verses shown (2.1 and 2.3)
+    assert (
+        "Varahamihira describes Venus as the desire" not in text
+    )  # the English is swapped out, not added to
 
 
-async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(ctx, tmp_path, monkeypatch):
+async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(
+    ctx, tmp_path, monkeypatch
+):
     entry = {
-        "id": "t-venus", "topic": "planet:venus", "system": "any", "english": "English words.",
+        "id": "t-venus",
+        "topic": "planet:venus",
+        "system": "any",
+        "english": "English words.",
         "citation": {"text": "Test", "chapter": 1, "verse": 1, "edition": "test"},
         "verse": {"devanagari": "शुक्रः", "roman": "śukraḥ", "text_checked": True},
-        "verification": {"level": "translation-checked", "checked_by": "t", "checked_on": "2026-11-09",
-                         "against": "test"},
+        "verification": {
+            "level": "translation-checked",
+            "checked_by": "t",
+            "checked_on": "2026-11-09",
+            "against": "test",
+        },
     }
     (tmp_path / "e.yaml").write_text(yaml.safe_dump([entry], allow_unicode=True))
     monkeypatch.setattr(entry_store, "ENTRIES_DIR", tmp_path)
@@ -618,15 +803,21 @@ async def test_sanskrit_toggle_swaps_a_checked_verse_in_place(ctx, tmp_path, mon
         update, msg = message(ALLOWED, "what is venus")
         await bot.on_text(update, ctx)
         assert "English words." in last_reply(msg)
-        assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+        assert buttons_of(msg.reply_text.await_args.kwargs["reply_markup"]) == {
+            prompts.BTN_SANSKRIT: "qa:sa:planet:venus"
+        }
 
         update, msg = tap(ALLOWED, "qa:sa:planet:venus")
         update.callback_query.edit_message_text = AsyncMock()
         await bot.on_button(update, ctx)
         edit = update.callback_query.edit_message_text.await_args
         assert "शुक्रः\nśukraḥ" in edit.args[0] and "English words." not in edit.args[0]
-        assert prompts.VERSE_UNPROOFREAD in edit.args[0]  # these test entries are not marked proofread
-        assert buttons_of(edit.kwargs["reply_markup"]) == {prompts.BTN_ENGLISH: "qa:en:planet:venus"}
+        assert (
+            prompts.VERSE_UNPROOFREAD in edit.args[0]
+        )  # these test entries are not marked proofread
+        assert buttons_of(edit.kwargs["reply_markup"]) == {
+            prompts.BTN_ENGLISH: "qa:en:planet:venus"
+        }
     finally:
         entry_store.load_entries.cache_clear()
 
@@ -656,11 +847,29 @@ from samay import narrate, qa
 def ai_on(monkeypatch):
     """The model is on; its replies are scripted. cfg["sort"] answers the topic sorter, cfg["ai"] the open answer."""
     monkeypatch.setattr(narrate, "OLLAMA_URL", "http://ollama.test")
-    cfg = {"sort": "planet:saturn", "ai": "Saturn is linked with discipline and patience in Jyotish.", "calls": []}
+    cfg = {
+        "sort": "planet:saturn",
+        "ai": "Saturn is linked with discipline and patience in Jyotish.",
+        "calls": [],
+    }
 
-    async def fake(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
+    async def fake(
+        system,
+        prompt,
+        client=None,
+        model=None,
+        timeout=None,
+        max_tokens=None,
+        temperature=None,
+    ):
         cfg["calls"].append(
-            {"system": system, "prompt": prompt, "model": model, "timeout": timeout, "temperature": temperature}
+            {
+                "system": system,
+                "prompt": prompt,
+                "model": model,
+                "timeout": timeout,
+                "temperature": temperature,
+            }
         )
         return cfg["sort"] if system == qa.MODEL_SYSTEM else cfg["ai"]
 
@@ -672,7 +881,9 @@ def _texts(msg):
     return [c.args[0] for c in msg.reply_text.await_args_list]
 
 
-async def test_ai_answer_uses_the_sources_as_context_and_is_the_only_response(ctx, ai_on):
+async def test_ai_answer_uses_the_sources_as_context_and_is_the_only_response(
+    ctx, ai_on
+):
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     (only,) = _texts(msg)
@@ -683,12 +894,21 @@ async def test_ai_answer_uses_the_sources_as_context_and_is_the_only_response(ct
     )
     call = next(c for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM)
     assert "Verified facts:" in call["prompt"]
-    assert "Checked source Brihat Jataka 2.1" in call["prompt"] and "sorrow of the cosmic person" in call["prompt"]
-    assert call["model"] == narrate.AI_MODEL and call["timeout"] == narrate.AI_TIMEOUT_SECONDS
+    assert (
+        "Checked source Brihat Jataka 2.1" in call["prompt"]
+        and "sorrow of the cosmic person" in call["prompt"]
+    )
+    assert (
+        call["model"] == narrate.AI_MODEL
+        and call["timeout"] == narrate.AI_TIMEOUT_SECONDS
+    )
 
 
 async def test_long_ai_answer_is_delivered_complete_with_its_source(ctx, ai_on):
-    ai_on["ai"] = "The text describes a period for reflection. " * 45 + "This is the complete conclusion."
+    ai_on["ai"] = (
+        "The text describes a period for reflection. " * 45
+        + "This is the complete conclusion."
+    )
     update, msg = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     (only,) = _texts(msg)
@@ -698,15 +918,22 @@ async def test_long_ai_answer_is_delivered_complete_with_its_source(ctx, ai_on):
 
 
 async def test_the_ai_answers_what_the_sources_cannot(ctx, store, ai_on):
-    ai_on["sort"], ai_on["ai"] = "none", "A nakshatra is one of 27 divisions of the Moon's path."
+    ai_on["sort"], ai_on["ai"] = (
+        "none",
+        "A nakshatra is one of 27 divisions of the Moon's path.",
+    )
     update, msg = message(ALLOWED, "what is a nakshatra?")
     await bot.on_text(update, ctx)
     (only,) = _texts(msg)
     assert only.startswith("A nakshatra is one of 27") and prompts.AI_CAVEAT in only
-    assert store.top_misses() == []  # nothing was sorted into a topic, so nothing is counted
+    assert (
+        store.top_misses() == []
+    )  # nothing was sorted into a topic, so nothing is counted
 
 
-async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(ctx, store, ai_on, empty_entries):
+async def test_unsourced_topic_notes_it_for_research_and_the_ai_still_answers(
+    ctx, store, ai_on, empty_entries
+):
     ai_on["sort"] = "dasha:venus"
     ai_on["ai"] = "This is a general explanation."
     update, msg = message(ALLOWED, "what does my venus dasha mean")
@@ -751,7 +978,9 @@ async def test_strangers_get_no_ai_answer_and_cost_no_model_call(ctx, ai_on):
 
 
 @needs_kernel
-async def test_the_model_does_not_replace_the_plain_today_unless_rewording_is_switched_on(ctx, store, ai_on, monkeypatch):
+async def test_the_model_does_not_replace_the_plain_today_unless_rewording_is_switched_on(
+    ctx, store, ai_on, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 9, 15, 0, tzinfo=UTC))
     _save_pune(store)
     update, msg = message(ALLOWED, "/today")
@@ -773,13 +1002,17 @@ def clock(monkeypatch):
 
 async def test_start_sent_twice_is_answered_once(ctx, clock, caplog):
     first, msg1 = message(ALLOWED, "/start")
-    second, msg2 = message(ALLOWED, "/start")  # a second, separate message, as a client double-send would be
+    second, msg2 = message(
+        ALLOWED, "/start"
+    )  # a second, separate message, as a client double-send would be
     with caplog.at_level(logging.INFO, logger="samay"):
         await bot.cmd_start(first, ctx)
         clock["t"] += 0.4
         await bot.cmd_start(second, ctx)
     assert msg1.reply_text.await_count == 1 and msg2.reply_text.await_count == 0
-    assert "ignored a repeated message" in caplog.text and "/start" not in caplog.text  # no message text logged
+    assert (
+        "ignored a repeated message" in caplog.text and "/start" not in caplog.text
+    )  # no message text logged
 
 
 async def test_the_same_command_works_again_after_the_window(ctx, clock):
@@ -792,18 +1025,27 @@ async def test_the_same_command_works_again_after_the_window(ctx, clock):
 
 async def test_different_text_or_a_different_chat_is_never_suppressed(ctx, clock):
     ctx.application.bot_data[bot.ALLOWED_KEY] = frozenset({ALLOWED, 222})
-    for chat, text, handler in ((ALLOWED, "/start", bot.cmd_start), (ALLOWED, "/help", bot.cmd_help),
-                                (222, "/start", bot.cmd_start)):
+    for chat, text, handler in (
+        (ALLOWED, "/start", bot.cmd_start),
+        (ALLOWED, "/help", bot.cmd_help),
+        (222, "/start", bot.cmd_start),
+    ):
         update, msg = message(chat, text)
         await handler(update, ctx)
         assert msg.reply_text.await_count == 1, (chat, text)
 
 
-async def test_a_menu_button_that_calls_a_command_handler_is_not_mistaken_for_a_repeat(ctx, store, clock):
-    update, msg = message(ALLOWED, prompts.MENU_FORGET)  # on_text -> cmd_forget, for the same update
+async def test_a_menu_button_that_calls_a_command_handler_is_not_mistaken_for_a_repeat(
+    ctx, store, clock
+):
+    update, msg = message(
+        ALLOWED, prompts.MENU_FORGET
+    )  # on_text -> cmd_forget, for the same update
     await bot.on_text(update, ctx)
     assert last_reply(msg) == prompts.FORGET_ASK
-    again, msg2 = message(ALLOWED, prompts.MENU_FORGET)  # a double tap on the same button
+    again, msg2 = message(
+        ALLOWED, prompts.MENU_FORGET
+    )  # a double tap on the same button
     await bot.on_text(again, ctx)
     msg2.reply_text.assert_not_awaited()
 
@@ -839,36 +1081,52 @@ def _router_prompts(cfg):
     return [c["prompt"] for c in cfg["calls"] if c["system"] == qa.MODEL_SYSTEM]
 
 
-async def test_a_follow_up_is_routed_with_the_previous_topic_and_the_ai_sees_the_exchange(ctx, ai_on, clock):
+async def test_a_follow_up_is_routed_with_the_previous_topic_and_the_ai_sees_the_exchange(
+    ctx, ai_on, clock
+):
     update, _ = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     clock["t"] += 10
     ai_on["sort"] = "planet:jupiter"
     ai_on["ai"] = "Jupiter is associated with wisdom."
-    update, msg = message(ALLOWED, "and the other big one?")  # no keyword for the code to match
+    update, msg = message(
+        ALLOWED, "and the other big one?"
+    )  # no keyword for the code to match
     await bot.on_text(update, ctx)
     assert "Previous topic: planet:saturn" in _router_prompts(ai_on)[1]
     prompt = [c["prompt"] for c in ai_on["calls"] if c["system"] == qa.AI_SYSTEM][1]
-    assert "Person: What does Shani stand for?\nYou: Saturn is linked with discipline" in prompt
+    assert (
+        "Person: What does Shani stand for?\nYou: Saturn is linked with discipline"
+        in prompt
+    )
     assert "Jupiter" in _texts(msg)[0]
 
 
-async def test_small_talk_gets_only_the_models_reply_and_is_not_counted_as_a_miss(ctx, store, ai_on, clock):
-    ai_on["sort"], ai_on["ai"] = "none", "Namaste! Ask me about a planet, a house or your current period."
+async def test_small_talk_gets_only_the_models_reply_and_is_not_counted_as_a_miss(
+    ctx, store, ai_on, clock
+):
+    ai_on["sort"], ai_on["ai"] = (
+        "none",
+        "Namaste! Ask me about a planet, a house or your current period.",
+    )
     update, msg = message(ALLOWED, "hello, how are you?")
     await bot.on_text(update, ctx)
     (only,) = _texts(msg)
     assert only.startswith("Namaste!") and store.top_misses() == []
 
 
-async def test_small_talk_when_the_model_is_down_gets_the_plain_decline(ctx, ai_on, clock):
+async def test_small_talk_when_the_model_is_down_gets_the_plain_decline(
+    ctx, ai_on, clock
+):
     ai_on["sort"], ai_on["ai"] = "none", None
     update, msg = message(ALLOWED, "hello")
     await bot.on_text(update, ctx)
     assert _texts(msg) == [prompts.NO_TOPIC + "\n\n" + prompts.AI_UNAVAILABLE]
 
 
-async def test_the_conversation_is_remembered_for_a_few_turns_then_forgotten(ctx, ai_on, clock):
+async def test_the_conversation_is_remembered_for_a_few_turns_then_forgotten(
+    ctx, ai_on, clock
+):
     for i in range(6):
         update, _ = message(ALLOWED, f"question number {i}")
         await bot.on_text(update, ctx)
@@ -878,7 +1136,9 @@ async def test_the_conversation_is_remembered_for_a_few_turns_then_forgotten(ctx
     assert bot._recent_turns(ctx, ALLOWED) == []
 
 
-async def test_forgetting_me_clears_the_remembered_conversation(ctx, store, ai_on, clock):
+async def test_forgetting_me_clears_the_remembered_conversation(
+    ctx, store, ai_on, clock
+):
     update, _ = message(ALLOWED, "What does Shani stand for?")
     await bot.on_text(update, ctx)
     assert bot._recent_turns(ctx, ALLOWED)
@@ -907,9 +1167,14 @@ async def test_more_and_less_buttons_switch_the_answer_in_place(ctx):
     update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(update, ctx)
     edit = update.callback_query.edit_message_text.await_args
-    assert edit.args[0].count("• Varahamihira") >= 4 and "tr. N. Chidambaram Iyer" in edit.args[0]
+    assert (
+        edit.args[0].count("• Varahamihira") >= 4
+        and "tr. N. Chidambaram Iyer" in edit.args[0]
+    )
     assert buttons_of(edit.kwargs["reply_markup"]) == {
-        prompts.BTN_LESS: "qa:en:planet:venus", prompts.BTN_SANSKRIT: "qa:sa:planet:venus"}
+        prompts.BTN_LESS: "qa:en:planet:venus",
+        prompts.BTN_SANSKRIT: "qa:sa:planet:venus",
+    }
     update, _ = tap(ALLOWED, "qa:en:planet:venus")
     update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(update, ctx)
@@ -932,9 +1197,14 @@ async def test_typing_is_shown_while_the_block_runs_and_stops_afterwards(monkeyp
     async with bot.typing(update):
         await asyncio.sleep(0.05)
     calls_while_running = chat.send_action.await_count
-    assert calls_while_running >= 2 and chat.send_action.await_args.args[0] == bot.ChatAction.TYPING
+    assert (
+        calls_while_running >= 2
+        and chat.send_action.await_args.args[0] == bot.ChatAction.TYPING
+    )
     await asyncio.sleep(0.05)
-    assert chat.send_action.await_count == calls_while_running  # cancelled when the block ended
+    assert (
+        chat.send_action.await_count == calls_while_running
+    )  # cancelled when the block ended
 
 
 async def test_a_failing_typing_hint_never_breaks_the_reply(monkeypatch):
@@ -950,14 +1220,32 @@ async def test_typing_does_nothing_when_the_chat_cannot_show_it():
         pass
 
 
-async def test_the_chat_shows_typing_while_the_model_thinks(ctx, ai_on, clock, monkeypatch):
+async def test_the_chat_shows_typing_while_the_model_thinks(
+    ctx, ai_on, clock, monkeypatch
+):
     monkeypatch.setattr(bot, "TYPING_REFRESH_SECONDS", 0.01)
     update, msg = message(ALLOWED, "What does Shani stand for?")
     update.effective_chat = _chat_with_actions()
     real = ai_on["calls"]
 
-    async def slow(system, prompt, client=None, model=None, timeout=None, max_tokens=None, temperature=None):
-        real.append({"system": system, "prompt": prompt, "model": model, "timeout": timeout, "temperature": temperature})
+    async def slow(
+        system,
+        prompt,
+        client=None,
+        model=None,
+        timeout=None,
+        max_tokens=None,
+        temperature=None,
+    ):
+        real.append(
+            {
+                "system": system,
+                "prompt": prompt,
+                "model": model,
+                "timeout": timeout,
+                "temperature": temperature,
+            }
+        )
         await asyncio.sleep(0.05)
         return "planet:saturn" if system == qa.MODEL_SYSTEM else "A slow answer."
 
@@ -976,20 +1264,28 @@ async def test_no_typing_is_shown_when_the_model_is_off(ctx, clock):
     update.effective_chat.send_action.assert_not_awaited()
 
 
-async def test_a_tap_too_old_to_acknowledge_is_still_handled_but_other_errors_are_not(ctx, store):
+async def test_a_tap_too_old_to_acknowledge_is_still_handled_but_other_errors_are_not(
+    ctx, store
+):
     from telegram.error import BadRequest
 
     _save_pune(store)
     update, _ = tap(ALLOWED, "img:north:0")
-    update.callback_query.answer.side_effect = BadRequest("Query is too old and response timeout expired")
-    await bot.on_button(update, ctx)  # the tap waited behind a slow model call: the button still works
+    update.callback_query.answer.side_effect = BadRequest(
+        "Query is too old and response timeout expired"
+    )
+    await bot.on_button(
+        update, ctx
+    )  # the tap waited behind a slow model call: the button still works
     update.callback_query.edit_message_media.assert_awaited()
     update.callback_query.answer.side_effect = BadRequest("Chat not found")
     with pytest.raises(BadRequest):
         await bot.on_button(update, ctx)
 
 
-async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(ctx, store, monkeypatch):
+async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(
+    ctx, store, monkeypatch
+):
     import asyncio
 
     _save_pune(store)
@@ -1004,7 +1300,9 @@ async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(ctx
     second = asyncio.create_task(slow_handler(message(ALLOWED, "again")[0], ctx))
     await asyncio.sleep(0)
     tap_update, _ = tap(ALLOWED, "img:north:0")
-    await asyncio.wait_for(bot.on_button(tap_update, ctx), timeout=5)  # not blocked by the two waiting messages
+    await asyncio.wait_for(
+        bot.on_button(tap_update, ctx), timeout=5
+    )  # not blocked by the two waiting messages
     tap_update.callback_query.edit_message_media.assert_awaited()
     assert not second.done()  # messages in one chat stay in order
     release.set()
@@ -1012,36 +1310,53 @@ async def test_a_tap_is_answered_while_the_same_chat_waits_on_a_slow_message(ctx
 
 
 @needs_kernel
-async def test_a_question_about_the_week_ahead_gets_the_outlook_with_more_and_is_not_a_miss(ctx, store, monkeypatch):
+async def test_a_question_about_the_week_ahead_gets_the_outlook_with_more_and_is_not_a_miss(
+    ctx, store, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
     _save_pune(store)
     update, msg = message(ALLOWED, "What does my upcoming week look like")
     await bot.on_text(update, ctx)
     text = last_reply(msg)
-    assert "🔮 Your week ahead" in text and "The Moon changes house every couple of days" in text
-    assert "house" not in text.split("Tap")[0].replace("changes house", "").replace("change house", "")  # no houses, points or verses in plain words
+    assert (
+        "🔮 Your week ahead" in text
+        and "The Moon changes house every couple of days" in text
+    )
+    assert "house" not in text.split("Tap")[0].replace("changes house", "").replace(
+        "change house", ""
+    )  # no houses, points or verses in plain words
     assert [b.text for b in last_buttons(msg)] == [prompts.BTN_TECH]
     assert store.top_misses() == []
     tap_update, _ = tap(ALLOWED, last_buttons(msg)[0].callback_data)
     tap_update.callback_query.edit_message_text = AsyncMock()
     await bot.on_button(tap_update, ctx)
     shown = tap_update.callback_query.edit_message_text.await_args
-    assert "🌙 Moon" in shown.args[0] and "Counted from your Moon sign" in shown.args[0]  # the technical view
-    assert [b.text for b in shown.kwargs["reply_markup"].inline_keyboard[0]] == [prompts.BTN_PLAIN]
+    assert (
+        "🌙 Moon" in shown.args[0] and "Counted from your Moon sign" in shown.args[0]
+    )  # the technical view
+    assert [b.text for b in shown.kwargs["reply_markup"].inline_keyboard[0]] == [
+        prompts.BTN_PLAIN
+    ]
 
 
-async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on_the_last(ctx):
+async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on_the_last(
+    ctx,
+):
     update, msg = message(ALLOWED, "x")
     long_text = "\n\n".join(f"block {i} " + "word " * 300 for i in range(8))
     await bot._say(update, long_text, "BUTTONS")
     sent = [c.args[0] for c in msg.reply_text.await_args_list]
     assert len(sent) > 1 and all(len(s) <= 4096 for s in sent)
-    assert all("reply_markup" not in c.kwargs for c in msg.reply_text.await_args_list[:-1])
+    assert all(
+        "reply_markup" not in c.kwargs for c in msg.reply_text.await_args_list[:-1]
+    )
     assert msg.reply_text.await_args_list[-1].kwargs["reply_markup"] == "BUTTONS"
 
 
 @needs_kernel
-async def test_a_question_that_looks_ahead_gets_one_reflective_ai_answer(ctx, store, ai_on, monkeypatch):
+async def test_a_question_that_looks_ahead_gets_one_reflective_ai_answer(
+    ctx, store, ai_on, monkeypatch
+):
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
     _save_pune(store)
     ai_on["sort"] = "future:week"
@@ -1052,29 +1367,54 @@ async def test_a_question_that_looks_ahead_gets_one_reflective_ai_answer(ctx, st
     assert prompts.NO_SOURCE_AI in last and "This is a guess by an AI:" in last
     assert prompts.AI_PREDICTION_CAVEAT in last
     system = next(c["system"] for c in ai_on["calls"] if c["system"] != qa.MODEL_SYSTEM)
-    assert system == qa.AI_PREDICT_SYSTEM and "do not present anything as likely, expected, or a prediction" in system
+    assert (
+        system == qa.AI_PREDICT_SYSTEM
+        and "do not present anything as likely, expected, or a prediction" in system
+    )
 
 
 def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reach_the_model():
     from samay.subject import Subject
+
     a = lambda topic, who=qa.SELF: qa.Answer(topic, (), (), who=who)
-    assert qa.is_prediction(a("future:week")) and qa.is_prediction(a("when:marriage")) and qa.is_prediction(a("life:career"))
+    assert (
+        qa.is_prediction(a("future:week"))
+        and qa.is_prediction(a("when:marriage"))
+        and qa.is_prediction(a("life:career"))
+    )
     assert not qa.is_prediction(a("planet:saturn")) and not qa.is_prediction(a(None))
-    assert not qa.is_prediction(a("chart:longevity")) and not qa.is_prediction(a("chart:death_timing"))
-    assert qa.is_prediction(a("life:career", Subject("Maya", "daughter", True)))      # a child's life area is still gentle, not gated
+    assert not qa.is_prediction(a("chart:longevity")) and not qa.is_prediction(
+        a("chart:death_timing")
+    )
+    assert qa.is_prediction(
+        a("life:career", Subject("Maya", "daughter", True))
+    )  # a child's life area is still gentle, not gated
 
 
 @needs_kernel
-def test_the_morning_message_keeps_the_date_and_avoid_window_when_the_panchang_fails(monkeypatch, caplog):
+def test_the_morning_message_keeps_the_date_and_avoid_window_when_the_panchang_fails(
+    monkeypatch, caplog
+):
     def broken(*_a, **_k):
         raise RuntimeError("secret Maplewood details")
 
     monkeypatch.setattr(bot.service, "panchang_report", broken)
     with caplog.at_level(logging.ERROR, logger="samay"):
-        text = bot.compose_brief(None, MAPLEWOOD(), datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
-    assert "Good morning! Today is Monday, 09 November 2026." in text and "Tulu date" not in text
-    assert "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood" in text
-    assert "panchang report failed error=RuntimeError" in caplog.text and "secret" not in caplog.text
+        text = bot.compose_brief(
+            None, MAPLEWOOD(), datetime(2026, 11, 9, 13, 5, tzinfo=UTC)
+        )
+    assert (
+        "Good morning! Today is Monday, 09 November 2026." in text
+        and "Tulu date" not in text
+    )
+    assert (
+        "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood"
+        in text
+    )
+    assert (
+        "panchang report failed error=RuntimeError" in caplog.text
+        and "secret" not in caplog.text
+    )
 
 
 # --- panchang questions -------------------------------------------------------------------------
@@ -1087,14 +1427,18 @@ PUNE_HOME = lambda: geo.find_places("Pune, IN")[0]
 @pytest.fixture
 def no_router(monkeypatch):
     """Panchang questions must be answered without the birth-chart router."""
+
     def refuse(*_a, **_k):
         raise AssertionError("the birth-chart router was called")
+
     monkeypatch.setattr(qa, "route_with_model", refuse)
     monkeypatch.setattr(qa, "rule_route", refuse)
 
 
 @needs_kernel
-async def test_a_panchang_question_is_answered_for_the_saved_home_without_the_router(ctx, store, monkeypatch, no_router):
+async def test_a_panchang_question_is_answered_for_the_saved_home_without_the_router(
+    ctx, store, monkeypatch, no_router
+):
     monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 21, 4, 0, tzinfo=UTC))
     store.save_home(ALLOWED, "Pune", PUNE_HOME().id)
@@ -1105,7 +1449,9 @@ async def test_a_panchang_question_is_answered_for_the_saved_home_without_the_ro
     assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
 
 
-async def test_a_panchang_question_without_a_home_asks_for_the_city(ctx, store, monkeypatch, no_router):
+async def test_a_panchang_question_without_a_home_asks_for_the_city(
+    ctx, store, monkeypatch, no_router
+):
     monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
     update, msg = message(ALLOWED, "is it ekadashi today")
     await bot.on_text(update, ctx)
@@ -1114,11 +1460,59 @@ async def test_a_panchang_question_without_a_home_asks_for_the_city(ctx, store, 
     assert store.get_draft(ALLOWED)["purpose"] == "home"
 
 
-async def test_a_question_about_a_planet_still_reaches_the_birth_chart_router(ctx, monkeypatch):
+async def test_a_question_about_a_planet_still_reaches_the_birth_chart_router(
+    ctx, monkeypatch
+):
     monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
     seen = []
     real = qa.rule_route
-    monkeypatch.setattr(qa, "rule_route", lambda q, *a, **k: seen.append(q) or real(q, *a, **k))
+    monkeypatch.setattr(
+        qa, "rule_route", lambda q, *a, **k: seen.append(q) or real(q, *a, **k)
+    )
     update, msg = message(ALLOWED, "tell me about Jupiter")
     await bot.on_text(update, ctx)
     assert seen == ["tell me about Jupiter"] and "Jupiter" in last_reply(msg)
+
+
+@needs_kernel
+async def test_a_list_of_observance_days_this_month_is_answered_in_lines(
+    ctx, store, monkeypatch, no_router
+):
+    monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 22, 4, 0, tzinfo=UTC))
+    store.save_home(ALLOWED, "Pune", PUNE_HOME().id)
+    update, msg = message(ALLOWED, "list all auspicious days this month")
+    await bot.on_text(update, ctx)
+    (text,) = [
+        c.args[0] for c in msg.reply_text.await_args_list
+    ]  # a month is quick: no "one moment" first
+    assert text.splitlines()[0].startswith(
+        "Observance days from Sun 1 Nov to Mon 30 Nov 2026 in Pune"
+    )
+    assert "Fri 20 Nov: Ekadashi" in text and "auspicious" not in text.lower()
+    assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
+
+
+@needs_kernel
+async def test_a_years_list_says_one_moment_first_and_arrives_in_safe_parts(
+    ctx, store, monkeypatch, no_router
+):
+    monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 22, 4, 0, tzinfo=UTC))
+    store.save_home(ALLOWED, "Pune", PUNE_HOME().id)
+    update, msg = message(ALLOWED, "list all observance days for 2027")
+    await bot.on_text(update, ctx)
+    sent = [c.args[0] for c in msg.reply_text.await_args_list]
+    assert (
+        sent[0] == panchang_words.WORKING
+        and len(sent) >= 2
+        and all(len(s) <= 4096 for s in sent)
+    )
+    body = "\n".join(sent[1:])
+    assert body.startswith("Observance days from Fri 1 Jan to Fri 31 Dec 2027 in Pune")
+    assert (
+        "January 2027" in body
+        and "December 2027" in body
+        and body.rstrip().endswith(".")
+    )
+    assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU

@@ -1,4 +1,5 @@
 """The only API front ends call. Synchronous; the bot runs it in a worker thread."""
+
 from __future__ import annotations
 
 import hashlib
@@ -36,13 +37,20 @@ from .engine.geo import Place
 from .engine.paths import EPHEMERIS_PATH, PROFILES_DIR, TIME_STANDARDS_DIR
 from .engine.profiles import DEFAULT_PROFILE, load_profile
 from .engine.rules import fired, load_rules, rules_hash
-from .engine.vedic import antardashas, current_dasha, house_from, sign_index, vimshottari
+from .engine.vedic import (
+    antardashas,
+    current_dasha,
+    house_from,
+    sign_index,
+    vimshottari,
+)
 from .models import (
     BirthInput,
     NatalReport,
     NeedsDisambiguation,
     NextObservanceReport,
     ObservanceDay,
+    ObservanceListReport,
     OutlookReport,
     PanchangReport,
     Provenance,
@@ -52,7 +60,14 @@ from .models import (
 )
 
 DATE_FORMATS = (
-    "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%d.%m.%Y", "%d %B %Y", "%d %b %Y", "%B %d %Y", "%b %d %Y",
+    "%Y-%m-%d",
+    "%d-%m-%Y",
+    "%d/%m/%Y",
+    "%d.%m.%Y",
+    "%d %B %Y",
+    "%d %b %Y",
+    "%B %d %Y",
+    "%b %d %Y",
 )
 TRANSIT_GRAHAS = ("jupiter", "saturn", "rahu", "ketu")
 _ORDINAL = re.compile(r"(?<=\d)(st|nd|rd|th)\b", re.IGNORECASE)
@@ -63,7 +78,9 @@ _CLOCK = re.compile(r"(\d{1,2})(?:[:.](\d{2}))?\s*(?:([ap])\.?\s*m\.?)?", re.IGN
 class Clock:
     hour: int  # 24-hour reading of what was typed
     minute: int
-    ambiguous: bool  # typed 1-12 with no am/pm, so the hour could mean morning or evening
+    ambiguous: (
+        bool  # typed 1-12 with no am/pm, so the hour could mean morning or evening
+    )
 
 
 def parse_date(text: str) -> datetime:
@@ -74,7 +91,9 @@ def parse_date(text: str) -> datetime:
             return datetime.strptime(cleaned, fmt)
         except ValueError:
             continue
-    raise InvalidInput(f"could not read the date {text!r}; use DD-MM-YYYY, e.g. 15-08-1952")
+    raise InvalidInput(
+        f"could not read the date {text!r}; use DD-MM-YYYY, e.g. 15-08-1952"
+    )
 
 
 def parse_clock(text: str) -> Clock:
@@ -107,7 +126,9 @@ def resolve_birth(inp: BirthInput) -> ResolvedBirth | NeedsDisambiguation:
     else:
         places = geo.find_places(inp.place_text)
         if not places:
-            raise PlaceNotFound(f"no place called {inp.place_text!r}; try the nearest town or add ', CC'")
+            raise PlaceNotFound(
+                f"no place called {inp.place_text!r}; try the nearest town or add ', CC'"
+            )
         if len(places) > 1:
             return NeedsDisambiguation("place", tuple(places))
         place = places[0]
@@ -175,9 +196,15 @@ def _rules(schools: tuple[str, ...]):
 def natal_report(birth: ResolvedBirth) -> NatalReport:
     profile = load_profile(birth.profile)
     chart = ephemeris.compute_chart(
-        birth.utc, birth.place.latitude, birth.place.longitude, profile.ayanamsa, profile.node
+        birth.utc,
+        birth.place.latitude,
+        birth.place.longitude,
+        profile.ayanamsa,
+        profile.node,
     )
-    dashas = vimshottari(chart.planets["moon"].longitude, birth.utc, profile.dasha_year_days)
+    dashas = vimshottari(
+        chart.planets["moon"].longitude, birth.utc, profile.dasha_year_days
+    )
     yogas = fired(chart, list(_rules(profile.schools)))
     return NatalReport(
         birth=birth,
@@ -192,13 +219,20 @@ def natal_report(birth: ResolvedBirth) -> NatalReport:
 def today_report(birth: ResolvedBirth, now: datetime) -> TodayReport:
     natal = natal_report(birth)
     profile = load_profile(birth.profile)
-    sky = ephemeris.compute_chart(now, birth.place.latitude, birth.place.longitude, profile.ayanamsa, profile.node)
+    sky = ephemeris.compute_chart(
+        now, birth.place.latitude, birth.place.longitude, profile.ayanamsa, profile.node
+    )
     moon_sign = sign_index(natal.chart.planets["moon"].longitude)
     transits = tuple(
-        (g, house_from(moon_sign, sign_index(sky.planets[g].longitude))) for g in TRANSIT_GRAHAS
+        (g, house_from(moon_sign, sign_index(sky.planets[g].longitude)))
+        for g in TRANSIT_GRAHAS
     )
-    dasha = current_dasha(natal.chart.planets["moon"].longitude, birth.utc, now, profile.dasha_year_days)
-    return TodayReport(natal=natal, sky=sky, now=now, current_dasha=dasha, transit_houses=transits)
+    dasha = current_dasha(
+        natal.chart.planets["moon"].longitude, birth.utc, now, profile.dasha_year_days
+    )
+    return TodayReport(
+        natal=natal, sky=sky, now=now, current_dasha=dasha, transit_houses=transits
+    )
 
 
 # span -> (length, sampling step, planets shown, whether to check vedha). The Moon changes sign every ~2.5 days, so it
@@ -208,12 +242,24 @@ OUTLOOK_SPANS = {
     "week": (timedelta(days=7), timedelta(hours=1), _FAST, True),
     "fortnight": (timedelta(days=14), timedelta(hours=1), _FAST, True),
     "month": (timedelta(days=30), timedelta(hours=3), _FAST[1:], True),
-    "year": (timedelta(days=365), timedelta(days=1), ("jupiter", "saturn", "rahu", "ketu"), False),
-    "years": (timedelta(days=5 * 365 + 1), timedelta(days=1), ("jupiter", "saturn", "rahu", "ketu"), False),
+    "year": (
+        timedelta(days=365),
+        timedelta(days=1),
+        ("jupiter", "saturn", "rahu", "ketu"),
+        False,
+    ),
+    "years": (
+        timedelta(days=5 * 365 + 1),
+        timedelta(days=1),
+        ("jupiter", "saturn", "rahu", "ketu"),
+        False,
+    ),
 }
 
 
-def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | None = None) -> OutlookReport:
+def outlook_report(
+    birth: ResolvedBirth, now: datetime, span: str, tz: str | None = None
+) -> OutlookReport:
     """The planets' transits over the period ahead, from the natal Moon sign, read by Phaladeepika chapter 26."""
     length, step, planets, check_vedha = OUTLOOK_SPANS[span]
     natal = natal_report(birth)
@@ -237,13 +283,30 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
     sub = antardasha.load_rules()
     pairs = [(at_start[0].lord, at_start[1].lord)] if at_start else []
     pairs += [(lord, a.lord) for lord, a in changes]
-    results = tuple((m, a, *sub.result(m, a)) for m, a in dict.fromkeys(pairs) if sub.result(m, a))
+    results = tuple(
+        (m, a, *sub.result(m, a)) for m, a in dict.fromkeys(pairs) if sub.result(m, a)
+    )
     return OutlookReport(
-        natal=natal, span=span, start=start, end=end, tz=tz or birth.place.tz, moon_sign=moon_sign,
-        stays=tuple(found), dasha_at_start=at_start,
-        dasha_changes=tuple(changes), rules_level=rules.level, rules_edition=rules.edition, rules_pages=rules.pages,
-        antardasha=results, antardasha_edition=sub.edition, antardasha_pages=sub.pages, antardasha_checked=sub.servable,
-        ashtaka_checked=ashtaka.servable, ashtaka_meaning=tuple(sorted(ashtaka.meaning.items())) if ashtaka.servable else (),
+        natal=natal,
+        span=span,
+        start=start,
+        end=end,
+        tz=tz or birth.place.tz,
+        moon_sign=moon_sign,
+        stays=tuple(found),
+        dasha_at_start=at_start,
+        dasha_changes=tuple(changes),
+        rules_level=rules.level,
+        rules_edition=rules.edition,
+        rules_pages=rules.pages,
+        antardasha=results,
+        antardasha_edition=sub.edition,
+        antardasha_pages=sub.pages,
+        antardasha_checked=sub.servable,
+        ashtaka_checked=ashtaka.servable,
+        ashtaka_meaning=(
+            tuple(sorted(ashtaka.meaning.items())) if ashtaka.servable else ()
+        ),
         ashtaka_variants=sum(1 for v in ashtaka.variants if "phaladeepika" in v),
     )
 
@@ -277,7 +340,9 @@ def warm() -> VersionStamp:
 TIMING_YEARS = 3
 
 
-def timing_report(birth: ResolvedBirth, now: datetime, area: str, tz: str | None = None) -> house_timing.Timing | None:
+def timing_report(
+    birth: ResolvedBirth, now: datetime, area: str, tz: str | None = None
+) -> house_timing.Timing | None:
     """Phaladeepika's timing rules for a life area over the next TIMING_YEARS years, one day at a time (noon UTC). None until the rules are
     checked."""
     rules = house_timing.load_rules()
@@ -295,7 +360,9 @@ def timing_report(birth: ResolvedBirth, now: datetime, area: str, tz: str | None
 DEATH_TIMING_YEARS = 5
 
 
-def death_timing_report(birth: ResolvedBirth, now: datetime, tz: str | None = None) -> death_timing.DeathTiming | None:
+def death_timing_report(
+    birth: ResolvedBirth, now: datetime, tz: str | None = None
+) -> death_timing.DeathTiming | None:
     """Phaladeepika's death-timing conditions as stretches of days over the next DEATH_TIMING_YEARS years (noon UTC, one per day). None until checked.
     Never a date: the book names conditions only."""
     rules = death_timing.load_rules()
@@ -310,17 +377,26 @@ def death_timing_report(birth: ResolvedBirth, now: datetime, tz: str | None = No
     if not found:
         return None
     exits = death_transits.load_rules()
-    if exits.servable:  # chapter 17 adds its transit rules, using Gulika and Yamakantaka when they can be worked out
+    if (
+        exits.servable
+    ):  # chapter 17 adds its transit rules, using Gulika and Yamakantaka when they can be worked out
         ups = upagraha_report(birth, force=True)
         longs = {p.key: p.longitude for p in ups.points} if ups else {}
         night = None if not ups or not ups.when else ups.when == "night"
-        found = replace(found, results=found.results + death_transits.find(exits, natal.chart, times, track, longs, night))
+        found = replace(
+            found,
+            results=found.results
+            + death_transits.find(exits, natal.chart, times, track, longs, night),
+        )
     return replace(found, tz=tz or birth.place.tz)
 
 
-def upagraha_report(birth: ResolvedBirth, force: bool = False) -> upagrahas.Upagrahas | None:
+def upagraha_report(
+    birth: ResolvedBirth, force: bool = False
+) -> upagrahas.Upagrahas | None:
     """Gulika and the other upagrahas of this birth, by Phaladeepika chapter 25. None until the rules are checked. `force` works the points out anyway,
-    for a rule (chapter 17) that needs a point but shows only its own result, never the upagraha texts."""
+    for a rule (chapter 17) that needs a point but shows only its own result, never the upagraha texts.
+    """
     rules = upagrahas.load_rules()
     if not rules.servable and not force:
         return None
@@ -331,10 +407,14 @@ def upagraha_report(birth: ResolvedBirth, force: bool = False) -> upagrahas.Upag
     p = birth.place
 
     def ascendant_at(moment: datetime) -> float:
-        return ephemeris.compute_chart(moment, p.latitude, p.longitude, profile.ayanamsa, profile.node).ascendant
+        return ephemeris.compute_chart(
+            moment, p.latitude, p.longitude, profile.ayanamsa, profile.node
+        ).ascendant
 
     local = birth.utc.astimezone(ZoneInfo(p.tz))
-    return upagrahas.find(rules, natal.chart, local, p.latitude, p.longitude, p.tz, ascendant_at)
+    return upagrahas.find(
+        rules, natal.chart, local, p.latitude, p.longitude, p.tz, ascendant_at
+    )
 
 
 def strength_report(birth: ResolvedBirth) -> planet_strength.Strengths | None:
@@ -372,12 +452,17 @@ def reference_place() -> Place | None:
 
 def observance_explanation(name: str, directory=None) -> list[str]:
     """Checked entries for an observance, in our own words. Unchecked entries are never returned."""
-    return [e.english for e in entries.answers_for(f"observance:{name}", directory=directory)]
+    return [
+        e.english
+        for e in entries.answers_for(f"observance:{name}", directory=directory)
+    ]
 
 
 def nakshatra_explanation(name: str, directory=None) -> list[str]:
     """Checked entries for a nakshatra, in our own words. Unchecked entries are never returned."""
-    return [e.english for e in entries.answers_for(f"nakshatra:{name}", directory=directory)]
+    return [
+        e.english for e in entries.answers_for(f"nakshatra:{name}", directory=directory)
+    ]
 
 
 def _explanation(name: str) -> str | None:
@@ -385,26 +470,44 @@ def _explanation(name: str) -> str | None:
     return found[0] if found else None
 
 
-def _as_day(name: str, label: str, o: observances.Observance) -> ObservanceDay:
+def _as_day(
+    name: str, label: str, o: observances.Observance, explain: bool = True
+) -> ObservanceDay:
     """The engine may name one alternate day for several reasons (a kshaya day that is also another tradition's day);
     each day is listed once, its reasons joined in the order the engine gave them."""
     reasons: dict[date, list[str]] = {}
     for a in o.alternates:
         reasons.setdefault(a.day, []).append(a.reason)
-    alternates = tuple((day, " and ".join(dict.fromkeys(why))) for day, why in reasons.items())
-    return ObservanceDay(name, label, o.primary, o.kind, alternates, _explanation(name))
+    alternates = tuple(
+        (day, " and ".join(dict.fromkeys(why))) for day, why in reasons.items()
+    )
+    return ObservanceDay(
+        name,
+        label,
+        o.primary,
+        o.kind,
+        alternates,
+        _explanation(name) if explain else None,
+    )
 
 
 def panchang_report(place: Place, day: date) -> PanchangReport | None:
     """Everything the bot says about one local day at a place. Observance days are named only from verified rules
-    and only once the family's tradition is set; otherwise the report says that a claim was withheld."""
+    and only once the family's tradition is set; otherwise the report says that a claim was withheld.
+    """
     profile, site = _panchang_profile(), _site(place)
     facts = panchang.day_facts(site, day, profile.ayanamsa, profile.sunrise_definition)
     if facts is None:
         return None
     tulu_profile = tulu.load_tulu_profile(PANCHANG_PROFILES_DIR)
-    date_in_tulu = tulu.tulu_date(day, place.latitude, place.longitude, place.tz, tulu_profile.cutoff,
-                                  tulu_profile.ayanamsa)
+    date_in_tulu = tulu.tulu_date(
+        day,
+        place.latitude,
+        place.longitude,
+        place.tz,
+        tulu_profile.cutoff,
+        tulu_profile.ayanamsa,
+    )
     today: list[ObservanceDay] = []
     needs_tradition = withheld = False
     for spec in profile.observances.values():
@@ -412,30 +515,134 @@ def panchang_report(place: Place, day: date) -> PanchangReport | None:
             withheld = True
             continue
         try:
-            found = observances.observances_for(spec.rules, profile.sampradaya, site, day, day, profile.ayanamsa,
-                                                profile.margin_minutes, profile.sunrise_definition)
+            found = observances.observances_for(
+                spec.rules,
+                profile.sampradaya,
+                site,
+                day,
+                day,
+                profile.ayanamsa,
+                profile.margin_minutes,
+                profile.sunrise_definition,
+            )
         except SampradayaNotSet:
             needs_tradition = True
             continue
         today += [_as_day(spec.name, spec.label, o) for o in found]
     nakshatra_key = facts.nakshatra.name.lower().replace(" ", "-")
-    if notes := nakshatra_explanation(nakshatra_key):  # only once a checked entry exists
-        today.append(ObservanceDay(nakshatra_key, facts.nakshatra.name, None, "single", (), notes[0]))
-    return PanchangReport(place.label, place.tz, facts, date_in_tulu, tulu_profile.cutoff, tuple(today),
-                          needs_tradition, withheld)
+    if notes := nakshatra_explanation(
+        nakshatra_key
+    ):  # only once a checked entry exists
+        today.append(
+            ObservanceDay(
+                nakshatra_key, facts.nakshatra.name, None, "single", (), notes[0]
+            )
+        )
+    return PanchangReport(
+        place.label,
+        place.tz,
+        facts,
+        date_in_tulu,
+        tulu_profile.cutoff,
+        tuple(today),
+        needs_tradition,
+        withheld,
+    )
 
 
-def next_observance_report(place: Place, name: str, today: date) -> NextObservanceReport:
+def next_observance_report(
+    place: Place, name: str, today: date
+) -> NextObservanceReport:
     """The next day an observance falls on, or why no day can be named."""
     profile = _panchang_profile()
     spec = profile.observances[name]
-    base = {"place_label": place.label, "tz": place.tz, "name": name, "label": spec.label}
+    base = {
+        "place_label": place.label,
+        "tz": place.tz,
+        "name": name,
+        "label": spec.label,
+    }
     if not spec.verified:
-        return NextObservanceReport(**base, found=None, claim_available=False, needs_sampradaya=False)
+        return NextObservanceReport(
+            **base, found=None, claim_available=False, needs_sampradaya=False
+        )
     try:
-        found = observances.find_next(spec.rules, profile.sampradaya, _site(place), today, profile.ayanamsa,
-                                      profile.margin_minutes, profile.sunrise_definition)
+        found = observances.find_next(
+            spec.rules,
+            profile.sampradaya,
+            _site(place),
+            today,
+            profile.ayanamsa,
+            profile.margin_minutes,
+            profile.sunrise_definition,
+        )
     except SampradayaNotSet:
-        return NextObservanceReport(**base, found=None, claim_available=False, needs_sampradaya=True)
-    return NextObservanceReport(**base, found=None if found is None else _as_day(name, spec.label, found),
-                                claim_available=True, needs_sampradaya=False)
+        return NextObservanceReport(
+            **base, found=None, claim_available=False, needs_sampradaya=True
+        )
+    return NextObservanceReport(
+        **base,
+        found=None if found is None else _as_day(name, spec.label, found),
+        claim_available=True,
+        needs_sampradaya=False,
+    )
+
+
+LIST_MAX_DAYS = 366
+
+
+def observance_list_report(
+    place: Place, first: date, last: date, names: tuple[str, ...] = ()
+) -> ObservanceListReport:
+    """Every day the verified rules name between two local days (inclusive), for the observances in `names` or all
+    of them. One engine search per observance covers the whole range. A day is named only from a verified rule and,
+    where traditions differ, only once the family's tradition is set. Over LIST_MAX_DAYS nothing is worked out.
+    """
+    profile, site = _panchang_profile(), _site(place)
+    specs = [s for s in profile.observances.values() if not names or s.name in names]
+    base = {
+        "place_label": place.label,
+        "tz": place.tz,
+        "first": first,
+        "last": last,
+        "labels": tuple(s.label for s in specs),
+        "filtered": bool(names),
+    }
+    if (last - first).days + 1 > LIST_MAX_DAYS:
+        return ObservanceListReport(
+            **base, days=(), withheld=(), needs_sampradaya=False, too_long=True
+        )
+    days: list[ObservanceDay] = []
+    needs_tradition = False
+    for spec in specs:
+        if not spec.verified:
+            continue
+        try:
+            found = observances.observances_for(
+                spec.rules,
+                profile.sampradaya,
+                site,
+                first,
+                last,
+                profile.ayanamsa,
+                profile.margin_minutes,
+                profile.sunrise_definition,
+            )
+        except SampradayaNotSet:
+            needs_tradition = True
+            continue
+        days += [_as_day(spec.name, spec.label, o, explain=False) for o in found]
+    order = [s.name for s in specs]
+    days.sort(
+        key=lambda o: (
+            o.primary or min((d for d, _ in o.alternates), default=first),
+            order.index(o.name),
+        )
+    )
+    return ObservanceListReport(
+        **base,
+        days=tuple(days),
+        withheld=tuple(s.label for s in specs if not s.verified),
+        needs_sampradaya=needs_tradition,
+        too_long=False,
+    )

@@ -3,6 +3,7 @@
 Long polling, so no inbound port or TLS. Synchronous work runs in a worker thread. Logs carry
 chat ids and error types only, never birth details.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -63,7 +64,9 @@ STORE_KEY, ALLOWED_KEY, LOCKS_KEY = "store", "allowed", "chat_locks"
 FORGET_YES, FORGET_NO = "forget:yes", "forget:no"
 QA_PREFIX = "qa:"  # qa:<sa|en|full>:<topic>
 QA_VIEWS = {"sa": "sanskrit", "en": "compact", "full": "full"}
-CHAT_KEY = "chats"  # in memory only: a few recent turns per chat, so follow-ups make sense
+CHAT_KEY = (
+    "chats"  # in memory only: a few recent turns per chat, so follow-ups make sense
+)
 CHAT_TURNS = 4
 SESSION_KEY = "sessions"  # in memory only: whom the chat is about, people not saved, who was just added
 SENS_PREFIX = "sens:"  # sens:yes@<pid>:<topic> | sens:no  (consent for a sensitive answer; nothing is remembered between taps)
@@ -74,7 +77,9 @@ BRIEF_HOURS = (6, 7, 8, 9)
 BRIEF_CHECK_SECONDS = 300
 CHART_PREFIX = "img:"  # img:<south|north>:<0|1 = degrees shown>
 NETWORK_TIMEOUT = 20.0  # seconds
-MENU = ReplyKeyboardMarkup([list(row) for row in prompts.MENU_ROWS], resize_keyboard=True)
+MENU = ReplyKeyboardMarkup(
+    [list(row) for row in prompts.MENU_ROWS], resize_keyboard=True
+)
 
 
 def _now() -> datetime:
@@ -95,7 +100,10 @@ def _keyboard(reply: flow.Reply) -> InlineKeyboardMarkup | None:
     if not reply.buttons:
         return None
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton(b.label, callback_data=b.data) for b in row] for row in reply.buttons]
+        [
+            [InlineKeyboardButton(b.label, callback_data=b.data) for b in row]
+            for row in reply.buttons
+        ]
     )
 
 
@@ -111,7 +119,8 @@ def _monotonic() -> float:
 def debounced(handler):
     """Answer a message once when the same text arrives again within DEBOUNCE_SECONDS in the same chat: a
     double tap, or a Telegram client that sent it twice. A handler that another handler calls for the same
-    update (the menu buttons call the command handlers) still runs, because the update id is the same."""
+    update (the menu buttons call the command handlers) still runs, because the update id is the same.
+    """
 
     @functools.wraps(handler)
     async def wrapper(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -120,7 +129,9 @@ def debounced(handler):
         if text and chat is not None:
             recent = ctx.application.bot_data.setdefault(RECENT_KEY, {})
             now, uid = _monotonic(), getattr(update, "update_id", id(update))
-            for stale in [k for k, (t, _) in recent.items() if now - t > DEBOUNCE_SECONDS]:
+            for stale in [
+                k for k, (t, _) in recent.items() if now - t > DEBOUNCE_SECONDS
+            ]:
                 del recent[stale]
             seen = recent.get((chat.id, text))
             if seen is not None and seen[1] != uid:
@@ -143,7 +154,7 @@ async def typing(update: Update, action: str = ChatAction.TYPING):
         while True:
             try:
                 await send(action)
-            except Exception as e:  # noqa: BLE001 - a cosmetic hint must never break the reply
+            except Exception as e:  # noqa: BLE001 - a failed typing indicator must never break the answer
                 log.debug("chat action not sent: %s", type(e).__name__)
             await asyncio.sleep(TYPING_REFRESH_SECONDS)
 
@@ -159,14 +170,25 @@ async def typing(update: Update, action: str = ChatAction.TYPING):
 def chart_markup(style: str, degrees: bool) -> InlineKeyboardMarkup:
     """The two switches under the chart picture: South/North style and degrees on/off."""
     other = "north" if style == "south" else "south"
-    return InlineKeyboardMarkup([[
-        InlineKeyboardButton(f"🔄 {other.title()} Indian", callback_data=f"{CHART_PREFIX}{other}:{int(degrees)}"),
-        InlineKeyboardButton("🔢 Hide degrees" if degrees else "🔢 Show degrees",
-                             callback_data=f"{CHART_PREFIX}{style}:{int(not degrees)}"),
-    ]])
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    f"🔄 {other.title()} Indian",
+                    callback_data=f"{CHART_PREFIX}{other}:{int(degrees)}",
+                ),
+                InlineKeyboardButton(
+                    "🔢 Hide degrees" if degrees else "🔢 Show degrees",
+                    callback_data=f"{CHART_PREFIX}{style}:{int(not degrees)}",
+                ),
+            ]
+        ]
+    )
 
 
-_LOCK_HELD: contextvars.ContextVar[frozenset] = contextvars.ContextVar("chat_lock_held", default=frozenset())
+_LOCK_HELD: contextvars.ContextVar[frozenset] = contextvars.ContextVar(
+    "chat_lock_held", default=frozenset()
+)
 
 
 def guarded(handler):
@@ -177,10 +199,14 @@ def guarded(handler):
         chat = update.effective_chat
         if chat is None or chat.id not in ctx.application.bot_data[ALLOWED_KEY]:
             return None
-        if update.callback_query is not None:  # a tap never waits behind a slow model call
+        if (
+            update.callback_query is not None
+        ):  # a tap never waits behind a slow model call
             return await handler(update, ctx)
         # Updates run concurrently, but a chat's messages and commands still go one at a time, in order.
-        if chat.id in _LOCK_HELD.get():  # a handler that calls another guarded handler already holds the lock
+        if (
+            chat.id in _LOCK_HELD.get()
+        ):  # a handler that calls another guarded handler already holds the lock
             return await handler(update, ctx)
         locks = ctx.application.bot_data.setdefault(LOCKS_KEY, {})
         async with locks.setdefault(chat.id, asyncio.Lock()):
@@ -199,13 +225,17 @@ def _store(ctx) -> Store:
 
 async def _say(update: Update, text: str, markup=None) -> None:
     message = update.effective_message
-    chunks = split_message(text)  # Telegram refuses a message over 4096 characters; buttons go on the last part
+    chunks = split_message(
+        text
+    )  # Telegram refuses a message over 4096 characters; buttons go on the last part
     for part in chunks[:-1]:
         await message.reply_text(part)
     await message.reply_text(chunks[-1], reply_markup=markup)
 
 
-async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefix: str = "") -> None:
+async def _send_flow(
+    update: Update, ctx, chat_id: int, out: flow.Outcome, prefix: str = ""
+) -> None:
     store = _store(ctx)
     note = ""
     if out.person is not None:
@@ -228,10 +258,16 @@ async def _send_flow(update: Update, ctx, chat_id: int, out: flow.Outcome, prefi
         await _say(update, out.reply.text, MENU)
         await _show(update, ctx, chat_id, "chart")
         return
-    if out.person is not None and out.draft is None:  # the last of the people just described is confirmed
+    if (
+        out.person is not None and out.draft is None
+    ):  # the last of the people just described is confirmed
         await asyncio.to_thread(store.delete_draft, chat_id)
         names = [name for _, name, kept in _session(ctx, chat_id)["intake"] if kept]
-        saved_line = "\n" + prompts.PEOPLE_SAVED_LIST.format(names=", ".join(names)) if names else ""
+        saved_line = (
+            "\n" + prompts.PEOPLE_SAVED_LIST.format(names=", ".join(names))
+            if names
+            else ""
+        )
         await _say(update, out.reply.text + saved_line + note, MENU)
         if out.then is not None:
             await _answer_intake(update, ctx, chat_id, *out.then)
@@ -274,16 +310,28 @@ async def _show(update: Update, ctx, chat_id: int, kind: str) -> None:
     now = _now()
     if kind == "today":
         report = await asyncio.to_thread(service.today_report, resolved, now)
-        reading = await narrate.narrate(today_facts(report)) if narrate.rewording_enabled() else None
+        reading = (
+            await narrate.narrate(today_facts(report))
+            if narrate.rewording_enabled()
+            else None
+        )
         extras = (await _rahu_line(ctx, chat_id, now),)
         text = render_today(report, reading, technical=False, extras=extras)
     else:
         natal = await asyncio.to_thread(service.natal_report, resolved)
         if kind == "chart":
             async with typing(update, ChatAction.UPLOAD_PHOTO):
-                picture = await asyncio.to_thread(render_chart_png, natal, "south", False)
-            await update.effective_message.reply_photo(photo=picture, reply_markup=chart_markup("south", False))
-        text = render_dasha(natal, now, technical=False) if kind == "dasha" else render_chart(natal, technical=False)
+                picture = await asyncio.to_thread(
+                    render_chart_png, natal, "south", False
+                )
+            await update.effective_message.reply_photo(
+                photo=picture, reply_markup=chart_markup("south", False)
+            )
+        text = (
+            render_dasha(natal, now, technical=False)
+            if kind == "dasha"
+            else render_chart(natal, technical=False)
+        )
     await _say(update, text, MENU)
 
 
@@ -320,7 +368,13 @@ def _session(ctx, chat_id: int) -> dict:
     now = _monotonic()
     state = sessions.get(chat_id)
     if state is None or now - state["touched"] > CHAT_TTL_SECONDS:
-        state = sessions[chat_id] = {"active": None, "guests": {}, "intake": [], "next_guest": -1, "touched": now}
+        state = sessions[chat_id] = {
+            "active": None,
+            "guests": {},
+            "intake": [],
+            "next_guest": -1,
+            "touched": now,
+        }
     state["touched"] = now
     return state
 
@@ -339,27 +393,41 @@ async def _person_by_id(ctx, chat_id: int, pid: int) -> Person | None:
 
 async def _record_person(ctx, chat_id: int, result: flow.PersonResult) -> bool:
     """A confirmed person becomes the one we are talking about. They are saved (encrypted) if the user chose that,
-    otherwise, or when there is no room left, kept in memory only. True if they were saved."""
+    otherwise, or when there is no room left, kept in memory only. True if they were saved.
+    """
     state = _session(ctx, chat_id)
     pid, saved = None, False
     if result.save:
         try:
-            pid = await asyncio.to_thread(_store(ctx).save_person, chat_id, result.name, result.relation or None,
-                                          result.birth)
+            pid = await asyncio.to_thread(
+                _store(ctx).save_person,
+                chat_id,
+                result.name,
+                result.relation or None,
+                result.birth,
+            )
             saved = True
         except TooManyPeople:
             pid = None
     if pid is None:
-        for gid in [g for g, who in state["guests"].items() if who.name.casefold() == result.name.casefold()]:
+        for gid in [
+            g
+            for g, who in state["guests"].items()
+            if who.name.casefold() == result.name.casefold()
+        ]:
             del state["guests"][gid]
         pid, state["next_guest"] = state["next_guest"], state["next_guest"] - 1
-        state["guests"][pid] = Person(pid, result.name, result.relation or None, result.birth)
+        state["guests"][pid] = Person(
+            pid, result.name, result.relation or None, result.birth
+        )
     state["active"] = pid
     state["intake"].append((pid, result.name, saved))
     return saved
 
 
-async def _subject_and_birth(ctx, chat_id: int, pid: int | None) -> tuple[Subject, ResolvedBirth | None]:
+async def _subject_and_birth(
+    ctx, chat_id: int, pid: int | None
+) -> tuple[Subject, ResolvedBirth | None]:
     """Whom an answer is about and their resolved birth: the user (pid None), or a person. A person who has been
     deleted since sends us back to the user."""
     if pid is not None:
@@ -381,7 +449,9 @@ def _switch(state: dict, name: str | None, people: list[Person]) -> bool:
     if name == "me":
         changed, state["active"] = state["active"] is not None, None
         return changed
-    person = next((p for p in reversed(people) if p.name.casefold() == name.casefold()), None)
+    person = next(
+        (p for p in reversed(people) if p.name.casefold() == name.casefold()), None
+    )
     if person is None or person.id == state["active"]:
         return False
     state["active"] = person.id
@@ -396,18 +466,62 @@ def answer_markup(
     later still shows that person's answer even if the conversation has moved on."""
     tag = "" if pid is None else f"@{pid}"
     if view == "sanskrit":
-        row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}")]
+        row = [
+            InlineKeyboardButton(
+                prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"
+            )
+        ]
     else:
         row = []
-        if answer.outlook is not None:  # plain words by default, the houses and points one tap away
-            row.append(InlineKeyboardButton(prompts.BTN_PLAIN if view == "full" else prompts.BTN_TECH,
-                                            callback_data=f"{QA_PREFIX}{'en' if view == 'full' else 'full'}{tag}:{answer.topic}"))
+        if (
+            answer.outlook is not None
+        ):  # plain words by default, the houses and points one tap away
+            row.append(
+                InlineKeyboardButton(
+                    prompts.BTN_PLAIN if view == "full" else prompts.BTN_TECH,
+                    callback_data=f"{QA_PREFIX}{'en' if view == 'full' else 'full'}{tag}:{answer.topic}",
+                )
+            )
         elif view == "full":
-            row.append(InlineKeyboardButton(prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"))
-        elif len(answer.entries) > 1 or answer.outlook is not None or answer.ashtaka is not None or answer.moon is not None or answer.together_checked or answer.yogas is not None or answer.timing is not None or answer.health is not None or answer.houses is not None or answer.women is not None or answer.death is not None or answer.upagrahas is not None or answer.strength is not None or answer.signs is not None or answer.vargas is not None or answer.malefic is not None or answer.death_bj is not None or answer.birth_bj is not None or answer.longevity is not None:
-            row.append(InlineKeyboardButton(prompts.BTN_MORE, callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}"))
+            row.append(
+                InlineKeyboardButton(
+                    prompts.BTN_LESS, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}"
+                )
+            )
+        elif (
+            len(answer.entries) > 1
+            or answer.outlook is not None
+            or answer.ashtaka is not None
+            or answer.moon is not None
+            or answer.together_checked
+            or answer.yogas is not None
+            or answer.timing is not None
+            or answer.health is not None
+            or answer.houses is not None
+            or answer.women is not None
+            or answer.death is not None
+            or answer.upagrahas is not None
+            or answer.strength is not None
+            or answer.signs is not None
+            or answer.vargas is not None
+            or answer.malefic is not None
+            or answer.death_bj is not None
+            or answer.birth_bj is not None
+            or answer.longevity is not None
+        ):
+            row.append(
+                InlineKeyboardButton(
+                    prompts.BTN_MORE,
+                    callback_data=f"{QA_PREFIX}full{tag}:{answer.topic}",
+                )
+            )
         if any(e.shows_verse for e in answer.entries):
-            row.append(InlineKeyboardButton(prompts.BTN_SANSKRIT, callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}"))
+            row.append(
+                InlineKeyboardButton(
+                    prompts.BTN_SANSKRIT,
+                    callback_data=f"{QA_PREFIX}sa{tag}:{answer.topic}",
+                )
+            )
     return InlineKeyboardMarkup([row]) if row else MENU
 
 
@@ -418,9 +532,14 @@ def _recent_turns(ctx, chat_id: int) -> list[tuple[float, str | None, str, str]]
     return [t for t in turns if now - t[0] <= CHAT_TTL_SECONDS]
 
 
-def _remember_turn(ctx, chat_id: int, topic: str | None, question: str, reply: str) -> None:
+def _remember_turn(
+    ctx, chat_id: int, topic: str | None, question: str, reply: str
+) -> None:
     chats = ctx.application.bot_data.setdefault(CHAT_KEY, {})
-    chats[chat_id] = [*_recent_turns(ctx, chat_id), (_monotonic(), topic, question[:200], reply[:400])][-CHAT_TURNS:]
+    chats[chat_id] = [
+        *_recent_turns(ctx, chat_id),
+        (_monotonic(), topic, question[:200], reply[:400]),
+    ][-CHAT_TURNS:]
 
 
 async def _start_intake(update: Update, ctx, chat_id: int, text: str) -> None:
@@ -429,17 +548,28 @@ async def _start_intake(update: Update, ctx, chat_id: int, text: str) -> None:
         extracted = await narrative.extract_people(text)
     _session(ctx, chat_id)["intake"] = []
     if extracted is None:  # the model could not read it: ask step by step instead
-        await _send_flow(update, ctx, chat_id, flow.begin_person(narrate=False), prompts.NARRATE_FAILED + "\n\n")
+        await _send_flow(
+            update,
+            ctx,
+            chat_id,
+            flow.begin_person(narrate=False),
+            prompts.NARRATE_FAILED + "\n\n",
+        )
         return
     await _send_flow(update, ctx, chat_id, flow.from_extraction(extracted))
 
 
-async def _answer_intake(update: Update, ctx, chat_id: int, question: str, about: str) -> None:
+async def _answer_intake(
+    update: Update, ctx, chat_id: int, question: str, about: str
+) -> None:
     """The question that came with the details: answered for the person it names, or for each person just added."""
     state = _session(ctx, chat_id)
     added = [(pid, name) for pid, name, _ in state["intake"]]
     state["intake"] = []
-    named = next((pid for pid, name in added if about and name.casefold() == about.casefold()), None)
+    named = next(
+        (pid for pid, name in added if about and name.casefold() == about.casefold()),
+        None,
+    )
     for pid in [named] if named is not None else [pid for pid, _ in added]:
         state["active"] = pid
         await _answer_question(update, ctx, chat_id, question, allow_intake=False)
@@ -447,7 +577,8 @@ async def _answer_intake(update: Update, ctx, chat_id: int, question: str, about
 
 async def _answer_panchang(update: Update, ctx, chat_id: int, question: str) -> bool:
     """Panchang questions (today's tithi, the next Ekadashi, what Ekadashi is) need a place, not a birth, so they are
-    answered before the birth-chart router, from the engine's facts only (no model). Returns True when it answered."""
+    answered before the birth-chart router, from the engine's facts only (no model). Returns True when it answered.
+    """
     asked = panchang_qa.sort(question)
     if asked is None:
         return False
@@ -456,16 +587,28 @@ async def _answer_panchang(update: Update, ctx, chat_id: int, question: str) -> 
         home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
         place = geo.get_place(home.place_id) if home is not None else None
     if place is None:
-        await _send_flow(update, ctx, chat_id, flow.begin_home(), f"{panchang_words.NEED_PLACE}\n\n")
+        await _send_flow(
+            update, ctx, chat_id, flow.begin_home(), f"{panchang_words.NEED_PLACE}\n\n"
+        )
         return True
-    await _say(update, await asyncio.to_thread(panchang_qa.answer, asked, place, _now()), MENU)
+    now = _now()
+    if panchang_qa.is_slow(
+        asked, place, now
+    ):  # a long list takes seconds: say so first
+        await _say(update, panchang_words.WORKING)
+    await _say(
+        update, await asyncio.to_thread(panchang_qa.answer, asked, place, now), MENU
+    )
     return True
 
 
-async def _answer_question(update: Update, ctx, chat_id: int, question: str, allow_intake: bool = True) -> None:
+async def _answer_question(
+    update: Update, ctx, chat_id: int, question: str, allow_intake: bool = True
+) -> None:
     """Understand the message and give one source-grounded AI answer when the local model is on.
     Otherwise show the checked answer. A message describing someone starts intake instead. Only a topic key is
-    counted when nothing sourced exists; question words stay in memory briefly for follow-ups, never on disk."""
+    counted when nothing sourced exists; question words stay in memory briefly for follow-ups, never on disk.
+    """
     if await _answer_panchang(update, ctx, chat_id, question):
         return
     ai = narrate.enabled()
@@ -477,8 +620,11 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
     if ai:
         async with typing(update):
             route = await qa.route_with_model(
-                question, previous=turns[-1][1] if turns else None,
-                people=[(p.name, p.relation) for p in people], active=current.name if current else None)
+                question,
+                previous=turns[-1][1] if turns else None,
+                people=[(p.name, p.relation) for p in people],
+                active=current.name if current else None,
+            )
     else:
         named = narrative.match_person(question, people)
         route = replace(qa.rule_route(question), person=named.name if named else None)
@@ -498,34 +644,74 @@ async def _answer_question(update: Update, ctx, chat_id: int, question: str, all
     if level:  # warn first; the answer is computed only after the tap
         yes = f"{SENS_PREFIX}yes{'' if pid is None else f'@{pid}'}:{route.topic}"
         if route.topic == "chart:death_timing":
-            warning = prompts.SENS_WARN_DEATH_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN_DEATH
+            warning = (
+                prompts.SENS_WARN_DEATH_CHILD.format(name=subject.name)
+                if level == "child"
+                else prompts.SENS_WARN_DEATH
+            )
         elif route.topic == "chart:afterlife" and level != "child":
             warning = prompts.SENS_WARN_AFTERLIFE
         elif route.topic == "chart:birth_parents":
-            warning = prompts.SENS_WARN_PARENTS_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN_PARENTS
+            warning = (
+                prompts.SENS_WARN_PARENTS_CHILD.format(name=subject.name)
+                if level == "child"
+                else prompts.SENS_WARN_PARENTS
+            )
         else:
-            warning = prompts.SENS_WARN_CHILD.format(name=subject.name) if level == "child" else prompts.SENS_WARN
-        await _say(update, warning, InlineKeyboardMarkup([[
-            InlineKeyboardButton(prompts.BTN_SENS_YES, callback_data=yes),
-            InlineKeyboardButton(prompts.BTN_SENS_NO, callback_data=f"{SENS_PREFIX}no")]]))
+            warning = (
+                prompts.SENS_WARN_CHILD.format(name=subject.name)
+                if level == "child"
+                else prompts.SENS_WARN
+            )
+        await _say(
+            update,
+            warning,
+            InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton(prompts.BTN_SENS_YES, callback_data=yes),
+                        InlineKeyboardButton(
+                            prompts.BTN_SENS_NO, callback_data=f"{SENS_PREFIX}no"
+                        ),
+                    ]
+                ]
+            ),
+        )
         return
     tz = await _home_tz(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
-    if answer.topic is not None and not answer.topic.startswith(qa.COMPUTED_PREFIXES) and not answer.entries:
+    answer = await asyncio.to_thread(
+        qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz
+    )
+    if (
+        answer.topic is not None
+        and not answer.topic.startswith(qa.COMPUTED_PREFIXES)
+        and not answer.entries
+    ):
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
     if ai:
         async with typing(update):
-            reply = await qa.ai_answer(question, answer, history=history, source_answer=sourced)
+            reply = await qa.ai_answer(
+                question, answer, history=history, source_answer=sourced
+            )
         if reply:
             _remember_turn(ctx, chat_id, answer.topic, question, reply)
             source_line = next(
-                (line for line in sourced.splitlines() if line.startswith(("Source:", "Sources:"))), None
+                (
+                    line
+                    for line in sourced.splitlines()
+                    if line.startswith(("Source:", "Sources:"))
+                ),
+                None,
             )
             note = prompts.MINOR_NOTE if answer.who.minor else None
             if answer.topic is not None and source_line is None:
-                note = "\n\n".join(part for part in (note, prompts.NO_SOURCE_AI) if part)
-            text = render_ai(reply, qa.is_prediction(answer), source_line, answer.who.heading, note)
+                note = "\n\n".join(
+                    part for part in (note, prompts.NO_SOURCE_AI) if part
+                )
+            text = render_ai(
+                reply, qa.is_prediction(answer), source_line, answer.who.heading, note
+            )
         elif answer.topic is None:
             text = prompts.NO_TOPIC + "\n\n" + prompts.AI_UNAVAILABLE
         else:
@@ -556,7 +742,9 @@ async def _sensitive_button(update: Update, ctx, chat_id: int, choice: str) -> N
         return
     subject, birth = await _subject_and_birth(ctx, chat_id, pid)
     tz = await _home_tz(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
+    answer = await asyncio.to_thread(
+        qa.answer_topic, topic, birth, _now(), None, "", subject, tz
+    )
     await update.callback_query.edit_message_reply_markup(reply_markup=None)
     await _say(update, render_answer(answer, birth_known=birth is not None), MENU)
 
@@ -576,14 +764,22 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
             await _say(update, prompts.PERSON_GONE, MENU)
             return
     subject, birth = await _subject_and_birth(ctx, chat_id, pid)
-    if qa.sensitivity(topic, subject):  # a sensitive answer is reached only through its warning, never through a More/Less button
+    if qa.sensitivity(
+        topic, subject
+    ):  # a sensitive answer is reached only through its warning, never through a More/Less button
         return
     tz = await _home_tz(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
+    answer = await asyncio.to_thread(
+        qa.answer_topic, topic, birth, _now(), None, "", subject, tz
+    )
     view = QA_VIEWS[mode]
     try:
-        first, *rest = split_message(render_answer(answer, view, birth_known=birth is not None))
-        await update.callback_query.edit_message_text(first, reply_markup=answer_markup(answer, view, pid))
+        first, *rest = split_message(
+            render_answer(answer, view, birth_known=birth is not None)
+        )
+        await update.callback_query.edit_message_text(
+            first, reply_markup=answer_markup(answer, view, pid)
+        )
         for part in rest:  # a long view continues in new messages under the edited one
             await update.effective_message.reply_text(part)
     except BadRequest as e:
@@ -604,14 +800,29 @@ async def cmd_ask(update: Update, ctx) -> None:
 def _people_markup(people: list[Person], active: int | None) -> InlineKeyboardMarkup:
     rows = []
     for p in people:
-        label = ("✅ " if p.id == active else "") + p.name + (f" ({p.relation})" if p.relation else "")
+        label = (
+            ("✅ " if p.id == active else "")
+            + p.name
+            + (f" ({p.relation})" if p.relation else "")
+        )
         label += "" if p.id > 0 else " · not saved"
-        rows.append([InlineKeyboardButton(label, callback_data=f"{PEOPLE_PREFIX}use:{p.id}"),
-                     InlineKeyboardButton("🗑", callback_data=f"{PEOPLE_PREFIX}del:{p.id}")])
-    rows.append([
-        InlineKeyboardButton(("✅ " if active is None else "") + prompts.BTN_ABOUT_ME, callback_data=f"{PEOPLE_PREFIX}me"),
-        InlineKeyboardButton(prompts.BTN_ADD_PERSON, callback_data=f"{PEOPLE_PREFIX}add"),
-    ])
+        rows.append(
+            [
+                InlineKeyboardButton(label, callback_data=f"{PEOPLE_PREFIX}use:{p.id}"),
+                InlineKeyboardButton("🗑", callback_data=f"{PEOPLE_PREFIX}del:{p.id}"),
+            ]
+        )
+    rows.append(
+        [
+            InlineKeyboardButton(
+                ("✅ " if active is None else "") + prompts.BTN_ABOUT_ME,
+                callback_data=f"{PEOPLE_PREFIX}me",
+            ),
+            InlineKeyboardButton(
+                prompts.BTN_ADD_PERSON, callback_data=f"{PEOPLE_PREFIX}add"
+            ),
+        ]
+    )
     return InlineKeyboardMarkup(rows)
 
 
@@ -648,10 +859,19 @@ async def _people_button(update: Update, ctx, chat_id: int, data: str) -> None:
         state["active"] = pid
         await _say(update, prompts.SWITCHED.format(name=person.name), MENU)
     elif action == "del":
-        markup = InlineKeyboardMarkup([[
-            InlineKeyboardButton(prompts.BTN_REALLY_DELETE.format(name=person.name), callback_data=f"{PEOPLE_PREFIX}delyes:{pid}"),
-            InlineKeyboardButton(prompts.BTN_NO, callback_data=f"{PEOPLE_PREFIX}delno:{pid}"),
-        ]])
+        markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton(
+                        prompts.BTN_REALLY_DELETE.format(name=person.name),
+                        callback_data=f"{PEOPLE_PREFIX}delyes:{pid}",
+                    ),
+                    InlineKeyboardButton(
+                        prompts.BTN_NO, callback_data=f"{PEOPLE_PREFIX}delno:{pid}"
+                    ),
+                ]
+            ]
+        )
         await _say(update, prompts.ASK_DELETE_PERSON.format(name=person.name), markup)
     elif action == "delyes":
         if pid < 0:
@@ -676,15 +896,22 @@ def _hour_label(hour: int) -> str:
 
 
 def brief_markup() -> InlineKeyboardMarkup:
-    hours = [InlineKeyboardButton(_hour_label(h), callback_data=f"{BRIEF_PREFIX}{h}") for h in BRIEF_HOURS]
-    off = [InlineKeyboardButton(prompts.BTN_BRIEF_OFF, callback_data=f"{BRIEF_PREFIX}off")]
+    hours = [
+        InlineKeyboardButton(_hour_label(h), callback_data=f"{BRIEF_PREFIX}{h}")
+        for h in BRIEF_HOURS
+    ]
+    off = [
+        InlineKeyboardButton(prompts.BTN_BRIEF_OFF, callback_data=f"{BRIEF_PREFIX}off")
+    ]
     return InlineKeyboardMarkup([hours, off])
 
 
 def _brief_status(home: Home, place) -> str:
     if home.brief_hour is None:
         return prompts.BRIEF_STATUS_OFF
-    return prompts.BRIEF_STATUS_ON.format(time=_hour_label(home.brief_hour), place=place.name)
+    return prompts.BRIEF_STATUS_ON.format(
+        time=_hour_label(home.brief_hour), place=place.name
+    )
 
 
 @guarded
@@ -693,10 +920,14 @@ async def cmd_brief(update: Update, ctx) -> None:
     chat_id = update.effective_chat.id
     home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
     if home is None:
-        await _send_flow(update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME)
+        await _send_flow(
+            update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME
+        )
         return
     place = geo.get_place(home.place_id)
-    await _say(update, f"{_brief_status(home, place)}\n\n{prompts.BRIEF_ASK}", brief_markup())
+    await _say(
+        update, f"{_brief_status(home, place)}\n\n{prompts.BRIEF_ASK}", brief_markup()
+    )
 
 
 async def _set_brief(update: Update, ctx, chat_id: int, choice: str) -> None:
@@ -706,31 +937,43 @@ async def _set_brief(update: Update, ctx, chat_id: int, choice: str) -> None:
     store = _store(ctx)
     home = await asyncio.to_thread(store.get_home, chat_id)
     if home is None:
-        await _send_flow(update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME)
+        await _send_flow(
+            update, ctx, chat_id, flow.begin_home(), prompts.BRIEF_NEED_HOME
+        )
         return
     hour = None if choice == "off" else hours[choice]
     await asyncio.to_thread(store.set_brief, chat_id, hour)
     place = geo.get_place(home.place_id)
-    text = prompts.BRIEF_OFF if hour is None else prompts.BRIEF_ON.format(time=_hour_label(hour), place=place.name)
+    text = (
+        prompts.BRIEF_OFF
+        if hour is None
+        else prompts.BRIEF_ON.format(time=_hour_label(hour), place=place.name)
+    )
     await _say(update, text, MENU)
 
 
 def compose_brief(saved: BirthInput | None, place, now: datetime) -> str:
     """The morning message for someone living at `place`. Synchronous; the bot runs it in a thread. `saved` is no
-    longer read (the dasha line was dropped) but stays in the signature so callers do not change."""
+    longer read (the dasha line was dropped) but stays in the signature so callers do not change.
+    """
     local_now = now.astimezone(ZoneInfo(place.tz))
     try:
         report = service.panchang_report(place, local_now.date())
     except Exception as e:  # noqa: BLE001 - the date and the avoid-window still go out
         log.error("panchang report failed error=%s", type(e).__name__)
         report = None
-    return render_brief(local_now, service.rahu_kaala_for(place, now), place.label, report)
+    return render_brief(
+        local_now, service.rahu_kaala_for(place, now), place.label, report
+    )
 
 
 async def _brief_job(ctx: ContextTypes.DEFAULT_TYPE) -> None:
     """Every few minutes: send the morning message to anyone whose local hour has come and who has
     not had one today. Restart-safe, because "sent today" is stored."""
-    store, allowed = ctx.application.bot_data[STORE_KEY], ctx.application.bot_data[ALLOWED_KEY]
+    store, allowed = (
+        ctx.application.bot_data[STORE_KEY],
+        ctx.application.bot_data[ALLOWED_KEY],
+    )
     now = _now()
     for chat_id, home in await asyncio.to_thread(store.briefs_enabled):
         if chat_id not in allowed:
@@ -738,23 +981,34 @@ async def _brief_job(ctx: ContextTypes.DEFAULT_TYPE) -> None:
         try:
             place = geo.get_place(home.place_id)
             today = now.astimezone(ZoneInfo(place.tz))
-            if today.hour != home.brief_hour or home.brief_last == today.date().isoformat():
+            if (
+                today.hour != home.brief_hour
+                or home.brief_last == today.date().isoformat()
+            ):
                 continue
             saved = await asyncio.to_thread(store.get_user, chat_id)
             text = await asyncio.to_thread(compose_brief, saved, place, now)
             await ctx.bot.send_message(chat_id, text, reply_markup=MENU)
-            await asyncio.to_thread(store.mark_brief_sent, chat_id, today.date().isoformat())
+            await asyncio.to_thread(
+                store.mark_brief_sent, chat_id, today.date().isoformat()
+            )
         except Exception as e:  # noqa: BLE001 - one person's failure must not stop the others
-            log.error("morning message failed chat=%s error=%s", chat_id, type(e).__name__)
+            log.error(
+                "morning message failed chat=%s error=%s", chat_id, type(e).__name__
+            )
 
 
 @guarded
 @debounced
 async def cmd_forget(update: Update, ctx) -> None:
-    markup = InlineKeyboardMarkup([[
-        InlineKeyboardButton(prompts.BTN_YES_DELETE, callback_data=FORGET_YES),
-        InlineKeyboardButton(prompts.BTN_NO, callback_data=FORGET_NO),
-    ]])
+    markup = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(prompts.BTN_YES_DELETE, callback_data=FORGET_YES),
+                InlineKeyboardButton(prompts.BTN_NO, callback_data=FORGET_NO),
+            ]
+        ]
+    )
     await _say(update, prompts.FORGET_ASK, markup)
 
 
@@ -792,10 +1046,16 @@ async def on_text(update: Update, ctx) -> None:
         await _answer_question(update, ctx, chat_id, text)
         return
     draft = flow.Draft.from_dict(stored)
-    if draft.step == "narrate" and narrate.enabled():  # a story about someone: the model reads it
+    if (
+        draft.step == "narrate" and narrate.enabled()
+    ):  # a story about someone: the model reads it
         async with typing(update):
             extracted = await narrative.extract_people(text)
-        out = flow.from_extraction(extracted, draft.profile) if extracted else flow.narrative_failed(draft)
+        out = (
+            flow.from_extraction(extracted, draft.profile)
+            if extracted
+            else flow.narrative_failed(draft)
+        )
     else:
         out = await asyncio.to_thread(flow.on_text, draft, text)
     await _send_flow(update, ctx, chat_id, out)
@@ -815,10 +1075,13 @@ async def _redraw_chart(update: Update, ctx, chat_id: int, choice: str) -> None:
     picture = await asyncio.to_thread(render_chart_png, natal, style, degrees == "1")
     try:
         await update.callback_query.edit_message_media(
-            media=InputMediaPhoto(picture), reply_markup=chart_markup(style, degrees == "1")
+            media=InputMediaPhoto(picture),
+            reply_markup=chart_markup(style, degrees == "1"),
         )
     except BadRequest as e:
-        if "not modified" not in str(e).lower():  # a double tap asks for the picture already shown
+        if (
+            "not modified" not in str(e).lower()
+        ):  # a double tap asks for the picture already shown
             raise
 
 
@@ -833,26 +1096,32 @@ async def on_button(update: Update, ctx) -> None:
             raise
     chat_id, data = update.effective_chat.id, query.data or ""
     if data.startswith(QA_PREFIX):
-        await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX):])
+        await _toggle_answer(update, ctx, chat_id, data[len(QA_PREFIX) :])
         return
     if data.startswith(SENS_PREFIX):
-        await _sensitive_button(update, ctx, chat_id, data[len(SENS_PREFIX):])
+        await _sensitive_button(update, ctx, chat_id, data[len(SENS_PREFIX) :])
         return
     if data.startswith(PEOPLE_PREFIX):
-        await _people_button(update, ctx, chat_id, data[len(PEOPLE_PREFIX):])
+        await _people_button(update, ctx, chat_id, data[len(PEOPLE_PREFIX) :])
         return
     if data.startswith(BRIEF_PREFIX):
-        await _set_brief(update, ctx, chat_id, data[len(BRIEF_PREFIX):])
+        await _set_brief(update, ctx, chat_id, data[len(BRIEF_PREFIX) :])
         return
     if data.startswith(CHART_PREFIX):
-        await _redraw_chart(update, ctx, chat_id, data[len(CHART_PREFIX):])
+        await _redraw_chart(update, ctx, chat_id, data[len(CHART_PREFIX) :])
         return
     if data in (FORGET_YES, FORGET_NO):
         if data == FORGET_YES:
             await asyncio.to_thread(_store(ctx).forget, chat_id)
-            ctx.application.bot_data.get(CHAT_KEY, {}).pop(chat_id, None)  # and what was remembered in memory
-            ctx.application.bot_data.get(SESSION_KEY, {}).pop(chat_id, None)  # including people not saved
-        await _say(update, prompts.FORGOTTEN if data == FORGET_YES else prompts.KEPT, MENU)
+            ctx.application.bot_data.get(CHAT_KEY, {}).pop(
+                chat_id, None
+            )  # and what was remembered in memory
+            ctx.application.bot_data.get(SESSION_KEY, {}).pop(
+                chat_id, None
+            )  # including people not saved
+        await _say(
+            update, prompts.FORGOTTEN if data == FORGET_YES else prompts.KEPT, MENU
+        )
         return
     stored = await asyncio.to_thread(_store(ctx).get_draft, chat_id)
     draft = flow.Draft.from_dict(stored) if stored else None
@@ -865,7 +1134,12 @@ async def on_error(update: object, ctx: ContextTypes.DEFAULT_TYPE) -> None:
     chat = getattr(update, "effective_chat", None)
     kind = "expected" if isinstance(err, SamayError) else "unexpected"
     # Never log the exception text or traceback: they can contain birth details.
-    log.error("handler failed (%s) chat=%s error=%s", kind, getattr(chat, "id", None), type(err).__name__)
+    log.error(
+        "handler failed (%s) chat=%s error=%s",
+        kind,
+        getattr(chat, "id", None),
+        type(err).__name__,
+    )
     message = getattr(update, "effective_message", None)
     if message is not None:
         try:
@@ -876,12 +1150,22 @@ async def on_error(update: object, ctx: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def _register_commands(app) -> None:
     """Fill Telegram's "/" menu from the handlers that are really registered, in prompts.COMMANDS
-    order, so a new command can never be missing from the menu or left in it by mistake."""
-    live = {c for h in app.handlers.get(0, []) if isinstance(h, CommandHandler) for c in h.commands}
+    order, so a new command can never be missing from the menu or left in it by mistake.
+    """
+    live = {
+        c
+        for h in app.handlers.get(0, [])
+        if isinstance(h, CommandHandler)
+        for c in h.commands
+    }
     unlisted = live - prompts.COMMANDS.keys()
     if unlisted:
-        raise RuntimeError(f"commands without a description in prompts.COMMANDS: {sorted(unlisted)}")
-    menu = [BotCommand(cmd, desc) for cmd, desc in prompts.COMMANDS.items() if cmd in live]
+        raise RuntimeError(
+            f"commands without a description in prompts.COMMANDS: {sorted(unlisted)}"
+        )
+    menu = [
+        BotCommand(cmd, desc) for cmd, desc in prompts.COMMANDS.items() if cmd in live
+    ]
     await app.bot.set_my_commands(menu)
     log.info("registered %d commands in the Telegram menu", len(menu))
 
@@ -913,15 +1197,27 @@ def build_application(token: str, allowed: frozenset[int], store: Store) -> Appl
         .build()
     )
     app.bot_data[STORE_KEY], app.bot_data[ALLOWED_KEY] = store, allowed
-    for name, fn in [("start", cmd_start), ("help", cmd_help), ("birth", cmd_birth), ("forget", cmd_forget),
-                     ("home", cmd_home), ("brief", cmd_brief), ("ask", cmd_ask), ("people", cmd_people),
-                     ("chart", _command("chart")), ("dasha", _command("dasha")), ("today", _command("today"))]:
+    for name, fn in [
+        ("start", cmd_start),
+        ("help", cmd_help),
+        ("birth", cmd_birth),
+        ("forget", cmd_forget),
+        ("home", cmd_home),
+        ("brief", cmd_brief),
+        ("ask", cmd_ask),
+        ("people", cmd_people),
+        ("chart", _command("chart")),
+        ("dasha", _command("dasha")),
+        ("today", _command("today")),
+    ]:
         app.add_handler(CommandHandler(name, fn))
     app.add_handler(CallbackQueryHandler(on_button))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
     app.add_error_handler(on_error)
     if app.job_queue is not None:
-        app.job_queue.run_repeating(_brief_job, interval=BRIEF_CHECK_SECONDS, first=15, name="morning_brief")
+        app.job_queue.run_repeating(
+            _brief_job, interval=BRIEF_CHECK_SECONDS, first=15, name="morning_brief"
+        )
     else:
         log.warning("job queue unavailable: morning messages are disabled")
     return app
@@ -938,14 +1234,22 @@ def load_env_file(path: Path) -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     for noisy in ("httpx", "httpcore", "telegram", "apscheduler"):
-        logging.getLogger(noisy).setLevel(logging.WARNING)  # their INFO lines include the bot token
+        logging.getLogger(noisy).setLevel(
+            logging.WARNING
+        )  # their INFO lines include the bot token
     load_env_file(Path(os.environ.get("SAMAY_ENV_FILE", ".env")))
     allowed = parse_allowed(os.environ.get("ALLOWED_CHAT_IDS", ""))
-    token = os.environ.get("TELEGRAM_TOKEN") or os.environ.get("SAMAY_TELEGRAM_BOT_TOKEN", "")
+    token = os.environ.get("TELEGRAM_TOKEN") or os.environ.get(
+        "SAMAY_TELEGRAM_BOT_TOKEN", ""
+    )
     if not token:
-        raise SystemExit("Set TELEGRAM_TOKEN (or SAMAY_TELEGRAM_BOT_TOKEN) to the token from @BotFather")
+        raise SystemExit(
+            "Set TELEGRAM_TOKEN (or SAMAY_TELEGRAM_BOT_TOKEN) to the token from @BotFather"
+        )
     try:
         store = Store()
     except SamayError as e:  # a missing or wrong database key
@@ -955,7 +1259,12 @@ def main() -> None:
     # bootstrap_retries=-1: keep retrying the first connection instead of exiting if Telegram is
     # briefly unreachable.
     try:
-        app.run_polling(allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY], bootstrap_retries=-1)
+        app.run_polling(
+            allowed_updates=[Update.MESSAGE, Update.CALLBACK_QUERY],
+            bootstrap_retries=-1,
+        )
     except InvalidToken:
         # The library's own message includes the token, so do not let it reach the logs.
-        raise SystemExit("Telegram rejected the bot token: check TELEGRAM_TOKEN") from None
+        raise SystemExit(
+            "Telegram rejected the bot token: check TELEGRAM_TOKEN"
+        ) from None

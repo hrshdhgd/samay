@@ -1,4 +1,5 @@
 """Report models shared by every front end. All frozen; renderers only read them."""
+
 from __future__ import annotations
 
 import hashlib
@@ -24,7 +25,9 @@ class BirthInput:
     place_choice: str | None = None
     fold: int | None = None
     profile: str = DEFAULT_PROFILE
-    approx_for: str | None = None  # birthplace the user named, when a nearby town stands in for it
+    approx_for: str | None = (
+        None  # birthplace the user named, when a nearby town stands in for it
+    )
 
 
 @dataclass(frozen=True)
@@ -97,7 +100,9 @@ class TodayReport:
 @dataclass(frozen=True)
 class OutlookReport:
     """A period ahead (a week to several years): where the planets go, counted from the natal Moon sign, with the
-    text's transit results (Phaladeepika ch. 26), and the dasha sub-chapters that begin inside the period."""
+    text's transit results (Phaladeepika ch. 26), and the dasha sub-chapters that begin inside the period.
+    """
+
     natal: NatalReport
     span: str  # week, fortnight, month, year or years
     start: datetime  # UTC
@@ -106,27 +111,40 @@ class OutlookReport:
     moon_sign: int
     stays: tuple[Stay, ...]
     dasha_at_start: tuple[Period, Period] | None
-    dasha_changes: tuple[tuple[str, Period], ...]  # (mahadasha lord, antardasha) for each sub-chapter that begins
+    dasha_changes: tuple[
+        tuple[str, Period], ...
+    ]  # (mahadasha lord, antardasha) for each sub-chapter that begins
     rules_level: str
     rules_edition: str
     rules_pages: str
-    antardasha: tuple[tuple[str, str, str, int], ...] = ()  # (mahadasha, antardasha, result, verse): Phaladeepika 21
+    antardasha: tuple[
+        tuple[str, str, str, int], ...
+    ] = ()  # (mahadasha, antardasha, result, verse): Phaladeepika 21
     antardasha_edition: str = ""
     antardasha_pages: str = ""
     antardasha_checked: bool = False
-    ashtaka_checked: bool = False  # the points on each stay are shown only once the ashtakavarga tables are checked
-    ashtaka_meaning: tuple[tuple[int, str], ...] = ()  # (points, what the text says), Phaladeepika 23.11
-    ashtaka_variants: int = 0  # lists where Phaladeepika's printed table differs from the tables used
+    ashtaka_checked: bool = (
+        False  # the points on each stay are shown only once the ashtakavarga tables are checked
+    )
+    ashtaka_meaning: tuple[
+        tuple[int, str], ...
+    ] = ()  # (points, what the text says), Phaladeepika 23.11
+    ashtaka_variants: int = (
+        0  # lists where Phaladeepika's printed table differs from the tables used
+    )
 
 
 @dataclass(frozen=True)
 class ObservanceDay:
     """An observance the rules name for a day: its label, primary day, alternates, and its checked explanation."""
+
     name: str
     label: str
     primary: date | None
     kind: str  # single | kshaya | vriddhi
-    alternates: tuple[tuple[date, str], ...]  # (day, reason); each day once, several reasons joined with " and "
+    alternates: tuple[
+        tuple[date, str], ...
+    ]  # (day, reason); each day once, several reasons joined with " and "
     explanation: str | None  # a checked entry's own words, or None
 
 
@@ -137,7 +155,9 @@ class PanchangReport:
     facts: object  # panchang.DayFacts
     tulu: object  # tulu.TuluDate
     cutoff: str  # the Tulu day-1 rule used
-    observances: tuple[ObservanceDay, ...]  # only observances whose rules are verified and touch the day
+    observances: tuple[
+        ObservanceDay, ...
+    ]  # only observances whose rules are verified and touch the day
     needs_sampradaya: bool  # True when day claims were withheld because the family's tradition is not set
     claims_withheld: bool  # True when some observance rules are not verified yet
 
@@ -149,5 +169,29 @@ class NextObservanceReport:
     name: str
     label: str
     found: ObservanceDay | None
-    claim_available: bool  # False when the rule is unverified or the tradition is not set
+    claim_available: (
+        bool  # False when the rule is unverified or the tradition is not set
+    )
     needs_sampradaya: bool
+
+
+@dataclass(frozen=True)
+class ObservanceListReport:
+    """Every day verified rules name in a range of local days, for a list ("Ekadashi dates in 2027")."""
+
+    place_label: str
+    tz: str
+    first: date
+    last: date
+    labels: tuple[str, ...]  # the observances asked about, in profile order
+    filtered: bool  # True when the question named observances, False for all of them
+    days: tuple[
+        ObservanceDay, ...
+    ]  # by primary day (or first alternate); explanation always None
+    withheld: tuple[
+        str, ...
+    ]  # labels of asked-about observances whose rules are not verified
+    needs_sampradaya: bool  # True when some days were withheld because the family's tradition is not set
+    too_long: (
+        bool  # True when the range is longer than LIST_MAX_DAYS; nothing was worked out
+    )
