@@ -1,127 +1,150 @@
-# Panchang core and Moon-based days: design
+# Panchang core, Moon-based days and Tulu date: design (hardened)
 
-*Sub-project 1 of 4. Date: 2026-11-21.*
+*Sub-project 1 of 4. Date: 2026-11-21. Revised after a crucible pressure-test (5 rounds, committee verdict
+"needs work" from all three reviewers; no one asked for a rethink of the core).*
 
 ## 1. Background
 
-Users want to know about auspicious days (Ekadashi and similar) with an explanation of why, and about
-days traditionally treated with care (Bharani, Krittika). samay has no tithi, karana or
-nakshatra-of-the-day calculation. Natal nakshatras exist in `engine/vedic.py`; sunrise and sunset exist in
+The family wants to know about auspicious days (Ekadashi and similar), with the reason, and about days
+traditionally treated with care ("barani-keertige", read as Bharani and Krittika). The family uses the
+Bunts/Tulu **solar (sauramana)** calendar, so a lunar-only answer would not match the calendar they read.
+samay has no tithi, karana or nakshatra-of-the-day calculation yet; sunrise and sunset exist in
 `engine/daylight.py`.
 
-The wider request is split into four sub-projects, each with its own spec, plan and implementation:
-
-1. **Panchang core and Moon-based days (this spec).**
-2. Alerts delivery: observance in the morning brief and an evening-before heads-up.
+The wider request is four sub-projects, each with its own spec, plan and implementation:
+1. **Panchang core, Moon-based days and Tulu date (this spec).**
+2. Alerts delivery: morning brief and an evening-before heads-up.
 3. Personal timing: Chandrashtama, Tara Bala (needs the natal Moon).
-4. Festivals and Sun-based days: needs lunar-month naming and a regional-rules decision.
+4. Festivals and other Sun-based days: needs lunar-month naming and regional rules.
 
 ## 2. Scope
 
 In scope:
-- Compute tithi, nakshatra, karana and yoga, with start and end times, for a place and date.
-- Detect Moon-based observances: Ekadashi, Pradosha, Purnima, Amavasya, Sankashti Chaturthi, and the
-  care-days Bharani and Krittika.
-- Explain each observance from a cited, verified entry.
-- Answer on demand through chat Q&A (no new command): "is today special?", "when is the next Ekadashi?",
-  "what is Ekadashi?".
+- Tithi, nakshatra, karana, yoga with start and end times for a place and date, using the place's **local**
+  sunrise, sunset and timezone.
+- Per-observance day selection for Ekadashi, Pradosha, Purnima, Amavasya, with one primary date and an
+  alternate when ambiguous.
+- Bharani and Krittika as computed nakshatra facts (no care-day label, see 7).
+- **Tulu month and day-of-month**, with the Sun's ingress time.
+- Natural-language Q&A only (no new command): "is today special?", "when is the next Ekadashi?", "what is
+  Ekadashi?".
 
-Out of scope: festivals, lunar-month names, personal timing, morning-brief push, any prediction.
+Out of scope: festivals, lunar-month names, personal timing, push alerts, Sankashti (weak sourcing, needs
+moonrise), any prediction.
 
-## 3. Decisions made
+## 3. Decisions (all owner-confirmed)
 
 | Decision | Choice |
 |---|---|
-| Ekadashi day selection | Smarta rule: the tithi prevailing at local sunrise. Stored in `data/profiles/*.yaml`. Vaishnava rules can be added later as a profile option. |
-| Sourcing | Only observances whose explanation was read against an openly available translation ship a "why". Entries below `translation-checked` are never shown. Copyright is not a constraint for checking (private use); verbatim quotes stay public-domain only. |
-| Surface | Natural-language Q&A only; routing through `qa.py`. |
-| Rules storage | Explanations as `data/entries/` YAML; observance detection in the engine. Not `data/rules/` (those are chart conditions). |
+| Day selection | **Per-observance rules stored as data**, not one global rule. Each rule names its instant or window and has explicit kshaya (no match) and vriddhi (two matches) tie-breaks. |
+| Ambiguity | Every result has one **primary date**; when ambiguous, an **alternate** is attached and the reply says "show both, a local panchang may differ". |
+| Rule differences | Smarta, Vaishnava or Madhva, Dashami-viddha and similar are **named alternates**. `sampradaya` has **no default**: the bot refuses to pick until it is set. |
+| Margin N | Covers **calculation error only**, measured from the engine's own sensitivity (see 8). Rule differences are never absorbed by widening N. |
+| Local time | All sunrise, sunset and day boundaries are the user's local ones, with the place's own timezone and historical offsets. |
+| Windows | The v1 rule format has a **window primitive**: "tithi prevails during [offset from sunrise or sunset, length]". Offsets (arunodaya, Pradosha) are profile parameters. |
+| Sourcing | Day-selection conventions live in profiles, cited to a published calendar that states its rules. Explanations are a separate, non-blocking track (see 7). Any openly available translation may be used to check an entry (private family use); verbatim quotes stay public-domain only. |
+| Surface | Natural-language Q&A through `qa.py` into a new table-driven `panchang_qa.py`. |
+| Reference app | **Tulu Panchanga** (Apache-2.0, github.com/maheshraikg/tulu-panchanga), plus the family's printed panchang, which is still to be identified. |
 
-## 4. Engine: `samay/engine/panchang.py`
+## 4. Engine: `samay/engine/panchang.py` (pure, imports nothing else from samay)
 
-Pure; imports nothing else from samay. Reuses the existing Moon and Sun longitudes and `daylight` sunrise.
+- Core function takes **`(date, location)`** and returns facts for that location. There is no "asker" concept
+  inside the engine, so per-person and per-family alerts (sub-project 2) need no change to its output shape.
+- `panchang_at(utc)`: tithi (1-30 with paksha), nakshatra and pada, karana, yoga, each with start and end.
+- `tithi_prevails(window)`: the window primitive. A rule is evaluated at an instant or over a window; kshaya
+  and vriddhi are resolved by the rule's tie-break and reported (never silently skipped).
+- `find_next(observance, location, from_date)` uses the same rule evaluation and surfaces alternates.
+- Sunrise definition (upper limb, standard refraction 34′, elevation 0) is a profile field, not code.
+- Dates outside DE440s (1849-2150) get a plain "I can't compute that far" reply.
 
-- `panchang_at(utc) -> Panchang`: tithi (1-30 with paksha), nakshatra and pada, karana, yoga, each with its
-  start and end time. Longitudes are sidereal degrees in [0, 360); times are timezone-aware UTC.
-- `day_panchang(place, date) -> DayPanchang`: values prevailing at local sunrise (and sunset for Pradosha),
-  plus the tithis and nakshatras that begin or end during that day.
-- `observances(day) -> tuple[Observance, ...]`: matched on the computed day, not a stored table.
-  - Ekadashi: tithi 11 at sunrise, either paksha.
-  - Pradosha: tithi 13 prevailing at sunset.
-  - Purnima: tithi 15 at sunrise. Amavasya: tithi 30 at sunrise.
-  - Sankashti Chaturthi: Krishna-paksha Chaturthi, decided by moonrise (see risks).
-  - Bharani, Krittika: Moon in that nakshatra at sunrise.
-- `find_next(observance, place, from_date) -> date`: day-by-day forward search.
-- Disputed choices (day-selection rule, sunrise definition) come from the profile, and the profile stamp
-  is attached to every answer.
+### Tulu date: `samay/engine/tulu.py`
+- Month from the Sun's sidereal sign (Mesha = Paggu, Vrushabha = Besha, Mithuna = Kaarthel, Karkataka = Aati,
+  Simha = Sona, Kanya = Nirnala, Thula = Bonthel, Vrushchika = Jarde, Dhanu = Perarde, Makara = Ponni,
+  Kumbha = Mayi, Meena = Suggi).
+- **Day 1 is not "days since ingress".** Which civil day starts a month when the ingress falls late in the day
+  is a disputed setting: `sankranti_cutoff` in `data/profiles/tulu.yaml` (sunrise, sunset, midnight,
+  aparahna or next-day variants, the same options the reference app exposes).
+- The Tulu date and the tithi observance use the **same local-day boundary**, so one reply cannot disagree
+  with itself.
+- The reply states "computed by rule X" and prints the exact ingress time. Within the window where the
+  cutoff rules disagree, it also shows the neighbouring day and says the month starts today or tomorrow
+  depending on convention.
+- The cutoff is chosen from 6-10 **anchors from the family's own calendar** (Bisu as Paggu 1, sankranti days,
+  Aati start), recorded as "family calendar, N anchors". These anchors become the regression suite for
+  sub-project 4.
 
-## 5. Entries: `data/entries/panchang-observances.yaml`
+## 5. Service: reference location
 
-One entry per observance in the existing entry schema: topic `observance:<name>`, `system: any`, an English
-paraphrase in our own words, a citation (text, chapter or verse, edition) and a `verification` block.
-
-Two layers of output:
-- **Computed facts** (tithi, nakshatra, karana, yoga, times) are always shown: they are calculation.
-- **An observance flag with its "why"** is shown only when its entry is verified. An observance with no
-  verified entry is not flagged at all.
-
-Care-days (Bharani, Krittika) are framed as traditional guidance for starting new ventures, never as a
-prediction. That wording lives in the entry, so the engine never invents it.
+`service.py` gets a thin `family_reference` layer: one configured reference location per family that resolves
+the single canonical date for the family chat. A person's own-sunrise date is an optional "at your place"
+note shown only when it differs. The reference location is a **separate setting** from the saved home that
+`/brief` uses. Whether alerts are per-person or per-family is decided in sub-project 2 and needs no engine
+change.
 
 ## 6. Q&A routing
 
-`qa.py` stays thin. New module `samay/panchang_qa.py` holds keyword sorting, date parsing (today, tomorrow,
-weekday names, explicit dates) and answer assembly; `qa.py` calls it.
+`qa.py` stays thin. `samay/panchang_qa.py` is **table-driven** (a new observance is a data row, not a new
+parsing path) and holds keyword sorting, date parsing (today, tomorrow, weekday, explicit date) and answer
+assembly. New topic keys: `panchang:day`, `panchang:next:<observance>`, `observance:<name>`. The place comes
+from the family reference location, or the saved home. All user-facing wording is in `render/`; a local
+model may reword but never add facts. Outcome questions ("will Ekadashi bring me luck?") still get the
+existing "outside known topics" reply.
 
-New topic keys, following `kind:subject:detail`:
-- `panchang:day`: "is today special?", "what's the tithi?", "is tomorrow auspicious?"
-- `panchang:next:<observance>`: "when is the next Ekadashi?"
-- `observance:<name>`: "what is Ekadashi?", "why is it auspicious?"
+## 7. Explanations: a separate, non-blocking track
 
-The place is the user's saved home (the one `/brief` uses). With no home set, the bot asks through the
-existing `flow.begin_home()`. All user-facing wording lives in `render/`. The local model may reword but
-never add facts. Questions about outcomes ("will Ekadashi bring me luck?") still get the existing
-"outside known topics" reply.
+- Computed facts always ship. An explanation ships only when its entry (`data/entries/`, existing schema) is
+  `translation-checked` against an openly available translation. An empty or unverified entry is a valid
+  state and shows as "computed fact only". It never holds up a release.
+- **Located so far:** Bharani and Krittika classification (Brihat Samhita ch. 98, slokas 6-11, Sastri
+  translation) and Pradosha (Skanda Purana, Brahma Khanda, vv. 5-14, 74-78, Tagare translation).
+  Ekadashi, Purnima and Amavasya passages are still unread.
+- **Bharani and Krittika wording follows the text:** Bharani is *ugra* (fierce, suits harsh work), Krittika
+  *mixed*. The text gives no instruction to avoid either. No care-day label ships in v1. The reply says
+  plainly that "barani-keertige" is a family or local custom the bot has no source for, and states only
+  the classification. If a source for the custom is found later it becomes a separately labelled entry.
+- A time-boxed sourcing spike reads the Ekadashi, Pradosha, Purnima and Amavasya passages (Kamakoti
+  Dharmasindhu summary plus one English translation). A rule still unreadable after the time-box ships its
+  computed fact with no day-selection claim.
 
-## 7. Errors
+## 8. Verification (two layers, never mixed)
 
-- Dates outside the DE440s range (1849-2150): a plain "I can't compute that far" reply.
-- Ambiguous or unparseable date: ask which date was meant; do not guess.
-- No verified entry for an observance: no flag, facts only.
+1. **Calculation.** Pin every convention in the profile (sunrise definition, ayanamsa, windows, per-observance
+   tie-breaks). Verify tithi, nakshatra, karana and sunrise times against an independent computation (Swiss
+   Ephemeris, or a separate Skyfield run) under the **same** conventions. Pass: all ~15 dates within 1 minute
+   (several latitudes, one southern-hemisphere place, one DST boundary, and dates chosen near
+   tithi-at-sunrise edges). N is set from the engine's sensitivity to ±1′ in sunrise and ayanamsa variants.
+2. **Convention.** A year of Ekadashi, Pradosha, Purnima and Amavasya dates is compared with published
+   sources, each **tagged with the profile it matches**: the Tulu Panchanga CSV exports for Mangaluru, and
+   the family's printed panchang. The fixture deliberately includes that year's kshaya and vriddhi cases.
+   Zero unexplained mismatches; every divergence is listed by cause in `known_divergences.yaml`.
+   Published sources are a convention-diff report, **never used to tune N**.
 
-## 8. Testing and verification
-
-1. **Astronomy:** about 15 dates (several latitudes, one southern-hemisphere place, one DST boundary)
-   compared with published panchang data in a fixture like `tests/fixtures/rahu_kaala_published.yaml`, each
-   figure recording its source. Target: boundaries within a few minutes.
-2. **Observance rules:** one test per rule. Ekadashi dates for a full year are cross-checked against two
-   independent published calendars; each disagreement is explained by a convention difference or fixed.
-3. **Entries:** loading, the verified gate, and the "no verified entry, so no flag" case.
-4. **Routing:** sample questions map to the right topic key; date parsing cases.
-5. **Explanations:** each entry is read against an openly available text and promoted to
-   `translation-checked` only when it matches.
+Note: the reference app is itself a computation under stated conventions, not ground truth. Its own
+`docs/VERIFY.md` lists what still needs a priest's confirmation. It checks calculation and the Tulu day-1
+rule well; it cannot say which Ekadashi tradition the family follows.
 
 Before committing: `uv run ruff check` and `uv run pytest -q`.
 
-## 9. Risks
+## 9. Order of work
 
-- **Sourcing (survey: `research/notes/panchang-sources.md`).** Owner decision 2026-11-21: any openly
-  available translation may be used to check an entry (private family use, as in `data/entries/README.md`);
-  no Sanskrit reader is available. An entry is `translation-checked` against such a translation, and is
-  paraphrased, never quoted verbatim unless the work is public domain (the repo is public).
-  - Computed facts (tithi name, nakshatra, karana, yoga, times, `find_next`) always ship.
-  - A "why" ships only for observances whose entry was actually read against a located passage. Located so
-    far: Bharani and Krittika (Brihat Samhita ch. 98, slokas 6-11, Sastri translation) and Pradosha
-    (Skanda Purana, Brahma Khanda, vv. 5-14, 74-78, Tagare translation). Ekadashi (Hari Bhakti Vilasa,
-    Padma Purana) and Purnima/Amavasya still need a passage read.
-  - **Bharani and Krittika wording follows the text:** Bharani is classed *ugra* (fierce, suits harsh work),
-    Krittika *mixed*. The text gives no instruction to avoid either; the "avoid" guidance is a later
-    tradition and is shown, if at all, only as a separately labelled traditional saying with its own source.
-  - Sankashti is deferred (weak sourcing, needs moonrise).
-- **Sankashti needs moonrise.** `daylight.py` has no Moon rise function, and the Moon can fail to rise on
-  some dates. If this proves hard, Sankashti moves out of v1 and this spec is updated.
-- **Regional disagreement.** Some dates differ by tradition even under the Smarta rule (a tithi split around
-  sunrise). Answers state which rule produced the date via the profile stamp.
-- **Framing.** Auspicious and inauspicious labels are traditional guidance. The disclaimer stays and no
-  answer implies a prediction.
-- **Interpretation of the request.** "Barani-keertige" is read as Bharani and Krittika nakshatra days.
+0. **Demand and oracle gate (owner).** Identify the family's printed panchang and who decides Ekadashi
+   dates; copy 10-15 real dates, including some Smarta/Madhva splits, as the first fixtures. Hand-send two
+   weeks of observances computed by the engine to the family and see whether anyone replies or compares
+   them with the printed copy. Build the Q&A surface only if they do; otherwise the first deliverable is a
+   static table in the family's convention from the same engine.
+1. Profile fields and rule format (window primitive, tie-breaks).
+2. Engine, Tulu date, anchors, calculation layer of verification.
+3. Convention layer of verification, `known_divergences.yaml`.
+4. `panchang_qa.py` and rendering.
+5. Explanation entries as sourcing allows.
+
+## 10. Acknowledged risks
+
+- The family's printed panchang and Ekadashi convention are still unknown. If the family is Madhva, a
+  Smarta-first reading would be wrong for them; the no-default `sampradaya` field prevents silent guessing.
+- Demand is unproven until gate 0 is run.
+- "Verified" means "matches one openly available translation". There is no Sanskrit reader.
+- The reference app is a computation, not a printed almanac.
+- Many explanations will ship empty at first.
+- Per-person versus per-family alerts is deferred to sub-project 2.
+- Honest framing stays: traditional interpretation, not prediction, and no answer implies one.
