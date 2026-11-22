@@ -1,0 +1,7 @@
+# Tulu (Tulunadu) solar calendar. The month is the Sun's sidereal sign; which civil day is day 1 is a disputed choice.
+# sankranti_cutoff: same_day | sunset | aparahna | next_day. PROVISIONAL: Task 0 anchors from the family's calendar decide it.
+id: tulu
+name: Tulu solar calendar
+ayanamsa: lahiri_mean
+sankranti_cutoff: sunset
+source: {text: "Tulu calendar (sauramana); reference app Tulu Panchanga (Apache-2.0)", locus: null, verified: false}
