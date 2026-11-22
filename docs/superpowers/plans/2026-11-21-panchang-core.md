@@ -716,6 +716,17 @@ def find_next(rules: dict[str, Rule], sampradaya: str | None, site: Site, after:
 
 ---
 
+## Task 4b: Make the observance search fast enough for chat (added during execution)
+
+Task 4's implementer measured about 8-10 s for one two-month `observances_between` call (and about 9 s for `find_next`), mostly in repeated `element_at` bisection and per-day sun-time searches. That is too slow for a chat answer, so before Task 9 wires it into the bot:
+
+- [ ] **Step 1: Profile.** `uv run python -X importtime`-style is not needed; use `cProfile` on `observances_between(Rule(tithis=(11, 26)), PUNE, date(2026, 11, 1), date(2026, 12, 31))` and record where the time goes in the commit message.
+- [ ] **Step 2: Cut the cost without changing any result.** Likely wins: vectorise the bisection (evaluate a grid of candidate instants in one `sidereal_track` call and narrow in 3-4 rounds instead of about 13 single-instant calls), and cache `element_at` by (kind, tithi start) so each tithi is searched once per run. The existing tests are the guard: all of them must still pass unchanged.
+- [ ] **Step 3: Add a timing guard.** A test that `observances_between` for two months finishes under 5 s and `find_next` under 3 s (skip when `CI` sets `SAMAY_SLOW_CI=1`).
+- [ ] **Step 4: Commit.** `git commit -m "perf: faster tithi search for observance days"`.
+
+---
+
 ## Task 5: Panchang profile and the shipped conventions
 
 **Files:** Create `data/profiles/panchang-family.yaml`, `samay/engine/panchang_profile.py`. Test: `tests/test_panchang_profile.py`.
