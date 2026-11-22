@@ -93,8 +93,7 @@ def render_next(report: NextObservanceReport) -> str:
 
 def render_about(label: str, explanations: list[str]) -> str:
     if not explanations:
-        return (f"I have no checked source for {label} yet, so I will not describe what it means. "
-                "I can still tell you which day it falls on.")
+        return f"I have no checked source for {label} yet, so I will not describe what it means."
     return "\n\n".join(explanations)
 
 
