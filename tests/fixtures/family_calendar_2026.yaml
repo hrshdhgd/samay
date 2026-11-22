@@ -1,0 +1,11 @@
+# Dates read from the family's Bunts calendar (owner, 2026-11-22). The owner has the printed calendar; the Ekadashi
+# dates for this year have passed and will be added when supplied. Place is not stated, so nakshatras are checked at
+# Mangaluru (a boundary-safe choice: Bharani ends 02:02 on 24 Nov, Krittika 23:25 on 24 Nov).
+source: family Bunts calendar (printed), 2026
+place: {name: Mangaluru, latitude: 12.9141, longitude: 74.856, tz: Asia/Kolkata}
+nakshatra_days:
+  - {date: 2026-11-23, nakshatra: Bharani, family_name: Barani}
+  - {date: 2026-11-24, nakshatra: Krittika, family_name: Keertige}
+sankashti:
+  - {date: 2026-11-27, note: "marked auspicious (Friday)"}
+ekadashi: []
