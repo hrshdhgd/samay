@@ -112,20 +112,17 @@ def test_rahu_kaala_line_and_polar_message():
     assert "does not both rise and set" in render_rahu_kaala(None, "Tromsø")
 
 
-def test_brief_has_date_rahu_kaala_and_dasha_dates_but_no_meanings():
+def test_brief_has_date_and_avoid_window_but_no_dasha():
     from datetime import date
 
     from samay.engine import daylight
     from samay.render.text import render_brief
 
     rahu = daylight.rahu_kaala(18.5196, 73.8553, "Asia/Kolkata", date(2026, 11, 9))
-    dasha = service.today_report(service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune")),
-                                 datetime(2026, 11, 9, tzinfo=UTC)).current_dasha
-    text = render_brief(datetime(2026, 11, 9, 7, 0), rahu, "Pune", dasha)
+    text = render_brief(datetime(2026, 11, 9, 7, 0), rahu, "Pune", None)
     assert text.splitlines()[0] == "🌅 Good morning! Today is Monday, 09 November 2026."
-    assert "Rahu Kaala today:" in text and "(Pune)" in text
-    assert "Jupiter chapter (mahadasha) until" in text and "Venus sub-chapter (antardasha) until" in text
-    assert len(render_brief(datetime(2026, 11, 9, 7, 0), rahu, "Pune", None).splitlines()) == 2
+    assert text.splitlines()[1].startswith("Traditionally avoided for starting new things:") and "Pune" in text
+    assert "dasha" not in text.lower() and len(text.splitlines()) == 2
 
 
 def test_today_can_carry_extra_lines_before_the_footer():

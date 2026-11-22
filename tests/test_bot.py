@@ -470,7 +470,8 @@ async def test_morning_job_sends_once_a_day_at_the_local_hour(ctx, store, monkey
     await bot._brief_job(ctx)
     chat, text = ctx.bot.send_message.await_args.args
     assert chat == ALLOWED and "Good morning! Today is Monday, 09 November 2026." in text
-    assert "Rahu Kaala today: 8:" in text and "Jupiter chapter (mahadasha)" in text and "(Maplewood" in text
+    assert "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood" in text
+    assert "Shukla Pratipada" in text and "Tulu date:" in text and "dasha" not in text.lower()
     assert store.get_home(ALLOWED).brief_last == "2026-11-09"
 
     clock["now"] = datetime(2026, 11, 9, 13, 50, tzinfo=UTC)  # same morning: no repeat
@@ -491,7 +492,7 @@ async def test_morning_job_works_without_saved_birth_details_and_skips_people_of
     await bot._brief_job(ctx)
     assert ctx.bot.send_message.await_count == 1
     chat, text = ctx.bot.send_message.await_args.args
-    assert chat == ALLOWED and "Running now" not in text and "Rahu Kaala today" in text
+    assert chat == ALLOWED and "dasha" not in text.lower() and "(called Rahu Kaala)" in text
 
 
 @needs_kernel

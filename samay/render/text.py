@@ -33,15 +33,15 @@ from ..engine.vedic import (
     NAKSHATRAS,
     RASHIS,
     SIGNS,
-    Period,
     antardashas,
     house_from,
     nakshatra,
     sign_index,
 )
-from ..models import NatalReport, NeedsDisambiguation, OutlookReport, TodayReport
+from ..models import NatalReport, NeedsDisambiguation, OutlookReport, PanchangReport, TodayReport
 from ..qa import LIFE_AREAS, OUTLOOK_TOPICS
 from ..subject import SELF
+from . import panchang as panchang_words
 from . import prompts
 
 TELEGRAM_LIMIT = 4096
@@ -292,17 +292,10 @@ def render_rahu_kaala(rahu: RahuKaala | None, place_label: str) -> str:
 
 
 def render_brief(
-    local_now: datetime, rahu: RahuKaala | None, place_label: str, dasha: tuple[Period, Period] | None
+    local_now: datetime, rahu: RahuKaala | None, place_label: str, report: PanchangReport | None
 ) -> str:
-    """The short morning message: date, Rahu Kaala, running dasha. Facts only, no meanings."""
-    lines = [f"🌅 Good morning! Today is {local_now:%A, %d %B %Y}.", render_rahu_kaala(rahu, place_label)]
-    if dasha:
-        maha, antar = dasha
-        lines.append(
-            f"Running now: {maha.lord.title()} chapter (mahadasha) until {maha.end:%b %Y}, "
-            f"{antar.lord.title()} sub-chapter (antardasha) until {antar.end:%d %b %Y}."
-        )
-    return "\n".join(lines)
+    """The morning message, in plain words. The dasha line was dropped: it implied a meaning without giving one."""
+    return panchang_words.render_brief(local_now, rahu, place_label, report)
 
 
 def _ref(e) -> tuple[int, int, str]:

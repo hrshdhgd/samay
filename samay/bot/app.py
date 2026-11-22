@@ -696,14 +696,11 @@ async def _set_brief(update: Update, ctx, chat_id: int, choice: str) -> None:
 
 
 def compose_brief(saved: BirthInput | None, place, now: datetime) -> str:
-    """The morning message for someone living at `place`. Synchronous; the bot runs it in a thread."""
-    dasha = None
-    if saved is not None:
-        resolved = service.resolve_birth(saved)
-        if isinstance(resolved, ResolvedBirth):
-            dasha = service.today_report(resolved, now).current_dasha
+    """The morning message for someone living at `place`. Synchronous; the bot runs it in a thread. `saved` is no
+    longer read (the dasha line was dropped) but stays in the signature so callers do not change."""
     local_now = now.astimezone(ZoneInfo(place.tz))
-    return render_brief(local_now, service.rahu_kaala_for(place, now), place.label, dasha)
+    report = service.panchang_report(place, local_now.date())
+    return render_brief(local_now, service.rahu_kaala_for(place, now), place.label, report)
 
 
 async def _brief_job(ctx: ContextTypes.DEFAULT_TYPE) -> None:
