@@ -11,6 +11,8 @@ NO_CLAIM = "Observance days are not named yet: the rules for them are not set up
 NEED_TRADITION = "To name observance days I need to know which tradition your family follows. Please set it first."
 TOO_FAR = "I can only work out days between 1972 and 2150."
 NO_SUN = "The Sun does not both rise and set that day in {place}, so I cannot give sunrise-based times."
+WHICH_DATE = "I could not read that date. Which day do you mean? For example: 4 December 2026, or 2026-12-04."
+NEED_PLACE = "To work out the panchang I need to know where you live now, because the day starts at local sunrise."
 
 # How the Tulu month's first day is chosen, in one clause per profile choice (data/profiles/tulu.yaml).
 CUTOFF_WORDS = {

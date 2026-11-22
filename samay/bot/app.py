@@ -36,10 +36,11 @@ from telegram.ext import (
     filters,
 )
 
-from .. import narrate, narrative, qa, service
+from .. import narrate, narrative, panchang_qa, qa, service
 from ..engine import geo
 from ..engine.errors import SamayError, TooManyPeople
 from ..models import BirthInput, NeedsDisambiguation, ResolvedBirth
+from ..render import panchang as panchang_words
 from ..render import prompts
 from ..render.chart_image import STYLES, render_chart_png
 from ..render.text import (
@@ -444,10 +445,29 @@ async def _answer_intake(update: Update, ctx, chat_id: int, question: str, about
         await _answer_question(update, ctx, chat_id, question, allow_intake=False)
 
 
+async def _answer_panchang(update: Update, ctx, chat_id: int, question: str) -> bool:
+    """Panchang questions (today's tithi, the next Ekadashi, what Ekadashi is) need a place, not a birth, so they are
+    answered before the birth-chart router, from the engine's facts only (no model). Returns True when it answered."""
+    asked = panchang_qa.sort(question)
+    if asked is None:
+        return False
+    place = service.reference_place()
+    if place is None:
+        home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
+        place = geo.get_place(home.place_id) if home is not None else None
+    if place is None:
+        await _send_flow(update, ctx, chat_id, flow.begin_home(), f"{panchang_words.NEED_PLACE}\n\n")
+        return True
+    await _say(update, await asyncio.to_thread(panchang_qa.answer, asked, place, _now()), MENU)
+    return True
+
+
 async def _answer_question(update: Update, ctx, chat_id: int, question: str, allow_intake: bool = True) -> None:
     """Understand the message and give one source-grounded AI answer when the local model is on.
     Otherwise show the checked answer. A message describing someone starts intake instead. Only a topic key is
     counted when nothing sourced exists; question words stay in memory briefly for follow-ups, never on disk."""
+    if await _answer_panchang(update, ctx, chat_id, question):
+        return
     ai = narrate.enabled()
     state = _session(ctx, chat_id)
     people = await _people(ctx, chat_id)

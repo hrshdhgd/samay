@@ -1062,3 +1062,50 @@ def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reac
     assert not qa.is_prediction(a("planet:saturn")) and not qa.is_prediction(a(None))
     assert not qa.is_prediction(a("chart:longevity")) and not qa.is_prediction(a("chart:death_timing"))
     assert qa.is_prediction(a("life:career", Subject("Maya", "daughter", True)))      # a child's life area is still gentle, not gated
+
+
+# --- panchang questions -------------------------------------------------------------------------
+
+from samay.render import panchang as panchang_words
+
+PUNE_HOME = lambda: geo.find_places("Pune, IN")[0]
+
+
+@pytest.fixture
+def no_router(monkeypatch):
+    """Panchang questions must be answered without the birth-chart router."""
+    def refuse(*_a, **_k):
+        raise AssertionError("the birth-chart router was called")
+    monkeypatch.setattr(qa, "route_with_model", refuse)
+    monkeypatch.setattr(qa, "rule_route", refuse)
+
+
+@needs_kernel
+async def test_a_panchang_question_is_answered_for_the_saved_home_without_the_router(ctx, store, monkeypatch, no_router):
+    monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 21, 4, 0, tzinfo=UTC))
+    store.save_home(ALLOWED, "Pune", PUNE_HOME().id)
+    update, msg = message(ALLOWED, "what tithi today")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert "Tulu date" in text and "in Pune" in text and "Shukla Dwadashi" in text
+    assert msg.reply_text.await_args.kwargs["reply_markup"] is bot.MENU
+
+
+async def test_a_panchang_question_without_a_home_asks_for_the_city(ctx, store, monkeypatch, no_router):
+    monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
+    update, msg = message(ALLOWED, "is it ekadashi today")
+    await bot.on_text(update, ctx)
+    text = last_reply(msg)
+    assert text.startswith(panchang_words.NEED_PLACE) and prompts.ASK_HOME in text
+    assert store.get_draft(ALLOWED)["purpose"] == "home"
+
+
+async def test_a_question_about_a_planet_still_reaches_the_birth_chart_router(ctx, monkeypatch):
+    monkeypatch.delenv("SAMAY_REFERENCE_PLACE", raising=False)
+    seen = []
+    real = qa.rule_route
+    monkeypatch.setattr(qa, "rule_route", lambda q, *a, **k: seen.append(q) or real(q, *a, **k))
+    update, msg = message(ALLOWED, "tell me about Jupiter")
+    await bot.on_text(update, ctx)
+    assert seen == ["tell me about Jupiter"] and "Jupiter" in last_reply(msg)
