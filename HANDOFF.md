@@ -195,3 +195,11 @@ docker compose exec ollama ollama pull qwen2.5:3b
   Integrated Approach*. AGPL-3.0. Good for cross-checking results.
 - **jyotishganit**: MIT, Skyfield-based. Could be vendored if needed.
 - **Jagannatha Hora** (Windows freeware) / **swetest**: reference output for validation.
+
+## 9. Found 2026-11-21: nutation offset in sidereal longitudes (decision for owner)
+`ephemeris.sidereal_track` and `compute_chart` subtract the MEAN Lahiri ayanamsa from Skyfield's apparent (true-equinox)
+longitudes, so every sidereal longitude carries the nutation in longitude (about 18 arcseconds) that Swiss Ephemeris
+sidereal positions do not. Measured against Swiss Ephemeris in `tests/test_panchang_golden.py`: tithi and karana are
+unaffected, nakshatra boundaries move about 30 s, yoga boundaries about 1 minute. Not fixed, because it would move every
+chart (see `golden_charts.json`). Options: subtract a true ayanamsa (mean plus nutation), or use mean-equinox
+longitudes. This is the same question as "mean Lahiri vs true Chitrapaksha" in section 5.
