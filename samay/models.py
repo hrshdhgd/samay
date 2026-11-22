@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Literal
 
 from .engine.ephemeris import Chart
@@ -117,3 +117,37 @@ class OutlookReport:
     ashtaka_checked: bool = False  # the points on each stay are shown only once the ashtakavarga tables are checked
     ashtaka_meaning: tuple[tuple[int, str], ...] = ()  # (points, what the text says), Phaladeepika 23.11
     ashtaka_variants: int = 0  # lists where Phaladeepika's printed table differs from the tables used
+
+
+@dataclass(frozen=True)
+class ObservanceDay:
+    """An observance the rules name for a day: its label, primary day, alternates, and its checked explanation."""
+    name: str
+    label: str
+    primary: date | None
+    kind: str  # single | kshaya | vriddhi
+    alternates: tuple[tuple[date, str], ...]  # (day, reason); each day once, several reasons joined with " and "
+    explanation: str | None  # a checked entry's own words, or None
+
+
+@dataclass(frozen=True)
+class PanchangReport:
+    place_label: str
+    tz: str
+    facts: object  # panchang.DayFacts
+    tulu: object  # tulu.TuluDate
+    cutoff: str  # the Tulu day-1 rule used
+    observances: tuple[ObservanceDay, ...]  # only observances whose rules are verified and touch the day
+    needs_sampradaya: bool  # True when day claims were withheld because the family's tradition is not set
+    claims_withheld: bool  # True when some observance rules are not verified yet
+
+
+@dataclass(frozen=True)
+class NextObservanceReport:
+    place_label: str
+    tz: str
+    name: str
+    label: str
+    found: ObservanceDay | None
+    claim_available: bool  # False when the rule is unverified or the tradition is not set
+    needs_sampradaya: bool

@@ -6,7 +6,7 @@ import importlib.metadata
 import os
 import re
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
@@ -22,14 +22,18 @@ from .engine import (
     gochara,
     house_effects,
     house_timing,
+    observances,
+    panchang,
+    panchang_profile,
     planet_strength,
     timestd,
+    tulu,
     upagrahas,
 )
 from .engine.daylight import RahuKaala
-from .engine.errors import InvalidInput, PlaceNotFound
+from .engine.errors import InvalidInput, PlaceNotFound, SampradayaNotSet
 from .engine.geo import Place
-from .engine.paths import EPHEMERIS_PATH, TIME_STANDARDS_DIR
+from .engine.paths import EPHEMERIS_PATH, PROFILES_DIR, TIME_STANDARDS_DIR
 from .engine.profiles import DEFAULT_PROFILE, load_profile
 from .engine.rules import fired, load_rules, rules_hash
 from .engine.vedic import antardashas, current_dasha, house_from, sign_index, vimshottari
@@ -37,7 +41,10 @@ from .models import (
     BirthInput,
     NatalReport,
     NeedsDisambiguation,
+    NextObservanceReport,
+    ObservanceDay,
     OutlookReport,
+    PanchangReport,
     Provenance,
     ResolvedBirth,
     TodayReport,
@@ -261,6 +268,9 @@ def warm() -> VersionStamp:
             raise FileNotFoundError(f"required data folder is missing: {folder}")
     entries.load_entries()
     house_effects.load_rules()
+    # Panchang conventions: a missing or malformed profile must stop start-up too.
+    _panchang_profile()
+    tulu.load_tulu_profile(PANCHANG_PROFILES_DIR)
     return data_info()
 
 
@@ -337,3 +347,88 @@ def strength_report(birth: ResolvedBirth) -> planet_strength.Strengths | None:
     sun = daylight.sun_times(p.latitude, p.longitude, p.tz, local.date())
     night = None if sun is None else not (sun.sunrise <= local < sun.sunset)
     return planet_strength.find(rules, natal_report(birth).chart, night)
+
+
+PANCHANG_PROFILES_DIR = PROFILES_DIR  # a test may point this at a copy
+
+
+def _panchang_profile() -> panchang_profile.PanchangProfile:
+    return panchang_profile.load_panchang_profile(directory=PANCHANG_PROFILES_DIR)
+
+
+def _site(place: Place) -> panchang.Site:
+    return panchang.Site(place.latitude, place.longitude, place.tz)
+
+
+def reference_place() -> Place | None:
+    """The family's reference place (SAMAY_REFERENCE_PLACE, for example "Mangaluru, IN"), separate from a chat's saved
+    home."""
+    text = os.environ.get("SAMAY_REFERENCE_PLACE", "").strip()
+    if not text:
+        return None
+    found = geo.find_places(text, limit=1)
+    return found[0] if found else None
+
+
+def observance_explanation(name: str, directory=None) -> list[str]:
+    """Checked entries for an observance or nakshatra, in our own words. Unchecked entries are never returned."""
+    topic = f"nakshatra:{name}" if name in ("bharani", "krittika") else f"observance:{name}"
+    return [e.english for e in entries.answers_for(topic, directory=directory)]
+
+
+def _explanation(name: str) -> str | None:
+    found = observance_explanation(name)
+    return found[0] if found else None
+
+
+def _as_day(name: str, label: str, o: observances.Observance) -> ObservanceDay:
+    """The engine may name one alternate day for several reasons (a kshaya day that is also another tradition's day);
+    each day is listed once, its reasons joined in the order the engine gave them."""
+    reasons: dict[date, list[str]] = {}
+    for a in o.alternates:
+        reasons.setdefault(a.day, []).append(a.reason)
+    alternates = tuple((day, " and ".join(dict.fromkeys(why))) for day, why in reasons.items())
+    return ObservanceDay(name, label, o.primary, o.kind, alternates, _explanation(name))
+
+
+def panchang_report(place: Place, day: date) -> PanchangReport | None:
+    """Everything the bot says about one local day at a place. Observance days are named only from verified rules
+    and only once the family's tradition is set; otherwise the report says that a claim was withheld."""
+    profile, site = _panchang_profile(), _site(place)
+    facts = panchang.day_facts(site, day, profile.ayanamsa, profile.sunrise_definition)
+    if facts is None:
+        return None
+    tulu_profile = tulu.load_tulu_profile(PANCHANG_PROFILES_DIR)
+    date_in_tulu = tulu.tulu_date(day, place.latitude, place.longitude, place.tz, tulu_profile.cutoff,
+                                  tulu_profile.ayanamsa)
+    today: list[ObservanceDay] = []
+    needs_tradition = withheld = False
+    for spec in profile.observances.values():
+        if not spec.verified:
+            withheld = True
+            continue
+        try:
+            found = observances.observances_for(spec.rules, profile.sampradaya, site, day, day, profile.ayanamsa,
+                                                profile.margin_minutes, profile.sunrise_definition)
+        except SampradayaNotSet:
+            needs_tradition = True
+            continue
+        today += [_as_day(spec.name, spec.label, o) for o in found]
+    return PanchangReport(place.label, place.tz, facts, date_in_tulu, tulu_profile.cutoff, tuple(today),
+                          needs_tradition, withheld)
+
+
+def next_observance_report(place: Place, name: str, today: date) -> NextObservanceReport:
+    """The next day an observance falls on, or why no day can be named."""
+    profile = _panchang_profile()
+    spec = profile.observances[name]
+    base = {"place_label": place.label, "tz": place.tz, "name": name, "label": spec.label}
+    if not spec.verified:
+        return NextObservanceReport(**base, found=None, claim_available=False, needs_sampradaya=False)
+    try:
+        found = observances.find_next(spec.rules, profile.sampradaya, _site(place), today, profile.ayanamsa,
+                                      profile.margin_minutes, profile.sunrise_definition)
+    except SampradayaNotSet:
+        return NextObservanceReport(**base, found=None, claim_available=False, needs_sampradaya=True)
+    return NextObservanceReport(**base, found=None if found is None else _as_day(name, spec.label, found),
+                                claim_available=True, needs_sampradaya=False)
