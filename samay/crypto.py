@@ -58,9 +58,7 @@ class Cipher:
         try:
             self._fernet = Fernet(key.encode())
         except (ValueError, TypeError):
-            raise StoreKeyError(
-                f"{KEY_ENV} is not a valid key; make one with: uv run samay keygen"
-            ) from None
+            raise StoreKeyError(f"{KEY_ENV} is not a valid key; make one with: uv run samay keygen") from None
 
     def encrypt(self, value: str) -> str:
         return PREFIX + self._fernet.encrypt(value.encode()).decode()
@@ -72,9 +70,7 @@ class Cipher:
         try:
             return self._fernet.decrypt(value[len(PREFIX) :].encode()).decode()
         except InvalidToken:
-            raise StoreKeyError(
-                "the database key does not match this database"
-            ) from None
+            raise StoreKeyError("the database key does not match this database") from None
 
 
 def is_encrypted(value: object) -> bool:

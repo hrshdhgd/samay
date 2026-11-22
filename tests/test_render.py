@@ -15,15 +15,11 @@ from samay.render.text import (
     render_today,
 )
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 
 
 def _report(date_text="1990-08-15", time_text="14:30"):
-    return service.natal_report(
-        service.resolve_birth(BirthInput(date_text, time_text, "Pune"))
-    )
+    return service.natal_report(service.resolve_birth(BirthInput(date_text, time_text, "Pune")))
 
 
 def test_chart_text_has_everything():
@@ -60,9 +56,7 @@ def test_options():
 
 
 def _family(date_text, time_text, place):
-    report = service.natal_report(
-        service.resolve_birth(BirthInput(date_text, time_text, place))
-    )
+    report = service.natal_report(service.resolve_birth(BirthInput(date_text, time_text, place)))
     return report, render_chart(report, technical=False)
 
 
@@ -132,10 +126,7 @@ def test_rahu_kaala_line_and_polar_message():
     from samay.render.text import render_rahu_kaala
 
     rahu = daylight.rahu_kaala(28.6139, 77.2090, "Asia/Kolkata", date(2026, 11, 9))
-    assert (
-        render_rahu_kaala(rahu, "New Delhi")
-        == "⚠ Rahu Kaala today: 8:00 am – 9:22 am (New Delhi)"
-    )
+    assert render_rahu_kaala(rahu, "New Delhi") == "⚠ Rahu Kaala today: 8:00 am – 9:22 am (New Delhi)"
     assert "does not both rise and set" in render_rahu_kaala(None, "Tromsø")
 
 
@@ -149,10 +140,7 @@ def test_brief_has_date_and_avoid_window_but_no_dasha():
     text = render_brief(datetime(2026, 11, 9, 7, 0), rahu, "Pune", None)
     assert text.splitlines()[0] == "🌅 Good morning! Today is Monday, 09 November 2026."
     assert (
-        text.splitlines()[1].startswith(
-            "Traditionally avoided for starting new things:"
-        )
-        and "Pune" in text
+        text.splitlines()[1].startswith("Traditionally avoided for starting new things:") and "Pune" in text
     )
     assert "dasha" not in text.lower() and len(text.splitlines()) == 2
 
@@ -162,13 +150,8 @@ def test_today_can_carry_extra_lines_before_the_footer():
 
     birth = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
     report = service.today_report(birth, datetime(2026, 11, 9, tzinfo=UTC))
-    lines = render_today(
-        report, technical=False, extras=("⚠ Rahu Kaala today: X",)
-    ).splitlines()
-    assert (
-        "⚠ Rahu Kaala today: X" in lines
-        and lines.index("⚠ Rahu Kaala today: X") < len(lines) - 3
-    )
+    lines = render_today(report, technical=False, extras=("⚠ Rahu Kaala today: X",)).splitlines()
+    assert "⚠ Rahu Kaala today: X" in lines and lines.index("⚠ Rahu Kaala today: X") < len(lines) - 3
 
 
 def test_ordinals():
@@ -237,20 +220,14 @@ def test_chat_dasha_is_explained_with_lengths_dates_and_the_current_sub_chapters
     rows = [line for line in text.splitlines() if " · " in line and "years" in line]
     assert len(rows) == 9 and sum(1 for r in rows if "← now" in r) == 1
     assert next(r for r in rows if "← now" in r).startswith("Jupiter · 16 years · ")
-    assert (
-        rows[0].split(" · ")[2].startswith("birth –")
-    )  # the first chapter began before birth
+    assert rows[0].split(" · ")[2].startswith("birth –")  # the first chapter began before birth
     assert "Rahu and Ketu are not planets you can see" in text
     assert "Sub-chapters inside your Jupiter chapter:" in text
-    assert (
-        sum(1 for line in text.splitlines() if line.endswith("← now")) == 2
-    )  # chapter + sub-chapter
+    assert sum(1 for line in text.splitlines() if line.endswith("← now")) == 2  # chapter + sub-chapter
 
 
 def test_cli_dasha_is_unchanged():
-    assert render_dasha(_report(), datetime(2026, 11, 9, tzinfo=UTC)).startswith(
-        "Vimshottari mahadashas:"
-    )
+    assert render_dasha(_report(), datetime(2026, 11, 9, tzinfo=UTC)).startswith("Vimshottari mahadashas:")
 
 
 def test_a_short_text_is_one_message_and_a_long_one_is_split_without_losing_a_word():
@@ -262,9 +239,7 @@ def test_a_short_text_is_one_message_and_a_long_one_is_split_without_losing_a_wo
     parts = split_message(text, limit=1000)
     assert len(parts) > 2 and all(len(p) <= 1000 for p in parts)
     assert "\n\n".join(parts).split() == text.split()  # nothing dropped or reordered
-    assert all(
-        p.startswith("paragraph") for p in parts
-    )  # cut at paragraph boundaries here
+    assert all(p.startswith("paragraph") for p in parts)  # cut at paragraph boundaries here
 
 
 def test_a_paragraph_longer_than_the_limit_is_cut_at_lines_and_then_at_words():
@@ -272,15 +247,10 @@ def test_a_paragraph_longer_than_the_limit_is_cut_at_lines_and_then_at_words():
 
     lines = "\n".join(f"line {i} " + "x" * 80 for i in range(30))
     parts = split_message(lines, limit=500)
-    assert (
-        all(len(p) <= 500 for p in parts) and "\n".join(parts).split() == lines.split()
-    )
+    assert all(len(p) <= 500 for p in parts) and "\n".join(parts).split() == lines.split()
     one_long_line = "word " * 400
     pieces = split_message(one_long_line, limit=300)
-    assert (
-        all(len(p) <= 300 for p in pieces)
-        and " ".join(pieces).split() == one_long_line.split()
-    )
+    assert all(len(p) <= 300 for p in pieces) and " ".join(pieces).split() == one_long_line.split()
 
 
 def test_a_word_longer_than_the_limit_is_cut_hard_rather_than_looping():
@@ -295,20 +265,10 @@ def test_today_gives_the_books_meaning_only_when_it_is_kind(monkeypatch):
     from samay.engine import antardasha
     from samay.render import text as T
 
-    rules = dataclasses.replace(
-        antardasha.load_rules(), level="translation-checked", checked_by="test"
-    )
+    rules = dataclasses.replace(antardasha.load_rules(), level="translation-checked", checked_by="test")
     monkeypatch.setattr(antardasha, "load_rules", lambda path=None: rules)
-    kind = [
-        k
-        for k, (t, _) in rules.effects.items()
-        if not any(w in t.lower() for w in T.HARSH_WORDS)
-    ]
-    hard = [
-        k
-        for k, (t, _) in rules.effects.items()
-        if any(w in t.lower() for w in T.HARSH_WORDS)
-    ]
+    kind = [k for k, (t, _) in rules.effects.items() if not any(w in t.lower() for w in T.HARSH_WORDS)]
+    hard = [k for k, (t, _) in rules.effects.items() if any(w in t.lower() for w in T.HARSH_WORDS)]
     assert kind and hard
     assert (
         "is about" in T._gentle_phase(*kind[0])

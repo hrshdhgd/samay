@@ -75,15 +75,11 @@ def load_rules(path: Path = RULES_PATH) -> VargaRules:
     if set(raw["moon_drekkana"]["kinds"]) != set(KINDS):
         raise ValueError(f"{path.name}: moon_drekkana needs the kinds {KINDS}")
     if [k for k in raw["rising_navamsa"] if k not in ("verse", "vargottama")] != SIGNS:
-        raise ValueError(
-            f"{path.name} rising_navamsa: needs the twelve signs, Aries first"
-        )
-    if set(raw["trimsamsa_own"]) != set(TRIMSAMSA_PLANETS) or set(
-        raw["trimsamsa_lights"]
-    ) - {"verse"} != set(TRIMSAMSA_PLANETS):
-        raise ValueError(
-            f"{path.name}: trimsamsa rows need Mars, Saturn, Jupiter, Mercury and Venus"
-        )
+        raise ValueError(f"{path.name} rising_navamsa: needs the twelve signs, Aries first")
+    if set(raw["trimsamsa_own"]) != set(TRIMSAMSA_PLANETS) or set(raw["trimsamsa_lights"]) - {"verse"} != set(
+        TRIMSAMSA_PLANETS
+    ):
+        raise ValueError(f"{path.name}: trimsamsa rows need Mars, Saturn, Jupiter, Mercury and Venus")
     return VargaRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),
@@ -133,10 +129,7 @@ def _group_hora(
 ) -> str | None:
     """'full' when every planet is in the stated hora of the stated kind of sign, 'moderate' when every planet is in the stated hora or every planet in the stated kind of
     sign (the translator's reading of 21.5), else None."""
-    pairs = [
-        (hora(lons[p]) == good_hora, (sign_index(lons[p]) % 2 == 0) == good_odd)
-        for p in planets
-    ]
+    pairs = [(hora(lons[p]) == good_hora, (sign_index(lons[p]) % 2 == 0) == good_odd) for p in planets]
     if all(h and s for h, s in pairs):
         return "full"
     if all(h for h, _ in pairs) or all(s for _, s in pairs):
@@ -155,14 +148,8 @@ def find(rules: VargaRules, chart: Chart) -> tuple[Finding, ...] | None:
     out: list[Finding] = []
 
     own = [p for p in SEVEN if SIGN_LORDS[sign[p]] == p]
-    friendly = [
-        p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "friendly"
-    ]
-    weak = [
-        p
-        for p in SEVEN
-        if house_effects.strength(ch20, p, sign[p]) in ("inimical", "depression")
-    ]
+    friendly = [p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "friendly"]
+    weak = [p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) in ("inimical", "depression")]
     for key, label, names in (
         ("own_signs", "in their own signs", own),
         ("friendly_signs", "in friendly signs", friendly),
@@ -177,16 +164,10 @@ def find(rules: VargaRules, chart: Chart) -> tuple[Finding, ...] | None:
                 )
             )
 
-    exalted = [
-        p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "exaltation"
-    ]
+    exalted = [p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "exaltation"]
     if len(exalted) == 1:
         p = exalted[0]
-        friends = [
-            q
-            for q in SEVEN
-            if q != p and _is_friend(ch20, p, q) and _aspects(q, sign[q], sign[p])
-        ]
+        friends = [q for q in SEVEN if q != p and _is_friend(ch20, p, q) and _aspects(q, sign[q], sign[p])]
         if friends:
             out.append(
                 Finding(
@@ -196,9 +177,7 @@ def find(rules: VargaRules, chart: Chart) -> tuple[Finding, ...] | None:
                 )
             )
     for p in exalted:
-        friends = [
-            q for q in SEVEN if q != p and sign[q] == sign[p] and _is_friend(ch20, p, q)
-        ]
+        friends = [q for q in SEVEN if q != p and sign[q] == sign[p] and _is_friend(ch20, p, q)]
         if friends:
             out.append(
                 Finding(
@@ -225,9 +204,7 @@ def find(rules: VargaRules, chart: Chart) -> tuple[Finding, ...] | None:
     ):
         got = _group_hora(lon, names, good_hora, good_odd)
         if got:
-            where = ", ".join(
-                f"{p.title()} {hora(lon[p])} hora of {SIGNS[sign[p]]}" for p in names
-            )
+            where = ", ".join(f"{p.title()} {hora(lon[p])} hora of {SIGNS[sign[p]]}" for p in names)
             out.append(
                 Finding(
                     h["verse"],
@@ -273,11 +250,7 @@ def find(rules: VargaRules, chart: Chart) -> tuple[Finding, ...] | None:
     for p in TRIMSAMSA_PLANETS:
         if trimsamsa_lord(lon[p]) == p:
             row = r["trimsamsa_own"][p]
-            out.append(
-                Finding(
-                    row["verse"], f"{p.title()} is in its own trimsamsa", row["text"]
-                )
-            )
+            out.append(Finding(row["verse"], f"{p.title()} is in its own trimsamsa", row["text"]))
     for light in ("sun", "moon"):
         lord = trimsamsa_lord(lon[light])
         if lord != light:

@@ -59,13 +59,9 @@ def load_tulu_profile(directory: Path = PROFILES_DIR) -> TuluProfile:
         raise UnknownProfile("missing tulu profile")
     raw = yaml.safe_load(path.read_text())
     if raw["sankranti_cutoff"] not in CUTOFFS:
-        raise ValueError(
-            f"profile field 'sankranti_cutoff': unsupported value {raw['sankranti_cutoff']!r}"
-        )
+        raise ValueError(f"profile field 'sankranti_cutoff': unsupported value {raw['sankranti_cutoff']!r}")
     if raw["ayanamsa"] not in ephemeris.AYANAMSAS:
-        raise ValueError(
-            f"profile field 'ayanamsa': unsupported value {raw['ayanamsa']!r}"
-        )
+        raise ValueError(f"profile field 'ayanamsa': unsupported value {raw['ayanamsa']!r}")
     return TuluProfile(raw["ayanamsa"], raw["sankranti_cutoff"])
 
 
@@ -94,9 +90,7 @@ def last_ingress(utc: datetime, ayanamsa: str = "lahiri_mean") -> tuple[int, dat
     return sign, inside
 
 
-def month_start(
-    ingress: datetime, latitude: float, longitude: float, tz: str, cutoff: str
-) -> date:
+def month_start(ingress: datetime, latitude: float, longitude: float, tz: str, cutoff: str) -> date:
     """The civil day that counts as day 1 of the month the Sun entered at `ingress`."""
     local = ingress.astimezone(ZoneInfo(tz))
     day = local.date()
@@ -107,11 +101,7 @@ def month_start(
     sun = daylight.sun_times(latitude, longitude, tz, day)
     if sun is None:
         return day
-    limit = (
-        sun.sunset
-        if cutoff == "sunset"
-        else sun.sunrise + (sun.sunset - sun.sunrise) * APARAHNA_FRACTION
-    )
+    limit = sun.sunset if cutoff == "sunset" else sun.sunrise + (sun.sunset - sun.sunrise) * APARAHNA_FRACTION
     return day if local < limit else day + timedelta(days=1)
 
 
@@ -127,16 +117,10 @@ def tulu_date(
         raise ValueError(f"unknown sankranti cutoff {cutoff!r}")
     zone = ZoneInfo(tz)
     following = day + timedelta(days=1)
-    day_end = datetime(
-        following.year, following.month, following.day, tzinfo=zone
-    ).astimezone(UTC)
+    day_end = datetime(following.year, following.month, following.day, tzinfo=zone).astimezone(UTC)
     sign, ingress = last_ingress(day_end - timedelta(seconds=1), ayanamsa)
     start = month_start(ingress, latitude, longitude, tz, cutoff)
-    if (
-        start > day
-    ):  # the Sun entered the sign today but the cutoff makes the month start tomorrow
+    if start > day:  # the Sun entered the sign today but the cutoff makes the month start tomorrow
         sign, ingress = last_ingress(ingress - timedelta(seconds=1), ayanamsa)
         start = month_start(ingress, latitude, longitude, tz, cutoff)
-    return TuluDate(
-        MONTHS[sign], (day - start).days + 1, ingress.astimezone(zone), start
-    )
+    return TuluDate(MONTHS[sign], (day - start).days + 1, ingress.astimezone(zone), start)

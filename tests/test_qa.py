@@ -7,9 +7,7 @@ from samay import narrate, qa, service
 from samay.engine.paths import EPHEMERIS_PATH
 from samay.models import BirthInput
 
-needs_kernel = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 NOW = datetime(2026, 11, 9, tzinfo=UTC)
 
 
@@ -70,9 +68,7 @@ def test_every_topic_is_a_valid_storable_key():
 
 def _client(reply):
     return httpx.AsyncClient(
-        transport=httpx.MockTransport(
-            lambda r: httpx.Response(200, json={"response": reply})
-        )
+        transport=httpx.MockTransport(lambda r: httpx.Response(200, json={"response": reply}))
     )
 
 
@@ -83,32 +79,20 @@ def model_on(monkeypatch):
 
 async def test_model_sorter_accepts_only_known_keys(model_on):
     assert (
-        await qa.sort_with_model(
-            "what's the deal with the ringed one", _client("planet:saturn")
-        )
+        await qa.sort_with_model("what's the deal with the ringed one", _client("planet:saturn"))
         == "planet:saturn"
     )
-    assert (
-        await qa.sort_with_model("whatever", _client(" `dasha:venus`.\n"))
-        == "dasha:venus"
-    )
+    assert await qa.sort_with_model("whatever", _client(" `dasha:venus`.\n")) == "dasha:venus"
     assert await qa.sort_with_model("will I be rich", _client("none")) is None
 
 
 async def test_model_sorter_falls_back_to_rules_on_unknown_keys_or_failure(model_on):
+    assert await qa.sort_with_model("what is shani", _client("planet:pluto")) == "planet:saturn"
     assert (
-        await qa.sort_with_model("what is shani", _client("planet:pluto"))
+        await qa.sort_with_model("what is shani", _client("Saturn is a planet of discipline"))
         == "planet:saturn"
     )
-    assert (
-        await qa.sort_with_model(
-            "what is shani", _client("Saturn is a planet of discipline")
-        )
-        == "planet:saturn"
-    )
-    broken = httpx.AsyncClient(
-        transport=httpx.MockTransport(lambda r: httpx.Response(500))
-    )
+    broken = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(500)))
     assert await qa.sort_with_model("what is shani", broken) == "planet:saturn"
 
 
@@ -163,9 +147,7 @@ def test_current_dasha_resolves_to_the_running_chapter_and_shows_its_dates(
 @needs_kernel
 def test_past_and_future_chapters_are_labelled():
     assert "it has ended" in qa.answer_topic("dasha:moon", _birth(), NOW).facts[0]
-    assert (
-        "it is still ahead" in qa.answer_topic("dasha:saturn", _birth(), NOW).facts[0]
-    )
+    assert "it is still ahead" in qa.answer_topic("dasha:saturn", _birth(), NOW).facts[0]
 
 
 def test_current_dasha_without_birth_stays_general():
@@ -176,9 +158,7 @@ def test_current_dasha_without_birth_stays_general():
 def test_rahu_and_ketu_always_get_the_astronomy_note_alongside_their_entries():
     for node in ("rahu", "ketu"):
         a = qa.answer_topic(f"planet:{node}", None, NOW)
-        assert [e.id for e in a.entries] == [f"bj-2-3-names-{node}"] and a.notes == (
-            qa.RAHU_KETU_FACT,
-        )
+        assert [e.id for e in a.entries] == [f"bj-2-3-names-{node}"] and a.notes == (qa.RAHU_KETU_FACT,)
     assert qa.answer_topic("planet:saturn", None, NOW).notes == ()
 
 
@@ -200,30 +180,21 @@ def test_rahu_and_ketu_always_get_the_astronomy_note_alongside_their_entries():
     ],
 )
 def test_answer_names_the_planet_when_asked_by_its_sanskrit_name(question, line):
-    assert (
-        qa.answer_topic(
-            qa.sort_question(question), None, NOW, question=question
-        ).name_line
-        == line
-    )
+    assert qa.answer_topic(qa.sort_question(question), None, NOW, question=question).name_line == line
 
 
 def test_name_line_comes_first_in_the_rendered_answer():
     from samay.render.text import render_answer
 
     q = "What does Shani stand for?"
-    text = render_answer(
-        qa.answer_topic(qa.sort_question(q), None, NOW, question=q), birth_known=False
-    )
+    text = render_answer(qa.answer_topic(qa.sort_question(q), None, NOW, question=q), birth_known=False)
     assert text.startswith(
         "Shani is the Sanskrit and Hindi name for Saturn.\n\nVarahamihira describes Saturn"
     )
 
 
 def test_kalapurusha_question_gets_its_entry():
-    assert [
-        e.id for e in qa.answer_topic("concept:kalapurusha", None, NOW).entries
-    ] == ["bj-1-4-kalapurusha"]
+    assert [e.id for e in qa.answer_topic("concept:kalapurusha", None, NOW).entries] == ["bj-1-4-kalapurusha"]
 
 
 def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
@@ -242,10 +213,7 @@ def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
     (tmp_path / "e.yaml").write_text(yaml.safe_dump([draft]))
     entry_store.load_entries.cache_clear()
     try:
-        assert (
-            qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries
-            == ()
-        )
+        assert qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries == ()
     finally:
         entry_store.load_entries.cache_clear()
 
@@ -253,13 +221,8 @@ def test_unchecked_entries_stay_hidden_from_answers(tmp_path):
 def test_house_question_returns_the_checked_house_entries():
     a = qa.answer_topic("house:4", None, NOW)
     assert [e.id for e in a.entries] == ["bj-1-15-house-4", "bj-1-15-note-house-4"]
-    assert (
-        "signifies relations" in a.entries[0].english
-        and "Graha (dwelling place)" in a.entries[0].english
-    )
-    assert (
-        "translator, N. Chidambaram Iyer" in a.entries[1].english
-    )  # the note says whose words it is
+    assert "signifies relations" in a.entries[0].english and "Graha (dwelling place)" in a.entries[0].english
+    assert "translator, N. Chidambaram Iyer" in a.entries[1].english  # the note says whose words it is
     assert all(e.verification.checked_by == "h2" for e in a.entries)
 
 
@@ -307,12 +270,9 @@ def test_planet_answer_with_a_birth_adds_the_entries_for_its_house(tmp_path):
             "planet:saturn", _birth(), NOW, entries_dir=tmp_path
         )  # Saturn is in the 2nd house here
         assert [e.id for e in a.entries] == ["sat", "h2"]
-        assert [
-            e.id
-            for e in qa.answer_topic(
-                "planet:saturn", None, NOW, entries_dir=tmp_path
-            ).entries
-        ] == ["sat"]
+        assert [e.id for e in qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path).entries] == [
+            "sat"
+        ]
     finally:
         entry_store.load_entries.cache_clear()
 
@@ -332,29 +292,18 @@ def test_the_ai_is_told_the_guardrails():
 
 def test_prediction_prompt_uses_sources_and_refuses_to_make_event_predictions():
     assert "source and chart facts as traditional ideas" in qa.AI_PREDICT_SYSTEM
-    assert (
-        "do not present anything as likely, expected, or a prediction"
-        in qa.AI_PREDICT_SYSTEM
-    )
+    assert "do not present anything as likely, expected, or a prediction" in qa.AI_PREDICT_SYSTEM
     assert "Do not mention death, serious illness or accidents." in qa.AI_PREDICT_SYSTEM
 
 
 def test_current_dasha_prompt_requires_plain_language_without_dropping_source_items():
-    prompt = qa._ai_prompt(
-        "What is my current period?", qa.Answer("future:overview", (), ())
-    )
+    prompt = qa._ai_prompt("What is my current period?", qa.Answer("future:overview", (), ()))
     assert "translate every listed effect into ordinary words" in prompt
     assert "Do not copy the source list verbatim" in prompt
     assert "loss or serious harm involving a spouse or children" in prompt
-    assert (
-        "Count the source's semicolon-separated items and include the same number."
-        in prompt
-    )
+    assert "Count the source's semicolon-separated items and include the same number." in prompt
     assert "translate every sub-chapter effect into ordinary words" in prompt
-    assert (
-        "Name weapons separately from enemies, and wounds separately from poison"
-        in prompt
-    )
+    assert "Name weapons separately from enemies, and wounds separately from poison" in prompt
     assert "without explaining house or sign meanings" in prompt
 
 
@@ -364,21 +313,13 @@ def test_the_ai_prompt_carries_verified_facts_and_a_bounded_question():
     assert prompt.startswith(
         "Verified facts:\n- Checked source Brihat Jataka 2.1: Varahamihira describes the Moon as the mind"
     )
-    assert (
-        "Answer using these checked sources and chart facts as the authority." in prompt
-    )
+    assert "Answer using these checked sources and chart facts as the authority." in prompt
     assert prompt.endswith(f"Question: {'x' * qa.MAX_QUESTION_CHARS}")
-    assert (
-        qa._ai_prompt("what is a nakshatra?", qa.Answer(None, (), ()))
-        == "Question: what is a nakshatra?"
-    )
+    assert qa._ai_prompt("what is a nakshatra?", qa.Answer(None, (), ())) == "Question: what is a nakshatra?"
 
 
 async def test_a_complete_long_ai_reply_is_not_cut_mid_sentence(model_on, monkeypatch):
-    reply = (
-        "The text describes a period of reflection. " * 180
-        + "The final sentence is complete."
-    )
+    reply = "The text describes a period of reflection. " * 180 + "The final sentence is complete."
 
     async def long_reply(*args, **kwargs):
         return reply
@@ -389,9 +330,7 @@ async def test_a_complete_long_ai_reply_is_not_cut_mid_sentence(model_on, monkey
 
 def test_the_ai_prompt_includes_the_entire_long_sourced_answer():
     source = "A checked fact. " * 400 + "The last checked fact."
-    prompt = qa._ai_prompt(
-        "How is my week?", qa.Answer("future:week", (), ()), source_answer=source
-    )
+    prompt = qa._ai_prompt("How is my week?", qa.Answer("future:week", (), ()), source_answer=source)
     assert source in prompt
 
 
@@ -399,18 +338,14 @@ async def test_ai_answer_is_none_when_the_model_says_nothing(model_on):
     assert await qa.ai_answer("q", qa.Answer(None, (), ()), _client("")) is None
 
 
-async def test_career_modern_examples_are_separate_from_the_sourced_reading(
-    model_on, monkeypatch
-):
+async def test_career_modern_examples_are_separate_from_the_sourced_reading(model_on, monkeypatch):
     from samay.engine.livelihood import Livelihood
 
     answer = qa.Answer(
         "life:career",
         (),
         (),
-        livelihood=Livelihood(
-            (), (("10.2–3", "Mercury", "Writing and accounting"),), (), ()
-        ),
+        livelihood=Livelihood((), (("10.2–3", "Mercury", "Writing and accounting"),), (), ()),
     )
     calls = []
 
@@ -435,9 +370,7 @@ async def test_career_modern_examples_are_separate_from_the_sourced_reading(
     assert calls[0][0] != calls[1][0]
 
 
-async def test_career_does_not_present_partial_ai_answer_if_modern_examples_fail(
-    model_on, monkeypatch
-):
+async def test_career_does_not_present_partial_ai_answer_if_modern_examples_fail(model_on, monkeypatch):
     from samay.engine.livelihood import Livelihood
 
     answer = qa.Answer(
@@ -452,12 +385,7 @@ async def test_career_does_not_present_partial_ai_answer_if_modern_examples_fail
         return next(replies)
 
     monkeypatch.setattr(narrate, "complete", complete)
-    assert (
-        await qa.ai_answer(
-            "How is my career?", answer, source_answer="The text mentions writing."
-        )
-        is None
-    )
+    assert await qa.ai_answer("How is my career?", answer, source_answer="The text mentions writing.") is None
 
 
 def test_render_ai_is_one_direct_answer_with_source_and_caveat():
@@ -485,13 +413,9 @@ def test_wording_changes_only_when_an_ai_answer_follows(empty_entries):
         render_answer(qa.answer_topic(None, None, NOW), ai_follows=True)
         == "I have no checked source for this."
     )
-    unsourced = render_answer(
-        qa.answer_topic("dasha:venus", None, NOW), birth_known=False, ai_follows=True
-    )
+    unsourced = render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False, ai_follows=True)
     assert "I have noted the topic" in unsourced and "won't guess" not in unsourced
-    assert "won't guess" in render_answer(
-        qa.answer_topic("dasha:venus", None, NOW), birth_known=False
-    )
+    assert "won't guess" in render_answer(qa.answer_topic("dasha:venus", None, NOW), birth_known=False)
 
 
 def test_shipped_dasha_entries_cover_every_planet_from_the_vimshottari_verses_only():
@@ -519,12 +443,8 @@ def test_shipped_dasha_entries_cover_every_planet_from_the_vimshottari_verses_on
         "ketu",
         "venus",
     ]  # the text's order, v. 18-26
-    assert [ph[f"ph-19-{18 + i}-{g}"].topic for i, g in enumerate(order)] == [
-        f"dasha:{g}" for g in order
-    ]
-    assert all(
-        "Phaladeepika" in e.english or "Mantreswara" in e.english for e in ph.values()
-    )
+    assert [ph[f"ph-19-{18 + i}-{g}"].topic for i, g in enumerate(order)] == [f"dasha:{g}" for g in order]
+    assert all("Phaladeepika" in e.english or "Mantreswara" in e.english for e in ph.values())
 
 
 def _checked_dasha_entry(system="vimshottari"):
@@ -562,19 +482,13 @@ def test_a_dasha_answer_with_sourced_entries_carries_the_not_a_forecast_frame(tm
             qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path),
             birth_known=False,
         )
-        assert (
-            "listed effects" in text
-            and prompts.DASHA_FRAME in text
-            and "not a forecast" in text
-        )
+        assert "listed effects" in text and prompts.DASHA_FRAME in text and "not a forecast" in text
         assert text.index("listed effects") < text.index(prompts.DASHA_FRAME)
         other = render_answer(
             qa.answer_topic("planet:saturn", None, NOW, entries_dir=tmp_path),
             birth_known=False,
         )
-        assert (
-            prompts.DASHA_FRAME not in other
-        )  # the frame belongs to dasha answers only
+        assert prompts.DASHA_FRAME not in other  # the frame belongs to dasha answers only
     finally:
         entry_store.load_entries.cache_clear()
 
@@ -586,15 +500,10 @@ def test_an_entry_for_a_different_dasha_system_never_answers_a_vimshottari_quest
 
     from samay.engine import entries as entry_store
 
-    (tmp_path / "e.yaml").write_text(
-        yaml.safe_dump([_checked_dasha_entry(system="brihat-jataka-dasa")])
-    )
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([_checked_dasha_entry(system="brihat-jataka-dasa")]))
     entry_store.load_entries.cache_clear()
     try:
-        assert (
-            qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path).entries
-            == ()
-        )
+        assert qa.answer_topic("dasha:saturn", None, NOW, entries_dir=tmp_path).entries == ()
     finally:
         entry_store.load_entries.cache_clear()
 
@@ -623,10 +532,7 @@ async def test_the_model_routes_any_wording_to_a_known_topic(model_on):
         "anything good coming for me?",
         "my luck lately?",
     ):
-        assert (
-            await qa.sort_with_model(wording, _client("future:overview"))
-            == "future:overview"
-        )
+        assert await qa.sort_with_model(wording, _client("future:overview")) == "future:overview"
 
 
 async def test_the_router_prompt_lists_the_topics_and_the_previous_one(model_on):
@@ -637,22 +543,13 @@ async def test_the_router_prompt_lists_the_topics_and_the_previous_one(model_on)
         return httpx.Response(200, json={"response": "none"})
 
     client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-    assert (
-        await qa.sort_with_model("hello there", client, previous="planet:saturn")
-        is None
-    )
+    assert await qa.sort_with_model("hello there", client, previous="planet:saturn") is None
     body = seen["body"]
-    assert (
-        "Previous topic: planet:saturn" in body
-        and "future:overview" in body
-        and "small talk" in body
-    )
+    assert "Previous topic: planet:saturn" in body and "future:overview" in body and "small talk" in body
     assert "follow-up" in body and "dasha:<planet>" in body
 
 
-async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_facts(
-    model_on, monkeypatch
-):
+async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_facts(model_on, monkeypatch):
     captured = {}
 
     async def fake(
@@ -669,9 +566,7 @@ async def test_the_ai_prompt_includes_recent_conversation_after_the_verified_fac
 
     monkeypatch.setattr(narrate, "complete", fake)
     answer = qa.answer_topic("planet:moon", None, NOW)
-    await qa.ai_answer(
-        "and the sun?", answer, history=[("what is the moon?", "The Moon is the mind.")]
-    )
+    await qa.ai_answer("and the sun?", answer, history=[("what is the moon?", "The Moon is the mind.")])
     prompt = captured["prompt"]
     assert (
         prompt.index("Verified facts:")
@@ -697,39 +592,26 @@ def test_the_future_reading_is_built_from_the_running_dasha_the_chart_and_the_tr
     )
     text = render_answer(a)
     assert text.startswith("🔮 Your current period of life")
-    assert (
-        "Sources: Phaladeepika 19.22; Brihat Jataka 20." in text
-        and "not a forecast" in text
-    )
+    assert "Sources: Phaladeepika 19.22; Brihat Jataka 20." in text and "not a forecast" in text
     assert qa.answer_topic("future:overview", None, NOW).entries == ()
-    assert render_answer(
-        qa.answer_topic("future:overview", None, NOW), birth_known=False
-    ).startswith("To look at your future")
+    assert render_answer(qa.answer_topic("future:overview", None, NOW), birth_known=False).startswith(
+        "To look at your future"
+    )
 
 
 def test_the_answer_shows_one_lead_entry_and_one_source_line_unless_more_is_asked_for():
     from samay.render.text import render_answer
 
     answer = qa.answer_topic("planet:venus", None, NOW)
-    compact, full = render_answer(answer, birth_known=False), render_answer(
-        answer, "full", birth_known=False
-    )
+    compact, full = render_answer(answer, birth_known=False), render_answer(answer, "full", birth_known=False)
     assert (
         compact.count("Varahamihira") == 1
         and compact.count("Source:") == 1
         and "(translation-checked)" not in compact
     )
-    assert (
-        full.count("• Varahamihira") >= 4
-        and "tr. N. Chidambaram Iyer" in full
-        and "· checked" in full
-    )
+    assert full.count("• Varahamihira") >= 4 and "tr. N. Chidambaram Iyer" in full and "· checked" in full
     sanskrit = render_answer(answer, "sanskrit", birth_known=False)
-    assert (
-        "मदनो" in sanskrit
-        and sanskrit.count("ⓘ Verse text") == 1
-        and "Varahamihira" not in sanskrit
-    )
+    assert "मदनो" in sanskrit and sanskrit.count("ⓘ Verse text") == 1 and "Varahamihira" not in sanskrit
 
 
 # --- life areas: marriage, career and the rest, read through the houses the text assigns -------------------
@@ -770,9 +652,7 @@ def test_the_model_can_route_a_marriage_question_to_its_area(model_on):
     import asyncio
 
     assert (
-        asyncio.run(
-            qa.sort_with_model("will my marriage work out?", _client("life:marriage"))
-        )
+        asyncio.run(qa.sort_with_model("will my marriage work out?", _client("life:marriage")))
         == "life:marriage"
     )
 
@@ -816,23 +696,15 @@ def _models_client(replies):
     return httpx.AsyncClient(transport=httpx.MockTransport(handler)), asked
 
 
-async def test_an_unusable_small_model_route_is_retried_once_on_the_larger_model(
-    model_on, monkeypatch
-):
+async def test_an_unusable_small_model_route_is_retried_once_on_the_larger_model(model_on, monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_MODEL", "small")
     monkeypatch.setattr(narrate, "AI_MODEL", "large")
-    client, asked = _models_client(
-        {"small": "Saturn is a planet of discipline", "large": "planet:saturn"}
-    )
-    assert (
-        await qa.route_with_model("the ringed one?", client)
-    ).topic == "planet:saturn"
+    client, asked = _models_client({"small": "Saturn is a planet of discipline", "large": "planet:saturn"})
+    assert (await qa.route_with_model("the ringed one?", client)).topic == "planet:saturn"
     assert asked == ["small", "large"]
 
 
-async def test_a_usable_small_model_route_never_calls_the_larger_model(
-    model_on, monkeypatch
-):
+async def test_a_usable_small_model_route_never_calls_the_larger_model(model_on, monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_MODEL", "small")
     monkeypatch.setattr(narrate, "AI_MODEL", "large")
     client, asked = _models_client({"small": "none", "large": "planet:saturn"})
@@ -840,9 +712,7 @@ async def test_a_usable_small_model_route_never_calls_the_larger_model(
     assert asked == ["small"]
 
 
-async def test_no_retry_when_both_models_are_the_same_and_rules_decide_if_both_fail(
-    model_on, monkeypatch
-):
+async def test_no_retry_when_both_models_are_the_same_and_rules_decide_if_both_fail(model_on, monkeypatch):
     monkeypatch.setattr(narrate, "OLLAMA_MODEL", "same")
     monkeypatch.setattr(narrate, "AI_MODEL", "same")
     client, asked = _models_client({"same": "gibberish"})

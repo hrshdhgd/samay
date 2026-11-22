@@ -88,8 +88,7 @@ def load_rules(path: Path = RULES_PATH) -> StrengthRules:
         raise ValueError(f"{path.name}: kinds must be exactly {KINDS}")
     for k, d in raw["kinds"].items():
         if not all(
-            isinstance(d.get(f), str) and d[f].strip()
-            for f in ("verse", "name", "definition", "text")
+            isinstance(d.get(f), str) and d[f].strip() for f in ("verse", "name", "definition", "text")
         ):
             raise ValueError(f"{path.name} {k}: needs verse, name, definition and text")
     return StrengthRules(
@@ -129,11 +128,7 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         # kala: two half-points
         k = 0.0
         if night is not None:
-            suits_time = (
-                p == "mercury"
-                or (night and p in NIGHT_PLANETS)
-                or (not night and p in DAY_PLANETS)
-            )
+            suits_time = p == "mercury" or (night and p in NIGHT_PLANETS) or (not night and p in DAY_PLANETS)
             if suits_time:
                 k += 0.5
         # the bright half suits the benefics (Mercury, Jupiter, Venus) and the Moon when she waxes; the dark half suits the Sun, Mars and Saturn
@@ -142,9 +137,7 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         held["kala"] = k
         # chesta
         held["chesta"] = (
-            1.0
-            if (full_moon if p == "moon" else north if p == "sun" else pl.retrograde)
-            else 0.0
+            1.0 if (full_moon if p == "moon" else north if p == "sun" else pl.retrograde) else 0.0
         )
         # uchcha
         dist = abs((pl.longitude - DEEP_EXALTATION[p] + 180.0) % 360.0 - 180.0)
@@ -159,7 +152,9 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         held["sthana"] = (
             0.0
             if (stand == "depression" or combust)
-            else 1.0 if (stand in GOOD_SIGNS or house in (1, 4, 7, 10)) else 0.0
+            else 1.0
+            if (stand in GOOD_SIGNS or house in (1, 4, 7, 10))
+            else 0.0
         )
         if combust:
             notes.append(rules.modifiers["combust"])
@@ -174,9 +169,7 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         SIGNS[sign_index(chart.planets["ketu"].longitude)],
     )
     ketu_lon = chart.planets["ketu"].longitude
-    ketu_ok = ketu in n["ketu_strong_in"] or (
-        ketu == "Sagittarius" and degree_in_sign(ketu_lon) >= 15.0
-    )
+    ketu_ok = ketu in n["ketu_strong_in"] or (ketu == "Sagittarius" and degree_in_sign(ketu_lon) >= 15.0)
     nodes = (
         f"Rahu is in {rahu}: "
         + (
@@ -185,11 +178,7 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
             else "not one of the signs where the book calls it strong"
         ),
         f"Ketu is in {ketu}: "
-        + (
-            "strong there"
-            if ketu_ok
-            else "not one of the signs where the book calls it strong"
-        ),
+        + ("strong there" if ketu_ok else "not one of the signs where the book calls it strong"),
     )
     return Strengths(
         tuple(out),

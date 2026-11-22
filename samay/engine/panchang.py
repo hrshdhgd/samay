@@ -224,9 +224,7 @@ def element_at(kind: str, utc: datetime, ayanamsa: str = "lahiri_mean") -> Eleme
     steps = range(1, int(SEARCH_LIMIT / COARSE_STEP) + 1)
     back = [utc] + [utc - COARSE_STEP * i for i in steps]
     ahead = [utc] + [utc + COARSE_STEP * i for i in steps]
-    values = [
-        angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)
-    ]
+    values = [angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)]
     back_values, ahead_values = values[: len(back)], values[:1] + values[len(back) :]
     cell = _cell(values[0], width)
     edges = []
@@ -278,8 +276,5 @@ def day_facts(
         day,
         sun.sunrise,
         sun.sunset,
-        *(
-            element_at(k, at, ayanamsa)
-            for k in ("tithi", "nakshatra", "karana", "yoga")
-        ),
+        *(element_at(k, at, ayanamsa) for k in ("tithi", "nakshatra", "karana", "yoga")),
     )

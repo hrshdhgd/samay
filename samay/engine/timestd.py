@@ -75,13 +75,9 @@ def load_standards(directory: Path = TIME_STANDARDS_DIR) -> tuple[StandardEntry,
             if missing:
                 raise ValueError(f"{path.name}[{i}]: missing {sorted(missing)}")
             if raw["confidence"] not in CONFIDENCES:
-                raise ValueError(
-                    f"{path.name}[{i}]: bad confidence {raw['confidence']!r}"
-                )
+                raise ValueError(f"{path.name}[{i}]: bad confidence {raw['confidence']!r}")
             if not {"text", "locus", "verified"} <= raw["source"].keys():
-                raise ValueError(
-                    f"{path.name}[{i}]: source needs text, locus and verified"
-                )
+                raise ValueError(f"{path.name}[{i}]: source needs text, locus and verified")
             entries.append(
                 StandardEntry(
                     country=raw["country"],
@@ -98,9 +94,7 @@ def load_standards(directory: Path = TIME_STANDARDS_DIR) -> tuple[StandardEntry,
     return tuple(entries)
 
 
-def _match(
-    local: datetime, place: Place, entries: tuple[StandardEntry, ...]
-) -> StandardEntry | None:
+def _match(local: datetime, place: Place, entries: tuple[StandardEntry, ...]) -> StandardEntry | None:
     best, best_score = None, -1
     for e in entries:
         if e.country != place.country or not e.start <= local.date() < e.end:
@@ -135,9 +129,7 @@ def resolve_local_time(
 
     entry = _match(local, place, entries)
     if entry:
-        cite = entry.source["text"] + (
-            f", {entry.source['locus']}" if entry.source.get("locus") else ""
-        )
+        cite = entry.source["text"] + (f", {entry.source['locus']}" if entry.source.get("locus") else "")
         return TimeResolution(
             utc=(local - entry.offset).replace(tzinfo=UTC),
             offset=entry.offset,
@@ -146,13 +138,9 @@ def resolve_local_time(
         )
 
     zone = ZoneInfo(place.tz)
-    first, second = local.replace(tzinfo=zone, fold=0), local.replace(
-        tzinfo=zone, fold=1
-    )
+    first, second = local.replace(tzinfo=zone, fold=0), local.replace(tzinfo=zone, fold=1)
     if first.astimezone(UTC).astimezone(zone).replace(tzinfo=None) != local:
-        raise NonexistentTime(
-            f"{local:%Y-%m-%d %H:%M} never occurred on clocks in {place.tz}"
-        )
+        raise NonexistentTime(f"{local:%Y-%m-%d %H:%M} never occurred on clocks in {place.tz}")
     u0, u1 = first.astimezone(UTC), second.astimezone(UTC)
     if u0 != u1 and fold is None:
         return AmbiguousTime(options=tuple(sorted((u0, u1))))
@@ -160,11 +148,7 @@ def resolve_local_time(
     offset = chosen.utcoffset()
 
     confidence = "tzdata" if local.year >= TZDATA_RELIABLE_FROM else "low"
-    warning = (
-        INDIA_WARNING
-        if place.country == "IN" and local.date() < INDIA_UNIFIED_FROM
-        else None
-    )
+    warning = INDIA_WARNING if place.country == "IN" and local.date() < INDIA_UNIFIED_FROM else None
     return TimeResolution(
         utc=chosen.astimezone(UTC),
         offset=offset,

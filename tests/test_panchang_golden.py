@@ -10,13 +10,9 @@ import pytest
 from samay.engine import panchang
 from samay.engine.paths import EPHEMERIS_PATH
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 
-CASES = json.loads(
-    (Path(__file__).parent / "fixtures" / "golden_panchang.json").read_text()
-)["cases"]
+CASES = json.loads((Path(__file__).parent / "fixtures" / "golden_panchang.json").read_text())["cases"]
 # The Moon moves about 30 arcseconds a minute; DE440 and Moshier agree far inside that.
 TOLERANCE = timedelta(minutes=1)
 # Known, measured difference (found 2026-11-21): samay's sidereal longitudes are apparent (true equinox, so they include

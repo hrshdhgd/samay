@@ -19,9 +19,7 @@ OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2:3b")
 TIMEOUT_SECONDS = 20.0
 # Free-form answers are longer than sorting a question, and a bigger model can be used for them.
 AI_MODEL = os.environ.get("OLLAMA_QA_MODEL") or "qwen2.5:14b"
-AI_TIMEOUT_SECONDS = (
-    240.0  # allows cold CPU inference while the bot shows its typing indicator
-)
+AI_TIMEOUT_SECONDS = 240.0  # allows cold CPU inference while the bot shows its typing indicator
 AI_MAX_TOKENS = 1024
 THINKING_MODELS = {"qwen3", "qwen3.5", "gemma4"}
 
@@ -86,11 +84,7 @@ async def complete(
             "system": system,
             "prompt": prompt,
             "stream": False,
-            **(
-                {"think": False}
-                if selected_model.split(":", 1)[0] in THINKING_MODELS
-                else {}
-            ),
+            **({"think": False} if selected_model.split(":", 1)[0] in THINKING_MODELS else {}),
             **({"options": options} if options else {}),
         }
         r = await (client or _get_client()).post(
@@ -116,7 +110,5 @@ async def narrate(facts: list[str], client: httpx.AsyncClient | None = None) -> 
     """Reworded facts, or the plain template when narration is off or the model is unavailable."""
     if not enabled():
         return template(facts)
-    prompt = (
-        "Facts:\n" + "\n".join(f"- {f}" for f in facts) + "\n\nWrite today's reading."
-    )
+    prompt = "Facts:\n" + "\n".join(f"- {f}" for f in facts) + "\n\nWrite today's reading."
     return await complete(SYSTEM, prompt, client) or template(facts)

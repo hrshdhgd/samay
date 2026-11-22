@@ -45,18 +45,10 @@ def load_rules(path: Path = RULES_PATH) -> DrekkanaRules:
     v = raw["verification"]
     if v.get("level") in SERVABLE_LEVELS and not v.get("checked_by"):
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
-    if list(raw["figures"]) != SIGNS or any(
-        len(r) != 3 for r in raw["figures"].values()
-    ):
-        raise ValueError(
-            f"{path.name}: needs three figures for each of the twelve signs, Aries first"
-        )
+    if list(raw["figures"]) != SIGNS or any(len(r) != 3 for r in raw["figures"].values()):
+        raise ValueError(f"{path.name}: needs three figures for each of the twelve signs, Aries first")
     if any(
-        not (
-            isinstance(f.get("text"), str)
-            and f["text"].strip()
-            and isinstance(f.get("verse"), str)
-        )
+        not (isinstance(f.get("text"), str) and f["text"].strip() and isinstance(f.get("verse"), str))
         for r in raw["figures"].values()
         for f in r
     ):

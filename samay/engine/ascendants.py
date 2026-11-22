@@ -31,11 +31,7 @@ class AscendantRules:
 
     def text(self, sign: int) -> tuple[str, str] | None:
         """(verse, text) for a rising sign index, or None until the rules are checked."""
-        return (
-            (self.signs[SIGNS[sign]]["verse"], self.signs[SIGNS[sign]]["text"])
-            if self.servable
-            else None
-        )
+        return (self.signs[SIGNS[sign]]["verse"], self.signs[SIGNS[sign]]["text"]) if self.servable else None
 
 
 @lru_cache(maxsize=4)
@@ -48,9 +44,7 @@ def load_rules(path: Path = RULES_PATH) -> AscendantRules:
         raise ValueError(f"{path.name}: needs the twelve signs, Aries first")
     for s, row in raw["signs"].items():
         if not (
-            isinstance(row.get("text"), str)
-            and row["text"].strip()
-            and isinstance(row.get("verse"), str)
+            isinstance(row.get("text"), str) and row["text"].strip() and isinstance(row.get("verse"), str)
         ):
             raise ValueError(f"{path.name} {s}: needs a verse and a text")
     return AscendantRules(

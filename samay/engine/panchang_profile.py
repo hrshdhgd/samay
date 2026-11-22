@@ -92,9 +92,7 @@ def load_panchang_profile(
     _check("sunrise_definition", raw["sunrise_definition"], set(HORIZON_DEGREES))
     margin = int(raw["ambiguity_margin_minutes"])
     if margin < 0:
-        raise ValueError(
-            "profile field 'ambiguity_margin_minutes' must not be negative"
-        )
+        raise ValueError("profile field 'ambiguity_margin_minutes' must not be negative")
     observances = {}
     for name, spec in raw["observances"].items():
         rules = {who: _rule(f"{name}.{who}", r) for who, r in spec["rules"].items()}
@@ -103,9 +101,7 @@ def load_panchang_profile(
             raise ValueError(
                 f"profile field 'sampradaya': observance {name!r} has no rule for tradition {sampradaya!r}"
             )
-        observances[name] = ObservanceSpec(
-            name, spec["label"], rules, bool(spec["verified"]), spec["source"]
-        )
+        observances[name] = ObservanceSpec(name, spec["label"], rules, bool(spec["verified"]), spec["source"])
     return PanchangProfile(
         raw["id"],
         raw.get("sampradaya"),

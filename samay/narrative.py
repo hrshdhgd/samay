@@ -42,9 +42,7 @@ class Mentioned:
     relation: str = ""
     date_text: str = ""  # YYYY-MM-DD, validated, or ""
     time_text: str = ""  # HH:MM, validated, or ""
-    ask_ampm: tuple[int, int] | None = (
-        None  # (hour, minute) as written, when morning or evening is unclear
-    )
+    ask_ampm: tuple[int, int] | None = None  # (hour, minute) as written, when morning or evening is unclear
     place_text: str = ""
 
 
@@ -98,9 +96,7 @@ def parse_extraction(reply: str, narrative: str) -> Extraction | None:
     for item in raw["people"][:MAX_PEOPLE_PER_MESSAGE]:
         if not isinstance(item, dict):
             continue
-        time_text, ask = _time(
-            _text(item.get("time"), 12), item.get("time_certain") is True
-        )
+        time_text, ask = _time(_text(item.get("time"), 12), item.get("time_certain") is True)
         person = Mentioned(
             name=_text(item.get("name"), MAX_NAME),
             relation=_text(item.get("relation"), MAX_RELATION),
@@ -138,7 +134,5 @@ def match_person(text: str, people) -> object | None:
     This is the offline fallback for "who is this about"; with the model on, the model decides.
     """
     words = set(re.findall(r"[^\W\d_]+", text.casefold()))
-    hits = [
-        p for p in people if p.name.split() and p.name.split()[0].casefold() in words
-    ]
+    hits = [p for p in people if p.name.split() and p.name.split()[0].casefold() in words]
     return hits[0] if len(hits) == 1 else None

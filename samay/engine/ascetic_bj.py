@@ -72,9 +72,7 @@ def load_rules(path: Path = RULES_PATH) -> AsceticRules:
     if set(raw["orders"]) != set(SEVEN) or not all(
         o.get("name") and o.get("note") for o in raw["orders"].values()
     ):
-        raise ValueError(
-            f"{path.name}: orders needs a name and note for each of the seven planets"
-        )
+        raise ValueError(f"{path.name}: orders needs a name and note for each of the seven planets")
     return AsceticRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),
@@ -108,8 +106,7 @@ def find(rules: AsceticRules, chart: Chart) -> tuple[Found, ...] | None:
             best = max(STANDING_RANK[c.stand(p)] for p in group)
             top = [p for p in group if STANDING_RANK[c.stand(p)] == best]
             orders = "; ".join(
-                f"{p.title()}: {rules.orders[p]['name']} ({rules.orders[p]['note']})"
-                for p in top
+                f"{p.title()}: {rules.orders[p]['name']} ({rules.orders[p]['note']})" for p in top
             )
             out.append(
                 Found(
@@ -131,9 +128,7 @@ def find(rules: AsceticRules, chart: Chart) -> tuple[Found, ...] | None:
     lord = SIGN_LORDS[c.sign["moon"]]
     if lord != "saturn":
         ls = c.sign[lord]
-        if c.sees(lord, c.sign["saturn"]) and not [
-            p for p in c.seers(ls) if p != "saturn" and p != lord
-        ]:
+        if c.sees(lord, c.sign["saturn"]) and not [p for p in c.seers(ls) if p != "saturn" and p != lord]:
             out.append(
                 Found(
                     r["lord_aspects_saturn"]["verse"],
@@ -150,9 +145,7 @@ def find(rules: AsceticRules, chart: Chart) -> tuple[Found, ...] | None:
                 )
             )
     m = c.sign["moon"]
-    dlord = SIGN_LORDS[
-        (m + 4 * int(degree_in_sign(chart.planets["moon"].longitude) // 10.0)) % 12
-    ]
+    dlord = SIGN_LORDS[(m + 4 * int(degree_in_sign(chart.planets["moon"].longitude) // 10.0)) % 12]
     others = [p for p in c.seers(m) if p != "saturn"]
     if (
         dlord == "saturn"

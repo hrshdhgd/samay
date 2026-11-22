@@ -67,19 +67,13 @@ def load_rules(path: Path = RULES_PATH) -> AyurdasaRules:
     if set(raw["names"]) != set(NAMES) or any(
         n["nature"] not in ("good", "bad", "mixed") for n in raw["names"].values()
     ):
-        raise ValueError(
-            f"{path.name}: names must be exactly {NAMES}, each good, bad or mixed"
-        )
+        raise ValueError(f"{path.name}: names must be exactly {NAMES}, each good, bad or mixed")
     if set(raw["results"]) != set(SEVEN) | {"verse", "mixed"} or any(
         set(raw["results"][p]) != {"good", "bad"} for p in SEVEN
     ):
-        raise ValueError(
-            f"{path.name}: results needs good and bad for each of the seven planets"
-        )
+        raise ValueError(f"{path.name}: results needs good and bad for each of the seven planets")
     if any(len(raw["lagna_period"][k]) != 3 for k in ("common", "movable", "fixed")):
-        raise ValueError(
-            f"{path.name}: lagna_period needs three names for each kind of sign"
-        )
+        raise ValueError(f"{path.name}: lagna_period needs three names for each kind of sign")
     return AyurdasaRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),
@@ -105,11 +99,7 @@ def _name(r: dict, c: Ctx, p: str) -> str:
         or c.nav[p] == c.ch20.exaltation[p]
         or c.nav[p] == c.sign[p]
     )
-    nav_bad = (
-        nav_lord != p
-        and nav_lord not in c.ch20.friends[p]
-        and nav_lord not in c.ch20.neutrals[p]
-    )
+    nav_bad = nav_lord != p and nav_lord not in c.ch20.friends[p] and nav_lord not in c.ch20.neutrals[p]
     arc = min(abs(lon - exalt), 360.0 - abs(lon - exalt))
     if arc <= 1.0:
         return "sampoorna"
@@ -165,9 +155,7 @@ def find(rules: AyurdasaRules, chart: Chart) -> tuple[Period, ...] | None:
     for w in order:
         if w == "lagna":
             kind = {0: "movable", 1: "fixed", 2: "common"}[c.lagna % 3]
-            name = r["lagna_period"][kind][
-                int(degree_in_sign(chart.ascendant) // 10.0)
-            ].lower()
+            name = r["lagna_period"][kind][int(degree_in_sign(chart.ascendant) // 10.0)].lower()
             nature = {"uttama": "good", "madhyama": "mixed", "adhama": "bad"}[name]
             res = r["results"][SIGN_LORDS[c.lagna]]
         else:

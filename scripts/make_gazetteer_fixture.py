@@ -6,6 +6,7 @@
 Run scripts/build_gazetteer.py first so data/geonames-src/ is populated. The extract keeps the
 same file layout as the real dumps, so tests exercise the real builder.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -41,9 +42,7 @@ PICKS = [
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--src", type=Path, default=ROOT / "data" / "geonames-src")
-    p.add_argument(
-        "--out", type=Path, default=ROOT / "tests" / "fixtures" / "geonames-mini"
-    )
+    p.add_argument("--out", type=Path, default=ROOT / "tests" / "fixtures" / "geonames-mini")
     p.add_argument(
         "--village",
         type=int,
@@ -55,19 +54,13 @@ def main() -> None:
 
     by_stem: dict[str, list[list[str]]] = {}
     for stem in ("cities500", *COUNTRIES):
-        by_stem[stem] = [
-            r for r in _read(args.src, stem) if len(r) >= 18 and r[6] in ("P", "A")
-        ]
+        by_stem[stem] = [r for r in _read(args.src, stem) if len(r) >= 18 and r[6] in ("P", "A")]
 
     chosen: dict[int, tuple[str, list[str]]] = {}
     for name, cc, n, must in PICKS:
         hits: list[tuple[str, list[str]]] = []
         for stem in ("cities500", *COUNTRIES):
-            hits += [
-                (stem, r)
-                for r in by_stem[stem]
-                if r[6] == "P" and r[8] == cc and name in (r[1], r[2])
-            ]
+            hits += [(stem, r) for r in by_stem[stem] if r[6] == "P" and r[8] == cc and name in (r[1], r[2])]
         hits.sort(key=lambda h: -int(h[1][14] or 0))
         seen: set[str] = set()
         unique = []
@@ -92,33 +85,21 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     for stem in ("cities500", *COUNTRIES):
         lines = ["\t".join(r) for s, r in chosen.values() if s == stem]
-        (args.out / f"{stem}.txt").write_text(
-            "".join(f"{line}\n" for line in lines), encoding="utf-8"
-        )
+        (args.out / f"{stem}.txt").write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
 
     ids = {str(g) for g in chosen}
-    alt = [
-        "\t".join(r)
-        for r in _read(args.src, "alternateNamesV2")
-        if r[1] in ids and r[2] in LANGUAGES
-    ]
-    (args.out / "alternateNamesV2.txt").write_text(
-        "".join(f"{line}\n" for line in alt), encoding="utf-8"
-    )
+    alt = ["\t".join(r) for r in _read(args.src, "alternateNamesV2") if r[1] in ids and r[2] in LANGUAGES]
+    (args.out / "alternateNamesV2.txt").write_text("".join(f"{line}\n" for line in alt), encoding="utf-8")
 
     a1 = {f"{r[8]}.{r[10]}" for _, r in chosen.values()}
     a2 = {f"{r[8]}.{r[10]}.{r[11]}" for _, r in chosen.values()}
     for stem, keys in (("admin1CodesASCII", a1), ("admin2Codes", a2)):
         lines = ["\t".join(r) for r in _read(args.src, stem) if r[0] in keys]
-        (args.out / f"{stem}.txt").write_text(
-            "".join(f"{line}\n" for line in lines), encoding="utf-8"
-        )
+        (args.out / f"{stem}.txt").write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
 
     isos = {r[8] for _, r in chosen.values()} | set(COUNTRIES)
     info = ["\t".join(r) for r in _read(args.src, "countryInfo") if r[0] in isos]
-    (args.out / "countryInfo.txt").write_text(
-        "".join(f"{line}\n" for line in info), encoding="utf-8"
-    )
+    (args.out / "countryInfo.txt").write_text("".join(f"{line}\n" for line in info), encoding="utf-8")
     print(f"wrote {len(chosen)} places, {len(alt)} alternate names to {args.out}")
 
 

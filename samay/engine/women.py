@@ -79,10 +79,7 @@ def load_rules(path: Path = RULES_PATH) -> WomenRules:
     if set(raw["rules"]) != set(RULE_KEYS):
         raise ValueError(f"{path.name}: rules must be exactly {RULE_KEYS}")
     for k, r in raw["rules"].items():
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
             raise ValueError(f"{path.name} {k}: needs verse, definition and text")
     return WomenRules(
         v.get("level", "unchecked"),

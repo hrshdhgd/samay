@@ -36,9 +36,7 @@ def test_a_profile_can_still_be_unverified_and_without_a_tradition(tmp_path):
     raw = yaml.safe_load((PROFILES_DIR / "panchang-family.yaml").read_text())
     for spec in raw["observances"].values():
         spec["verified"] = False
-    p = load_panchang_profile(
-        directory=write(tmp_path, observances=raw["observances"], sampradaya=None)
-    )
+    p = load_panchang_profile(directory=write(tmp_path, observances=raw["observances"], sampradaya=None))
     assert p.sampradaya is None and not any(o.verified for o in p.observances.values())
 
 
@@ -93,9 +91,4 @@ def test_a_tradition_some_observance_has_no_rule_for_fails_on_load(tmp_path):
 
 @pytest.mark.parametrize("tradition", ["smarta", "madhva"])
 def test_a_tradition_every_observance_covers_loads(tmp_path, tradition):
-    assert (
-        load_panchang_profile(
-            directory=write(tmp_path, sampradaya=tradition)
-        ).sampradaya
-        == tradition
-    )
+    assert load_panchang_profile(directory=write(tmp_path, sampradaya=tradition)).sampradaya == tradition

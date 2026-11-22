@@ -25,9 +25,7 @@ class BirthInput:
     place_choice: str | None = None
     fold: int | None = None
     profile: str = DEFAULT_PROFILE
-    approx_for: str | None = (
-        None  # birthplace the user named, when a nearby town stands in for it
-    )
+    approx_for: str | None = None  # birthplace the user named, when a nearby town stands in for it
 
 
 @dataclass(frozen=True)
@@ -126,12 +124,8 @@ class OutlookReport:
     ashtaka_checked: bool = (
         False  # the points on each stay are shown only once the ashtakavarga tables are checked
     )
-    ashtaka_meaning: tuple[
-        tuple[int, str], ...
-    ] = ()  # (points, what the text says), Phaladeepika 23.11
-    ashtaka_variants: int = (
-        0  # lists where Phaladeepika's printed table differs from the tables used
-    )
+    ashtaka_meaning: tuple[tuple[int, str], ...] = ()  # (points, what the text says), Phaladeepika 23.11
+    ashtaka_variants: int = 0  # lists where Phaladeepika's printed table differs from the tables used
 
 
 @dataclass(frozen=True)
@@ -155,9 +149,7 @@ class PanchangReport:
     facts: object  # panchang.DayFacts
     tulu: object  # tulu.TuluDate
     cutoff: str  # the Tulu day-1 rule used
-    observances: tuple[
-        ObservanceDay, ...
-    ]  # only observances whose rules are verified and touch the day
+    observances: tuple[ObservanceDay, ...]  # only observances whose rules are verified and touch the day
     needs_sampradaya: bool  # True when day claims were withheld because the family's tradition is not set
     claims_withheld: bool  # True when some observance rules are not verified yet
 
@@ -169,9 +161,7 @@ class NextObservanceReport:
     name: str
     label: str
     found: ObservanceDay | None
-    claim_available: (
-        bool  # False when the rule is unverified or the tradition is not set
-    )
+    claim_available: bool  # False when the rule is unverified or the tradition is not set
     needs_sampradaya: bool
 
 
@@ -185,13 +175,7 @@ class ObservanceListReport:
     last: date
     labels: tuple[str, ...]  # the observances asked about, in profile order
     filtered: bool  # True when the question named observances, False for all of them
-    days: tuple[
-        ObservanceDay, ...
-    ]  # by primary day (or first alternate); explanation always None
-    withheld: tuple[
-        str, ...
-    ]  # labels of asked-about observances whose rules are not verified
+    days: tuple[ObservanceDay, ...]  # by primary day (or first alternate); explanation always None
+    withheld: tuple[str, ...]  # labels of asked-about observances whose rules are not verified
     needs_sampradaya: bool  # True when some days were withheld because the family's tradition is not set
-    too_long: (
-        bool  # True when the range is longer than LIST_MAX_DAYS; nothing was worked out
-    )
+    too_long: bool  # True when the range is longer than LIST_MAX_DAYS; nothing was worked out

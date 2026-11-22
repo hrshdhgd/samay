@@ -8,9 +8,7 @@ import pytest
 from samay import engine
 
 NAMES = [
-    i.name
-    for i in pkgutil.iter_modules(engine.__path__)
-    if i.name not in ("entries", "profiles", "rules")
+    i.name for i in pkgutil.iter_modules(engine.__path__) if i.name not in ("entries", "profiles", "rules")
 ]
 
 

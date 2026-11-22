@@ -43,9 +43,7 @@ class AyurRules:
 class Method:
     name: str
     verse: str
-    rows: tuple[
-        tuple[str, float, float, str], ...
-    ]  # (who, years before reductions, years after, note)
+    rows: tuple[tuple[str, float, float, str], ...]  # (who, years before reductions, years after, note)
     total: float
     reductions: tuple[str, ...]
 
@@ -62,12 +60,8 @@ def load_rules(path: Path = RULES_PATH) -> AyurRules:
     v = raw["verification"]
     if v.get("level") in SERVABLE_LEVELS and not v.get("checked_by"):
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
-    if set(raw["max_years"]) != set(SEVEN) or set(raw["exaltation_degree"]) != set(
-        SEVEN
-    ):
-        raise ValueError(
-            f"{path.name}: max_years and exaltation_degree need each of the seven planets"
-        )
+    if set(raw["max_years"]) != set(SEVEN) or set(raw["exaltation_degree"]) != set(SEVEN):
+        raise ValueError(f"{path.name}: max_years and exaltation_degree need each of the seven planets")
     for k in ("pinda", "satyacharya", "beyond"):
         if not raw[k].get("verse"):
             raise ValueError(f"{path.name}: {k} needs a verse")
@@ -111,9 +105,7 @@ def _reductions(c: Ctx, years: dict[str, float]) -> tuple[dict[str, float], list
         h = house_from(c.lagna, sign)
         frac = CHAKRA[h] * (1.0 if top in MALEFICS else 0.5)
         out[top] -= years[top] * frac
-        notes.append(
-            f"{top.title()} in the {h}th loses {frac:.3g} of its years (Chakrapata)"
-        )
+        notes.append(f"{top.title()} in the {h}th loses {frac:.3g} of its years (Chakrapata)")
     return {p: max(v, 0.0) for p, v in out.items()}, notes
 
 
@@ -162,9 +154,7 @@ def _satya(r: dict, c: Ctx) -> Method:
     )
     red, notes = _reductions(c, years)
     red["lagna"] = lagna_years
-    rows = tuple(
-        (p.title(), years.get(p, lagna_years), red[p], "") for p in (*SEVEN, "lagna")
-    )
+    rows = tuple((p.title(), years.get(p, lagna_years), red[p], "") for p in (*SEVEN, "lagna"))
     return Method(
         "Satyacharya's method",
         r["satyacharya"]["verse"],

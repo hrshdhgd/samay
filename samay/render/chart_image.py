@@ -79,9 +79,7 @@ def marks_by_sign(report: NatalReport, degrees: bool = False) -> dict[int, list[
     out: dict[int, list[Mark]] = {i: [] for i in range(12)}
     for g in GRAHAS:
         p = report.chart.planets[g]
-        out[sign_index(p.longitude)].append(
-            _mark(g, p.longitude, p.retrograde, degrees)
-        )
+        out[sign_index(p.longitude)].append(_mark(g, p.longitude, p.retrograde, degrees))
     return out
 
 
@@ -89,9 +87,7 @@ def lagna_sign(report: NatalReport) -> int:
     return sign_index(report.chart.ascendant)
 
 
-def north_houses(
-    report: NatalReport, degrees: bool = False
-) -> list[tuple[int, list[Mark]]]:
+def north_houses(report: NatalReport, degrees: bool = False) -> list[tuple[int, list[Mark]]]:
     """House 1-12 as (sign number 1-12, marks). House 1 is the lagna sign."""
     by_sign, lagna = marks_by_sign(report, degrees), lagna_sign(report)
     return [((lagna + h) % 12 + 1, by_sign[(lagna + h) % 12]) for h in range(12)]
@@ -152,9 +148,7 @@ class _Pen:
 
     def png(self) -> bytes:
         out = io.BytesIO()
-        self.image.resize((WIDTH, HEIGHT), Image.LANCZOS).save(
-            out, "PNG", optimize=True
-        )
+        self.image.resize((WIDTH, HEIGHT), Image.LANCZOS).save(out, "PNG", optimize=True)
         return out.getvalue()
 
 
@@ -185,10 +179,7 @@ def _draw_marks(
     fits = False
     for px in sizes:
         lines = _wrap(pen, marks, box_w, px)
-        widest = max(
-            sum(pen.width(m.text, px) for m in line) + px * 0.5 * (len(line) - 1)
-            for line in lines
-        )
+        widest = max(sum(pen.width(m.text, px) for m in line) + px * 0.5 * (len(line) - 1) for line in lines)
         fits = len(lines) * px * LINE_HEIGHT <= box_h and widest <= box_w
         if fits:
             break
@@ -257,9 +248,7 @@ def _draw_south(pen: _Pen, report: NatalReport, degrees: bool) -> None:
         )
         pen.text((cx0 + cell / 2, cy0 + 24), SIGNS[sign], 22, GOLD_DIM)
         if is_lagna:
-            pen.line(
-                [(cx0 + 6, cy0 + cell * 0.30), (cx0 + cell * 0.30, cy0 + 6)], GOLD, 4
-            )
+            pen.line([(cx0 + 6, cy0 + cell * 0.30), (cx0 + cell * 0.30, cy0 + 6)], GOLD, 4)
             asc = f"Asc {int(report.chart.ascendant % 30)}°" if degrees else "Asc"
             pen.text((cx0 + cell / 2, cy0 + cell - 24), asc, 24, GOLD, bold=True)
         _draw_marks(
@@ -345,9 +334,7 @@ def _draw_north(pen: _Pen, report: NatalReport, degrees: bool) -> None:
         _draw_marks(pen, marks, centre, box_w, box_h)
 
 
-def render_chart_png(
-    report: NatalReport, style: str = "south", degrees: bool = False
-) -> bytes:
+def render_chart_png(report: NatalReport, style: str = "south", degrees: bool = False) -> bytes:
     """The chart as PNG bytes. `style` is 'south' or 'north'; `degrees` adds each planet's degree."""
     if style not in STYLES:
         raise ValueError(f"unknown chart style {style!r}; use one of {STYLES}")

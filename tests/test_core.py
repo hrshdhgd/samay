@@ -75,9 +75,7 @@ def _chart(**signs):
 def test_rules_load_and_fire():
     rules = load_rules()
     assert {"gajakesari", "hamsa"} <= {r.id for r in rules}
-    c = _chart(
-        sun=4, moon=3, mars=6, mercury=4, jupiter=3, venus=1, saturn=8, rahu=2, ketu=8
-    )
+    c = _chart(sun=4, moon=3, mars=6, mercury=4, jupiter=3, venus=1, saturn=8, rahu=2, ketu=8)
     ids = {r.id for r in fired(c, rules)}
     assert "gajakesari" in ids  # Jupiter with Moon
     assert "hamsa" in ids  # Jupiter in Cancer, 4th from Aries lagna

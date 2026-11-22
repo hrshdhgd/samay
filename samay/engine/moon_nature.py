@@ -82,40 +82,27 @@ def load_rules(path: Path = RULES_PATH) -> MoonRules:
             raise ValueError(f"{path.name}: needs {want} {key}, has {len(raw[key])}")
     for i, row in enumerate(raw["signs"]):
         if row["name"] != SIGNS[i]:
-            raise ValueError(
-                f"{path.name}: sign {i + 1} is {row['name']!r}, expected {SIGNS[i]!r}"
-            )
+            raise ValueError(f"{path.name}: sign {i + 1} is {row['name']!r}, expected {SIGNS[i]!r}")
     for i, row in enumerate(raw["nakshatras"]):
         if row["name"] != TRANSLATION_NAMES[i]:
             raise ValueError(
                 f"{path.name}: nakshatra {i + 1} is {row['name']!r}, expected {TRANSLATION_NAMES[i]!r}"
             )
     for row in (*raw["nakshatras"], *raw["signs"]):
-        if (
-            not isinstance(row["text"], str)
-            or not row["text"].strip()
-            or not isinstance(row["verse"], int)
-        ):
+        if not isinstance(row["text"], str) or not row["text"].strip() or not isinstance(row["verse"], int):
             raise ValueError(f"{path.name}: every row needs a text and a verse number")
     return MoonRules(
         level=v.get("level", "unchecked"),
         checked_by=v.get("checked_by"),
         edition=raw["edition"],
         pages=str(raw.get("pages", "")),
-        nakshatras=tuple(
-            Description(r["name"], r["verse"], r["text"].strip())
-            for r in raw["nakshatras"]
-        ),
-        signs=tuple(
-            Description(r["name"], r["verse"], r["text"].strip()) for r in raw["signs"]
-        ),
+        nakshatras=tuple(Description(r["name"], r["verse"], r["text"].strip()) for r in raw["nakshatras"]),
+        signs=tuple(Description(r["name"], r["verse"], r["text"].strip()) for r in raw["signs"]),
         conditions={k: (c["verse"], c["text"]) for k, c in raw["conditions"].items()},
     )
 
 
-def for_moon(
-    rules: MoonRules, longitude: float
-) -> tuple[int, Description, int, Description, int]:
+def for_moon(rules: MoonRules, longitude: float) -> tuple[int, Description, int, Description, int]:
     """(sign index, the sign's description, nakshatra index, its description, pada 1-4) for a sidereal Moon longitude."""
     sign = sign_index(longitude)
     nak, pada = nakshatra(longitude)

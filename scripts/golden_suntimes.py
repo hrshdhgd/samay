@@ -14,9 +14,7 @@ from zoneinfo import ZoneInfo
 
 import swisseph as swe
 
-OUT = (
-    Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_suntimes.json"
-)
+OUT = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_suntimes.json"
 CASES = [
     ("pune", 18.5196, 73.8553, "Asia/Kolkata", date(2026, 11, 9)),
     ("new-delhi", 28.6139, 77.2090, "Asia/Kolkata", date(2026, 11, 9)),
@@ -30,17 +28,11 @@ CASES = [
 def event(lat: float, lon: float, zone: ZoneInfo, day: date, kind: int) -> str | None:
     start = datetime(day.year, day.month, day.day, tzinfo=zone).astimezone(UTC)
     jd = swe.julday(start.year, start.month, start.day, start.hour + start.minute / 60)
-    res, t = swe.rise_trans(
-        jd, swe.SUN, kind, (lon, lat, 0), 1013.25, 15.0, swe.FLG_MOSEPH
-    )
+    res, t = swe.rise_trans(jd, swe.SUN, kind, (lon, lat, 0), 1013.25, 15.0, swe.FLG_MOSEPH)
     if res != 0:
         return None
     y, mo, d, h = swe.revjul(t[0])
-    return (
-        (datetime(y, mo, d, tzinfo=UTC) + timedelta(hours=h))
-        .astimezone(zone)
-        .isoformat()
-    )
+    return (datetime(y, mo, d, tzinfo=UTC) + timedelta(hours=h)).astimezone(zone).isoformat()
 
 
 def main() -> None:

@@ -88,9 +88,7 @@ class Ctx:
         self.house = {p: house_from(self.lagna, s) for p, s in self.sign.items()}
         self.nav = {p: navamsa_sign(chart.planets[p].longitude) for p in BODIES}
         self.lagna_nav = navamsa_sign(chart.ascendant)
-        elong = (
-            chart.planets["moon"].longitude - chart.planets["sun"].longitude
-        ) % 360.0
+        elong = (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0
         self.full_moon = 144.0 <= elong <= 216.0
 
     def lord(self, h: int) -> str:
@@ -124,9 +122,7 @@ class Ctx:
     def relation(self, p: str, q: str) -> str:
         """How q stands to p by Phaladeepika 2.21-23: the natural friendship plus the temporary one (q in the 2nd, 3rd, 4th, 10th, 11th or 12th sign from p)."""
         natural = (
-            "friend"
-            if q in self.ch20.friends[p]
-            else "neutral" if q in self.ch20.neutrals[p] else "enemy"
+            "friend" if q in self.ch20.friends[p] else "neutral" if q in self.ch20.neutrals[p] else "enemy"
         )
         temporary = house_from(self.sign[p], self.sign[q]) in (2, 3, 4, 10, 11, 12)
         return {
@@ -164,9 +160,7 @@ def _d_retro(c: Ctx) -> str | None:
     ps = [
         p
         for p in ("mars", "mercury", "jupiter", "venus", "saturn")
-        if c.chart.planets[p].retrograde
-        and not c.combust(p)
-        and c.house[p] not in (6, 8, 12)
+        if c.chart.planets[p].retrograde and not c.combust(p) and c.house[p] not in (6, 8, 12)
     ]
     return (
         f"{_names(ps)} {'is' if len(ps) == 1 else 'are'} retrograde, not combust and not in a dusthana"
@@ -180,9 +174,7 @@ def _d_digbala(c: Ctx) -> str | None:
     ps = [p for p, h in DIGBALA.items() if c.house[p] == h]
     if len(ps) >= 2:
         return f"{_names(ps)} have directional strength" + (
-            " (four or more besides Saturn)"
-            if len([p for p in ps if p != "saturn"]) >= 4
-            else ""
+            " (four or more besides Saturn)" if len([p for p in ps if p != "saturn"]) >= 4 else ""
         )
     return None
 
@@ -207,11 +199,7 @@ def _d_varg_ll(c: Ctx) -> str | None:
 
 def _d_full_aspected(c: Ctx) -> str | None:
     s = [p for p in c.seers(c.sign["moon"]) if c.strong(p)]
-    return (
-        f"the Moon is nearly full and {_names(s)} (strong) aspects her"
-        if c.full_moon and s
-        else None
-    )
+    return f"the Moon is nearly full and {_names(s)} (strong) aspects her" if c.full_moon and s else None
 
 
 def _d_full_kendra(c: Ctx) -> str | None:
@@ -224,14 +212,8 @@ def _d_full_kendra(c: Ctx) -> str | None:
 
 def _d_venus_ashwini(c: Ctx) -> str | None:
     seen = c.seers(c.sign["venus"])
-    ok = (
-        c.house["venus"] == 1
-        and nakshatra(c.chart.planets["venus"].longitude)[0] == 0
-        and len(seen) >= 3
-    )
-    return (
-        f"Venus is in the lagna in Ashwini, aspected by {_names(seen)}" if ok else None
-    )
+    ok = c.house["venus"] == 1 and nakshatra(c.chart.planets["venus"].longitude)[0] == 0 and len(seen) >= 3
+    return f"Venus is in the lagna in Ashwini, aspected by {_names(seen)}" if ok else None
 
 
 def _d_ll_second(c: Ctx) -> str | None:
@@ -243,19 +225,13 @@ def _d_ll_second(c: Ctx) -> str | None:
         and c.sign[ll] == c.sign["venus"]
         and c.stand("venus") not in ("depression", "inimical")
     )
-    return (
-        f"the lagna lord {ll.title()} is strong, in the 2nd with Venus" if ok else None
-    )
+    return f"the lagna lord {ll.title()} is strong, in the 2nd with Venus" if ok else None
 
 
 def _d_mars_cardinal(c: Ctx) -> str | None:
     if c.sign["mars"] == c.lagna and c.lagna in (0, 8):
         f = [p for p in c.seers(c.lagna) if c.friends("mars", p)]
-        return (
-            f"Mars is in {SIGNS[c.lagna]}, the lagna, aspected by {_names(f)}"
-            if f
-            else None
-        )
+        return f"Mars is in {SIGNS[c.lagna]}, the lagna, aspected by {_names(f)}" if f else None
     return None
 
 
@@ -269,16 +245,8 @@ def _d_exchange(c: Ctx) -> str | None:
 
 
 def _d_sun_moon_sag(c: Ctx) -> str | None:
-    mid = (
-        lambda p: c.sign[p] == 8
-        and 10.0 <= degree_in_sign(c.chart.planets[p].longitude) < 20.0
-    )
-    ok = (
-        mid("sun")
-        and mid("moon")
-        and c.house["saturn"] == 1
-        and c.stand("mars") == "exaltation"
-    )
+    mid = lambda p: c.sign[p] == 8 and 10.0 <= degree_in_sign(c.chart.planets[p].longitude) < 20.0
+    ok = mid("sun") and mid("moon") and c.house["saturn"] == 1 and c.stand("mars") == "exaltation"
     return (
         "the Sun and Moon are in the middle of Sagittarius, Saturn is in the lagna and Mars is exalted"
         if ok
@@ -326,11 +294,7 @@ def _d_varg_moon(c: Ctx) -> str | None:
 
 
 def _d_full_varg(c: Ctx) -> str | None:
-    return (
-        "the Moon is nearly full and vargottama"
-        if c.full_moon and c.vargottama("moon")
-        else None
-    )
+    return "the Moon is nearly full and vargottama" if c.full_moon and c.vargottama("moon") else None
 
 
 def _d_jm_kendra(c: Ctx) -> str | None:
@@ -342,9 +306,7 @@ def _d_jm_kendra(c: Ctx) -> str | None:
         and not any(c.stand(p) == "depression" for p in SEVEN)
     )
     return (
-        "Jupiter and the Moon are in kendras, aspected by Venus, and no planet is debilitated"
-        if ok
-        else None
+        "Jupiter and the Moon are in kendras, aspected by Venus, and no planet is debilitated" if ok else None
     )
 
 
@@ -362,17 +324,11 @@ def _d_water(c: Ctx) -> str | None:
 
 
 def _d_venus_jup(c: Ctx) -> str | None:
-    return (
-        "Venus is aspected by Jupiter" if c.sees("jupiter", c.sign["venus"]) else None
-    )
+    return "Venus is aspected by Jupiter" if c.sees("jupiter", c.sign["venus"]) else None
 
 
 def _d_jup_lagna(c: Ctx) -> str | None:
-    return (
-        f"Jupiter is in the lagna, {SIGNS[c.lagna]}"
-        if c.house["jupiter"] == 1 and c.lagna != 9
-        else None
-    )
+    return f"Jupiter is in the lagna, {SIGNS[c.lagna]}" if c.house["jupiter"] == 1 and c.lagna != 9 else None
 
 
 def _d_ll_kendra(c: Ctx) -> str | None:
@@ -387,9 +343,7 @@ def _d_ll_kendra(c: Ctx) -> str | None:
 def _d_merc(c: Ctx) -> str | None:
     return (
         "Mercury is strong in a kendra and aspected by Jupiter"
-        if c.strong("mercury")
-        and c.house["mercury"] in KENDRA
-        and c.sees("jupiter", c.sign["mercury"])
+        if c.strong("mercury") and c.house["mercury"] in KENDRA and c.sees("jupiter", c.sign["mercury"])
         else None
     )
 
@@ -422,11 +376,7 @@ def _d_moon_pisces(c: Ctx) -> str | None:
 
 
 def _d_moon_exalted(c: Ctx) -> str | None:
-    return (
-        "the Moon is nearly full in Taurus"
-        if c.full_moon and c.sign["moon"] == 1
-        else None
-    )
+    return "the Moon is nearly full in Taurus" if c.full_moon and c.sign["moon"] == 1 else None
 
 
 def _adhimitra_moon(c: Ctx) -> str | None:
@@ -476,9 +426,7 @@ def _d_four_one_sign(c: Ctx) -> str | None:
 
 
 def _decanate_lord(lon: float) -> str:
-    return SIGN_LORDS[
-        (sign_index(lon) + (0, 4, 8)[int(degree_in_sign(lon) // 10)]) % 12
-    ]
+    return SIGN_LORDS[(sign_index(lon) + (0, 4, 8)[int(degree_in_sign(lon) // 10)]) % 12]
 
 
 def _d_moon_sat_dec(c: Ctx) -> str | None:
@@ -487,11 +435,7 @@ def _d_moon_sat_dec(c: Ctx) -> str | None:
         and c.sees("saturn", c.sign["moon"])
         and c.sees("mars", c.sign["moon"])
     )
-    return (
-        "the Moon is in a decanate of Saturn and Saturn and Mars aspect her"
-        if ok
-        else None
-    )
+    return "the Moon is in a decanate of Saturn and Saturn and Mars aspect her" if ok else None
 
 
 def _d_moon_mars_nav(c: Ctx) -> str | None:
@@ -523,9 +467,7 @@ def _d_tenth_four(c: Ctx) -> str | None:
 
 
 def _d_m36(c: Ctx) -> str | None:
-    got = {
-        h: [p for p in ("sun", "mars", "saturn") if c.house[p] == h] for h in (3, 6, 11)
-    }
+    got = {h: [p for p in ("sun", "mars", "saturn") if c.house[p] == h] for h in (3, 6, 11)}
     return (
         "malefics are in the 3rd, 6th and 11th: "
         + "; ".join(f"{_names(v)} in the {_o(h)}" for h, v in got.items())
@@ -535,19 +477,11 @@ def _d_m36(c: Ctx) -> str | None:
 
 
 def _d_mm(c: Ctx) -> str | None:
-    return (
-        "Mars and Mercury are in the 2nd"
-        if c.house["mars"] == 2 and c.house["mercury"] == 2
-        else None
-    )
+    return "Mars and Mercury are in the 2nd" if c.house["mars"] == 2 and c.house["mercury"] == 2 else None
 
 
 def _d_sv(c: Ctx) -> str | None:
-    return (
-        "the Sun and Venus are in the 4th"
-        if c.house["sun"] == 4 and c.house["venus"] == 4
-        else None
-    )
+    return "the Sun and Venus are in the 4th" if c.house["sun"] == 4 and c.house["venus"] == 4 else None
 
 
 def _d_msj(c: Ctx) -> str | None:
@@ -628,10 +562,7 @@ def load_rules(path: Path = RULES_PATH) -> RajaRules:
             f"{path.name}: yogas {sorted(set(raw['yogas']) ^ set(DETECTORS))} do not match the code"
         )
     for k, y in raw["yogas"].items():
-        if not all(
-            isinstance(y.get(f), str) and y[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
+        if not all(isinstance(y.get(f), str) and y[f].strip() for f in ("verse", "definition", "text")):
             raise ValueError(f"{path.name} {k}: needs verse, definition and text")
     if set(raw["neechabhanga"]["conditions"]) != set(NB_KEYS):
         raise ValueError(f"{path.name}: neechabhanga conditions must be {NB_KEYS}")
@@ -658,9 +589,7 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
             text = y["text"]
             if key == "four_in_one_sign":
                 top = detail.split("the strongest there: ")[1].split(", ")
-                text += ": " + "; ".join(
-                    f"{p.lower()} gives {y['orders'][p.lower()]}" for p in top
-                )
+                text += ": " + "; ".join(f"{p.lower()} gives {y['orders'][p.lower()]}" for p in top)
             out.append(Found(key, y["verse"], text, detail))
     moon = c.sign["moon"]
     nb = rules.nb
@@ -673,17 +602,11 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
         exalt_lord = SIGN_LORDS[c.ch20.exaltation[p]]
         why = []
         for who in {sign_lord, exalted_here} - {None, p}:
-            if (
-                house_from(c.lagna, c.sign[who]) in KENDRA
-                or house_from(moon, c.sign[who]) in KENDRA
-            ):
+            if house_from(c.lagna, c.sign[who]) in KENDRA or house_from(moon, c.sign[who]) in KENDRA:
                 why.append(
                     f"{who.title()}, {'lord of that sign' if who == sign_lord else 'the planet exalted in it'}, is in a kendra from the lagna or the Moon"
                 )
-        if (
-            sign_lord != exalt_lord
-            and house_from(c.sign[sign_lord], c.sign[exalt_lord]) in KENDRA
-        ):
+        if sign_lord != exalt_lord and house_from(c.sign[sign_lord], c.sign[exalt_lord]) in KENDRA:
             why.append(
                 f"the lord of the debilitation sign ({sign_lord.title()}) and the lord of its exaltation sign ({exalt_lord.title()}) are in kendras from each other"
             )
@@ -697,8 +620,7 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
                     "neechabhanga",
                     nb["verse"],
                     nb["text"],
-                    f"{p.title()} is debilitated in {SIGNS[s]}; "
-                    + "; ".join(dict.fromkeys(why)),
+                    f"{p.title()} is debilitated in {SIGNS[s]}; " + "; ".join(dict.fromkeys(why)),
                 )
             )
     return tuple(out)

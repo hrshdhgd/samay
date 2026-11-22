@@ -143,12 +143,8 @@ MONTHS = (
 _WORD = re.compile(r"[a-z]+")
 _MONTH = "|".join(MONTHS)
 _ISO = re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b")
-_DAY_MONTH = re.compile(
-    rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({_MONTH})\b(?:,?\s+(\d{{4}})\b)?"
-)
-_MONTH_DAY = re.compile(
-    rf"\b({_MONTH})\s+(\d{{1,2}})(?:st|nd|rd|th)?\b(?:,?\s+(\d{{4}})\b)?"
-)
+_DAY_MONTH = re.compile(rf"\b(\d{{1,2}})(?:st|nd|rd|th)?\s+(?:of\s+)?({_MONTH})\b(?:,?\s+(\d{{4}})\b)?")
+_MONTH_DAY = re.compile(rf"\b({_MONTH})\s+(\d{{1,2}})(?:st|nd|rd|th)?\b(?:,?\s+(\d{{4}})\b)?")
 # Ranges, tried in this order. "may" and "march" are months only with a year or after in/for/of/during.
 _N_DAYS = re.compile(r"\b(?:next|coming|upcoming)\s+(\d{1,4})\s+days\b")
 _COMING_DAYS = re.compile(r"\b(?:the\s+)?(?:coming|upcoming)\s+days\b")
@@ -169,9 +165,7 @@ class Asked:
     kind: str  # day | next | about | list
     observance: str | None
     when: When  # for a list: week, month, year (value: offset), named_month ((month, year or None)), year_number, days
-    names: tuple[
-        str, ...
-    ] = ()  # for a list: the observances asked about, none meaning all
+    names: tuple[str, ...] = ()  # for a list: the observances asked about, none meaning all
 
 
 def _dated(year: int | None, month: int, day: int) -> When:
@@ -202,9 +196,7 @@ def _when(text: str, found: list[str]) -> When:
 
 def _observances(found: list[str]) -> tuple[str, ...]:
     pieces = set(found) | {a + b for a, b in pairwise(found)}
-    return tuple(
-        name for name, aliases in OBSERVANCES.items() if pieces.intersection(aliases)
-    )
+    return tuple(name for name, aliases in OBSERVANCES.items() if pieces.intersection(aliases))
 
 
 def _span(text: str) -> tuple[When, str] | None:
@@ -236,8 +228,7 @@ def sort(text: str) -> Asked | None:
     chart = [
         w
         for i, w in enumerate(found)
-        if w in CHART_WORDS
-        and not (w == "moon" and i and found[i - 1] in ("full", "new"))
+        if w in CHART_WORDS and not (w == "moon" and i and found[i - 1] in ("full", "new"))
     ]
     if chart or any(w in PERSONAL_WORDS or w in OUTCOME_WORDS for w in found):
         return None
@@ -249,8 +240,7 @@ def sort(text: str) -> Asked | None:
     if span and (names or listed):
         return Asked("list", observance, span[0], names)
     if "list" in found and (
-        names
-        or any(w in SPECIAL_WORDS or w in ("observance", "observances") for w in found)
+        names or any(w in SPECIAL_WORDS or w in ("observance", "observances") for w in found)
     ):
         return Asked("list", observance, When("days", COMING_DAYS), names)
     when = _when(lowered, found)
@@ -273,9 +263,7 @@ def sort(text: str) -> Asked | None:
 def resolve_when(when: When, today: date) -> date:
     if when.kind == "date":
         return when.value
-    if (
-        when.kind == "monthday"
-    ):  # the next time that day comes round (29 February: the next leap year)
+    if when.kind == "monthday":  # the next time that day comes round (29 February: the next leap year)
         month, day = when.value
         for year in range(today.year, today.year + 9):
             try:
@@ -328,9 +316,7 @@ def _answer_list(asked: Asked, place, today: date) -> str:
     first, last = resolve_range(asked.when, today)
     if not (UTC_LEAP_SECONDS_FROM.date() <= first and last <= EPHEMERIS_END.date()):
         return words.TOO_FAR
-    return words.render_list(
-        service.observance_list_report(place, first, last, asked.names)
-    )
+    return words.render_list(service.observance_list_report(place, first, last, asked.names))
 
 
 def answer(asked: Asked, place, now: datetime) -> str:
@@ -344,9 +330,7 @@ def answer(asked: Asked, place, now: datetime) -> str:
                 service.observance_explanation(asked.observance),
             )
         if asked.kind == "next":
-            return words.render_next(
-                service.next_observance_report(place, asked.observance, today)
-            )
+            return words.render_next(service.next_observance_report(place, asked.observance, today))
         if asked.when.kind == "bad":
             return words.WHICH_DATE
         day = resolve_when(asked.when, today)
@@ -354,10 +338,6 @@ def answer(asked: Asked, place, now: datetime) -> str:
         if not UTC_LEAP_SECONDS_FROM.date() <= day <= EPHEMERIS_END.date():
             return words.TOO_FAR
         report = service.panchang_report(place, day)
-        return (
-            words.NO_SUN.format(place=place.label)
-            if report is None
-            else words.render_day(report, day)
-        )
+        return words.NO_SUN.format(place=place.label) if report is None else words.render_day(report, day)
     except OutOfEphemerisRange:
         return words.TOO_FAR

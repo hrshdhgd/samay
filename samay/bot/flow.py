@@ -44,9 +44,7 @@ class Draft:
     token: str = ""
     date_text: str = ""
     time_text: str = ""
-    hour: int | None = (
-        None  # time typed without am/pm, waiting for the morning/evening answer
-    )
+    hour: int | None = None  # time typed without am/pm, waiting for the morning/evening answer
     minute: int | None = None
     place_text: str = ""
     approx_for: str | None = None
@@ -54,22 +52,14 @@ class Draft:
     fold: int | None = None
     options: tuple[str, ...] = ()
     profile: str = DEFAULT_PROFILE
-    purpose: str = (
-        "birth"  # "birth" (the user), "home" (their living city) or "person" (someone else)
-    )
+    purpose: str = "birth"  # "birth" (the user), "home" (their living city) or "person" (someone else)
     # --- someone else ---
     name: str = ""
     relation: str = ""
     relation_asked: bool = False
-    narrate: bool = (
-        False  # the model can read a narrative, so "start over" begins with that
-    )
-    queue: (
-        tuple
-    ) = ()  # the other people from the same message, still to be checked (plain dicts)
-    question: str = (
-        ""  # what was asked alongside the details, answered once they are done
-    )
+    narrate: bool = False  # the model can read a narrative, so "start over" begins with that
+    queue: tuple = ()  # the other people from the same message, still to be checked (plain dicts)
+    question: str = ""  # what was asked alongside the details, answered once they are done
     about: str = ""  # whom that question is about, if the message said
 
     def to_dict(self) -> dict:
@@ -99,13 +89,9 @@ class Outcome:
     draft: Draft | None
     reply: Reply
     done: BirthInput | None = None
-    home: tuple[str, str] | None = (
-        None  # (what was typed, place id) when the living city is set
-    )
+    home: tuple[str, str] | None = None  # (what was typed, place id) when the living city is set
     person: PersonResult | None = None  # someone's details are confirmed
-    then: tuple[str, str] | None = (
-        None  # (question, about) to answer now that the details are in
-    )
+    then: tuple[str, str] | None = None  # (question, about) to answer now that the details are in
 
 
 def _start_over() -> tuple[Button, ...]:
@@ -177,13 +163,9 @@ def _ask(draft: Draft) -> Reply:
             )
             return _reply(prompts.ASK_RELATION, rows)
         case "date":
-            return _reply(
-                prompts.ASK_DATE_FOR.format(name=name) if other else prompts.ASK_DATE
-            )
+            return _reply(prompts.ASK_DATE_FOR.format(name=name) if other else prompts.ASK_DATE)
         case "time":
-            return _reply(
-                prompts.ASK_TIME_FOR.format(name=name) if other else prompts.ASK_TIME
-            )
+            return _reply(prompts.ASK_TIME_FOR.format(name=name) if other else prompts.ASK_TIME)
         case "ampm":
             return _reply(
                 prompts.ASK_AMPM,
@@ -195,31 +177,21 @@ def _ask(draft: Draft) -> Reply:
                 ),
             )
         case "place":
-            return _reply(
-                prompts.ASK_PLACE_FOR.format(name=name) if other else prompts.ASK_PLACE
-            )
+            return _reply(prompts.ASK_PLACE_FOR.format(name=name) if other else prompts.ASK_PLACE)
         case "home_place":
             return _reply(prompts.ASK_HOME)
         case "nearby":
             return _reply(prompts.ASK_NEARBY.format(place=draft.approx_for))
         case "pick_place":
             rows = tuple(
-                (Button(geo.get_place(pid).label, _tap(draft, f"place={pid}")),)
-                for pid in draft.options
+                (Button(geo.get_place(pid).label, _tap(draft, f"place={pid}")),) for pid in draft.options
             )
             return _reply(
-                (
-                    prompts.PICK_PLACE_FOR.format(name=name)
-                    if other
-                    else prompts.PICK_PLACE
-                ),
+                (prompts.PICK_PLACE_FOR.format(name=name) if other else prompts.PICK_PLACE),
                 rows,
             )
         case "pick_fold":
-            rows = tuple(
-                (Button(label, _tap(draft, f"fold={i}")),)
-                for i, label in enumerate(draft.options)
-            )
+            rows = tuple((Button(label, _tap(draft, f"fold={i}")),) for i, label in enumerate(draft.options))
             return _reply(prompts.PICK_FOLD, rows)
         case "person_confirm":
             return _reply(
@@ -270,9 +242,7 @@ def begin_person(narrate: bool, profile: str = DEFAULT_PROFILE) -> Outcome:
     return Outcome(draft, _ask(draft))
 
 
-def _draft_from(
-    item, *, queue: tuple, question: str, about: str, profile: str, narrate: bool
-) -> Draft:
+def _draft_from(item, *, queue: tuple, question: str, about: str, profile: str, narrate: bool) -> Draft:
     d = asdict(item) if is_dataclass(item) else dict(item)
     ask = d.get("ask_ampm")
     return _next(
@@ -299,10 +269,7 @@ def from_extraction(ext: Extraction, profile: str = DEFAULT_PROFILE) -> Outcome:
     """The details the model read from a narrative: check the first person (asking only for what is missing); the
     others wait in the queue."""
     # Plain JSON-safe data (a list, not a tuple, for the pair), so a draft equals itself after a restart.
-    queue = tuple(
-        {**asdict(p), "ask_ampm": list(p.ask_ampm) if p.ask_ampm else None}
-        for p in ext.people[1:]
-    )
+    queue = tuple({**asdict(p), "ask_ampm": list(p.ask_ampm) if p.ask_ampm else None} for p in ext.people[1:])
     draft = _draft_from(
         ext.people[0],
         queue=queue,
@@ -347,9 +314,7 @@ def _finish(draft: Draft) -> Outcome:
     try:
         result = resolve_birth(birth)
     except NonexistentTime:
-        return _go(
-            draft, prompts.NONEXISTENT + "\n\n", step="time", hour=None, minute=None
-        )
+        return _go(draft, prompts.NONEXISTENT + "\n\n", step="time", hour=None, minute=None)
     except SamayError as e:
         return _go(draft, f"{e}\n\n", step="date", date_text="")
     if isinstance(result, NeedsDisambiguation):
@@ -412,9 +377,7 @@ def on_text(draft: Draft | None, text: str) -> Outcome:
         return begin()
     text = text.strip()
     match draft.step:
-        case (
-            "narrate"
-        ):  # the model could not read it (or is off): fall back to asking step by step
+        case "narrate":  # the model could not read it (or is off): fall back to asking step by step
             return narrative_failed(draft)
         case "name":
             name = clean(text, MAX_NAME)
@@ -454,9 +417,7 @@ def on_text(draft: Draft | None, text: str) -> Outcome:
             return _search_home(draft, text)
         case "place" | "nearby":
             return _search(draft, text)
-    return Outcome(
-        draft, replace(_ask(draft), text=prompts.RE_ASK + "\n\n" + _ask(draft).text)
-    )
+    return Outcome(draft, replace(_ask(draft), text=prompts.RE_ASK + "\n\n" + _ask(draft).text))
 
 
 def narrative_failed(draft: Draft) -> Outcome:

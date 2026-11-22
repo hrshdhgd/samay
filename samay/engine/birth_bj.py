@@ -77,9 +77,7 @@ def _biped(lon: float) -> bool:
 
 
 def _waning(c: Ctx) -> bool:
-    return (
-        c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude
-    ) % 360.0 > 180.0
+    return (c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude) % 360.0 > 180.0
 
 
 def _drek(lon: float) -> tuple[int, int]:
@@ -104,11 +102,7 @@ def _moon_sees_lagna(c: Ctx) -> bool:
 
 
 def _d_father_away_moon(c: Ctx) -> str | None:
-    return (
-        "the Moon is not in the 7th, so she does not aspect the lagna"
-        if not _moon_sees_lagna(c)
-        else None
-    )
+    return "the Moon is not in the 7th, so she does not aspect the lagna" if not _moon_sees_lagna(c) else None
 
 
 def _d_father_abroad(c: Ctx) -> tuple[str, str] | None:
@@ -128,9 +122,7 @@ def _d_father_abroad(c: Ctx) -> tuple[str, str] | None:
 
 def _d_father_planets(c: Ctx) -> str | None:
     m = c.sign["moon"]
-    between = (
-        c.sign["mercury"] in ((m - 1) % 12, m) and c.sign["venus"] in ((m + 1) % 12, m)
-    ) or (
+    between = (c.sign["mercury"] in ((m - 1) % 12, m) and c.sign["venus"] in ((m + 1) % 12, m)) or (
         c.sign["venus"] in ((m - 1) % 12, m) and c.sign["mercury"] in ((m + 1) % 12, m)
     )
     why = [
@@ -160,8 +152,7 @@ def _d_serpent_coiled(c: Ctx) -> str | None:
     d = _drek(c.chart.ascendant)
     return (
         f"the lagna is {SIGNS[c.lagna]} and the rising drekkana is the {d[1]}th of it, a drekkana of Mars"
-        if (c.lagna in (0, 4, 7) or (c.lagna == 3 and _waning(c)))
-        and d in MARS_DREKKANAS
+        if (c.lagna in (0, 4, 7) or (c.lagna == 3 and _waning(c))) and d in MARS_DREKKANAS
         else None
     )
 
@@ -182,9 +173,7 @@ def _d_custody(c: Ctx) -> tuple[str, str] | None:
     if c.sign["saturn"] != s:
         return None
     malefic_sign = (
-        s in (0, 4, 7, 9, 10)
-        or (s == 3 and _waning(c))
-        or (s in (2, 5) and c.sign["mercury"] == s)
+        s in (0, 4, 7, 9, 10) or (s == 3 and _waning(c)) or (s in (2, 5) and c.sign["mercury"] == s)
     )
     if not malefic_sign or house_from(c.sign["sun"], s) not in (5, 7, 9):
         return None
@@ -202,10 +191,7 @@ def _d_custody(c: Ctx) -> tuple[str, str] | None:
 def _d_boat_cancer(c: Ctx) -> str | None:
     return (
         "the Moon is nearly full in Cancer, Mercury in the lagna, Jupiter in the 4th"
-        if c.full_moon
-        and c.sign["moon"] == 3
-        and c.sign["mercury"] == c.lagna
-        and c.house["jupiter"] == 4
+        if c.full_moon and c.sign["moon"] == 3 and c.sign["mercury"] == c.lagna and c.house["jupiter"] == 4
         else None
     )
 
@@ -234,11 +220,7 @@ def _d_bank(c: Ctx) -> str | None:
         )
         if ok
     ]
-    return (
-        f"the lagna is {SIGNS[c.lagna]}, a watery sign; " + "; ".join(why)
-        if why
-        else None
-    )
+    return f"the lagna is {SIGNS[c.lagna]}, a watery sign; " + "; ".join(why) if why else None
 
 
 def _d_prison(c: Ctx) -> str | None:
@@ -355,11 +337,7 @@ def _d_house_state(c: Ctx) -> tuple[str, str] | None:
         f"the most powerful planet: {_names(top)}",
         "The birth will occur in "
         + " or ".join(
-            dict.fromkeys(
-                c.rules["house_of_planet"][p]
-                for p in top
-                if p in c.rules["house_of_planet"]
-            )
+            dict.fromkeys(c.rules["house_of_planet"][p] for p in top if p in c.rules["house_of_planet"])
         ),
     )
 
@@ -390,7 +368,9 @@ def _d_midwives(c: Ctx) -> tuple[str, str] | None:
         p: (
             3
             if c.stand(p) == "exaltation" or c.chart.planets[p].retrograde
-            else 2 if c.stand(p) in ("own", "moolatrikona") else 1
+            else 2
+            if c.stand(p) in ("own", "moolatrikona")
+            else 1
         )
         for p in between
     }
@@ -427,8 +407,7 @@ def _d_wick(c: Ctx) -> tuple[str, str] | None:
     lon = c.chart.ascendant
     return (
         f"the lagna is in the {('first', 'middle', 'last')[_third(lon)]} third of {SIGNS[c.lagna]}",
-        "The wick will be "
-        + _third_word(lon, ("long and unburnt", "half burnt", "nearly wholly burnt")),
+        "The wick will be " + _third_word(lon, ("long and unburnt", "half burnt", "nearly wholly burnt")),
     )
 
 
@@ -459,8 +438,7 @@ def _d_illegitimate(c: Ctx) -> str | None:
         or c.nav["moon"] in (8, 11)
         or SIGN_LORDS[moon_s] == "jupiter"
         or c.sign["jupiter"] == moon_s
-        or SIGN_LORDS[(moon_s + 4 * (_third(c.chart.planets["moon"].longitude))) % 12]
-        == "jupiter"
+        or SIGN_LORDS[(moon_s + 4 * (_third(c.chart.planets["moon"].longitude))) % 12] == "jupiter"
     )
     if not bad or saved:
         return None
@@ -474,9 +452,7 @@ def _d_illegitimate(c: Ctx) -> str | None:
 def _d_deserted(c: Ctx) -> tuple[str, str] | None:
     if c.sign["mars"] != c.sign["saturn"]:
         return None
-    lum = [
-        p for p in ("sun", "moon") if house_from(c.sign["mars"], c.sign[p]) in (5, 9)
-    ]
+    lum = [p for p in ("sun", "moon") if house_from(c.sign["mars"], c.sign[p]) in (5, 9)]
     if not lum:
         return None
     kind = (
@@ -486,17 +462,14 @@ def _d_deserted(c: Ctx) -> tuple[str, str] | None:
     )
     return (
         f"Mars and Saturn are together in {SIGNS[c.sign['mars']]}; {_names(lum)} in the 5th or 9th from them",
-        f"The child {kind}"
-        + (", though abandoned by its mother" if "live" in kind else ""),
+        f"The child {kind}" + (", though abandoned by its mother" if "live" in kind else ""),
     )
 
 
 def _d_deserted_dies(c: Ctx) -> str | None:
     if c.house["moon"] != 1 or c.sees("jupiter", c.sign["moon"]):
         return None
-    if c.house["mars"] == 7 and any(
-        c.sees(p, c.sign["moon"]) for p in ("mars", "saturn")
-    ):
+    if c.house["mars"] == 7 and any(c.sees(p, c.sign["moon"]) for p in ("mars", "saturn")):
         return "the Moon is in the lagna, Mars in the 7th aspecting her"
     if (
         house_from(c.sign["moon"], c.sign["mars"]) == 11
@@ -546,22 +519,13 @@ def load_rules(path: Path = RULES_PATH) -> BirthRules:
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
     rules = {r["id"]: r for r in raw["rules"]}
     if len(rules) != len(raw["rules"]) or set(rules) != set(DETECTORS):
-        raise ValueError(
-            f"{path.name}: the rule ids must be exactly those the engine codes"
-        )
+        raise ValueError(f"{path.name}: the rule ids must be exactly those the engine codes")
     for r in rules.values():
         if r.get("group") not in GROUPS or not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "text", "definition")
+            isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "text", "definition")
         ):
-            raise ValueError(
-                f"{path.name} {r.get('id')}: needs a group, verse, text and definition"
-            )
-    if (
-        list(raw["places"]) != SIGNS
-        or list(raw["bed"]) != SIGNS
-        or len(raw["limbs"]) != 12
-    ):
+            raise ValueError(f"{path.name} {r.get('id')}: needs a group, verse, text and definition")
+    if list(raw["places"]) != SIGNS or list(raw["bed"]) != SIGNS or len(raw["limbs"]) != 12:
         raise ValueError(
             f"{path.name}: places and bed need the twelve signs, Aries first, and limbs twelve entries"
         )
@@ -593,7 +557,5 @@ def find(rules: BirthRules, chart: Chart, group: str) -> tuple[Found, ...] | Non
         if got is None:
             continue
         detail, text = got if isinstance(got, tuple) else (got, rule["text"])
-        out.append(
-            Found(rid, group, rule["verse"], detail[:1].upper() + detail[1:], text)
-        )
+        out.append(Found(rid, group, rule["verse"], detail[:1].upper() + detail[1:], text))
     return tuple(out)

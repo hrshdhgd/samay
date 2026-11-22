@@ -132,9 +132,7 @@ class Store:
                     (self._cipher.encrypt(CHECK_VALUE),),
                 )
             elif self._cipher.decrypt(row["token"]) != CHECK_VALUE:
-                raise crypto.StoreKeyError(
-                    "the database key does not match this database"
-                )
+                raise crypto.StoreKeyError("the database key does not match this database")
 
     def _seal(self, value: object) -> str | None:
         return None if value is None else self._cipher.encrypt(str(value))
@@ -188,9 +186,7 @@ class Store:
 
     def get_user(self, chat_id: int) -> BirthInput | None:
         with self._conn() as c:
-            r = c.execute(
-                "SELECT * FROM users WHERE chat_id = ?", (chat_id,)
-            ).fetchone()
+            r = c.execute("SELECT * FROM users WHERE chat_id = ?", (chat_id,)).fetchone()
         if r is None:
             return None
         fold = self._open(r["fold"])
@@ -219,9 +215,7 @@ class Store:
         """The draft, or None if there is none or it has expired (expired drafts are deleted)."""
         now = time.time() if now is None else now
         with self._conn() as c:
-            r = c.execute(
-                "SELECT data, updated_at FROM drafts WHERE chat_id = ?", (chat_id,)
-            ).fetchone()
+            r = c.execute("SELECT data, updated_at FROM drafts WHERE chat_id = ?", (chat_id,)).fetchone()
             if r is None:
                 return None
             if now - r["updated_at"] > DRAFT_TTL_SECONDS:
@@ -261,9 +255,7 @@ class Store:
 
     def get_home(self, chat_id: int) -> Home | None:
         with self._conn() as c:
-            r = c.execute(
-                "SELECT * FROM homes WHERE chat_id = ?", (chat_id,)
-            ).fetchone()
+            r = c.execute("SELECT * FROM homes WHERE chat_id = ?", (chat_id,)).fetchone()
         return self._home(r) if r else None
 
     def set_brief(self, chat_id: int, hour: int | None) -> None:
@@ -283,18 +275,14 @@ class Store:
 
     def briefs_enabled(self) -> list[tuple[int, Home]]:
         with self._conn() as c:
-            rows = c.execute(
-                "SELECT * FROM homes WHERE brief_hour IS NOT NULL"
-            ).fetchall()
+            rows = c.execute("SELECT * FROM homes WHERE brief_hour IS NOT NULL").fetchall()
         return [(r["chat_id"], self._home(r)) for r in rows]
 
     def record_miss(self, topic: str) -> None:
         """Count one unanswered question under its sorted topic. Anything that is not a plain
         topic key (which could carry someone's words) is refused."""
         if not is_topic(topic):
-            raise ValueError(
-                "record_miss takes a topic key like 'dasha:saturn', never free text"
-            )
+            raise ValueError("record_miss takes a topic key like 'dasha:saturn', never free text")
         with self._conn() as c:
             c.execute(
                 "INSERT INTO topic_misses VALUES (?, 1) ON CONFLICT(topic) DO UPDATE SET count = count + 1",
@@ -348,9 +336,7 @@ class Store:
 
     def list_people(self, chat_id: int) -> list[Person]:
         with self._conn() as c:
-            rows = c.execute(
-                "SELECT * FROM people WHERE chat_id = ? ORDER BY id", (chat_id,)
-            ).fetchall()
+            rows = c.execute("SELECT * FROM people WHERE chat_id = ? ORDER BY id", (chat_id,)).fetchall()
         return [self._person(r) for r in rows]
 
     def get_person(self, chat_id: int, person_id: int) -> Person | None:
@@ -372,11 +358,7 @@ class Store:
     ) -> int:
         """Save someone, or update them if the chat already has a person of that name (case-insensitive)."""
         same = next(
-            (
-                p
-                for p in self.list_people(chat_id)
-                if p.name.casefold() == name.casefold()
-            ),
+            (p for p in self.list_people(chat_id) if p.name.casefold() == name.casefold()),
             None,
         )
         values = (
@@ -404,9 +386,7 @@ class Store:
                 )
                 return same.id
             if len(self.list_people(chat_id)) >= MAX_PEOPLE:
-                raise TooManyPeople(
-                    f"I can keep up to {MAX_PEOPLE} people; please delete one first"
-                )
+                raise TooManyPeople(f"I can keep up to {MAX_PEOPLE} people; please delete one first")
             return c.execute(
                 "INSERT INTO people (chat_id, name, relation, date_text, time_text, place_text, place_choice, fold, "
                 "approx_for, profile, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -429,9 +409,7 @@ class Store:
         """
         dest = Path(out)
         if dest.exists():
-            raise FileExistsError(
-                f"{dest} already exists; refusing to overwrite a backup"
-            )
+            raise FileExistsError(f"{dest} already exists; refusing to overwrite a backup")
         fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         os.close(fd)
         src, dst = self._conn(), sqlite3.connect(dest)

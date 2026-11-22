@@ -25,9 +25,7 @@ from .panchang import TITHI_DEG, Element, Site, _elongation, element_at
 ANCHORS = ("sunrise", "sunset")
 KSHAYA_CHOICES = ("start_day", "next_day", "none")
 VRIDDHI_CHOICES = ("first", "last")
-SEARCH_DAYS = (
-    70  # long enough for the rarest observance here (Amavasya, about 30 days apart)
-)
+SEARCH_DAYS = 70  # long enough for the rarest observance here (Amavasya, about 30 days apart)
 # Sampling step for finding which tithis a range holds: well under the shortest tithi (about 19 hours), so every
 # tithi has at least one sample inside it.
 SAMPLE_STEP = timedelta(hours=6)
@@ -45,9 +43,7 @@ class Viddha:
 
 @dataclass(frozen=True)
 class Rule:
-    tithis: tuple[
-        int, ...
-    ]  # tithi numbers 1-30 (Shukla Ekadashi is 11, Krishna Ekadashi 26)
+    tithis: tuple[int, ...]  # tithi numbers 1-30 (Shukla Ekadashi is 11, Krishna Ekadashi 26)
     anchor: str = "sunrise"
     start_minutes: int = 0
     end_minutes: int = 0
@@ -90,9 +86,7 @@ def _tithi_at(utc: datetime, ayanamsa: str) -> Element:
 
 
 @lru_cache(maxsize=64)
-def _tithi_points(
-    begin: datetime, stop: datetime, ayanamsa: str
-) -> tuple[tuple[int, datetime], ...]:
+def _tithi_points(begin: datetime, stop: datetime, ayanamsa: str) -> tuple[tuple[int, datetime], ...]:
     """(tithi number, an instant inside it) for each tithi from the one holding `begin` to the one holding `stop`,
     from a single sampled pass. Each instant is the middle sample of its tithi's run, hours from either boundary, so the
     exact element found there is that tithi. Walking tithi by tithi needs one full search for every tithi, wanted or
@@ -104,8 +98,7 @@ def _tithi_points(
     times.append(stop)
     track = sidereal_track(times, ayanamsa)
     cells = [
-        int(_elongation(s, m) // TITHI_DEG) % 30
-        for s, m in zip(track["sun"], track["moon"], strict=True)
+        int(_elongation(s, m) // TITHI_DEG) % 30 for s, m in zip(track["sun"], track["moon"], strict=True)
     ]
     runs: list[list[int]] = []
     for i, cell in enumerate(cells):
@@ -139,22 +132,17 @@ def _qualifies(
     if anchor is None:
         return False
     anchor += timedelta(minutes=delta)
-    w0, w1 = anchor + timedelta(minutes=rule.start_minutes), anchor + timedelta(
-        minutes=rule.end_minutes
-    )
-    hit = (
-        start <= w0 < end
-        if rule.start_minutes == rule.end_minutes
-        else max(start, w0) < min(end, w1)
-    )
+    w0, w1 = anchor + timedelta(minutes=rule.start_minutes), anchor + timedelta(minutes=rule.end_minutes)
+    hit = start <= w0 < end if rule.start_minutes == rule.end_minutes else max(start, w0) < min(end, w1)
     if hit and rule.viddha is not None:
         v = rule.viddha
         v_anchor = _anchor(site, day, v.anchor, definition)
         if v_anchor is not None:
             v_anchor += timedelta(minutes=delta)
-            v0, v1 = v_anchor + timedelta(
-                minutes=v.start_minutes
-            ), v_anchor + timedelta(minutes=v.end_minutes)
+            v0, v1 = (
+                v_anchor + timedelta(minutes=v.start_minutes),
+                v_anchor + timedelta(minutes=v.end_minutes),
+            )
             if _tithis_in(v0, max(v0, v1), ayanamsa) & set(v.tithis):
                 return False
     return hit
@@ -197,11 +185,7 @@ def _reduce(
             return "kshaya", start_day, [following]
         return "kshaya", following, [start_day]
     first, last = qualified[0], qualified[-1]
-    return (
-        ("vriddhi", first, [last])
-        if rule.on_vriddhi == "first"
-        else ("vriddhi", last, [first])
-    )
+    return ("vriddhi", first, [last]) if rule.on_vriddhi == "first" else ("vriddhi", last, [first])
 
 
 def observances_between(
@@ -215,24 +199,15 @@ def observances_between(
 ) -> list[Observance]:
     """Every occurrence of the rule's tithis that touches [first, last], each resolved to a primary day."""
     zone = ZoneInfo(site.tz)
-    begin = datetime(first.year, first.month, first.day, tzinfo=zone).astimezone(
-        UTC
-    ) - timedelta(days=1)
-    stop = datetime(last.year, last.month, last.day, tzinfo=zone).astimezone(
-        UTC
-    ) + timedelta(days=2)
+    begin = datetime(first.year, first.month, first.day, tzinfo=zone).astimezone(UTC) - timedelta(days=1)
+    stop = datetime(last.year, last.month, last.day, tzinfo=zone).astimezone(UTC) + timedelta(days=2)
     found = []
     for number, point in _tithi_points(begin, stop, ayanamsa):
-        if (
-            number not in rule.tithis
-            or (tithi := _tithi_at(point, ayanamsa)).start >= stop
-        ):
+        if number not in rule.tithis or (tithi := _tithi_at(point, ayanamsa)).start >= stop:
             continue
         kind, primary, others = _reduce(
             rule,
-            _qualified_days(
-                rule, tithi.start, tithi.end, site, ayanamsa, definition, 0
-            ),
+            _qualified_days(rule, tithi.start, tithi.end, site, ayanamsa, definition, 0),
             tithi.start,
             zone,
         )
@@ -240,26 +215,19 @@ def observances_between(
         for delta in (-margin_minutes, margin_minutes) if margin_minutes else ():
             _, shifted, _ = _reduce(
                 rule,
-                _qualified_days(
-                    rule, tithi.start, tithi.end, site, ayanamsa, definition, delta
-                ),
+                _qualified_days(rule, tithi.start, tithi.end, site, ayanamsa, definition, delta),
                 tithi.start,
                 zone,
             )
-            if (
-                shifted is not None
-                and shifted != primary
-                and all(a.day != shifted for a in alternates)
-            ):
+            if shifted is not None and shifted != primary and all(a.day != shifted for a in alternates):
                 alternates.append(Alternate(shifted, "calculation"))
         # A rule that makes no claim is still reported (never silently skipped): place it by the tithi itself.
-        days = ([primary] if primary is not None else []) + [
-            a.day for a in alternates
-        ] or [tithi.start.astimezone(zone).date(), tithi.end.astimezone(zone).date()]
+        days = ([primary] if primary is not None else []) + [a.day for a in alternates] or [
+            tithi.start.astimezone(zone).date(),
+            tithi.end.astimezone(zone).date(),
+        ]
         if any(first <= d <= last for d in days):
-            found.append(
-                Observance(primary, kind, tuple(alternates), tithi.start, tithi.end)
-            )
+            found.append(Observance(primary, kind, tuple(alternates), tithi.start, tithi.end))
     return found
 
 
@@ -284,15 +252,11 @@ def observances_for(
         raise ValueError(f"no rule for tradition {sampradaya!r}")
     else:
         chosen = sampradaya
-    primary = observances_between(
-        rules[chosen], site, first, last, ayanamsa, margin_minutes, definition
-    )
+    primary = observances_between(rules[chosen], site, first, last, ayanamsa, margin_minutes, definition)
     others = {
         name: {
             o.tithi_start: o
-            for o in observances_between(
-                rule, site, first, last, ayanamsa, margin_minutes, definition
-            )
+            for o in observances_between(rule, site, first, last, ayanamsa, margin_minutes, definition)
         }
         for name, rule in rules.items()
         if name != chosen
@@ -303,11 +267,7 @@ def observances_for(
         for name, table in others.items():
             twin = table.get(o.tithi_start)
             # Named even when the day is already an alternate for another reason: the tradition is the news.
-            if (
-                twin is not None
-                and twin.primary is not None
-                and twin.primary != o.primary
-            ):
+            if twin is not None and twin.primary is not None and twin.primary != o.primary:
                 extra.append(Alternate(twin.primary, f"{name} convention"))
         merged.append(
             Observance(

@@ -77,9 +77,7 @@ def load_rules(path: Path = RULES_PATH) -> RajaRules:
             or c.get("result") not in ("royal", "royal_only")
             or not c.get("all")
         ):
-            raise ValueError(
-                f"{where}: needs a unique id, text, result (royal / royal_only) and conditions"
-            )
+            raise ValueError(f"{where}: needs a unique id, text, result (royal / royal_only) and conditions")
         seen.add(c["id"])
         for item in c["all"]:
             _item_ok(item, where)
@@ -98,18 +96,14 @@ def load_rules(path: Path = RULES_PATH) -> RajaRules:
     )
 
 
-def _holds(
-    item: dict, sign: dict[str, int], house: dict[str, int], chart: Chart
-) -> bool:
+def _holds(item: dict, sign: dict[str, int], house: dict[str, int], chart: Chart) -> bool:
     p = item["planet"]
     if "house" in item or "houses" in item:
         return house[p] in ([item["house"]] if "house" in item else item["houses"])
     wanted = {_SIGN[s] for s in ([item["sign"]] if "sign" in item else item["signs"])}
     if sign[p] not in wanted:
         return False
-    return (
-        not item.get("first_half") or degree_in_sign(chart.planets[p].longitude) < 15.0
-    )
+    return not item.get("first_half") or degree_in_sign(chart.planets[p].longitude) < 15.0
 
 
 def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
@@ -124,11 +118,7 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
         if c.get("lagna") and SIGNS[lagna] not in c["lagna"]:
             continue
         if all(_holds(item, sign, house, chart) for item in c["all"]):
-            note = (
-                rules.family["anyone"]
-                if c["result"] == "royal"
-                else rules.family["royal_only"]
-            )
+            note = rules.family["anyone"] if c["result"] == "royal" else rules.family["royal_only"]
             out.append(
                 Found(
                     c["id"],
@@ -140,9 +130,7 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
             )
     # verse 1: three or more planets in their exaltation signs
     ch20 = house_effects.load_rules()
-    exalted = [
-        p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "exaltation"
-    ]
+    exalted = [p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) == "exaltation"]
     if len(exalted) >= 3:
         mal = [p for p in exalted if p in rules.exalted["malefics"]]
         ben = [p for p in exalted if p in rules.exalted["benefics"]]
@@ -158,10 +146,7 @@ def find(rules: RajaRules, chart: Chart) -> tuple[Found, ...]:
         )
     # verse 13: three or more planets in their own, exaltation or moolatrikona signs
     own = [
-        p
-        for p in SEVEN
-        if house_effects.strength(ch20, p, sign[p])
-        in ("own", "moolatrikona", "exaltation")
+        p for p in SEVEN if house_effects.strength(ch20, p, sign[p]) in ("own", "moolatrikona", "exaltation")
     ]
     if len(own) >= 3:
         text = rules.strong["five"] if len(own) >= 5 else rules.strong["three"]

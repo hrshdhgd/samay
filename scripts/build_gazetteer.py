@@ -8,6 +8,7 @@ The Dockerfile only copies the finished database and runs --verify; nothing is d
 built on the server. To refresh, delete data/geonames-src/ and rebuild: the snapshot date and
 every hash change, which is the deliberate part.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -57,9 +58,7 @@ def fetch(name: str, dest_dir: Path) -> Path:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument(
-        "--countries", default=os.environ.get("GEONAMES_FULL_COUNTRIES", "IN,US,UA,IT")
-    )
+    p.add_argument("--countries", default=os.environ.get("GEONAMES_FULL_COUNTRIES", "IN,US,UA,IT"))
     p.add_argument("--src", type=Path, default=ROOT / "data" / "geonames-src")
     p.add_argument("--out", type=Path, default=ROOT / "data" / "gazetteer.sqlite")
     p.add_argument("--lock", type=Path, default=ROOT / "data" / "gazetteer.lock")
@@ -96,9 +95,7 @@ def main() -> int:
         "database_sha256": sha256(args.out),
     }
     args.lock.write_text(json.dumps(lock, indent=2, sort_keys=True) + "\n")
-    print(
-        f"wrote {args.out} ({args.out.stat().st_size / 1e6:.0f} MB), snapshot {snapshot}"
-    )
+    print(f"wrote {args.out} ({args.out.stat().st_size / 1e6:.0f} MB), snapshot {snapshot}")
     return 0
 
 

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-NAMASTE = "Namaste 🙏 Main Samay Hoon. I can show your Jyotish birth chart from your date, time and place of birth."
+NAMASTE = (
+    "Namaste 🙏 Main Samay Hoon. I can show your Jyotish birth chart from your date, time and place of birth."
+)
 
 ASK_DATE = "When were you born?\nPlease type the date, for example 15-08-1952"
 BAD_DATE = "I couldn't read that date. Please type it like this: 15-08-1952"
@@ -14,9 +16,7 @@ ASK_NEARBY = (
     "I couldn't find “{place}”.\n"
     "Please type the nearest bigger town or city. The chart will say it is approximate."
 )
-ASK_NEARBY_AGAIN = (
-    "I couldn't find that either. Please try the district or the nearest large city."
-)
+ASK_NEARBY_AGAIN = "I couldn't find that either. Please try the district or the nearest large city."
 PICK_PLACE = "I found more than one place. Which one is yours?"
 PICK_FOLD = (
     "At that hour the clocks showed the same time twice that day (the clocks were turned back).\n"
@@ -41,7 +41,9 @@ ASK_DATE_FOR = "When was {name} born?\nPlease type the date, for example 15-08-2
 ASK_TIME_FOR = "At what time was {name} born?\nFor example 6:30 am, or 18:30"
 ASK_PLACE_FOR = "In which town or village was {name} born?\nYou can add the country, for example Pune, India"
 PICK_PLACE_FOR = "I found more than one place. Which one was {name} born in?"
-CONFIRM_PERSON = "Here is what I understood:\n\n👤 {name}{rel}\nBorn {date}, {time}\n📍 {place}{more}\n\nIs that right?"
+CONFIRM_PERSON = (
+    "Here is what I understood:\n\n👤 {name}{rel}\nBorn {date}, {time}\n📍 {place}{more}\n\nIs that right?"
+)
 CONFIRM_MORE = "\n\nAfter this I'll check the details for {names}."
 BTN_SAVE_PERSON = "💾 Yes, save {name}"
 BTN_KEEP_PERSON = "Yes, just for now"
@@ -50,9 +52,7 @@ BTN_GUIDED = "Step by step instead"
 PERSON_NEXT = "Thank you, that's {name} done."
 PERSON_DONE = "Thank you. We are now talking about {name}."
 PEOPLE_TITLE = "People I can talk about"
-PEOPLE_EMPTY = (
-    "I don't know anyone else yet. Tap “➕ Add someone” and tell me about them."
-)
+PEOPLE_EMPTY = "I don't know anyone else yet. Tap “➕ Add someone” and tell me about them."
 PEOPLE_NOW = "Right now we are talking about {name}."
 PEOPLE_NOW_SELF = "Right now we are talking about you."
 BTN_ADD_PERSON = "➕ Add someone"
@@ -81,9 +81,7 @@ BRIEF_ON = "Done. I will message you every morning at {time} ({place} time)."
 BRIEF_OFF = "Done. No more morning messages."
 BRIEF_STATUS_ON = "Your morning message is on, at {time} ({place} time)."
 BRIEF_STATUS_OFF = "Your morning message is off."
-BRIEF_NEED_HOME = (
-    "First, I need to know where you live now, so I can send the right time.\n\n"
-)
+BRIEF_NEED_HOME = "First, I need to know where you live now, so I can send the right time.\n\n"
 ASK_QUESTION = (
     "What would you like to know? Ask about a planet, a house or a dasha, for example:\n"
     "• What does Saturn stand for?\n• What does the 4th house mean?\n• What is my future?"
@@ -101,7 +99,9 @@ NO_SOURCE = (
     "I don't have a checked source for this yet, so I won't guess. "
     "I have noted the topic so it can be researched."
 )
-NEED_BIRTH_FOR_FACTS = "Tell me your birth details (“✏️ Change birth details”) and I can add facts from your own chart."
+NEED_BIRTH_FOR_FACTS = (
+    "Tell me your birth details (“✏️ Change birth details”) and I can add facts from your own chart."
+)
 VERSE_UNPROOFREAD = (
     "ⓘ Verse text: a typed copy from sanskritdocuments.org, compared with the GRETIL copy. No Sanskrit reader "
     "has proofread it, so a typing slip is possible."
@@ -114,7 +114,9 @@ DASHA_FRAME = (
 )
 READING_FRAME_SHORT = "An old text's view, not a forecast."
 FUTURE_TITLE = "🔮 {Your} current period of life"
-NEED_BIRTH_FOR_FUTURE = "To look at your future I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+NEED_BIRTH_FOR_FUTURE = (
+    "To look at your future I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+)
 BTN_TECH = "🔧 Technical details"
 BTN_PLAIN = "💬 Plain words"
 BTN_MORE = "➕ More"
@@ -123,10 +125,10 @@ LIFE_FRAME = (
     "This shows what the text associates with this area and what sits there in {your} chart. It cannot say whether or "
     "when anything will happen."
 )
-OUTLOOK_KEY = "Houses are counted from the Moon sign. ✓ marks a house the text counts as good for that planet."
-OUTLOOK_FRAME = (
-    "What an old text says about these transits and sub-chapters, not a forecast."
+OUTLOOK_KEY = (
+    "Houses are counted from the Moon sign. ✓ marks a house the text counts as good for that planet."
 )
+OUTLOOK_FRAME = "What an old text says about these transits and sub-chapters, not a forecast."
 OUTLOOK_NOT_APPLIED = (
     "The text adds refinements this reading does not apply yet: aspects from good and bad planets, each planet's "
     "strength in the sign, and the part of the sign where it acts. It also says a sign with many points can turn a hard "
@@ -138,7 +140,9 @@ OUTLOOK_ASHTAKA_NOTE = (
     "different lists in {n} of the 56."
 )
 OUTLOOK_TECH_HINT = "Tap “🔧 Technical details” for the houses, the points and the book’s verse numbers."
-OUTLOOK_DASHA_UNCHECKED = "What the text says about each sub-chapter is waiting for a check, so it is not shown yet."
+OUTLOOK_DASHA_UNCHECKED = (
+    "What the text says about each sub-chapter is waiting for a check, so it is not shown yet."
+)
 OUTLOOK_UNCHECKED = "The text's results for these transits are waiting for a check, so for now I show only where the planets are."
 NEED_BIRTH_FOR_CHART = "To count your ashtakavarga I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 ASHTAKA_UNCHECKED = (
@@ -146,32 +150,44 @@ ASHTAKA_UNCHECKED = (
     "the numbers yet."
 )
 ASHTAKA_KEY = "Points are the benefic dots the seven planets and the lagna give each sign; ✓ marks a sign above the text's 28."
-NEED_BIRTH_FOR_MOON = "To read your Moon I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+NEED_BIRTH_FOR_MOON = (
+    "To read your Moon I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+)
 MOON_UNCHECKED = (
     "I know where your Moon is, but the text's descriptions of it are waiting for a check against the book, so I don't "
     "show them yet."
 )
-MOON_YOGAS_UNCHECKED = "What the text says about the yogas the Moon makes is waiting for a check, so it is not shown yet."
-LORDSHIP_UNDECIDED = "The text sets conditions for strong and weak; this chart meets neither set, so both readings are given."
+MOON_YOGAS_UNCHECKED = (
+    "What the text says about the yogas the Moon makes is waiting for a check, so it is not shown yet."
+)
+LORDSHIP_UNDECIDED = (
+    "The text sets conditions for strong and weak; this chart meets neither set, so both readings are given."
+)
 NEED_BIRTH_FOR_TOGETHER = "To look at your planets together I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 TOGETHER_UNCHECKED = "The texts' words on planets together are waiting for a check, so I don't show them yet."
-TOGETHER_NONE = "No two of the seven planets share a sign in the chart, so the texts have nothing to say here."
-NEED_BIRTH_FOR_YOGAS = "To look for your yogas I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
-YOGAS_UNCHECKED = (
-    "What the texts say of these yogas is waiting for a check, so I don't show it yet."
+TOGETHER_NONE = (
+    "No two of the seven planets share a sign in the chart, so the texts have nothing to say here."
 )
-YOGAS_NONE_RAJA = "None of the raja yoga configurations of Brihat Jataka chapter 11 is present (they are rare)."
-MOON_ASPECTS_UNCHECKED = "What the text says of the Moon aspected by the planets is waiting for a check, so it is not shown yet."
-MOON_NOT_ASPECTED = "No planet aspects the Moon by the full sights of Brihat Jataka 2.13, so chapter 19 has nothing to add."
-NEED_BIRTH_FOR_WHEN = "To look at timing I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
-WHEN_UNCHECKED = (
-    "The book's timing rules are waiting for a check, so I can't show them yet."
+NEED_BIRTH_FOR_YOGAS = (
+    "To look for your yogas I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 )
+YOGAS_UNCHECKED = "What the texts say of these yogas is waiting for a check, so I don't show it yet."
+YOGAS_NONE_RAJA = (
+    "None of the raja yoga configurations of Brihat Jataka chapter 11 is present (they are rare)."
+)
+MOON_ASPECTS_UNCHECKED = (
+    "What the text says of the Moon aspected by the planets is waiting for a check, so it is not shown yet."
+)
+MOON_NOT_ASPECTED = (
+    "No planet aspects the Moon by the full sights of Brihat Jataka 2.13, so chapter 19 has nothing to add."
+)
+NEED_BIRTH_FOR_WHEN = (
+    "To look at timing I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
+)
+WHEN_UNCHECKED = "The book's timing rules are waiting for a check, so I can't show them yet."
 WHEN_ALL_DAY = "holds on {pct}% of the days, so it does not narrow anything"
 NEED_BIRTH_FOR_HEALTH = "To read the book's disease rules for your chart I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
-HEALTH_UNCHECKED = (
-    "The book's disease rules are waiting for a check, so I can't show them yet."
-)
+HEALTH_UNCHECKED = "The book's disease rules are waiting for a check, so I can't show them yet."
 HEALTH_NONE = "No planet is in the 6th, 8th or 12th house, is lord of the 6th, or joins it, so the book names no source of disease in this chart."
 SENS_WARN = (
     "⚠️ Before I show this\n\nThe next answer comes from old rules about how long a life may be and about death. It is "
@@ -189,9 +205,7 @@ NEED_BIRTH_FOR_LONGEVITY = "To read the book's rules on length of life I need yo
 LONGEVITY_UNCHECKED = "The book's rules on length of life are waiting for a check, so I can't show them yet."
 LONGEVITY_NONE = "None of the book's danger signs or length-of-life pointers is present in this chart."
 NEED_BIRTH_FOR_HOUSES = "To read the strength of your houses I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
-HOUSES_UNCHECKED = (
-    "The book's tests of the houses are waiting for a check, so I can't show them yet."
-)
+HOUSES_UNCHECKED = "The book's tests of the houses are waiting for a check, so I can't show them yet."
 HOUSES_NONE = "None of the book's tests for this house finds anything in the chart."
 NEED_BIRTH_FOR_WOMEN = "To read the book's pointers for a woman's chart I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
 WOMEN_UNCHECKED = "The book's pointers for a woman's chart are waiting for a check, so I can't show them yet."
@@ -208,31 +222,39 @@ SENS_WARN_DEATH_CHILD = (
     "⚠️ Please read this first — it is about {name}, a child\n\nThis asks when the old book links the end of life to the sky, for a child. The book "
     "gives conditions, never dates, nobody can foretell this, and it can be terrifying to read about a child. Please only continue if you are certain."
 )
-NEED_BIRTH_FOR_DEATH = "To look at this I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
+NEED_BIRTH_FOR_DEATH = (
+    "To look at this I need the birth details first. Tap “✏️ Change birth details”, then ask me again."
+)
 DEATH_UNCHECKED = "The book's death-timing conditions are waiting for a check, so I can't show them yet."
 NEED_BIRTH_FOR_UPAGRAHAS = "To find Gulika and the other upagrahas I need the birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
-UPAGRAHAS_UNCHECKED = "The book's rules for Gulika and the upagrahas are waiting for a check, so I can't show them yet."
+UPAGRAHAS_UNCHECKED = (
+    "The book's rules for Gulika and the upagrahas are waiting for a check, so I can't show them yet."
+)
 UPAGRAHAS_NO_SUN = "The Sun does not both rise and set on the day of birth at this place, so Gulika and the other time-based points cannot be worked out; the points from the Sun's position are shown."
 NEED_BIRTH_FOR_LAGNA = "To describe your rising sign I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
 LAGNA_UNCHECKED = "What the old books say of this rising sign is waiting for a check, so I can't show it yet."
 NEED_BIRTH_FOR_STRENGTH = "To see which planets are strong I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
-STRENGTH_UNCHECKED = "The book's tests of a planet's strength are waiting for a check, so I can't show them yet."
+STRENGTH_UNCHECKED = (
+    "The book's tests of a planet's strength are waiting for a check, so I can't show them yet."
+)
 NEED_BIRTH_FOR_SIGNS = "To read your planets in their signs I need your birth details. Tap “✏️ Change birth details”, then ask me again."
-SIGNS_UNCHECKED = "What Brihat Jataka says of each planet in its sign is waiting for a check, so I can't show it yet."
+SIGNS_UNCHECKED = (
+    "What Brihat Jataka says of each planet in its sign is waiting for a check, so I can't show it yet."
+)
 NEED_BIRTH_FOR_VARGAS = "To read your planets' dignity I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
 VARGAS_UNCHECKED = "What Brihat Jataka says of the planets in their own, friendly and hostile signs, the horas, drekkanas, navamsa and trimsamsas is waiting for a check, so I can't show it yet."
 NEED_BIRTH_FOR_MALEFIC = "To read the book's list of ill omens I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
-MALEFIC_UNCHECKED = "What Brihat Jataka says of the malefic yogas is waiting for a check, so I can't show it yet."
-MALEFIC_NONE = (
-    "None of the afflictions in Brihat Jataka chapter XXIII applies to this chart."
+MALEFIC_UNCHECKED = (
+    "What Brihat Jataka says of the malefic yogas is waiting for a check, so I can't show it yet."
 )
+MALEFIC_NONE = "None of the afflictions in Brihat Jataka chapter XXIII applies to this chart."
 NEED_BIRTH_FOR_AFTERLIFE = "To read what the old book says of a past and a next life I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
 AFTERLIFE_UNCHECKED = "What Brihat Jataka says of the worlds before and after this life is waiting for a check, so I can't show it yet."
 NEED_BIRTH_FOR_BIRTH = "To read the old book's picture of a birth I need your birth details, with the time of birth. Tap “✏️ Change birth details”, then ask me again."
-BIRTH_UNCHECKED = "What Brihat Jataka says of the circumstances of a birth is waiting for a check, so I can't show it yet."
-BIRTH_NONE = (
-    "None of the statements in Brihat Jataka chapter V on this applies to this chart."
+BIRTH_UNCHECKED = (
+    "What Brihat Jataka says of the circumstances of a birth is waiting for a check, so I can't show it yet."
 )
+BIRTH_NONE = "None of the statements in Brihat Jataka chapter V on this applies to this chart."
 SENS_WARN_PARENTS = (
     "⚠️ Before I show this\n\nThe next answer gives an old book's rules about a child's parents: whether a child was a parents' own, and a child left by its mother. "
     "They are old rules, not facts about anyone's family, and they can be upsetting to read. Would you like to see them?"
@@ -245,17 +267,15 @@ LONGEVITY_MORE = "Tap ➕ More for how the arithmetic was worked, the book's lif
 MINOR_NOTE = "ⓘ The classical texts describe adult life, so for a child this is only a general reading."
 NO_TOPIC_AI = "I have no checked source for this."
 NO_SOURCE_AI = "I don't have a checked source for this yet. I have noted the topic so it can be researched."
-AI_PREDICTION_CAVEAT = "Traditional Jyotish interpretation, for reflection and fun — not a forecast or guarantee of events."
-AI_CAVEAT = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
-AI_UNAVAILABLE = (
-    "🤖 The local AI helper is unavailable right now; this is Samay's non-AI fallback."
+AI_PREDICTION_CAVEAT = (
+    "Traditional Jyotish interpretation, for reflection and fun — not a forecast or guarantee of events."
 )
+AI_CAVEAT = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
+AI_UNAVAILABLE = "🤖 The local AI helper is unavailable right now; this is Samay's non-AI fallback."
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."
 NEED_BIRTH = "First I need your birth details."
-CHANGED = (
-    "Your saved place is no longer unique, so please tell me your birth details again."
-)
+CHANGED = "Your saved place is no longer unique, so please tell me your birth details again."
 FORGET_ASK = "Shall I delete everything I know about you?"
 FORGOTTEN = "Done. Everything has been deleted."
 KEPT = "Okay, nothing was deleted."

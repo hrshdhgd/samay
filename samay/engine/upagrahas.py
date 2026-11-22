@@ -150,9 +150,7 @@ def timed_moments(
     if today is None:
         return "", {}
     g = rules.raw["ghatikas"]
-    if (
-        today.sunrise <= local < today.sunset
-    ):  # a day birth: the weekday of this sunrise
+    if today.sunrise <= local < today.sunset:  # a day birth: the weekday of this sunrise
         d = book_weekday(local.date().weekday())
         out = {"gulika": moment_at(today.sunrise, today.sunset, g["gulika_day"][d])}
         for k in ("yamakantaka", "ardhaprahara", "kala"):
@@ -189,9 +187,7 @@ def find(
     lagna = sign_index(chart.ascendant)
     sign = {p: sign_index(chart.planets[p].longitude) for p in BODIES}
     when, moments = timed_moments(rules, local, latitude, longitude, tz)
-    lon: dict[str, float] = {
-        k: ascendant_at(m.astimezone(UTC)) for k, m in moments.items()
-    }
+    lon: dict[str, float] = {k: ascendant_at(m.astimezone(UTC)) for k, m in moments.items()}
     lon.update(from_sun(rules, chart.planets["sun"].longitude))
     points = tuple(
         Point(
@@ -205,9 +201,7 @@ def find(
         if k in lon
     )
     byk = {p.key: p for p in points}
-    effects: list[tuple[str, str, str]] = [
-        (r["nature"]["verse"], "In general", r["nature"]["general"])
-    ]
+    effects: list[tuple[str, str, str]] = [(r["nature"]["verse"], "In general", r["nature"]["general"])]
     g = byk.get("gulika")
     if g is not None:
         effects.append(

@@ -58,10 +58,7 @@ def evaluate(cond: dict[str, Any], ctx: Context) -> bool:
         elif key == "not":
             ok = not evaluate(arg, ctx)
         elif key == "house_from":
-            ok = (
-                _house(ctx, arg["planet"], arg.get("reference", "lagna"))
-                in arg["houses"]
-            )
+            ok = _house(ctx, arg["planet"], arg.get("reference", "lagna")) in arg["houses"]
         elif key == "in_house":
             ok = _house(ctx, arg["planet"], "lagna") in arg["houses"]
         elif key == "same_sign":
@@ -75,9 +72,7 @@ def evaluate(cond: dict[str, Any], ctx: Context) -> bool:
     return True
 
 
-def load_rules(
-    directory: Path = RULES_DIR, schools: Iterable[str] | None = None
-) -> list[Rule]:
+def load_rules(directory: Path = RULES_DIR, schools: Iterable[str] | None = None) -> list[Rule]:
     """All rules in `directory`, optionally limited to the given schools."""
     rules = []
     for path in sorted(directory.glob("*.yaml")):
@@ -103,8 +98,4 @@ def rules_hash(directory: Path = RULES_DIR) -> str:
 
 def fired(chart: Chart, rules: list[Rule] | None = None) -> list[Rule]:
     ctx = Context.from_chart(chart)
-    return [
-        r
-        for r in (rules if rules is not None else load_rules())
-        if evaluate(r.when, ctx)
-    ]
+    return [r for r in (rules if rules is not None else load_rules()) if evaluate(r.when, ctx)]

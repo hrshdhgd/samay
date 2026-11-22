@@ -103,13 +103,9 @@ def _words(line: str, limit: int) -> list[str]:
 
 
 DISCLAIMER = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
-UNVALIDATED = (
-    "Not yet checked against reference software; treat positions as provisional."
-)
+UNVALIDATED = "Not yet checked against reference software; treat positions as provisional."
 YOGA_SOURCES_PENDING = "ⓘ The book references for these yogas are still being checked."
-OLD_CLOCKS = (
-    "⚠ Old clock records can be uncertain, so please double-check the birth time."
-)
+OLD_CLOCKS = "⚠ Old clock records can be uncertain, so please double-check the birth time."
 
 
 def fmt_longitude(lon: float) -> str:
@@ -146,9 +142,7 @@ def _footer(report: NatalReport, technical: bool = True) -> list[str]:
         lines.append(f"⚠ {b.provenance.warning}")
     if b.provenance.place_approximate and b.provenance.approx_note:
         lines.append(f"⚠ Place approximate: {b.provenance.approx_note}")
-    lines.append(
-        f"Profile: {report.stamp.profile_id} · ayanamsa {report.chart.ayanamsa:.4f}°"
-    )
+    lines.append(f"Profile: {report.stamp.profile_id} · ayanamsa {report.chart.ayanamsa:.4f}°")
     if not report.validated:
         lines.append(UNVALIDATED)
     lines += [f"[{report.stamp.short()}]", DISCLAIMER]
@@ -167,15 +161,11 @@ def _plain_chart(report: NatalReport) -> str:
     for g in GRAHAS:
         pl = c.planets[g]
         sign = sign_index(pl.longitude)
-        back = (
-            " (moving backwards)" if pl.retrograde and g not in ("rahu", "ketu") else ""
-        )
+        back = " (moving backwards)" if pl.retrograde and g not in ("rahu", "ketu") else ""
         lines.append(f"• {g.title()} in {SIGNS[sign]} ({RASHIS[sign]}){back}")
     if report.yogas:
         lines += ["", "Special combinations (yogas) in your chart:"]
-        lines += [
-            f"• {r.name}: {r.effect[:1].upper() + r.effect[1:]}" for r in report.yogas
-        ]
+        lines += [f"• {r.name}: {r.effect[:1].upper() + r.effect[1:]}" for r in report.yogas]
         if any(not r.source.get("verified") for r in report.yogas):
             lines.append(YOGA_SOURCES_PENDING)
     return "\n".join(lines + _footer(report, False))
@@ -208,9 +198,7 @@ RAHU_KETU_NOTE = (
 
 
 def ordinal(n: int) -> str:
-    suffix = (
-        "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    )
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
     return f"{n}{suffix}"
 
 
@@ -229,9 +217,7 @@ def _plain_dasha(report: NatalReport, now: datetime) -> list[str]:
     for p in report.dashas:
         start = "birth" if p.start < born else f"{p.start:%b %Y}"
         mark = " ← now" if p.contains(now) else ""
-        lines.append(
-            f"{p.lord.title()} · {DASHA_YEARS[p.lord]} years · {start} – {p.end:%b %Y}{mark}"
-        )
+        lines.append(f"{p.lord.title()} · {DASHA_YEARS[p.lord]} years · {start} – {p.end:%b %Y}{mark}")
         current = p if p.contains(now) else current
     lines += ["", RAHU_KETU_NOTE]
     if current is not None:
@@ -256,16 +242,12 @@ def today_facts(report: TodayReport) -> list[str]:
     """The computed facts behind /today; the only thing an LLM is ever allowed to reword."""
     natal_moon = sign_index(report.natal.chart.planets["moon"].longitude)
     moon_now = fmt_longitude(report.sky.planets["moon"].longitude)
-    facts = [
-        f"Today ({report.now:%d %b %Y}). Natal Moon in {SIGNS[natal_moon]}; Moon now in {moon_now}."
-    ]
+    facts = [f"Today ({report.now:%d %b %Y}). Natal Moon in {SIGNS[natal_moon]}; Moon now in {moon_now}."]
     for g, h in report.transit_houses:
         facts.append(f"Transiting {g.title()} is in house {h} from your Moon.")
     if report.current_dasha:
         maha, antar = report.current_dasha
-        facts.append(
-            f"Running {maha.lord.title()} mahadasha, {antar.lord.title()} antardasha."
-        )
+        facts.append(f"Running {maha.lord.title()} mahadasha, {antar.lord.title()} antardasha.")
     return facts
 
 
@@ -394,15 +376,11 @@ def sources_line(
     levels = {e.verification.level for e in entries}
     if reading is not None:
         refs = groups.setdefault("Brihat Jataka", set())
-        refs.update(
-            (20, v, f"20.{v}") for v in {x.verse for x in reading.effects} | {11}
-        )
+        refs.update((20, v, f"20.{v}") for v in {x.verse for x in reading.effects} | {11})
         levels.add(reading.level)
     for v in second:
         first = int(v.verse.split("-")[0])
-        groups.setdefault("Phaladeepika", set()).add(
-            (8, first, f"8.{v.verse.replace('-', '–')}")
-        )
+        groups.setdefault("Phaladeepika", set()).add((8, first, f"8.{v.verse.replace('-', '–')}"))
     for v in lordship:
         for verse in [
             *(r[2] for r in v.rows),
@@ -425,22 +403,14 @@ def sources_line(
         for text, chapter, verse in re.findall(
             r"\b(Phaladeepika|Brihat Jataka)\s+(?:chapter\s+)?(\d+)\.(\d+)\b", fact
         ):
-            groups.setdefault(text, set()).add(
-                (int(chapter), int(verse), f"{chapter}.{verse}")
-            )
+            groups.setdefault(text, set()).add((int(chapter), int(verse), f"{chapter}.{verse}"))
     if not groups:
         return None
     parts = []
     for text, refs in groups.items():
         edition = f" ({editions[text]})" if full and editions.get(text) else ""
-        parts.append(
-            f"{text}{edition} " + ", ".join(label for _, _, label in sorted(refs))
-        )
-    status = (
-        "checked, some by a Sanskrit reader"
-        if "sanskrit-checked" in levels
-        else "checked"
-    )
+        parts.append(f"{text}{edition} " + ", ".join(label for _, _, label in sorted(refs)))
+    status = "checked, some by a Sanskrit reader" if "sanskrit-checked" in levels else "checked"
     label = "Sources" if sum(len(r) for r in groups.values()) > 1 else "Source"
     return f"{label}: {'; '.join(parts)} · {status}"
 
@@ -452,17 +422,13 @@ def _render_verses(answer) -> str:
         if e.shows_verse and e.verse.devanagari not in seen:
             seen.add(e.verse.devanagari)
             unproofread = unproofread or not e.verse.proofread
-            verses.append(
-                f"{e.verse.devanagari}\n{e.verse.roman}\n({e.citation['text']} {_ref(e)[2]})"
-            )
+            verses.append(f"{e.verse.devanagari}\n{e.verse.roman}\n({e.citation['text']} {_ref(e)[2]})")
     if not verses:
         return prompts.NO_SOURCE
     return "\n\n".join([*verses, *([prompts.VERSE_UNPROOFREAD] if unproofread else [])])
 
 
-def render_answer(
-    answer, view: str = "compact", birth_known: bool = True, ai_follows: bool = False
-) -> str:
+def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_follows: bool = False) -> str:
     """A grounded answer. `view`: "compact" (the lead entry, the person's chart facts, one source line), "full"
     (every entry) or "sanskrit" (the checked verses)."""
     if answer.topic is None:
@@ -639,8 +605,7 @@ def render_answer(
         blocks.append(prompts.NEED_BIRTH_FOR_FACTS)
     source = sources_line(
         shown,
-        answer.reading
-        or (answer.more_readings[0][0] if answer.more_readings else None),
+        answer.reading or (answer.more_readings[0][0] if answer.more_readings else None),
         full,
         answer.second,
         answer.lordship,
@@ -688,11 +653,7 @@ def _rule_sentence(r, shares) -> str:
     if not shares.get("good") and not shares.get("bad"):
         return "The text's rule on how much applies gives no share for a neutral sign."
     kinds = {e.kind for e in r.effects}
-    parts = [
-        _share_phrase(label, shares.get(label))
-        for label in ("good", "bad")
-        if kinds & {label, "mixed"}
-    ]
+    parts = [_share_phrase(label, shares.get(label)) for label in ("good", "bad") if kinds & {label, "mixed"}]
     return "By the text's own rule, " + "; ".join(parts) + "."
 
 
@@ -713,9 +674,7 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
             lines.append(f"“{e.text}”{same}")
         lines.append(f"{_rule_sentence(r, shares)} {prompts.READING_FRAME_SHORT}")
         return "\n".join(lines)
-    lines = [
-        f"What Brihat Jataka chapter 20 says about {name} in {who.your} {ordinal(r.house)} house:"
-    ]
+    lines = [f"What Brihat Jataka chapter 20 says about {name} in {who.your} {ordinal(r.house)} house:"]
     for e in r.effects:
         borrowed = (
             f" (the text gives {name} here the same effects as {e.borrowed_from.title()})"
@@ -734,11 +693,7 @@ def render_reading(r, shares, full: bool = True, who=SELF) -> str:
 
 def _span(a: datetime, b: datetime, tz: ZoneInfo) -> str:
     x, y = a.astimezone(tz), b.astimezone(tz)
-    return (
-        f"{_day(x)}"
-        if (x.year, x.month, x.day) == (y.year, y.month, y.day)
-        else f"{_day(x)} – {_day(y)}"
-    )
+    return f"{_day(x)}" if (x.year, x.month, x.day) == (y.year, y.month, y.day) else f"{_day(x)} – {_day(y)}"
 
 
 def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
@@ -748,9 +703,7 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
     if not r.windows:
         return f"{head} not in this period."
     if r.total and r.days / r.total > 0.5:
-        return (
-            f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}."
-        )
+        return f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}."
     shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:limit])
     more = f" and {len(r.windows) - limit} more" if len(r.windows) > limit else ""
     return f"{head} {shown}{more} ({r.days} of {r.total} days)."
@@ -759,9 +712,7 @@ def _rule_line(r, tz: ZoneInfo, limit: int) -> str:
 def render_livelihood(lv, who=SELF, full: bool = False) -> str:
     """Brihat Jataka chapter X: where wealth comes from and the kind of work, quoted, with the text's conditions."""
     lines = [f"On {who.your} source of wealth and work (Brihat Jataka chapter 10):"]
-    lines += [
-        f"• {w}: “{t}.” [{v}]" if full else f"• {w}: “{t}.”" for v, w, t in lv.wealth
-    ]
+    lines += [f"• {w}: “{t}.” [{v}]" if full else f"• {w}: “{t}.”" for v, w, t in lv.wealth]
     if full:
         lines += [f"• {w}: “{t}.” [{v}]" for v, w, t in lv.work]
     elif lv.work:
@@ -769,9 +720,7 @@ def render_livelihood(lv, who=SELF, full: bool = False) -> str:
             "With no classical planet in the 10th from the rising sign or Moon, the text uses the 10th "
             "from the rising sign, Moon and Sun for its work associations."
         )
-        lines += [
-            f"• {'; '.join(routes)}: “{t}.”" for _, routes, t in lv.grouped_work()
-        ]
+        lines += [f"• {'; '.join(routes)}: “{t}.”" for _, routes, t in lv.grouped_work()]
     lines += [f"• {t}" for _, t in lv.conditions]
     lines += [n for n in lv.notes if full]
     return "\n".join(lines)
@@ -832,11 +781,7 @@ def render_vargas(answer, who=SELF, full: bool = False) -> str:
         )
         if f.note and full:
             lines.append(f"   ({f.note})")
-    body = (
-        "\n\n".join(lines)
-        if lines
-        else "None of the book's statements in this chapter applies."
-    )
+    body = "\n\n".join(lines) if lines else "None of the book's statements in this chapter applies."
     blocks = [title, body, rules.caution]
     blocks.append(
         "Source: Brihat Jataka "
@@ -861,8 +806,7 @@ def render_malefic(answer, who=SELF, full: bool = False) -> str:
     if answer.malefic is None:
         return f"{title}\n\n{prompts.NEED_BIRTH_FOR_MALEFIC}"
     lines = [
-        f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.”"
-        + (f" [{f.verse}]" if full else "")
+        f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.”" + (f" [{f.verse}]" if full else "")
         for f in answer.malefic
     ]
     blocks = [title, "\n\n".join(lines) if lines else prompts.MALEFIC_NONE, rules.frame]
@@ -917,10 +861,7 @@ def render_strength(answer, who=SELF, full: bool = False) -> str:
         blocks += list(s.nodes)
         blocks.append(rules.order_note)
         blocks.append(
-            "\n".join(
-                f"• {d['name']} ({d['verse']}): {d['definition']}"
-                for d in rules.kinds.values()
-            )
+            "\n".join(f"• {d['name']} ({d['verse']}): {d['definition']}" for d in rules.kinds.values())
         )
     blocks.append(
         "Source: Phaladeepika 4.1–8"
@@ -984,14 +925,10 @@ def render_upagrahas(answer, who=SELF, full: bool = False) -> str:
             "This was a night birth, so only Gulika is worked out from the time; the book gives the night values for no other point."
         )
     blocks.append(
-        "\n".join(
-            f"• {h}: {t[0].upper()}{t[1:]}." + (f" [{v}]" if full else "")
-            for v, h, t in u.effects
-        )
+        "\n".join(f"• {h}: {t[0].upper()}{t[1:]}." + (f" [{v}]" if full else "") for v, h, t in u.effects)
     )
     verses = sorted(
-        {v for v, _, _ in u.effects}
-        | {rules.raw["ghatikas"]["verse"], rules.raw["formulas"]["verse"]},
+        {v for v, _, _ in u.effects} | {rules.raw["ghatikas"]["verse"], rules.raw["formulas"]["verse"]},
         key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])),
     )
     blocks.append(
@@ -1004,7 +941,9 @@ def render_upagrahas(answer, who=SELF, full: bool = False) -> str:
 
 def render_death_timing(answer, who=SELF) -> str:
     """Stretches of days in which each of the book's death-timing conditions holds, over five years. Never a date; the frame comes first."""
-    title = f"🕯 When the old book links the end of life to the sky, for {who.name if not who.is_self else 'you'}"
+    title = (
+        f"🕯 When the old book links the end of life to the sky, for {who.name if not who.is_self else 'you'}"
+    )
     rules = death_timing.load_rules()
     if not answer.death_checked:
         return f"{title}\n\n{prompts.DEATH_UNCHECKED}"
@@ -1026,17 +965,11 @@ def render_death_timing(answer, who=SELF) -> str:
         ):
             lines.append(f"• {r.text[0].upper()}{r.text[1:]} ({r.verse}): {r.note}.")
             continue
-        head = (
-            f"• {r.text[0].upper()}{r.text[1:]} ({r.verse})"
-            + (f" — {r.note}" if r.note else "")
-            + ":"
-        )
+        head = f"• {r.text[0].upper()}{r.text[1:]} ({r.verse})" + (f" — {r.note}" if r.note else "") + ":"
         if not r.windows:
             lines.append(f"{head} not in this period.")
         elif r.total and r.days / r.total > 0.5:
-            lines.append(
-                f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}."
-            )
+            lines.append(f"{head} {prompts.WHEN_ALL_DAY.format(pct=round(100 * r.days / r.total))}.")
         else:
             shown = ", ".join(_span(a, b, tz) for a, b in r.windows[:6])
             more = f" and {len(r.windows) - 6} more" if len(r.windows) > 6 else ""
@@ -1064,10 +997,7 @@ def render_women(answer, who=SELF) -> str:
     elif answer.women:
         blocks.append(
             "In this chart:\n"
-            + "\n".join(
-                f"• {p.text[0].upper()}{p.text[1:]} ({p.detail}) [{p.verse}]"
-                for p in answer.women
-            )
+            + "\n".join(f"• {p.text[0].upper()}{p.text[1:]} ({p.detail}) [{p.verse}]" for p in answer.women)
         )
     else:
         blocks.append(prompts.WOMEN_NONE)
@@ -1084,16 +1014,12 @@ def render_women(answer, who=SELF) -> str:
         blocks.append(prompts.WOMEN_UNCHECKED + " (Brihat Jataka chapter 24)")
     elif answer.women_bj is not None:
         lines = ["From Brihat Jataka chapter 24:", bj.frame, bj.houses["text"]]
-        lines += [
-            f"• {p.detail}: “{p.text[:1].upper() + p.text[1:]}.” [{p.verse}]"
-            for p in answer.women_bj
-        ]
+        lines += [f"• {p.detail}: “{p.text[:1].upper() + p.text[1:]}.” [{p.verse}]" for p in answer.women_bj]
         lines.append(
             "Source: Brihat Jataka "
             + ", ".join(
                 sorted(
-                    {p.verse.split(" ")[0] for p in answer.women_bj}
-                    | {bj.houses["verse"]},
+                    {p.verse.split(" ")[0] for p in answer.women_bj} | {bj.houses["verse"]},
                     key=lambda v: int(v.split(".")[1].split("–")[0]),
                 )
             )
@@ -1121,8 +1047,7 @@ def render_houses(answer, who=SELF, full: bool = False) -> str:
         lines = [label + (f". {rules.mixed}" if h.mixed else "")]
         icon = {"helps": "➕", "harms": "➖", "note": "•"}
         lines += [
-            f"{icon[f.kind]} {f.text[0].upper()}{f.text[1:]} ({f.detail})"
-            + (f" [{f.verse}]" if full else "")
+            f"{icon[f.kind]} {f.text[0].upper()}{f.text[1:]} ({f.detail})" + (f" [{f.verse}]" if full else "")
             for f in h.findings
         ]
         blocks.append("\n".join(lines))
@@ -1163,10 +1088,7 @@ def render_longevity(answer, who=SELF, full: bool = False) -> str:
     if lg.class_signs:
         blocks.append(
             "What points to a long, middle or short life in this chart:\n"
-            + "\n".join(
-                f"• {i.text}" + (f" [{i.verse}]" if full else "")
-                for i in lg.class_signs
-            )
+            + "\n".join(f"• {i.text}" + (f" [{i.verse}]" if full else "") for i in lg.class_signs)
         )
     else:
         blocks.append(
@@ -1181,18 +1103,13 @@ def render_longevity(answer, who=SELF, full: bool = False) -> str:
         else []
     )
     if full:
-        parts.append(
-            ("Cause and manner of death, by the 8th and 12th houses", lg.cause)
-        )
+        parts.append(("Cause and manner of death, by the 8th and 12th houses", lg.cause))
     for head, items in parts:
         if items:
             blocks.append(
                 head
                 + ":\n"
-                + "\n".join(
-                    f"• {i.text}" + (f" ({i.detail}) [{i.verse}]" if full else "")
-                    for i in items
-                )
+                + "\n".join(f"• {i.text}" + (f" ({i.detail}) [{i.verse}]" if full else "") for i in items)
             )
     if lg.cancelled and (full or who.minor):
         blocks.append(lg.cancelled)
@@ -1203,14 +1120,10 @@ def render_longevity(answer, who=SELF, full: bool = False) -> str:
             | {i.verse for i in lg.class_signs},
             key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1].split("–")[0])),
         )
-        blocks.append(
-            f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked"
-        )
+        blocks.append(f"Source: Phaladeepika {', '.join(refs)} ({rules.edition}) · checked")
     else:
         blocks.append(
-            "Source: Phaladeepika 13"
-            + (", Brihat Jataka 7" if ay is not None else "")
-            + " · checked"
+            "Source: Phaladeepika 13" + (", Brihat Jataka 7" if ay is not None else "") + " · checked"
         )
     return "\n\n".join(blocks)
 
@@ -1245,12 +1158,8 @@ def render_death_bj(answer, who=SELF, sections=("cause", "place", "body")) -> st
                 for f in items
             ]
             blocks.append("\n".join(lines))
-    verses = sorted(
-        {f.verse for f in answer.death_bj}, key=lambda v: int(v.split(".")[1])
-    )
-    blocks.append(
-        f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked"
-    )
+    verses = sorted({f.verse for f in answer.death_bj}, key=lambda v: int(v.split(".")[1]))
+    blocks.append(f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked")
     return "\n\n".join(blocks)
 
 
@@ -1279,9 +1188,7 @@ def render_ayurdasa(answer, who=SELF) -> str:
             f"• {_ym(p.start)} to {_ym(p.start + p.years)}: {who_name}, {p.name.title()} ({p.nature}): “{p.result[:1].upper() + p.result[1:]}.” [{rules.raw['results']['verse']}]"
         )
     lines.append(rules.raw["left_out"])
-    lines.append(
-        f"Source: Brihat Jataka 8.1–19 ({rules.edition}, pp. {rules.pages}) · checked"
-    )
+    lines.append(f"Source: Brihat Jataka 8.1–19 ({rules.edition}, pp. {rules.pages}) · checked")
     return "\n".join(lines)
 
 
@@ -1298,18 +1205,14 @@ def render_ayurdaya(answer, who=SELF) -> str:
         rules.frame,
     ]
     for m in a.methods:
-        lines.append(
-            f"• {m.name}: about {_ym(min(m.total, 120.0))} for {who.your} chart [{m.verse}]"
-        )
+        lines.append(f"• {m.name}: about {_ym(min(m.total, 120.0))} for {who.your} chart [{m.verse}]")
         lines.append(
             "   "
             + "; ".join(f"{w} {_ym(af)}" for w, _, af, _ in m.rows if af)
             + (f". {'; '.join(m.reductions)}." if m.reductions else ".")
         )
     if a.beyond:
-        lines.append(
-            f"• “{a.beyond[:1].upper() + a.beyond[1:]}.” [{rules.raw['beyond']['verse']}]"
-        )
+        lines.append(f"• “{a.beyond[:1].upper() + a.beyond[1:]}.” [{rules.raw['beyond']['verse']}]")
     lines.append(rules.raw["under_eight"])
     lines.append(
         f"Source: Brihat Jataka {rules.raw['pinda']['verse']}, {rules.raw['satyacharya']['verse']} ({rules.edition}, pp. {rules.pages}) · checked"
@@ -1327,9 +1230,7 @@ def render_balarishta(answer, who=SELF) -> str:
     lines = ["Dangers at birth, from Brihat Jataka chapter 6:", rules.frame]
     for f in answer.bala_bj:
         if f.kind == "danger":
-            lines.append(
-                f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]"
-            )
+            lines.append(f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]")
     mercy = [f for f in answer.bala_bj if f.kind == "cancel"]
     if mercy:
         lines.append("What the commentator says cancels such dangers, and holds here:")
@@ -1356,19 +1257,14 @@ def render_birth(answer, who=SELF) -> str:
         return f"{title}\n\n{prompts.BIRTH_UNCHECKED}"
     if answer.birth_bj is None:
         return f"{title}\n\n{prompts.NEED_BIRTH_FOR_BIRTH}"
-    lines = [
-        f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]"
-        for f in answer.birth_bj
-    ]
+    lines = [f"• {f.detail}: “{f.text[:1].upper() + f.text[1:]}.” [{f.verse}]" for f in answer.birth_bj]
     blocks = [
         title,
         rules.parents_frame if parents else rules.frame,
         "\n\n".join(lines) if lines else prompts.BIRTH_NONE,
     ]
     if answer.birth_bj:
-        verses = sorted(
-            {f.verse for f in answer.birth_bj}, key=lambda v: int(v.split(".")[1])
-        )
+        verses = sorted({f.verse for f in answer.birth_bj}, key=lambda v: int(v.split(".")[1]))
         blocks.append(
             f"Source: Brihat Jataka {', '.join(verses)} ({rules.edition}, pp. {rules.pages}) · checked"
         )
@@ -1388,38 +1284,26 @@ def render_health(answer, who=SELF, full: bool = False) -> str:
     if not h.sources:
         blocks.append(prompts.HEALTH_NONE)
     else:
-        lines = [
-            f"Sources of disease (14.1: {rules.sources_text.split(' A particular')[0].lower()}):"
-        ]
+        lines = [f"Sources of disease (14.1: {rules.sources_text.split(' A particular')[0].lower()}):"]
         for s in h.sources:
             items = [t for t, _ in s.items]
             shown = items if full else items[:6]
-            more = (
-                f"; and {len(items) - len(shown)} more (tap More)"
-                if len(shown) < len(items)
-                else ""
-            )
+            more = f"; and {len(items) - len(shown)} more (tap More)" if len(shown) < len(items) else ""
             lines.append(
                 f"• {s.planet.title()} ({'; '.join(s.why)}), which stands for: {'; '.join(shown)}{more}."
             )
         blocks.append("\n".join(lines))
         if h.overlaps:
-            joined = "; ".join(
-                f"{tag} ({', '.join(p.title() for p in ps)})" for tag, ps in h.overlaps
-            )
+            joined = "; ".join(f"{tag} ({', '.join(p.title() for p in ps)})" for tag, ps in h.overlaps)
             blocks.append(
                 f"Where two or more of these point to the same kind of trouble (the book says such a trouble may be predicted): {joined}."
             )
     if h.combinations:
         lines = ["The book's specific combinations found in the chart (14.10–11):"]
-        lines += [
-            f"• {c.text[0].upper()}{c.text[1:]} ({c.detail})." for c in h.combinations
-        ]
+        lines += [f"• {c.text[0].upper()}{c.text[1:]} ({c.detail})." for c in h.combinations]
         blocks.append("\n".join(lines))
     verses = sorted(
-        {s.verse for s in h.sources}
-        | {c.verse for c in h.combinations}
-        | {rules.sources_verse},
+        {s.verse for s in h.sources} | {c.verse for c in h.combinations} | {rules.sources_verse},
         key=lambda v: int(v.split(".")[1]),
     )
     blocks.append(
@@ -1484,9 +1368,7 @@ def render_timing(answer, who=SELF, full: bool = False) -> str:
         key=lambda v: (int(v.split(".")[0]), int(v.split(".")[1])),
     )
     edition = f" ({rules.edition}, pp. {rules.pages})" if full else ""
-    blocks.append(
-        f"{rules.moon_note}\n\nSource: Phaladeepika {', '.join(verses)}{edition} · checked"
-    )
+    blocks.append(f"{rules.moon_note}\n\nSource: Phaladeepika {', '.join(verses)}{edition} · checked")
     return "\n\n".join(blocks)
 
 
@@ -1496,9 +1378,7 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
     nab = view.nabhasa
     if nab.checked:
         count = f"{nab.sign_count} sign{'s' if nab.sign_count > 1 else ''}"
-        lines = [
-            f"Nabhasa yogas (Brihat Jataka chapter 12), made by where the seven planets sit ({count}):"
-        ]
+        lines = [f"Nabhasa yogas (Brihat Jataka chapter 12), made by where the seven planets sit ({count}):"]
         for y in nab.yogas:
             lines.append(
                 f"• {y.name} ({y.detail}): “A person born under it {y.text}”"
@@ -1512,9 +1392,7 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
         lines.append("Source: Brihat Jataka " + ", ".join(refs) + " · checked")
         blocks.append("\n".join(lines))
     else:
-        blocks.append(
-            prompts.YOGAS_UNCHECKED + " (Nabhasa yogas, Brihat Jataka chapter 12)"
-        )
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Nabhasa yogas, Brihat Jataka chapter 12)")
     if view.chapter6_checked:
         lines = [f"Yogas from Phaladeepika chapter 6, found in {who.your} chart:"]
         for f in view.chapter6:
@@ -1538,9 +1416,7 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
             lines = [
                 "Raja yogas, cancelled debilitations and ascetic yogas from Phaladeepika chapters 7 and 27:"
             ]
-            lines += [
-                f"• {f.detail}: {f.text[0].upper()}{f.text[1:]}." for f in view.ch7
-            ]
+            lines += [f"• {f.detail}: {f.text[0].upper()}{f.text[1:]}." for f in view.ch7]
             lines.append(view.ch7_frame)
             lines.append(
                 "Source: Phaladeepika "
@@ -1570,18 +1446,12 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
             lines.append(view.bj15_frame)
             lines.append(
                 "Source: Brihat Jataka "
-                + ", ".join(
-                    sorted(
-                        {f.verse for f in view.bj15}, key=lambda v: int(v.split(".")[1])
-                    )
-                )
+                + ", ".join(sorted({f.verse for f in view.bj15}, key=lambda v: int(v.split(".")[1])))
                 + " · checked"
             )
             blocks.append("\n".join(lines))
     else:
-        blocks.append(
-            prompts.YOGAS_UNCHECKED + " (Brihat Jataka chapter 15: ascetic yogas)"
-        )
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Brihat Jataka chapter 15: ascetic yogas)")
     if view.bj22_checked:
         lines = [
             "Karaka (helping) planets, yogas of a happy life and when a dasha's effects fall, from Brihat Jataka chapter 22:"
@@ -1605,30 +1475,22 @@ def render_yogas(view, who=SELF, full: bool = False) -> str:
         )
         blocks.append("\n".join(lines))
     else:
-        blocks.append(
-            prompts.YOGAS_UNCHECKED
-            + " (Brihat Jataka chapter 22: karakas, happiness yogas)"
-        )
+        blocks.append(prompts.YOGAS_UNCHECKED + " (Brihat Jataka chapter 22: karakas, happiness yogas)")
     if view.raja_checked:
         if view.raja:
             lines = ["Raja yogas of Brihat Jataka chapter 11:"]
             for f in view.raja:
                 lines.append(
-                    f"• {f.detail}: “{f.text}”"
-                    + (f" {f.family_note}" if f.family_note and full else "")
+                    f"• {f.detail}: “{f.text}”" + (f" {f.family_note}" if f.family_note and full else "")
                 )
             lines.append(
-                "Source: Brihat Jataka "
-                + ", ".join(sorted({f.verse for f in view.raja}))
-                + " · checked"
+                "Source: Brihat Jataka " + ", ".join(sorted({f.verse for f in view.raja})) + " · checked"
             )
             blocks.append("\n".join(lines))
         else:
             blocks.append(prompts.YOGAS_NONE_RAJA)
     else:
-        blocks.append(
-            prompts.YOGAS_UNCHECKED + " (raja yogas, Brihat Jataka chapter 11)"
-        )
+        blocks.append(prompts.YOGAS_UNCHECKED + " (raja yogas, Brihat Jataka chapter 11)")
     return "\n\n".join(blocks)
 
 
@@ -1659,14 +1521,7 @@ def render_together(answer, who=SELF, full: bool = False) -> str:
         blocks.append(
             f"With more than two planets in one sign, each pair is read in turn: “{conjunctions.load_rules().three_bj}”"
         )
-    verses = sorted(
-        {
-            v
-            for t in answer.together
-            for _, p in t.pairs
-            for v in (p.verse_bj, p.verse_pd)
-        }
-    )
+    verses = sorted({v for t in answer.together for _, p in t.pairs for v in (p.verse_bj, p.verse_pd)})
     named = [
         f"{name} {', '.join(v for v in verses if v.startswith(prefix))}"
         for name, prefix in (("Brihat Jataka", "14"), ("Phaladeepika", "18"))
@@ -1713,11 +1568,7 @@ def render_moon(view, full: bool = False, who=SELF) -> str:
                 + (f" ({f.detail})" if f.detail else "")
                 + f": “{f.text[0].upper()}{f.text[1:]}”"
             )
-            lines += [
-                f"  {note}"
-                for note in f.extra
-                if full or f.name.startswith("Kemadruma")
-            ]
+            lines += [f"  {note}" for note in f.extra if full or f.name.startswith("Kemadruma")]
         blocks.append("\n".join(lines))
         refs += sorted(
             {f.verse for f in view.yogas},
@@ -1733,10 +1584,7 @@ def render_moon(view, full: bool = False, who=SELF) -> str:
             lines = [
                 f"{who.Your} Moon is aspected by {', '.join(p.title() for p in a.aspecting)} (Brihat Jataka chapter 19):"
             ]
-            lines += [
-                f"• In {a.sign}, aspected by {p.title()}: “the person will {t}.”"
-                for p, t in a.in_sign
-            ]
+            lines += [f"• In {a.sign}, aspected by {p.title()}: “the person will {t}.”" for p, t in a.in_sign]
             lines += [
                 f"• In the navamsa of {a.navamsa_lord.title()} ({a.navamsa_sign}), aspected by {p.title()}: “the person will {t}.”"
                 for p, t in a.in_navamsa
@@ -1748,14 +1596,8 @@ def render_moon(view, full: bool = False, who=SELF) -> str:
     else:
         blocks.append(prompts.MOON_ASPECTS_UNCHECKED)
     if refs:
-        editions = (
-            f" ({view.edition}, pp. {view.pages}; yogas pp. {view.yoga_pages})"
-            if full
-            else ""
-        )
-        blocks.append(
-            f"Source: Brihat Jataka {', '.join(dict.fromkeys(refs))}{editions} · checked"
-        )
+        editions = f" ({view.edition}, pp. {view.pages}; yogas pp. {view.yoga_pages})" if full else ""
+        blocks.append(f"Source: Brihat Jataka {', '.join(dict.fromkeys(refs))}{editions} · checked")
     return "\n\n".join(blocks)
 
 
@@ -1770,11 +1612,7 @@ def render_ashtaka(view, full: bool = False, who=SELF) -> str:
         n = view.sarva[sign]
         row = f"{ordinal(h)} house · {SIGNS[sign]} ({RASHIS[sign]}): {n}{' ✓' if n > view.threshold else ''}"
         if full:
-            row += (
-                "  ["
-                + ", ".join(f"{p.title()} {view.bhinna[p][sign]}" for p in view.bhinna)
-                + "]"
-            )
+            row += "  [" + ", ".join(f"{p.title()} {view.bhinna[p][sign]}" for p in view.bhinna) + "]"
         lines.append(row)
     rule = (
         f"The text (Phaladeepika {view.verse}) says a transit through a sign with more than {view.threshold} points "
@@ -1808,14 +1646,8 @@ def render_lordship(v, who=SELF, full: bool = False) -> str:
     if v.leaning == "undecided":
         lines.append(prompts.LORDSHIP_UNDECIDED)
     for h, kind, _, text in v.rows:
-        tag = (
-            {"strong": "if strong", "weak": "if weak", "both": ""}[kind]
-            if v.leaning == "undecided"
-            else ""
-        )
-        lines.append(
-            f"• {ordinal(h)} house{f' ({tag})' if tag else ''}: {text[0].upper()}{text[1:]}."
-        )
+        tag = {"strong": "if strong", "weak": "if weak", "both": ""}[kind] if v.leaning == "undecided" else ""
+        lines.append(f"• {ordinal(h)} house{f' ({tag})' if tag else ''}: {text[0].upper()}{text[1:]}.")
     if v.nature:
         lines.append(f"Parasara's view, as the text gives it (20.{v.nature[0][0]}):")
         lines += [f"• {t[0].upper()}{t[1:]}." for _, t in v.nature]
@@ -1834,9 +1666,7 @@ def render_second(v, who=SELF) -> str:
     ]
     for r in v.rows:
         prefix = (
-            f"With {' or '.join(SIGNS[i] for i in sorted(r.when_lagna))} rising: "
-            if r.when_lagna
-            else ""
+            f"With {' or '.join(SIGNS[i] for i in sorted(r.when_lagna))} rising: " if r.when_lagna else ""
         )
         lines.append(f"{prefix}{r.text[0].upper()}{r.text[1:]}.")
     return "\n".join(lines)
@@ -1851,19 +1681,14 @@ def render_ai(
 ) -> str:
     """One direct AI answer, with the checked citation and the appropriate traditional-reading caveat."""
     caveat = prompts.AI_PREDICTION_CAVEAT if prediction else prompts.AI_CAVEAT
-    return "\n\n".join(
-        part for part in (heading, note, reply, source_line, caveat) if part
-    )
+    return "\n\n".join(part for part in (heading, note, reply, source_line, caveat) if part)
 
 
 def render_options(d: NeedsDisambiguation) -> list[str]:
     """One line per option, in the same order as d.options."""
     if d.kind == "place":
         return [p.label for p in d.options]
-    return [
-        f"{'first' if i == 0 else 'second'} occurrence ({u:%H:%M} UTC)"
-        for i, u in enumerate(d.options)
-    ]
+    return [f"{'first' if i == 0 else 'second'} occurrence ({u:%H:%M} UTC)" for i, u in enumerate(d.options)]
 
 
 PLANET_ICONS = {
@@ -1916,9 +1741,7 @@ def _stay_line(
         meaning = dict(report.ashtaka_meaning).get(s.points) if full else None
         house += f" ({s.points} pts{f': {meaning}' if meaning else ''})"
     if chained:
-        line = house + (
-            f" until {_stamp(s.end, tz, span)}" if s.end is not None else ""
-        )
+        line = house + (f" until {_stamp(s.end, tz, span)}" if s.end is not None else "")
     else:
         since = "now" if s.start is None else _stamp(s.start, tz, span)
         until = "end" if s.end is None else _stamp(s.end, tz, span)
@@ -1939,9 +1762,7 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
     tz = ZoneInfo(report.tz)
     checked = report.rules_level in SERVABLE_LEVELS
     start, end = report.start.astimezone(tz), report.end.astimezone(tz)
-    lines = [
-        f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}"
-    ]
+    lines = [f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}"]
     if report.dasha_at_start:
         maha, antar = report.dasha_at_start
         lines.append(
@@ -1949,21 +1770,14 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
             f"until {_day(antar.end)}."
         )
     said = {(m, a): text for m, a, text, _ in report.antardasha}
-    if (
-        report.dasha_at_start
-        and (report.dasha_at_start[0].lord, report.dasha_at_start[1].lord) in said
-    ):
+    if report.dasha_at_start and (report.dasha_at_start[0].lord, report.dasha_at_start[1].lord) in said:
         lines.append(
             f"The old book says of this sub-chapter: {said[report.dasha_at_start[0].lord, report.dasha_at_start[1].lord]}."
         )
     for lord, a in report.dasha_changes:
         lines.append(
             f"A new sub-chapter ({a.lord.title()}, in the {lord.title()} chapter) begins on {_day(a.start)}."
-            + (
-                f" The book says of it: {said[lord, a.lord]}."
-                if (lord, a.lord) in said
-                else ""
-            )
+            + (f" The book says of it: {said[lord, a.lord]}." if (lord, a.lord) in said else "")
         )
     blocks = ["\n".join(lines)]
     moves = sorted((s.start, s.planet) for s in report.stays if s.start is not None)
@@ -1978,8 +1792,7 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
         blocks.append(
             "Other planets that change house in this time: "
             + "; ".join(
-                f"{PLANET_ICONS[p]} {p.title()} on {_stamp(t, tz, report.span)}"
-                for t, p in others[:10]
+                f"{PLANET_ICONS[p]} {p.title()} on {_stamp(t, tz, report.span)}" for t, p in others[:10]
             )
             + (" …" if len(others) > 10 else "")
             + "."
@@ -2013,11 +1826,7 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
                         verdict += f" (its good result is held back by {' and '.join(g.title() for g in s.blocked_by)})"
                 first = "now" if s.start is None else _stamp(s.start, tz, report.span)
                 last = "the end" if s.end is None else _stamp(s.end, tz, report.span)
-                when = (
-                    "all through"
-                    if s.start is None and s.end is None
-                    else f"{first} – {last}"
-                )
+                when = "all through" if s.start is None and s.end is None else f"{first} – {last}"
                 lines.append(
                     f"{PLANET_ICONS[planet]} {planet.title()}, {when}: {verdict + ': ' if verdict else ''}{s.effect}."
                 )
@@ -2027,22 +1836,15 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
                     f"   …and {n} more change{'s' if n > 1 else ''} for {planet.title()} (see the technical details)."
                 )
         if lines:
-            blocks.append(
-                "What the old book says each stretch brings:\n" + "\n".join(lines)
-            )
+            blocks.append("What the old book says each stretch brings:\n" + "\n".join(lines))
         verses = sorted(
             {s.verse for s in report.stays if s.verse},
             key=lambda v: int(v.split("-")[0]),
         )
         refs = ["26.2–8", *(f"26.{v.replace('-', '–')}" for v in verses)]
         if report.antardasha_checked:
-            refs += [
-                f"21.{verse}"
-                for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])
-            ]
-        blocks.append(
-            f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)} · checked"
-        )
+            refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
+        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)} · checked")
     blocks.append(prompts.OUTLOOK_TECH_HINT)
     return "\n\n".join(blocks)
 
@@ -2080,9 +1882,7 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
         by_planet.setdefault(s.planet, []).append(s)
     for planet, stays in by_planet.items():
         name = f"{PLANET_ICONS[planet]} {planet.title()}"
-        repeats = [
-            any(t.house == s.house for t in stays[:i]) for i, s in enumerate(stays)
-        ]
+        repeats = [any(t.house == s.house for t in stays[:i]) for i, s in enumerate(stays)]
         if planet == "moon" or (full and len(stays) > 1):
             body.append(
                 name
@@ -2115,25 +1915,19 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
     else:
         blocks.append(prompts.OUTLOOK_UNCHECKED)
     if report.antardasha_checked:
-        refs += [
-            f"21.{verse}"
-            for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])
-        ]
+        refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
         editions.append(f"pp. {report.antardasha_pages}")
     else:
         blocks.append(prompts.OUTLOOK_DASHA_UNCHECKED)
     if report.ashtaka_checked and any(s.points is not None for s in report.stays):
         refs += ["23.11"]
         if full:
-            blocks.append(
-                prompts.OUTLOOK_ASHTAKA_NOTE.format(n=report.ashtaka_variants)
-            )
+            blocks.append(prompts.OUTLOOK_ASHTAKA_NOTE.format(n=report.ashtaka_variants))
     if refs:
         edition = f" ({report.rules_edition}; {', '.join(editions)})" if full else ""
         more = (
             "; Brihat Jataka 9.1–7"
-            if report.ashtaka_checked
-            and any(s.points is not None for s in report.stays)
+            if report.ashtaka_checked and any(s.points is not None for s in report.stays)
             else ""
         )
         blocks.append(

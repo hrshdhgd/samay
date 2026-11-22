@@ -123,9 +123,7 @@ def _t_mixed(c: Ctx, s: int) -> str | None:
     there = _in(c, s)
     return (
         f"{_names(there)} are in it"
-        if len(there) >= 2
-        and any(p in BENEFICS for p in there)
-        and any(p in MALEFICS for p in there)
+        if len(there) >= 2 and any(p in BENEFICS for p in there) and any(p in MALEFICS for p in there)
         else None
     )
 
@@ -145,9 +143,7 @@ def _d_signs(c: Ctx, parity: int | None) -> bool:
 
 
 def _d_feminine(c: Ctx) -> str | None:
-    return (
-        "the lagna and the Moon's sign are both even signs" if _d_signs(c, 1) else None
-    )
+    return "the lagna and the Moon's sign are both even signs" if _d_signs(c, 1) else None
 
 
 def _d_virtuous(c: Ctx) -> str | None:
@@ -158,9 +154,7 @@ def _d_virtuous(c: Ctx) -> str | None:
 
 
 def _d_masculine(c: Ctx) -> str | None:
-    return (
-        "the lagna and the Moon's sign are both odd signs" if _d_signs(c, 0) else None
-    )
+    return "the lagna and the Moon's sign are both odd signs" if _d_signs(c, 0) else None
 
 
 def _d_mixed_character(c: Ctx) -> str | None:
@@ -194,9 +188,7 @@ def _d_women_together(c: Ctx) -> str | None:
     if mutual:
         return "Saturn and Venus are in each other's navamsa and aspect each other"
     if c.lagna in (1, 6) and navamsa_sign(c.chart.ascendant) == 10:
-        return (
-            f"the lagna is {SIGNS[c.lagna]} and the rising navamsa is that of Aquarius"
-        )
+        return f"the lagna is {SIGNS[c.lagna]} and the rising navamsa is that of Aquarius"
     return None
 
 
@@ -279,19 +271,11 @@ def _d_dies_first(c: Ctx) -> str | None:
     s8, s2 = (c.lagna + 7) % 12, (c.lagna + 1) % 12
     mal = [p for p in MALEFICS if c.sign[p] == s8]
     ben = [p for p in BENEFICS if c.sign[p] == s2]
-    return (
-        f"{_names(mal)} in the 8th and {_names(ben)} in the 2nd"
-        if mal and ben
-        else None
-    )
+    return f"{_names(mal)} in the 8th and {_names(ben)} in the 2nd" if mal and ben else None
 
 
 def _d_few_sons(c: Ctx) -> str | None:
-    return (
-        f"the Moon is in {SIGNS[c.sign['moon']]}"
-        if c.sign["moon"] in (5, 7, 1, 4)
-        else None
-    )
+    return f"the Moon is in {SIGNS[c.sign['moon']]}" if c.sign["moon"] in (5, 7, 1, 4) else None
 
 
 def _d_masculine_planets(c: Ctx) -> str | None:
@@ -308,8 +292,7 @@ def _d_masculine_planets(c: Ctx) -> str | None:
 def _d_famed(c: Ctx) -> str | None:
     return (
         "Jupiter, Mars, Venus and Mercury are strong and the lagna is even"
-        if c.lagna % 2 == 1
-        and all(c.stand(p) in STRONG for p in ("jupiter", "mars", "venus", "mercury"))
+        if c.lagna % 2 == 1 and all(c.stand(p) in STRONG for p in ("jupiter", "mars", "venus", "mercury"))
         else None
     )
 
@@ -338,9 +321,7 @@ DETECTORS: dict[str, Detect] = {
     "husband_hermaphrodite": _each_seventh(_t_in("mercury")),
     "husband_travels": _each_seventh(lambda c, s: SIGNS[s] if s in MOVABLE else None),
     "husband_stays": _each_seventh(lambda c, s: SIGNS[s] if s in FIXED else None),
-    "husband_returns": _each_seventh(
-        lambda c, s: SIGNS[s] if s not in MOVABLE | FIXED else None
-    ),
+    "husband_returns": _each_seventh(lambda c, s: SIGNS[s] if s not in MOVABLE | FIXED else None),
     "rejected_sun": _each_seventh(_t_in("sun")),
     "widow_young": _each_seventh(_t_in("mars", ("sun", "saturn"))),
     "unmarried_old": _each_seventh(_t_in("saturn", ("sun", "mars"))),
@@ -373,25 +354,14 @@ def load_rules(path: Path = RULES_PATH) -> WomenBJRules:
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
     rules = {r["id"]: r for r in raw["rules"]}
     if len(rules) != len(raw["rules"]) or set(rules) != set(DETECTORS):
-        raise ValueError(
-            f"{path.name}: the rule ids must be exactly those the engine codes"
-        )
+        raise ValueError(f"{path.name}: the rule ids must be exactly those the engine codes")
     for r in rules.values():
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "text", "definition")
-        ):
-            raise ValueError(
-                f"{path.name} {r.get('id')}: needs verse, text and definition"
-            )
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "text", "definition")):
+            raise ValueError(f"{path.name} {r.get('id')}: needs verse, text and definition")
     groups = raw["trimsamsa"]["groups"]
     if sorted(s for g in groups for s in g["signs"]) != sorted(SIGNS):
-        raise ValueError(
-            f"{path.name}: the trimsamsa groups must cover each of the twelve signs once"
-        )
-    if not all(
-        all(isinstance(g.get(p), str) and g[p] for p in TRIM_LORDS) for g in groups
-    ):
+        raise ValueError(f"{path.name}: the trimsamsa groups must cover each of the twelve signs once")
+    if not all(all(isinstance(g.get(p), str) and g[p] for p in TRIM_LORDS) for g in groups):
         raise ValueError(
             f"{path.name}: each trimsamsa group needs a text for Mars, Saturn, Jupiter, Mercury and Venus"
         )
@@ -433,17 +403,12 @@ def _trimsamsa_pointers(rules: WomenBJRules, c: Ctx) -> list[Pointer]:
     best = max(r for *_, r in cands)
     keep = (
         cands
-        if len({(lord, sign) for _, lord, sign, _, _ in cands}) == 1
-        or cands[0][4] == cands[1][4]
+        if len({(lord, sign) for _, lord, sign, _, _ in cands}) == 1 or cands[0][4] == cands[1][4]
         else [x for x in cands if x[4] == best]
     )
     out = []
     for label, lord, sign, g, _ in keep:
-        note = (
-            f" ({rules.trimsamsa['more_powerful']['text']})"
-            if len(cands) > len(keep)
-            else ""
-        )
+        note = f" ({rules.trimsamsa['more_powerful']['text']})" if len(cands) > len(keep) else ""
         out.append(
             Pointer(
                 f"trimsamsa_{lord}",
@@ -486,9 +451,7 @@ def find(rules: WomenBJRules, chart: Chart) -> tuple[Pointer, ...] | None:
         got = DETECTORS[rid](c)
         if got is not None:
             detail, text = got if isinstance(got, tuple) else (got, rule["text"])
-            out.append(
-                Pointer(rid, rule["verse"], detail[:1].upper() + detail[1:], text)
-            )
+            out.append(Pointer(rid, rule["verse"], detail[:1].upper() + detail[1:], text))
         if rid == "fine_genital":
             out += _setting_pointers(rules, c)
     return tuple(out)

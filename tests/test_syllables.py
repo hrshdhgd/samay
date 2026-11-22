@@ -27,9 +27,7 @@ def test_the_table_has_every_pada_of_every_nakshatra():
         (NAK_SPAN * 21 + 0.1, "Shravana", 1, "Khi"),
     ],
 )
-def test_the_syllable_follows_the_moons_nakshatra_and_pada(
-    longitude, nakshatra, pada, syllable
-):
+def test_the_syllable_follows_the_moons_nakshatra_and_pada(longitude, nakshatra, pada, syllable):
     s = syllables.naming_syllable(longitude)
     assert (s.nakshatra, s.pada, s.syllable) == (nakshatra, pada, syllable)
 
@@ -37,18 +35,11 @@ def test_the_syllable_follows_the_moons_nakshatra_and_pada(
 def test_readings_used_by_other_traditions_are_kept_and_shown():
     shravana = syllables.naming_syllable(NAK_SPAN * 21 + 0.1)
     assert shravana.also == ("Ju",) and "other traditions also use Ju" in str(shravana)
-    assert (
-        syllables.naming_syllable(0.0).also == ()
-        and str(syllables.naming_syllable(0.0)) == "Chu"
-    )
+    assert syllables.naming_syllable(0.0).also == () and str(syllables.naming_syllable(0.0)) == "Chu"
 
 
 def test_the_syllables_follow_the_known_sequence_of_the_avakahada_chakra():
-    seq = [
-        s.syllable
-        for n in NAKSHATRAS
-        for s in (syllables.load_table()[(n, p)] for p in (1, 2, 3, 4))
-    ]
+    seq = [s.syllable for n in NAKSHATRAS for s in (syllables.load_table()[(n, p)] for p in (1, 2, 3, 4))]
     assert seq[:8] == ["Chu", "Che", "Cho", "La", "Li", "Lu", "Le", "Lo"]
     assert seq[-8:] == ["Du", "Tha", "Jha", "Yna", "De", "Do", "Cha", "Chi"]
 

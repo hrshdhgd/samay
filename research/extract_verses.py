@@ -11,6 +11,7 @@ conversion and on typing slips. Neither is proofread by a Sanskrit reader, and t
 Only verses whose whole content an entry's English covers are mapped (II.1-3, I.4, I.15-16). Stanzas 4-11 of
 chapter II mix several topics, including the caste lines the entries leave out, so they are not mapped.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,9 +34,7 @@ PASS_SCORE = 85  # similarity (0-100) between the two copies after removing spel
 
 PLANETS = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
 MAPPING: dict[str, list[tuple[int, int]]] = {f"bj-2-1-{p}": [(2, 1)] for p in PLANETS}
-MAPPING |= {
-    f"bj-2-2-names-{p}": [(2, 2)] for p in ("sun", "moon", "mercury", "mars", "saturn")
-}
+MAPPING |= {f"bj-2-2-names-{p}": [(2, 2)] for p in ("sun", "moon", "mercury", "mars", "saturn")}
 MAPPING |= {f"bj-2-3-names-{p}": [(2, 3)] for p in ("jupiter", "venus", "rahu", "ketu")}
 MAPPING["bj-1-4-kalapurusha"] = [(1, 4)]
 MAPPING |= {f"bj-1-15-house-{n}": [(1, 15), (1, 16)] for n in range(1, 13)}
@@ -84,13 +83,9 @@ def sd_verses() -> dict[tuple[int, int], list[str]]:
 
 
 def gretil_verses() -> dict[tuple[int, int], str]:
-    text = (SOURCES / "gretil-brhajjataka.txt").read_text(
-        encoding="utf-8", errors="replace"
-    )
+    text = (SOURCES / "gretil-brhajjataka.txt").read_text(encoding="utf-8", errors="replace")
     out: dict[tuple[int, int], list[str]] = {}
-    for m in re.finditer(
-        r"^BJ_(\d\d)\.(\d\d)([a-d]?)/(.*?)(?://|/)?(?:\(.*?\))?\s*$", text, re.MULTILINE
-    ):
+    for m in re.finditer(r"^BJ_(\d\d)\.(\d\d)([a-d]?)/(.*?)(?://|/)?(?:\(.*?\))?\s*$", text, re.MULTILINE):
         out.setdefault((int(m.group(1)), int(m.group(2))), []).append(m.group(4))
     return {k: " ".join(v) for k, v in out.items()}
 
@@ -99,11 +94,7 @@ def to_script(lines: list[str], target: str) -> str:
     """The verse's lines in the target script, without its closing '|| N ||' number."""
     cleaned = [re.sub(r"\s*\|\|\s*\d+\s*\|\|\s*$", " ||", line) for line in lines]
     out = sanscript.transliterate("\n".join(cleaned), sanscript.ITRANS, target)
-    return (
-        out.replace("||", "॥").replace("|", "।")
-        if target == sanscript.DEVANAGARI
-        else out
-    )
+    return out.replace("||", "॥").replace("|", "।") if target == sanscript.DEVANAGARI else out
 
 
 def verse_blocks() -> tuple[dict[tuple[int, int], dict], list[str]]:
@@ -111,9 +102,7 @@ def verse_blocks() -> tuple[dict[tuple[int, int], dict], list[str]]:
     result, report = {}, []
     for key in sorted({k for ks in MAPPING.values() for k in ks}):
         if key not in sd or key not in gr:
-            report.append(
-                f"{key}: MISSING (sanskritdocuments: {key in sd}, GRETIL: {key in gr})"
-            )
+            report.append(f"{key}: MISSING (sanskritdocuments: {key in sd}, GRETIL: {key in gr})")
             continue
         deva = to_script(sd[key], sanscript.DEVANAGARI)
         iast = to_script(sd[key], sanscript.IAST)
@@ -159,13 +148,9 @@ def write(verses: dict[tuple[int, int], dict]) -> int:
                     out.append(lines[j])
                     j += 1
                 out.append(lines[j])
-                if j + 1 < len(lines) and lines[j + 1].startswith(
-                    "  verse:"
-                ):  # already has one: replace it
+                if j + 1 < len(lines) and lines[j + 1].startswith("  verse:"):  # already has one: replace it
                     k = j + 1
-                    while k < len(lines) and (
-                        lines[k].startswith("    ") or lines[k].startswith("  verse:")
-                    ):
+                    while k < len(lines) and (lines[k].startswith("    ") or lines[k].startswith("  verse:")):
                         k += 1
                     j = k - 1
                 block = block_for(m.group(1), verses)
@@ -189,9 +174,7 @@ def main() -> int:
             f"\n--- {key[0]}.{key[1]} {'' if v['ok'] else '(REJECTED)'} ---\n{v['devanagari']}\n{v['roman']}"
         )
     if any("FAIL" in r or "MISSING" in r for r in report):
-        print(
-            "\nSome verses did not pass; those entries get no verse.", file=sys.stderr
-        )
+        print("\nSome verses did not pass; those entries get no verse.", file=sys.stderr)
     if args.write:
         print(f"\nwrote verses into {write(verses)} entries")
     return 0

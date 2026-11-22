@@ -52,9 +52,7 @@ class MoonAspects:
     sign: str
     navamsa_sign: str
     navamsa_lord: str
-    aspecting: tuple[
-        str, ...
-    ]  # the planets that aspect the Moon, in the order Sun..Saturn
+    aspecting: tuple[str, ...]  # the planets that aspect the Moon, in the order Sun..Saturn
     in_sign: tuple[tuple[str, str], ...]  # (planet, text) for the Moon's sign
     in_navamsa: tuple[tuple[str, str], ...]  # (planet, text) for her navamsa
 
@@ -71,12 +69,8 @@ def load_rules(path: Path = RULES_PATH) -> AspectRules:
         if list(raw[table]) != keys:
             raise ValueError(f"{path.name}: {table} must be {keys}")
         for k, row in raw[table].items():
-            if set(row) != set(ASPECTING) or not all(
-                isinstance(t, str) and t.strip() for t in row.values()
-            ):
-                raise ValueError(
-                    f"{path.name} {table}.{k}: needs a text for each of {ASPECTING}"
-                )
+            if set(row) != set(ASPECTING) or not all(isinstance(t, str) and t.strip() for t in row.values()):
+                raise ValueError(f"{path.name} {table}.{k}: needs a text for each of {ASPECTING}")
     rule = raw["aspect_rule"]
     full = {p: tuple(h) for p, h in rule["full"].items()}
     if set(full) != {
@@ -112,10 +106,7 @@ def find(rules: AspectRules, chart: Chart) -> MoonAspects | None:
     nav = navamsa_sign(moon_lon)
     lord = SIGN_LORDS[nav]
     aspecting = tuple(
-        p
-        for p in ASPECTING
-        if house_from(sign_index(chart.planets[p].longitude), moon_sign)
-        in rules.full[p]
+        p for p in ASPECTING if house_from(sign_index(chart.planets[p].longitude), moon_sign) in rules.full[p]
     )
     return MoonAspects(
         SIGNS[moon_sign],

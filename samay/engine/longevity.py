@@ -100,16 +100,14 @@ class Item:
 @dataclass(frozen=True)
 class Longevity:
     caution: str
-    framing: tuple[
-        Item, ...
-    ]  # the classes and the first-twelve-years note, always shown
+    framing: tuple[Item, ...]  # the classes and the first-twelve-years note, always shown
     dangers: tuple[Item, ...]  # dangers at birth the chart meets
-    class_signs: tuple[
-        Item, ...
-    ]  # the chart's pointers to a long, middle or short life
+    class_signs: tuple[Item, ...]  # the chart's pointers to a long, middle or short life
     protections: tuple[Item, ...]
     cause: tuple[Item, ...]  # the cause of death by the 8th house, and the manner
-    cancelled: str  # the book's cancellation, shown when benefics stand in a kendra or aspect the lagna / Moon
+    cancelled: (
+        str  # the book's cancellation, shown when benefics stand in a kendra or aspect the lagna / Moon
+    )
 
 
 @lru_cache(maxsize=4)
@@ -121,14 +119,12 @@ def load_rules(path: Path = RULES_PATH) -> LongevityRules:
     missing = [k for k in _REQUIRED if k not in raw]
     if missing:
         raise ValueError(f"{path.name}: missing {missing}")
-    if [k for k in raw["death_signs"] if k != "verse"] != SIGNS or set(
-        raw["death_planets"]
-    ) - {"verse"} != set(BODIES):
+    if [k for k in raw["death_signs"] if k != "verse"] != SIGNS or set(raw["death_planets"]) - {
+        "verse"
+    } != set(BODIES):
         raise ValueError(f"{path.name}: needs the twelve signs and the nine planets")
     for key in ("moon_degrees", "lagna_degrees"):
-        if len(raw[key]["values"]) != 12 or not all(
-            1 <= d <= 30 for d in raw[key]["values"]
-        ):
+        if len(raw[key]["values"]) != 12 or not all(1 <= d <= 30 for d in raw[key]["values"]):
             raise ValueError(f"{path.name} {key}: twelve degrees from 1 to 30")
     if set(raw["balarishta"]["rules"]) != {
         "lagna_and_8th",
@@ -162,23 +158,17 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
     sign = {p: sign_index(chart.planets[p].longitude) for p in BODIES}
     house = {p: house_from(lagna, s) for p, s in sign.items()}
     lord = {h: SIGN_LORDS[(lagna + h - 1) % 12] for h in range(1, 13)}
-    waning = (
-        chart.planets["moon"].longitude - chart.planets["sun"].longitude
-    ) % 360.0 >= 180.0
+    waning = (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0 >= 180.0
 
     def stand(p: str) -> str:
         return house_effects.strength(ch20, p, sign[p])
 
     def weak(p: str) -> bool:
-        return stand(p) in ("inimical", "depression") or house_effects.is_astangata(
-            ch20, p, chart
-        )
+        return stand(p) in ("inimical", "depression") or house_effects.is_astangata(ch20, p, chart)
 
     def sees(by: str, target: int) -> bool:
         return (
-            by in SEVEN
-            and sign[by] != target
-            and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
+            by in SEVEN and sign[by] != target and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
         )
 
     def with_(p: str, among: tuple[str, ...]) -> list[str]:
@@ -198,9 +188,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
         ("Moon", chart.planets["moon"].longitude),
     ):
         s, d = sign_index(lon), degree_in_sign(lon)
-        if (s in g["signs_end"] and d >= 30 - 10 / 3) or (
-            s in g["signs_start"] and d < 10 / 3
-        ):
+        if (s in g["signs_end"] and d >= 30 - 10 / 3) or (s in g["signs_start"] and d < 10 / 3):
             edge = "end" if s in g["signs_end"] else "start"
             dangers.append(
                 item(
@@ -212,11 +200,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
     m = r["moon_degrees"]
     ms, md = sign["moon"], int(degree_in_sign(chart.planets["moon"].longitude)) + 1
     if md == m["values"][ms]:
-        extra = (
-            " and she is in a kendra or the 8th house"
-            if house["moon"] in KENDRA | {8}
-            else ""
-        )
+        extra = " and she is in a kendra or the 8th house" if house["moon"] in KENDRA | {8} else ""
         dangers.append(
             item(
                 m,
@@ -252,8 +236,8 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
                 f"{', '.join(p.title() for p in mal_in(1))} in the 1st and {', '.join(p.title() for p in mal_in(7))} in the 7th",
             )
         )
-    around = lambda s: any(sign[p] == (s - 1) % 12 for p in MALEFICS) and any(
-        sign[p] == (s + 1) % 12 for p in MALEFICS
+    around = lambda s: (
+        any(sign[p] == (s - 1) % 12 for p in MALEFICS) and any(sign[p] == (s + 1) % 12 for p in MALEFICS)
     )
     if around(sign["moon"]) and around(lagna):
         found.append(
@@ -309,9 +293,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
         if kendra_benefic:
             why.append(f"{', '.join(p.title() for p in kendra_benefic)} in a kendra")
         if sees_lagna:
-            why.append(
-                f"{', '.join(p.title() for p in sees_lagna)} aspecting the lagna"
-            )
+            why.append(f"{', '.join(p.title() for p in sees_lagna)} aspecting the lagna")
         if sees_moon:
             why.append(f"{', '.join(p.title() for p in sees_moon)} aspecting the Moon")
         if why:
@@ -358,11 +340,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
         kinds.append(
             "friends"
             if fa and fb
-            else (
-                "neutral"
-                if na and nb
-                else "enemies" if not (fa or na or fb or nb) else "mixed"
-            )
+            else ("neutral" if na and nb else "enemies" if not (fa or na or fb or nb) else "mixed")
         )
     if kinds and len(set(kinds)) == 1 and kinds[0] != "mixed":
         classes.append(
@@ -405,12 +383,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
             )
         )
     sv = r["short_vicissitudes"]
-    if (
-        rank_in(lord[8]) > rank_in(lord[1])
-        and house[lord[8]] in KENDRA
-        and mal_in(8)
-        and mal_in(12)
-    ):
+    if rank_in(lord[8]) > rank_in(lord[1]) and house[lord[8]] in KENDRA and mal_in(8) and mal_in(12):
         classes.append(
             item(
                 sv,
@@ -448,11 +421,7 @@ def find(rules: LongevityRules, chart: Chart) -> Longevity | None:
                 "Jupiter is in the lagna in a strong sign",
             )
         )
-    if (
-        not waning
-        and house["moon"] in (1, 4, 5, 7, 9, 10, 11)
-        and nav_m in (3, 4, 8, 11)
-    ):
+    if not waning and house["moon"] in (1, 4, 5, 7, 9, 10, 11) and nav_m in (3, 4, 8, 11):
         prot.append(
             Item(
                 pr["verse"],

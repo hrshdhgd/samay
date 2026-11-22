@@ -56,9 +56,7 @@ def load_rules(path: Path = RULES_PATH) -> MiscRules:
     dt = raw["dasha_timing"]
     covered = [s for c in CLASSES for s in dt[c]["signs"]]
     if sorted(covered) != sorted(SIGNS):
-        raise ValueError(
-            f"{path.name}: dasha_timing must put each of the twelve signs in exactly one class"
-        )
+        raise ValueError(f"{path.name}: dasha_timing must put each of the twelve signs in exactly one class")
     for key in ("mutual", "special", "from_lagna", "kendra_pair", "tenth", "effects"):
         if not raw["karakas"][key].get("text"):
             raise ValueError(f"{path.name}: karakas.{key} needs a text")
@@ -123,8 +121,7 @@ def find(rules: MiscRules, chart: Chart) -> tuple[Found, ...] | None:
         (p, q)
         for i, p in enumerate(strong)
         for q in strong[i + 1 :]
-        if house_from(c.sign[p], c.sign[q]) in KENDRA
-        and not (p in in_kendra and q in in_kendra)
+        if house_from(c.sign[p], c.sign[q]) in KENDRA and not (p in in_kendra and q in in_kendra)
     ]
     if pairs:
         out.append(
@@ -139,25 +136,13 @@ def find(rules: MiscRules, chart: Chart) -> tuple[Found, ...] | None:
     for p in SEVEN:
         if c.stand(p) in ("moolatrikona", "exaltation") and c.house[p] not in KENDRA:
             for q in SEVEN:
-                if (
-                    q != p
-                    and house_from(c.sign[p], c.sign[q]) == 10
-                    and c.stand(q) in STRONG
-                ):
-                    friends = [
-                        x
-                        for x in SEVEN
-                        if x not in (p, q) and c.relation(q, x) == "adhimitra"
-                    ]
+                if q != p and house_from(c.sign[p], c.sign[q]) == 10 and c.stand(q) in STRONG:
+                    friends = [x for x in SEVEN if x not in (p, q) and c.relation(q, x) == "adhimitra"]
                     out.append(
                         Found(
                             k["tenth"]["verse"],
                             f"{p.title()} is in its {c.stand(p)} sign outside a kendra, and {q.title()} is in the 10th from it in {c.stand(q)}"
-                            + (
-                                f"; {q.title()}'s atimitra: {_names(friends)}"
-                                if friends
-                                else ""
-                            ),
+                            + (f"; {q.title()}'s atimitra: {_names(friends)}" if friends else ""),
                             k["tenth"]["text"],
                             k["tenth"]["note"],
                         )
@@ -176,9 +161,7 @@ def find(rules: MiscRules, chart: Chart) -> tuple[Found, ...] | None:
     if c.vargottama("moon"):
         out.append(Found(h["verse"], "the Moon is vargottama", h["moon_vargottama"]))
     if c.lagna_nav == c.lagna:
-        out.append(
-            Found(h["verse"], "the rising navamsa is vargottama", h["lagna_vargottama"])
-        )
+        out.append(Found(h["verse"], "the rising navamsa is vargottama", h["lagna_vargottama"]))
     second = (c.sign["sun"] + 1) % 12
     on_second = [p for p in BENEFICS if c.sign[p] == second]
     if on_second:

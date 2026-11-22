@@ -91,9 +91,7 @@ def _touch(c: Ctx, p: str, sign: int) -> bool:
 
 def _support(c: Ctx, sign: int) -> list[str]:
     """The benefics, and the sign's own lord, that stand in the sign or aspect it."""
-    return [
-        p for p in dict.fromkeys((*BENEFICS, SIGN_LORDS[sign])) if _touch(c, p, sign)
-    ]
+    return [p for p in dict.fromkeys((*BENEFICS, SIGN_LORDS[sign])) if _touch(c, p, sign)]
 
 
 def _benefic_sees(c: Ctx, sign: int) -> bool:
@@ -105,9 +103,7 @@ def _malefic_sees(c: Ctx, sign: int, among=MALEFICS) -> list[str]:
 
 
 def _waning(c: Ctx) -> bool:
-    return (
-        c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude
-    ) % 360.0 > 180.0
+    return (c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude) % 360.0 > 180.0
 
 
 def _drekkana(lon: float) -> tuple[int, int]:
@@ -131,9 +127,7 @@ def _strongest(c: Ctx) -> list[str]:
     return [p for p in FOUR if rank[p] == best]
 
 
-def _own_ref(
-    c: Ctx, house: int, signs: list[tuple[str, int]], want: bool
-) -> str | None:
+def _own_ref(c: Ctx, house: int, signs: list[tuple[str, int]], want: bool) -> str | None:
     shown = []
     for ref, s in signs:
         names = _support(c, s)
@@ -186,11 +180,7 @@ def _d_single_wife(c: Ctx) -> str | None:
     ms = (0, 4, 7)  # navamsas of Mars (Aries, Scorpio) and the Sun (Leo)
     if c.sign["jupiter"] == s7 and c.nav["jupiter"] in ms:
         return f"Jupiter is in the 7th ({SIGNS[s7]}) in the navamsa of {SIGNS[c.nav['jupiter']]}"
-    if (
-        c.sign["moon"] == s7 == c.sign["venus"]
-        and c.nav["moon"] in ms
-        and c.nav["venus"] in ms
-    ):
+    if c.sign["moon"] == s7 == c.sign["venus"] and c.nav["moon"] in ms and c.nav["venus"] in ms:
         return f"the Moon and Venus are in the 7th ({SIGNS[s7]}), in the navamsas of {SIGNS[c.nav['moon']]} and {SIGNS[c.nav['venus']]}"
     return None
 
@@ -228,9 +218,7 @@ def _d_wife_rope(c: Ctx) -> str | None:
 def _d_one_eye(c: Ctx) -> str | None:
     s, m = c.house["sun"], c.house["moon"]
     return (
-        f"the Sun is in the {s}th and the Moon in the {m}th house"
-        if (s, m) in ((12, 6), (6, 12))
-        else None
+        f"the Sun is in the {s}th and the Moon in the {m}th house" if (s, m) in ((12, 6), (6, 12)) else None
     )
 
 
@@ -276,11 +264,7 @@ def _d_adultery(c: Ctx) -> str | None:
 def _d_adultery_both(c: Ctx) -> str | None:
     vs = c.sign["venus"]
     by = [p for p in ("mars", "saturn") if c.sees(p, vs)]
-    if (
-        _ms_varga(c, "venus")
-        and by
-        and all(c.house[p] == 7 for p in ("moon", "saturn", "mars"))
-    ):
+    if _ms_varga(c, "venus") and by and all(c.house[p] == 7 for p in ("moon", "saturn", "mars")):
         return "Venus is in a sign or navamsa of Mars or Saturn and aspected by them, and the Moon, Saturn and Mars are in the 7th"
     return None
 
@@ -288,20 +272,14 @@ def _d_adultery_both(c: Ctx) -> str | None:
 def _d_neither_2(c: Ctx) -> str | None:
     return (
         "Venus and the Moon are in one sign and Saturn and Mars are in the 7th"
-        if c.sign["venus"] == c.sign["moon"]
-        and c.house["saturn"] == 7 == c.house["mars"]
+        if c.sign["venus"] == c.sign["moon"] and c.house["saturn"] == 7 == c.house["mars"]
         else None
     )
 
 
 def _d_late(c: Ctx) -> str | None:
     s7 = _hs(c, 7)
-    pair = [
-        (m, f)
-        for m in ("sun", "jupiter")
-        for f in ("moon", "venus")
-        if c.sign[m] == c.sign[f]
-    ]
+    pair = [(m, f) for m in ("sun", "jupiter") for f in ("moon", "venus") if c.sign[m] == c.sign[f]]
     if pair and c.house["saturn"] == 7 == c.house["mars"] and _benefic_sees(c, s7):
         m, f = pair[0]
         return f"{m.title()} and {f.title()} are together; Saturn and Mars are in the 7th and a benefic aspects it"
@@ -309,11 +287,7 @@ def _d_late(c: Ctx) -> str | None:
 
 
 def _d_family(c: Ctx) -> str | None:
-    if (
-        c.house["moon"] == 10
-        and c.house["venus"] == 7
-        and any(c.house[p] == 4 for p in MALEFICS)
-    ):
+    if c.house["moon"] == 10 and c.house["venus"] == 7 and any(c.house[p] == 4 for p in MALEFICS):
         return "the Moon is in the 10th, Venus in the 7th and a malefic in the 4th"
     return None
 
@@ -366,9 +340,7 @@ def _d_white_leprosy(c: Ctx) -> str | None:
 def _d_limbs_mms(c: Ctx) -> str | None:
     return (
         "the Moon is in the 10th, Mars in the 7th and Saturn in the sign after the Sun"
-        if c.house["moon"] == 10
-        and c.house["mars"] == 7
-        and c.sign["saturn"] == (c.sign["sun"] + 1) % 12
+        if c.house["moon"] == 10 and c.house["mars"] == 7 and c.sign["saturn"] == (c.sign["sun"] + 1) % 12
         else None
     )
 
@@ -388,9 +360,7 @@ def _d_asthma(c: Ctx) -> str | None:
 
 def _d_pulmonary(c: Ctx) -> str | None:
     return (
-        "the Sun is in Cancer or in a navamsa of Cancer"
-        if c.sign["sun"] == 3 or c.nav["sun"] == 3
-        else None
+        "the Sun is in Cancer or in a navamsa of Cancer" if c.sign["sun"] == 3 or c.nav["sun"] == 3 else None
     )
 
 
@@ -416,9 +386,7 @@ def _d_leprosy_moon(c: Ctx) -> str | None:
 def _d_leprosy_houses(c: Ctx) -> str | None:
     for h in (5, 9):
         s = _hs(c, h)
-        if s in (7, 3, 1, 9) and all(
-            c.sign[p] == s or c.sees(p, s) for p in ("saturn", "mars")
-        ):
+        if s in (7, 3, 1, 9) and all(c.sign[p] == s or c.sees(p, s) for p in ("saturn", "mars")):
             return f"the {h}th house is {SIGNS[s]} and Saturn and Mars are in it or aspect it"
     return None
 
@@ -431,9 +399,7 @@ def _d_blind(c: Ctx) -> str | None:
 
 
 def _d_deaf(c: Ctx) -> str | None:
-    if _in_houses(c, FOUR, (9, 11, 3, 5)) and not any(
-        _benefic_sees(c, c.sign[p]) for p in FOUR
-    ):
+    if _in_houses(c, FOUR, (9, 11, 3, 5)) and not any(_benefic_sees(c, c.sign[p]) for p in FOUR):
         return f"the Sun, Moon, Mars and Saturn are in the 9th, 11th, 3rd and 5th with no benefic aspect; the strongest is {_names(_strongest(c))}"
     return None
 
@@ -442,9 +408,7 @@ def _d_teeth(c: Ctx) -> str | None:
     s7 = _hs(c, 7)
     there = [p for p in MALEFICS if c.house[p] == 7]
     return (
-        f"{_names(there)} in the 7th with no benefic aspect"
-        if there and not _benefic_sees(c, s7)
-        else None
+        f"{_names(there)} in the 7th with no benefic aspect" if there and not _benefic_sees(c, s7) else None
     )
 
 
@@ -496,11 +460,7 @@ def _d_malefic_aspects(houses, who, aspecting) -> Detect:
             return None
         s = c.sign[ok[0]]
         by = [p for p in aspecting if p != ok[0] and c.sees(p, s)]
-        return (
-            f"{_names(ok)} in the {c.house[ok[0]]}th, aspected by {_names(by)}"
-            if by
-            else None
-        )
+        return f"{_names(ok)} in the {c.house[ok[0]]}th, aspected by {_names(by)}" if by else None
 
     return d
 
@@ -509,9 +469,7 @@ def _d_lagna_aspect(signs: set[int]) -> Detect:
     def d(c: Ctx) -> str | None:
         by = _malefic_sees(c, c.lagna)
         return (
-            f"the lagna is {SIGNS[c.lagna]} and {_names(by)} aspects it"
-            if c.lagna in signs and by
-            else None
+            f"the lagna is {SIGNS[c.lagna]} and {_names(by)} aspects it" if c.lagna in signs and by else None
         )
 
     return d
@@ -546,9 +504,7 @@ DETECTORS: dict[str, Detect] = {
     "no_wife": _d_house(7, False, "7th"),
     "virgo_wife": _d_virgo("saturn", 11),
     "virgo_sons": _d_virgo("mars", 9),
-    "moon_saturn_seventh": _d_pair(
-        "moon", 7, "saturn", 7, "the Moon and Saturn are both in the 7th"
-    ),
+    "moon_saturn_seventh": _d_pair("moon", 7, "saturn", 7, "the Moon and Saturn are both in the 7th"),
     "wives_number": _d_wives_number,
     "single_wife": _d_single_wife,
     "several_wives": _d_several_wives,
@@ -578,12 +534,8 @@ DETECTORS: dict[str, Detect] = {
     "blind": _d_blind,
     "deaf": _d_deaf,
     "deformed_teeth": _d_teeth,
-    "windy": _d_pair(
-        "saturn", 7, "jupiter", 1, "Saturn is in the 7th and Jupiter in the lagna"
-    ),
-    "insane": _d_pair(
-        "mars", 7, "jupiter", 1, "Mars is in the 7th and Jupiter in the lagna"
-    ),
+    "windy": _d_pair("saturn", 7, "jupiter", 1, "Saturn is in the 7th and Jupiter in the lagna"),
+    "insane": _d_pair("mars", 7, "jupiter", 1, "Mars is in the 7th and Jupiter in the lagna"),
     "idiot_saturn_mars": _d_idiot_sm,
     "idiot_moon_saturn": _d_idiot_ms,
     "servitude": _d_servitude,
@@ -605,17 +557,10 @@ def load_rules(path: Path = RULES_PATH) -> MaleficRules:
     rules = {r["id"]: r for r in raw["rules"]}
     special = {"imprisonment_houses", "imprisonment_drekkana"}
     if len(rules) != len(raw["rules"]) or set(rules) != set(DETECTORS) | special:
-        raise ValueError(
-            f"{path.name}: the rule ids must be exactly those the engine codes"
-        )
+        raise ValueError(f"{path.name}: the rule ids must be exactly those the engine codes")
     for r in rules.values():
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "text", "definition")
-        ):
-            raise ValueError(
-                f"{path.name} {r.get('id')}: needs verse, text and definition"
-            )
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "text", "definition")):
+            raise ValueError(f"{path.name} {r.get('id')}: needs verse, text and definition")
     if set(raw["causes"]) != {"sun", "moon", "mars", "saturn"}:
         raise ValueError(f"{path.name}: causes needs the Sun, Moon, Mars and Saturn")
     return MaleficRules(
@@ -672,9 +617,7 @@ def find(rules: MaleficRules, chart: Chart) -> tuple[Found, ...] | None:
         if rid in ("blind", "deaf"):
             top = _strongest(c)
             text += (
-                "; "
-                + "; ".join(f"{p.title()}: {rules.causes[p]}" for p in top)
-                + " (the translator's note)"
+                "; " + "; ".join(f"{p.title()}: {rules.causes[p]}" for p in top) + " (the translator's note)"
             )
         out.append(Found(rid, rule["verse"], detail[:1].upper() + detail[1:], text))
     return tuple(out)

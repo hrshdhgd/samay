@@ -40,9 +40,7 @@ class Effect:
     kind: str
     text: str
     variant: str | None = None
-    borrowed_from: str | None = (
-        None  # "sun" when the text gives this planet the Sun's effects here
-    )
+    borrowed_from: str | None = None  # "sun" when the text gives this planet the Sun's effects here
     hidden: bool = False  # the checker may hide a row from the family bot
 
 
@@ -71,9 +69,7 @@ class Reading:
     planet: str
     house: int
     sign: int
-    strength: (
-        str  # exaltation, moolatrikona, own, friendly, neutral, inimical or depression
-    )
+    strength: str  # exaltation, moolatrikona, own, friendly, neutral, inimical or depression
     astangata: bool
     effects: tuple[Effect, ...]
     citation: str
@@ -110,15 +106,11 @@ def load_rules(path: Path = RULES_PATH) -> Rules:
         checked_by=v.get("checked_by"),
         edition=raw["edition"],
         exaltation={p: _sign(x, "exaltation") for p, x in s["exaltation"].items()},
-        moolatrikona={
-            p: _sign(x, "moolatrikona") for p, x in s["moolatrikona"].items()
-        },
+        moolatrikona={p: _sign(x, "moolatrikona") for p, x in s["moolatrikona"].items()},
         friends={p: frozenset(x) for p, x in s["friends"].items()},
         neutrals={p: frozenset(x) for p, x in s["neutrals"].items()},
         astangata={p: float(x) for p, x in s["astangata_degrees"].items()},
-        astangata_retro={
-            p: float(x) for p, x in s["astangata_degrees_retrograde"].items()
-        },
+        astangata_retro={p: float(x) for p, x in s["astangata_degrees_retrograde"].items()},
         good_share=dict(s["good_share"]),
         bad_share=dict(s["bad_share"]),
         effects=tuple(raw["effects"]),
@@ -159,14 +151,11 @@ def is_astangata(rules: Rules, planet: str, chart: Chart) -> bool:
     return gap <= limit
 
 
-def _rows_for_house(
-    rules: Rules, planet: str, house: int, lagna: int, depth: int = 0
-) -> list[Effect]:
+def _rows_for_house(rules: Rules, planet: str, house: int, lagna: int, depth: int = 0) -> list[Effect]:
     rows = [
         e
         for e in rules.effects
-        if e["planet"] == planet
-        and (e.get("house") == house or house in e.get("houses", []))
+        if e["planet"] == planet and (e.get("house") == house or house in e.get("houses", []))
     ]
     borrowed = [e for e in rows if "same_as" in e]
     if borrowed and depth == 0:
@@ -183,14 +172,8 @@ def _rows_for_house(
             )
             for e in _rows_for_house(rules, other, house, lagna, depth + 1)
         ]
-    specific = [
-        e
-        for e in rows
-        if "when_lagna" in e and lagna in {_SIGN[s] for s in e["when_lagna"]}
-    ]
-    chosen = specific or [
-        e for e in rows if "when_lagna" not in e and "same_as" not in e
-    ]
+    specific = [e for e in rows if "when_lagna" in e and lagna in {_SIGN[s] for s in e["when_lagna"]}]
+    chosen = specific or [e for e in rows if "when_lagna" not in e and "same_as" not in e]
     return [
         Effect(
             planet,

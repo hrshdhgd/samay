@@ -76,9 +76,7 @@ def load_rules(path: Path = RULES_PATH) -> ChandraRules:
         if not raw[key].get("text"):
             raise ValueError(f"{path.name}: {key} needs a text")
     if set(raw["planets"]) != {"mars", "mercury", "jupiter", "venus", "saturn"}:
-        raise ValueError(
-            f"{path.name}: the yoga planets are the five from Mars to Saturn"
-        )
+        raise ValueError(f"{path.name}: the yoga planets are the five from Mars to Saturn")
     if not set(raw["planets"]) <= set(raw["yoga_planet"]):
         raise ValueError(f"{path.name}: yoga_planet needs a text for each of the five")
     return ChandraRules(
@@ -103,9 +101,7 @@ def find(rules: ChandraRules, chart: Chart) -> Yogas:
     # Verse 1: the Moon's house from the Sun
     m = r["moon_from_sun"]
     h = house_from(sign["sun"], sign["moon"])
-    grade = (
-        "poor" if h in m["poor"] else "moderate" if h in m["moderate"] else "excellent"
-    )
+    grade = "poor" if h in m["poor"] else "moderate" if h in m["moderate"] else "excellent"
     out.append(
         Found(
             "The Moon from the Sun",
@@ -176,9 +172,7 @@ def find(rules: ChandraRules, chart: Chart) -> Yogas:
 
     # Verse 9: benefics in the upachaya houses, from the lagna and from the Moon
     u = r["upachaya"]
-    from_lagna_n = sum(
-        1 for p in u["planets"] if house_from(lagna, sign[p]) in u["houses"]
-    )
+    from_lagna_n = sum(1 for p in u["planets"] if house_from(lagna, sign[p]) in u["houses"])
     from_moon_n = sum(1 for p in u["planets"] if from_moon[p] in u["houses"])
     texts = []
     if from_lagna_n:

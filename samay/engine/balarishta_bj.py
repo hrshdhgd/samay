@@ -61,9 +61,7 @@ def _mal_in(c: Ctx, h: int) -> list[str]:
 
 
 def _waning(c: Ctx) -> bool:
-    return (
-        c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude
-    ) % 360.0 > 180.0
+    return (c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude) % 360.0 > 180.0
 
 
 def _hemmed(c: Ctx) -> bool:
@@ -82,11 +80,7 @@ def _no_ben_kendra(c: Ctx) -> bool:
 
 
 def _strong_ben_with_or_seeing(c: Ctx, sign: int) -> list[str]:
-    return [
-        b
-        for b in BENEFICS
-        if (c.sign[b] == sign or c.sees(b, sign)) and c.stand(b) in STRONG
-    ]
+    return [b for b in BENEFICS if (c.sign[b] == sign or c.sees(b, sign)) and c.stand(b) in STRONG]
 
 
 def _full(c: Ctx) -> bool:
@@ -111,9 +105,7 @@ def _d_twilight(c: Ctx) -> str | None:
 def _d_four(c: Ctx) -> str | None:
     hs = [c.house["moon"], *(c.house[p] for p in MALEFICS)]
     return (
-        "the Moon, the Sun, Mars and Saturn stand one in each kendra"
-        if sorted(hs) == list(KENDRA)
-        else None
+        "the Moon, the Sun, Mars and Saturn stand one in each kendra" if sorted(hs) == list(KENDRA) else None
     )
 
 
@@ -137,18 +129,14 @@ def _d_three_signs(c: Ctx) -> str | None:
     if all(
         any(c.sign[p] == s for p in MALEFICS) for s in (c.lagna, s7, c.sign["moon"])
     ) and not _ben_sees_moon(c):
-        return "malefics stand in the lagna sign, the 7th and the Moon's sign, and no benefic aspects the Moon"
+        return (
+            "malefics stand in the lagna sign, the 7th and the Moon's sign, and no benefic aspects the Moon"
+        )
     return None
 
 
 def _d_waning_twelfth(c: Ctx) -> str | None:
-    if (
-        _waning(c)
-        and c.house["moon"] == 12
-        and _mal_in(c, 1)
-        and _mal_in(c, 8)
-        and _no_ben_kendra(c)
-    ):
+    if _waning(c) and c.house["moon"] == 12 and _mal_in(c, 1) and _mal_in(c, 8) and _no_ben_kendra(c):
         return "the waning Moon in the 12th, malefics in the lagna and the 8th, no benefic in a kendra"
     return None
 
@@ -204,12 +192,7 @@ def _d_lord_defeated(c: Ctx) -> str | None:
 
 
 def _d_waning_lagna(c: Ctx) -> str | None:
-    if (
-        _waning(c)
-        and c.house["moon"] == 1
-        and _mal_in(c, 8)
-        and all(_mal_in(c, h) for h in (4, 7, 10))
-    ):
+    if _waning(c) and c.house["moon"] == 1 and _mal_in(c, 8) and all(_mal_in(c, h) for h in (4, 7, 10)):
         return "the waning Moon in the lagna, a malefic in the 8th and in each of the 4th, 7th and 10th"
     return None
 
@@ -243,18 +226,12 @@ def _d_last_navamsa(c: Ctx) -> str | None:
 
 
 def _d_fifth_ninth(c: Ctx) -> str | None:
-    return (
-        "malefics stand in the 5th and the 9th"
-        if _mal_in(c, 5) and _mal_in(c, 9)
-        else None
-    )
+    return "malefics stand in the 5th and the 9th" if _mal_in(c, 5) and _mal_in(c, 9) else None
 
 
 def _d_moon_lagna_seventh(c: Ctx) -> str | None:
     return (
-        "the Moon in the lagna and a malefic in the 7th"
-        if c.house["moon"] == 1 and _mal_in(c, 7)
-        else None
+        "the Moon in the lagna and a malefic in the 7th" if c.house["moon"] == 1 and _mal_in(c, 7) else None
     )
 
 
@@ -287,11 +264,7 @@ def _d_four_planets(c: Ctx) -> str | None:
 
 def _d_moon_malefic_six(c: Ctx) -> str | None:
     m = [p for p in MALEFICS if c.sign[p] == c.sign["moon"]]
-    if (
-        not m
-        or c.house["moon"] not in (5, 7, 9, 12, 1, 8)
-        or _strong_ben_with_or_seeing(c, c.sign["moon"])
-    ):
+    if not m or c.house["moon"] not in (5, 7, 9, 12, 1, 8) or _strong_ben_with_or_seeing(c, c.sign["moon"]):
         return None
     return f"the Moon is with {_names(m)} in the {c.house['moon']}th, no powerful Venus, Mercury or Jupiter with or aspecting her"
 
@@ -328,11 +301,7 @@ def _c_lord(c):
     return (
         c.stand(lord) in STRONG
         and not any(c.sees(p, c.sign[lord]) for p in MALEFICS if p != lord)
-        and any(
-            c.house[b] in KENDRA and c.sees(b, c.sign[lord])
-            for b in BENEFICS
-            if b != lord
-        )
+        and any(c.house[b] in KENDRA and c.sees(b, c.sign[lord]) for b in BENEFICS if b != lord)
     )
 
 
@@ -361,17 +330,11 @@ def _c_day_night(c):
 
 
 def _c_full_jupiter(c):
-    return (
-        c.full_moon
-        and c.house["jupiter"] in KENDRA
-        and c.sees("jupiter", c.sign["moon"])
-    )
+    return c.full_moon and c.house["jupiter"] in KENDRA and c.sees("jupiter", c.sign["moon"])
 
 
 def _c_rahu(c):
-    return c.house["rahu"] in (3, 6, 11) and any(
-        c.sees(b, c.sign["rahu"]) for b in BENEFICS
-    )
+    return c.house["rahu"] in (3, 6, 11) and any(c.sees(b, c.sign["rahu"]) for b in BENEFICS)
 
 
 def _c_sirodaya(c):
@@ -397,26 +360,20 @@ def load_rules(path: Path = RULES_PATH) -> BalaRules:
     v = raw["verification"]
     if v.get("level") in SERVABLE_LEVELS and not v.get("checked_by"):
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
-    rules, cancel = {r["id"]: r for r in raw["rules"]}, {
-        r["id"]: r for r in raw["cancel"]
-    }
+    rules, cancel = {r["id"]: r for r in raw["rules"]}, {r["id"]: r for r in raw["cancel"]}
     if (
         set(rules) != set(DETECT)
         or len(rules) != len(raw["rules"])
         or set(cancel) != set(CANCEL)
         or len(cancel) != len(raw["cancel"])
     ):
-        raise ValueError(
-            f"{path.name}: rule ids must be exactly those the engine codes"
-        )
+        raise ValueError(f"{path.name}: rule ids must be exactly those the engine codes")
     if not all(
         isinstance(r.get(f), str) and r[f].strip()
         for r in (*rules.values(), *cancel.values())
         for f in ("text", "definition")
     ) or not all(r.get("verse") for r in rules.values()):
-        raise ValueError(
-            f"{path.name}: every rule needs text and definition (and the dangers a verse)"
-        )
+        raise ValueError(f"{path.name}: every rule needs text and definition (and the dangers a verse)")
     return BalaRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),

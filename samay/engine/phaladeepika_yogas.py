@@ -82,9 +82,7 @@ class Ctx:
         self.sign = {p: sign_index(chart.planets[p].longitude) for p in BODIES}
         self.lagna = sign_index(chart.ascendant)
         self.house = {p: house_from(self.lagna, s) for p, s in self.sign.items()}
-        self.moon_house = {
-            p: house_from(self.sign["moon"], s) for p, s in self.sign.items()
-        }
+        self.moon_house = {p: house_from(self.sign["moon"], s) for p, s in self.sign.items()}
         self._ch20 = house_effects.load_rules()
 
     def lord(self, house: int) -> str:
@@ -113,9 +111,7 @@ def _ord(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
-Detail = (
-    tuple[str, object] | None
-)  # (detail sentence, optional key into the yoga's `texts`)
+Detail = tuple[str, object] | None  # (detail sentence, optional key into the yoga's `texts`)
 
 
 def _mahapurusha(planet: str) -> Callable[[Ctx], Detail]:
@@ -125,9 +121,7 @@ def _mahapurusha(planet: str) -> Callable[[Ctx], Detail]:
         if c.sign[planet] not in signs:
             return None
         refs = [
-            name
-            for name, h in (("lagna", c.house[planet]), ("Moon", c.moon_house[planet]))
-            if h in KENDRA
+            name for name, h in (("lagna", c.house[planet]), ("Moon", c.moon_house[planet])) if h in KENDRA
         ]
         if not refs:
             return None
@@ -141,16 +135,10 @@ def _mahapurusha(planet: str) -> Callable[[Ctx], Detail]:
 
 def _mahapurusha_count(c: Ctx) -> Detail:
     names = [MAHAPURUSHA[p][0] for p in MAHAPURUSHA if _mahapurusha(p)(c)]
-    return (
-        (f"{len(names)} of the five: {', '.join(n.title() for n in names)}", len(names))
-        if names
-        else None
-    )
+    return (f"{len(names)} of the five: {', '.join(n.title() for n in names)}", len(names)) if names else None
 
 
-def _vesi_vasi(
-    planets: tuple[str, ...], two: bool, twelve: bool
-) -> Callable[[Ctx], Detail]:
+def _vesi_vasi(planets: tuple[str, ...], two: bool, twelve: bool) -> Callable[[Ctx], Detail]:
     def detect(c: Ctx) -> Detail:
         sun = c.sign["sun"]
         in2 = [p for p in planets if c.sign[p] == (sun + 1) % 12]
@@ -228,20 +216,14 @@ def _sakata(c: Ctx) -> Detail:
 def _moon_from_sun(houses: set[int]) -> Callable[[Ctx], Detail]:
     def detect(c: Ctx) -> Detail:
         h = house_from(c.sign["sun"], c.sign["moon"])
-        return (
-            (f"the Moon is in the {_ord(h)} from the Sun", None)
-            if h in houses
-            else None
-        )
+        return (f"the Moon is in the {_ord(h)} from the Sun", None) if h in houses else None
 
     return detect
 
 
 def _lakshmi(c: Ctx) -> Detail:
     ninth = c.lord(9)
-    ok = all(
-        c.own_or_exalted(p) and c.house[p] in KENDRA | TRIKONA for p in ("venus", ninth)
-    )
+    ok = all(c.own_or_exalted(p) and c.house[p] in KENDRA | TRIKONA for p in ("venus", ninth))
     return (
         (
             f"Venus and the 9th lord {ninth.title()} are each in an own or exaltation sign, in a kendra or trikona",
@@ -269,9 +251,9 @@ def _gouri(c: Ctx) -> Detail:
 
 
 def _saraswati(c: Ctx) -> Detail:
-    ok = all(
-        c.house[p] in KENDRA | TRIKONA | {2} for p in c.rules.benefics
-    ) and c.own_friend_or_exalted("jupiter")
+    ok = all(c.house[p] in KENDRA | TRIKONA | {2} for p in c.rules.benefics) and c.own_friend_or_exalted(
+        "jupiter"
+    )
     return (
         (
             "Mercury, Jupiter and Venus are in kendras, trikonas or the 2nd, and Jupiter is in an own, friend's or exaltation sign",
@@ -285,10 +267,7 @@ def _saraswati(c: Ctx) -> Detail:
 def _trio(planets_or_houses: tuple[str | int, ...]) -> Callable[[Ctx], Detail]:
     def detect(c: Ctx) -> Detail:
         planets = [c.lord(x) if isinstance(x, int) else x for x in planets_or_houses]
-        ok = all(
-            c.own_friend_or_exalted(p) and c.house[p] in KENDRA | TRIKONA
-            for p in planets
-        )
+        ok = all(c.own_friend_or_exalted(p) and c.house[p] in KENDRA | TRIKONA for p in planets)
         names = ", ".join(dict.fromkeys(p.title() for p in planets))
         return (
             (
@@ -310,11 +289,7 @@ def _exchanges(kind: str) -> Callable[[Ctx], Detail]:
                 la, lb = c.lord(a), c.lord(b)
                 if la == lb or c.house[la] != b or c.house[lb] != a:
                     continue
-                tag = (
-                    "dainya"
-                    if {a, b} & DUSTHANA
-                    else "kahala" if 3 in (a, b) else "maha"
-                )
+                tag = "dainya" if {a, b} & DUSTHANA else "kahala" if 3 in (a, b) else "maha"
                 if tag == kind:
                     pairs.append(
                         f"the {_ord(a)} lord {la.title()} in the {_ord(b)} and the {_ord(b)} lord {lb.title()} in the {_ord(a)}"
@@ -351,22 +326,14 @@ def _lord_in_dusthana(house: int) -> Callable[[Ctx], Detail]:
     def detect(c: Ctx) -> Detail:
         lord = c.lord(house)
         h = c.house[lord]
-        return (
-            (f"the {_ord(house)} lord {lord.title()} is in the {_ord(h)}", None)
-            if h in DUSTHANA
-            else None
-        )
+        return (f"the {_ord(house)} lord {lord.title()} is in the {_ord(h)}", None) if h in DUSTHANA else None
 
     return detect
 
 
 def _vipareeta(into: int) -> Callable[[Ctx], Detail]:
     def detect(c: Ctx) -> Detail:
-        got = [
-            f"the {_ord(h)} lord {c.lord(h).title()}"
-            for h in (6, 8, 12)
-            if c.house[c.lord(h)] == into
-        ]
+        got = [f"the {_ord(h)} lord {c.lord(h).title()}" for h in (6, 8, 12) if c.house[c.lord(h)] == into]
         return (f"{' and '.join(got)} in the {_ord(into)}", None) if got else None
 
     return detect
@@ -429,20 +396,13 @@ def load_rules(path: Path = RULES_PATH) -> YogaRules:
             f"{path.name}: yogas {sorted(set(yogas) ^ set(DETECTORS))} have no matching definition in the code"
         )
     for key, y in yogas.items():
-        if not all(
-            isinstance(y.get(f), str) and y[f].strip()
-            for f in ("name", "verse", "definition")
-        ):
+        if not all(isinstance(y.get(f), str) and y[f].strip() for f in ("name", "verse", "definition")):
             raise ValueError(f"{path.name} {key}: needs name, verse and definition")
-        if not (isinstance(y.get("text"), str) and y["text"].strip()) and not y.get(
-            "texts"
-        ):
+        if not (isinstance(y.get("text"), str) and y["text"].strip()) and not y.get("texts"):
             raise ValueError(f"{path.name} {key}: needs a text (or texts by key)")
     sk = raw["sankhya"]
     if set(sk["texts"]) != set(range(1, 8)) or any(n not in sk for n in range(1, 8)):
-        raise ValueError(
-            f"{path.name}: sankhya needs a name and a text for 1 to 7 signs"
-        )
+        raise ValueError(f"{path.name}: sankhya needs a name and a text for 1 to 7 signs")
     return YogaRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),

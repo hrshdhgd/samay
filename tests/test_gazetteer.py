@@ -12,9 +12,7 @@ from samay.engine.gazetteer_build import build
 from samay.engine.names import fold
 
 FIXTURES = Path(__file__).parent / "fixtures"
-BIRTHPLACES = yaml.safe_load(
-    (FIXTURES / "birthplaces.yaml").read_text(encoding="utf-8")
-)
+BIRTHPLACES = yaml.safe_load((FIXTURES / "birthplaces.yaml").read_text(encoding="utf-8"))
 HIT_RATE = 0.95
 
 
@@ -36,9 +34,7 @@ def test_family_birthplaces_in_extract():
 
 def test_family_birthplaces_hit_rate_on_real_database(real_gazetteer):
     hits = sum(_hit(e) for e in BIRTHPLACES)
-    assert hits / len(BIRTHPLACES) >= HIT_RATE, [
-        e["query"] for e in BIRTHPLACES if not _hit(e)
-    ]
+    assert hits / len(BIRTHPLACES) >= HIT_RATE, [e["query"] for e in BIRTHPLACES if not _hit(e)]
 
 
 @pytest.mark.parametrize(
@@ -69,9 +65,7 @@ def test_village_only_in_country_file_found_in_devanagari():
 
 def test_administrative_areas_hidden_when_a_city_matches():
     assert [p.label for p in geo.find_places("Mumbai")] == ["Mumbai, Maharashtra, IN"]
-    assert [p.label for p in geo.find_places("Kiev, Ukraine")] == [
-        "Kyiv, Kyiv City, UA"
-    ]
+    assert [p.label for p in geo.find_places("Kiev, Ukraine")] == ["Kyiv, Kyiv City, UA"]
 
 
 def test_administrative_area_offered_when_it_is_all_there_is():
@@ -81,9 +75,7 @@ def test_administrative_area_offered_when_it_is_all_there_is():
 def test_qualifiers_narrow_by_code_name_and_country():
     assert [p.admin1 for p in geo.find_places("Maplewood, MN, USA")] == ["MN"]
     assert [p.admin1 for p in geo.find_places("Maplewood, Minnesota")] == ["MN"]
-    assert [p.admin1_name for p in geo.find_places("Aurangabad, Maharashtra")] == [
-        "Maharashtra"
-    ]
+    assert [p.admin1_name for p in geo.find_places("Aurangabad, Maharashtra")] == ["Maharashtra"]
     assert geo.find_places("Maplewood, TX") == []
 
 
@@ -131,16 +123,8 @@ def test_builder_output_shape_and_determinism(tmp_path):
         for line in (extract / f"{stem}.txt").read_text(encoding="utf-8").splitlines()
     }
     assert conn.execute("SELECT count(*) FROM places").fetchone()[0] == len(ids)
-    assert (
-        conn.execute("SELECT count(*) FROM places WHERE fcode LIKE 'PCL%'").fetchone()[
-            0
-        ]
-        == 0
-    )
-    assert (
-        conn.execute("SELECT name FROM countries WHERE iso3 = 'USA'").fetchone()[0]
-        == "United States"
-    )
+    assert conn.execute("SELECT count(*) FROM places WHERE fcode LIKE 'PCL%'").fetchone()[0] == 0
+    assert conn.execute("SELECT name FROM countries WHERE iso3 = 'USA'").fetchone()[0] == "United States"
 
 
 def test_missing_database_is_a_typed_error(tmp_path, fixture_gazetteer):

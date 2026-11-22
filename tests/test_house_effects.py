@@ -11,9 +11,7 @@ from samay.engine.paths import EPHEMERIS_PATH
 from samay.models import BirthInput
 from samay.render.text import render_answer
 
-needs_kernel = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 SIGN = {
     n: i
     for i, n in enumerate(
@@ -64,9 +62,7 @@ def chart(lagna: str, **places) -> Chart:
     planets["sun"] = Placement(SIGN["sagittarius"] * 30 + 15)
     for g, sign in places.items():
         planets[g] = Placement(SIGN[sign] * 30 + 15, retrograde=g.endswith("_r"))
-    return Chart(
-        datetime(2000, 1, 1, tzinfo=UTC), 0, 0, 24.0, SIGN[lagna] * 30 + 1, planets
-    )
+    return Chart(datetime(2000, 1, 1, tzinfo=UTC), 0, 0, 24.0, SIGN[lagna] * 30 + 1, planets)
 
 
 def test_shipped_rules_are_checked_and_cover_the_seven_planets():
@@ -74,14 +70,8 @@ def test_shipped_rules_are_checked_and_cover_the_seven_planets():
     rules = hx.load_rules()
     assert rules.servable and rules.checked_by == "h2" and len(rules.effects) > 60
     assert {e["planet"] for e in rules.effects} == set(hx.PLANETS)
-    r = hx.reading(
-        chart("aries", saturn="cancer"), "saturn"
-    )  # Saturn in the 4th: the Sun's effects there
-    assert (
-        r is not None
-        and r.level == "translation-checked"
-        and r.effects[0].borrowed_from == "sun"
-    )
+    r = hx.reading(chart("aries", saturn="cancer"), "saturn")  # Saturn in the 4th: the Sun's effects there
+    assert r is not None and r.level == "translation-checked" and r.effects[0].borrowed_from == "sun"
 
 
 def test_a_rules_file_that_nobody_has_checked_is_never_used(tmp_path):
@@ -147,12 +137,8 @@ def test_astangata_uses_the_limit_and_the_retrograde_limit(checked):
 
 
 def test_lagna_specific_row_replaces_the_general_one(checked):
-    general = hx.reading(
-        chart("taurus", saturn="taurus"), "saturn", checked
-    )  # Saturn in 1st, Taurus lagna
-    special = hx.reading(
-        chart("libra", saturn="libra"), "saturn", checked
-    )  # Libra lagna: the exception
+    general = hx.reading(chart("taurus", saturn="taurus"), "saturn", checked)  # Saturn in 1st, Taurus lagna
+    special = hx.reading(chart("libra", saturn="libra"), "saturn", checked)  # Libra lagna: the exception
     assert general.house == special.house == 1
     assert general.effects[0].text.startswith("such person will be poor")
     assert [e.text for e in special.effects] == [
@@ -161,18 +147,14 @@ def test_lagna_specific_row_replaces_the_general_one(checked):
 
 
 def test_borrowed_effects_say_whose_they_are(checked):
-    r = hx.reading(
-        chart("aries", saturn="cancer"), "saturn", checked
-    )  # Saturn in the 4th
+    r = hx.reading(chart("aries", saturn="cancer"), "saturn", checked)  # Saturn in the 4th
     assert r.house == 4 and [(e.text, e.borrowed_from) for e in r.effects] == [
         ("the person will be afflicted with grief and mental sufferings", "sun")
     ]
 
 
 def test_venus_in_pisces_adds_its_own_line(checked):
-    r = hx.reading(
-        chart("aries", venus="pisces"), "venus", checked
-    )  # 12th house, borrowed from Jupiter
+    r = hx.reading(chart("aries", venus="pisces"), "venus", checked)  # 12th house, borrowed from Jupiter
     assert [e.text for e in r.effects] == [
         "he will do fearful deeds",
         "if Venus occupy sign Pisces at the time of birth the person will become rich",
@@ -232,34 +214,21 @@ def test_malformed_rows_are_rejected(checked, bad):
 def test_answer_shows_the_quote_the_strength_rule_and_the_frame(checked, monkeypatch):
     monkeypatch.setattr(hx, "RULES_PATH", checked)
     monkeypatch.setattr(hx.reading, "__defaults__", (checked,))
-    birth = service.resolve_birth(
-        BirthInput("1990-08-15", "14:30", "Pune")
-    )  # Saturn, Sagittarius, 2nd house
+    birth = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))  # Saturn, Sagittarius, 2nd house
     answer = qa.answer_topic("planet:saturn", birth, datetime(2026, 11, 9, tzinfo=UTC))
     compact = render_answer(answer)
     assert "Saturn in your 2nd house (Sagittarius, a neutral sign):" in compact
-    assert (
-        "will have his wealth carried away by the king" in compact
-        and "the same as Sun here" in compact
-    )
-    assert (
-        "gives no share for a neutral sign" in compact
-        and "An old text's view, not a forecast." in compact
-    )
+    assert "will have his wealth carried away by the king" in compact and "the same as Sun here" in compact
+    assert "gives no share for a neutral sign" in compact and "An old text's view, not a forecast." in compact
     full = render_answer(answer, "full")
     assert "What Brihat Jataka chapter 20 says about Saturn in your 2nd house:" in full
-    assert (
-        "same effects as Sun" in full
-        and "Your Saturn is in Sagittarius, a neutral planet's sign." in full
-    )
+    assert "same effects as Sun" in full and "Your Saturn is in Sagittarius, a neutral planet's sign." in full
     assert "It is not a forecast" in full
 
 
 def test_obscured_planet_gets_the_astangata_shares(checked):
     rules = hx.load_rules(checked)
-    r = hx.reading(
-        chart("aries", saturn="sagittarius"), "saturn", checked
-    )  # on top of the Sun
+    r = hx.reading(chart("aries", saturn="sagittarius"), "saturn", checked)  # on top of the Sun
     assert r.astangata and hx.shares(rules, r) == {"good": "not at all", "bad": "fully"}
 
 

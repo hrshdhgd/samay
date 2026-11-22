@@ -56,9 +56,7 @@ class Livelihood:
         groups: dict[tuple[str, str], list[str]] = {}
         for verse, route, text in self.work:
             groups.setdefault((verse, text), []).append(route)
-        return tuple(
-            (verse, tuple(routes), text) for (verse, text), routes in groups.items()
-        )
+        return tuple((verse, tuple(routes), text) for (verse, text), routes in groups.items())
 
 
 @lru_cache(maxsize=4)
@@ -71,9 +69,7 @@ def load_rules(path: Path = RULES_PATH) -> LivelihoodRules:
         if not set(SEVEN) <= set(raw[key]) or not all(
             isinstance(raw[key][p], str) and raw[key][p].strip() for p in SEVEN
         ):
-            raise ValueError(
-                f"{path.name} {key}: needs a text for each of the seven planets"
-            )
+            raise ValueError(f"{path.name} {key}: needs a text for each of the seven planets")
     for k in (
         "friendly_sign",
         "inimical_sign",
@@ -151,9 +147,7 @@ def find(rules: LivelihoodRules, chart: Chart) -> Livelihood | None:
         if p == "sun" and stand == "exaltation":
             key = "sun_exalted"
         if key:
-            conditions.append(
-                (rules.yoga["verse"], f"{p.title()} ({stand} sign): {rules.yoga[key]}")
-            )
+            conditions.append((rules.yoga["verse"], f"{p.title()} ({stand} sign): {rules.yoga[key]}"))
     if any(house_from(lagna, sign[b]) in (11, 1, 2) for b in BENEFICS):
         conditions.append((rules.yoga["verse"], rules.yoga["benefics_prosper"]))
     return Livelihood(tuple(wealth), tuple(work), tuple(conditions), tuple(notes))

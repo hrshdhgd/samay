@@ -28,9 +28,7 @@ class Syllable:
     also: tuple[str, ...] = ()
 
     def __str__(self) -> str:
-        more = (
-            f" (other traditions also use {', '.join(self.also)})" if self.also else ""
-        )
+        more = f" (other traditions also use {', '.join(self.also)})" if self.also else ""
         return f"{self.syllable}{more}"
 
 
@@ -41,9 +39,7 @@ def load_table(path: Path = TABLE) -> dict[tuple[str, int], Syllable]:
     for row in raw:
         for pada, p in enumerate(row["padas"], start=1):
             for field in (p["syllable"], p["devanagari"], *p.get("also", ())):
-                if not isinstance(
-                    field, str
-                ):  # e.g. a bare `No` is read by YAML as False
+                if not isinstance(field, str):  # e.g. a bare `No` is read by YAML as False
                     raise TypeError(
                         f"{path.name}: {row['nakshatra']} pada {pada}: {field!r} must be quoted text"
                     )

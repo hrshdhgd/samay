@@ -95,10 +95,7 @@ def load_rules(path: Path = RULES_PATH) -> StrengthRules:
     if set(raw["rules"]) != set(RULE_KEYS):
         raise ValueError(f"{path.name}: rules must be exactly {RULE_KEYS}")
     for k, r in raw["rules"].items():
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
             raise ValueError(f"{path.name} {k}: needs verse, definition and text")
     return StrengthRules(
         v.get("level", "unchecked"),
@@ -124,9 +121,7 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
     sign = {p: sign_index(chart.planets[p].longitude) for p in BODIES}
     house = {p: house_from(lagna, s) for p, s in sign.items()}
     lord = {h: SIGN_LORDS[(lagna + h - 1) % 12] for h in range(1, 13)}
-    waxing = (
-        chart.planets["moon"].longitude - chart.planets["sun"].longitude
-    ) % 360.0 < 180.0
+    waxing = (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0 < 180.0
     benefics = BENEFICS + (("moon",) if waxing else ())
 
     def stand(p: str) -> str:
@@ -134,20 +129,15 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
 
     def sees(by: str, target: int) -> bool:
         return (
-            by in SEVEN
-            and sign[by] != target
-            and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
+            by in SEVEN and sign[by] != target and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
         )
 
     def helped(p: str) -> bool:
-        return any(
-            q != p and (sign[q] == sign[p] or sees(q, sign[p])) for q in BENEFICS
-        )
+        return any(q != p and (sign[q] == sign[p] or sees(q, sign[p])) for q in BENEFICS)
 
     def afflicted(p: str) -> bool:
         return p in SEVEN and (
-            stand(p) in ("depression", "inimical")
-            or house_effects.is_astangata(ch20, p, chart)
+            stand(p) in ("depression", "inimical") or house_effects.is_astangata(ch20, p, chart)
         )
 
     out = []
@@ -263,9 +253,7 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
                 "helps",
             )
         if lord[1] != lh and (
-            sign[lord[1]] == sign[lh]
-            or sees(lord[1], sign[lh])
-            or sees(lh, sign[lord[1]])
+            sign[lord[1]] == sign[lh] or sees(lord[1], sign[lh]) or sees(lh, sign[lord[1]])
         ):
             add(
                 "lagna_lord_with_lord",
@@ -278,8 +266,6 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
                 f"{lord[1].title()} rules the lagna and also the {', '.join(_ord(d) for d in DUSTHANA if lord[d] == lord[1])}",
                 "note",
             )
-        mixed = any(f.kind == "helps" for f in found) and any(
-            f.kind == "harms" for f in found
-        )
+        mixed = any(f.kind == "helps" for f in found) and any(f.kind == "harms" for f in found)
         out.append(HouseReading(h, hs, lh, tuple(found), mixed))
     return tuple(out)

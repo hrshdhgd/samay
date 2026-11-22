@@ -13,15 +13,17 @@ from ..models import (
     PanchangReport,
 )
 
-NOTE_LOCAL = (
-    "A local panchang may differ, because traditions count this day differently."
-)
+NOTE_LOCAL = "A local panchang may differ, because traditions count this day differently."
 NO_CLAIM = "Observance days are not named yet: the rules for them are not set up from a checked source."
-NEED_TRADITION = "To name observance days I need to know which tradition your family follows. Please set it first."
+NEED_TRADITION = (
+    "To name observance days I need to know which tradition your family follows. Please set it first."
+)
 TOO_FAR = "I can only work out days between 1972 and 2150."
 NO_SUN = "The Sun does not both rise and set that day in {place}, so I cannot give sunrise-based times."
 WHICH_DATE = "I could not read that date. Which day do you mean? For example: 4 December 2026, or 2026-12-04."
-NEED_PLACE = "To work out the panchang I need to know where you live now, because the day starts at local sunrise."
+NEED_PLACE = (
+    "To work out the panchang I need to know where you live now, because the day starts at local sunrise."
+)
 WORKING = "Working that out, one moment."
 TOO_LONG = "That range is too long: I can list at most 366 days at a time. Please ask for a year or less."
 NOTE_LIST = (
@@ -51,11 +53,7 @@ def _day(d: date) -> str:
 def _clock(moment: datetime, tz: str, day: date | None = None) -> str:
     """HH:MM in the place's own time; the date is added when it falls on a day other than `day`."""
     local = moment.astimezone(ZoneInfo(tz))
-    return (
-        f"{local:%H:%M}"
-        if day is None or local.date() == day
-        else f"{local:%H:%M} on {local:%d %b}"
-    )
+    return f"{local:%H:%M}" if day is None or local.date() == day else f"{local:%H:%M} on {local:%d %b}"
 
 
 def _until(element, tz: str, day: date) -> str:
@@ -77,9 +75,7 @@ def _observance_lines(o: ObservanceDay, day: date | None = None) -> list[str]:
     if o.primary is None:
         if o.explanation:  # a nakshatra note: shown as it is, with no date wording
             return [o.explanation]
-        return [
-            f"{o.label}: the rule I use gives no clear day for this one. {NOTE_LOCAL}"
-        ]
+        return [f"{o.label}: the rule I use gives no clear day for this one. {NOTE_LOCAL}"]
     others = [d for d, _ in o.alternates if d != day]
     if day is not None and day != o.primary and day in {d for d, _ in o.alternates}:
         tense = "was" if o.primary < day else "is"
@@ -87,15 +83,11 @@ def _observance_lines(o: ObservanceDay, day: date | None = None) -> list[str]:
             f"{o.label}: some calendars keep it today. The day I use {tense} {_day(o.primary)}. {NOTE_LOCAL}"
         ]
         if others:
-            lines.append(
-                f"Other calendars place it on {', '.join(_day(d) for d in others)}."
-            )
+            lines.append(f"Other calendars place it on {', '.join(_day(d) for d in others)}.")
     else:
         lines = [f"{o.label}: {'today' if o.primary == day else _day(o.primary)}."]
         if others:
-            lines.append(
-                f"Some calendars place it on {', '.join(_day(d) for d in others)}. {NOTE_LOCAL}"
-            )
+            lines.append(f"Some calendars place it on {', '.join(_day(d) for d in others)}. {NOTE_LOCAL}")
     if o.explanation:
         lines.append(o.explanation)
     return lines
@@ -131,9 +123,7 @@ def render_next(report: NextObservanceReport) -> str:
     if report.found is None or report.found.primary is None:
         return f"I could not find the next {report.label} in the coming weeks."
     return "\n".join(
-        [
-            f"The next {report.label} is {_day(report.found.primary)} in {report.place_label}."
-        ]
+        [f"The next {report.label} is {_day(report.found.primary)} in {report.place_label}."]
         + _observance_lines(report.found)[1:]
     )
 
@@ -147,16 +137,16 @@ def render_about(label: str, explanations: list[str]) -> str:
 def render_avoid_window(rahu, place_label: str) -> str:
     """Rahu Kaala as the custom it is: a window traditionally avoided for new starts, not a forecast."""
     if rahu is None:
-        return f"The Sun does not both rise and set today in {place_label}, so there is no usual avoid-window."
+        return (
+            f"The Sun does not both rise and set today in {place_label}, so there is no usual avoid-window."
+        )
     return (
         f"Traditionally avoided for starting new things: {rahu.start:%H:%M} to {rahu.end:%H:%M} "
         f"(called Rahu Kaala), {place_label}."
     )
 
 
-def render_brief(
-    local_now: datetime, rahu, place_label: str, report: PanchangReport | None
-) -> str:
+def render_brief(local_now: datetime, rahu, place_label: str, report: PanchangReport | None) -> str:
     """The morning message: date, the avoid-window, the Moon's day and star, any observance, the Tulu date."""
     today = local_now.date()
     lines = [
@@ -205,11 +195,7 @@ def render_list(report: ObservanceListReport) -> str:
     for o in report.days:
         others = [d for d, _ in o.alternates if d != o.primary]
         if inside(o.primary):
-            extra = (
-                f" (some calendars: {', '.join(_short(d) for d in others)})"
-                if others
-                else ""
-            )
+            extra = f" (some calendars: {', '.join(_short(d) for d in others)})" if others else ""
             by_date.setdefault(o.primary, []).append(o.label + extra)
             counted[o.label] = counted.get(o.label, 0) + 1
             continue
@@ -233,9 +219,7 @@ def render_list(report: ObservanceListReport) -> str:
     if report.needs_sampradaya:
         tail.append(NEED_TRADITION)
     for label in dict.fromkeys(unclear):
-        tail.append(
-            f"{label}: the rule I use gives no clear day for one of these. {NOTE_LOCAL}"
-        )
+        tail.append(f"{label}: the rule I use gives no clear day for one of these. {NOTE_LOCAL}")
     if not by_date:
         return "\n".join(
             [
@@ -258,11 +242,7 @@ def render_list(report: ObservanceListReport) -> str:
         tail.append(NOTE_LIST)
     if counted:
         order = list(report.labels) + sorted(set(counted) - set(report.labels))
-        dates = sum(
-            1 for d in by_date if any("in some calendars" not in e for e in by_date[d])
-        )
-        parts = ", ".join(
-            f"{counted[label]} {label}" for label in order if label in counted
-        )
+        dates = sum(1 for d in by_date if any("in some calendars" not in e for e in by_date[d]))
+        parts = ", ".join(f"{counted[label]} {label}" for label in order if label in counted)
         tail.append(f"{dates} {'day' if dates == 1 else 'days'}: {parts}.")
     return "\n\n".join(blocks) + "\n\n" + "\n".join(tail)

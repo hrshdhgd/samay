@@ -53,9 +53,7 @@ def main() -> None:
                 "utc": utc.replace(tzinfo=UTC).isoformat(),
                 "latitude": lat,
                 "longitude": lon,
-                "ayanamsa_mean": swe.get_ayanamsa_ex_ut(
-                    jd, swe.FLG_MOSEPH | swe.FLG_NONUT
-                )[1],
+                "ayanamsa_mean": swe.get_ayanamsa_ex_ut(jd, swe.FLG_MOSEPH | swe.FLG_NONUT)[1],
                 "ascendant": ascmc[0],
                 "planets": planets,
             }

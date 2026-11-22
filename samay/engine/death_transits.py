@@ -67,11 +67,7 @@ class Unavailable(Exception):
 def _check_expr(expr: str, where: str) -> None:
     head, _, rest = expr.partition(":")
     if head in ("lord", "natal"):
-        ok = (
-            (rest.isdigit() and 1 <= int(rest) <= 12)
-            if head == "lord"
-            else rest in BODIES
-        )
+        ok = (rest.isdigit() and 1 <= int(rest) <= 12) if head == "lord" else rest in BODIES
         if not ok:
             raise ValueError(f"{where}: bad point {expr!r}")
     elif head in ("diff", "sum", "x9"):
@@ -98,23 +94,14 @@ def load_rules(path: Path = RULES_PATH) -> ExitRules:
         if (
             r["id"] in seen
             or r.get("mover") not in MOVERS
-            or not all(
-                isinstance(r.get(f), str) and r[f].strip()
-                for f in ("verse", "text", "definition")
-            )
+            or not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "text", "definition"))
         ):
-            raise ValueError(
-                f"{where}: needs a unique id, a mover from {MOVERS}, verse, text and definition"
-            )
+            raise ValueError(f"{where}: needs a unique id, a mover from {MOVERS}, verse, text and definition")
         seen.add(r["id"])
         if r.get("when") not in (None, "day", "night"):
             raise ValueError(f"{where}: when must be day or night")
         for t in r["targets"]:
-            if (
-                t["via"] not in VIAS
-                or not t["offsets"]
-                or not all(0 <= o < 12 for o in t["offsets"])
-            ):
+            if t["via"] not in VIAS or not t["offsets"] or not all(0 <= o < 12 for o in t["offsets"]):
                 raise ValueError(f"{where}: bad target {t}")
             for p in t["points"]:
                 _check_expr(p, where)
@@ -146,9 +133,7 @@ class Points:
         return SIGN_LORDS[(s + (0, 4, 8)[k]) % 12]
 
     def _lord22(self, lon: float) -> str:
-        n = sign_index(lon) * 3 + int(
-            degree_in_sign(lon) // 10
-        )  # 0-based decanate number, Aries first
+        n = sign_index(lon) * 3 + int(degree_in_sign(lon) // 10)  # 0-based decanate number, Aries first
         t = (n + 21) % 36  # the 22nd counting the starting decanate as the 1st
         return SIGN_LORDS[(t // 3 + (0, 4, 8)[t % 3]) % 12]
 
@@ -235,10 +220,7 @@ def find(
                 r,
                 "birth",
                 0,
-                [
-                    s in allowed
-                    for s in movers["moon" if r["mover"] == "moon" else r["mover"]]
-                ],
+                [s in allowed for s in movers["moon" if r["mover"] == "moon" else r["mover"]]],
                 times,
             )
         )

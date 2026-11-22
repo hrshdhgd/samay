@@ -7,9 +7,7 @@ from samay.engine.geo import Place
 from samay.engine.paths import EPHEMERIS_PATH
 from samay.render import panchang as words
 
-PUNE = Place(
-    "pune", "Pune", "IN", "Maharashtra", None, 18.5196, 73.8553, "Asia/Kolkata", 3124458
-)
+PUNE = Place("pune", "Pune", "IN", "Maharashtra", None, 18.5196, 73.8553, "Asia/Kolkata", 3124458)
 TODAY = date(2026, 11, 21)  # a Saturday
 NOW = datetime(2026, 11, 21, 4, 0, tzinfo=UTC)
 
@@ -125,9 +123,7 @@ def test_dates_are_resolved_in_the_places_own_day(text, expected):
 
 def test_a_weekday_asked_on_that_weekday_means_a_week_later():
     monday = date(2026, 11, 23)
-    assert pq.resolve_when(pq.sort("panchang on monday").when, monday) == date(
-        2026, 11, 30
-    )
+    assert pq.resolve_when(pq.sort("panchang on monday").when, monday) == date(2026, 11, 30)
 
 
 @pytest.mark.parametrize(
@@ -146,9 +142,7 @@ def test_impossible_dates_do_not_crash_and_ask_which_day(text):
     assert pq.answer(asked, PUNE, NOW) == words.WHICH_DATE
 
 
-pytestmark_engine = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark_engine = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 
 
 @pytestmark_engine
@@ -160,11 +154,7 @@ def test_a_day_question_gets_the_facts():
 @pytestmark_engine
 def test_an_observance_named_with_a_day_gets_that_days_facts():
     reply = pq.answer(pq.sort("is it ekadashi today"), PUNE, NOW)
-    assert (
-        "Saturday, 21 November 2026 in Pune" in reply
-        and "Tithi" in reply
-        and "Tulu date" in reply
-    )
+    assert "Saturday, 21 November 2026 in Pune" in reply and "Tithi" in reply and "Tulu date" in reply
 
 
 @pytestmark_engine
@@ -174,9 +164,7 @@ def test_a_next_question_names_the_day_from_the_shipped_profile():
 
 
 @pytestmark_engine
-def test_a_next_question_without_a_verified_rule_does_not_name_a_day(
-    tmp_path, monkeypatch
-):
+def test_a_next_question_without_a_verified_rule_does_not_name_a_day(tmp_path, monkeypatch):
     import yaml
 
     from samay import service
@@ -236,24 +224,16 @@ def test_the_edges_of_the_engines_range(day, answered):
 
 
 def test_a_nakshatra_question_is_asked_for_the_right_day():
-    assert pq.resolve_when(pq.sort("nakshatra tomorrow").when, TODAY) == date(
-        2026, 11, 22
-    )
+    assert pq.resolve_when(pq.sort("nakshatra tomorrow").when, TODAY) == date(2026, 11, 22)
 
 
 @pytestmark_engine
 def test_a_nakshatra_question_gets_the_days_facts():
     reply = pq.answer(pq.sort("what is the nakshatra today"), PUNE, NOW)
-    assert (
-        "Nakshatra (the Moon's star)" in reply
-        and "Karana" in reply
-        and "Tulu date" in reply
-    )
+    assert "Nakshatra (the Moon's star)" in reply and "Karana" in reply and "Tulu date" in reply
 
 
-@pytest.mark.parametrize(
-    "text", ["when is the next pradosham", "what is Pradosham", "next pradosh vratham"]
-)
+@pytest.mark.parametrize("text", ["when is the next pradosham", "what is Pradosham", "next pradosh vratham"])
 def test_south_indian_spellings_of_pradosha_are_understood(text):
     assert pq.sort(text).observance == "pradosha"
 
@@ -416,17 +396,16 @@ def test_weeks_start_on_monday(today, first, last):
 
 
 def test_next_month_in_december_is_january_of_the_next_year():
-    assert pq.resolve_range(
-        pq.sort("pradosha next month").when, date(2026, 12, 15)
-    ) == (date(2027, 1, 1), date(2027, 1, 31))
+    assert pq.resolve_range(pq.sort("pradosha next month").when, date(2026, 12, 15)) == (
+        date(2027, 1, 1),
+        date(2027, 1, 31),
+    )
 
 
 def test_a_range_over_366_days_is_too_long():
     asked = pq.sort("list ekadashi dates in the next 400 days")
     assert pq.resolve_range(asked.when, SUNDAY) == (SUNDAY, date(2027, 12, 26))
-    assert (
-        pq.answer(asked, PUNE, datetime(2026, 11, 22, 4, tzinfo=UTC)) == words.TOO_LONG
-    )
+    assert pq.answer(asked, PUNE, datetime(2026, 11, 22, 4, tzinfo=UTC)) == words.TOO_LONG
 
 
 def test_only_long_lists_are_slow():
@@ -443,15 +422,9 @@ def test_a_list_far_outside_the_engines_range_is_refused():
 
 @pytestmark_engine
 def test_a_list_question_gets_the_days_in_the_range():
-    reply = pq.answer(
-        pq.sort("list all ekadashi and pradosha days in December 2026"), PUNE, NOW
-    )
+    reply = pq.answer(pq.sort("list all ekadashi and pradosha days in December 2026"), PUNE, NOW)
     assert (
         reply.splitlines()[0]
         == f"Ekadashi and Pradosha days from Tue 1 Dec to Thu 31 Dec 2026 in {PUNE.label}"
     )
-    assert (
-        "Fri 4 Dec: Ekadashi" in reply
-        and "Purnima" not in reply
-        and "Amavasya" not in reply
-    )
+    assert "Fri 4 Dec: Ekadashi" in reply and "Purnima" not in reply and "Amavasya" not in reply

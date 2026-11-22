@@ -60,10 +60,7 @@ def lahiri_ayanamsa(jd_tt: float) -> float:
     """
     T = _centuries(jd_tt)
     T0 = _centuries(_LAHIRI_T0_JD)
-    return (
-        _LAHIRI_T0_DEG
-        + (_general_precession_arcsec(T) - _general_precession_arcsec(T0)) / 3600.0
-    )
+    return _LAHIRI_T0_DEG + (_general_precession_arcsec(T) - _general_precession_arcsec(T0)) / 3600.0
 
 
 def mean_lunar_node(jd_tt: float) -> float:
@@ -81,17 +78,11 @@ def mean_obliquity(jd_tt: float) -> float:
 def ascendant_tropical(ramc_deg: float, lat_deg: float, eps_deg: float) -> float:
     """Tropical ecliptic longitude of the ascendant (Meeus 14.2, quadrant-corrected)."""
     th, ph, ep = map(math.radians, (ramc_deg, lat_deg, eps_deg))
-    lam = math.degrees(
-        math.atan2(
-            -math.cos(th), math.sin(ep) * math.tan(ph) + math.cos(ep) * math.sin(th)
-        )
-    )
+    lam = math.degrees(math.atan2(-math.cos(th), math.sin(ep) * math.tan(ph) + math.cos(ep) * math.sin(th)))
     return (lam + 180.0) % 360.0
 
 
-SIDEREAL_DEG_PER_MINUTE = (
-    360.98564736629 / 1440.0
-)  # how fast the local sidereal time (RAMC) turns
+SIDEREAL_DEG_PER_MINUTE = 360.98564736629 / 1440.0  # how fast the local sidereal time (RAMC) turns
 
 
 def rising_sign_rest_minutes(chart: Chart) -> float:
@@ -103,9 +94,7 @@ def rising_sign_rest_minutes(chart: Chart) -> float:
     eps = mean_obliquity(t.tt)
 
     def gained(d: float) -> float:
-        asc = (
-            ascendant_tropical(ramc0 + d, chart.latitude, eps) - chart.ayanamsa
-        ) % 360.0
+        asc = (ascendant_tropical(ramc0 + d, chart.latitude, eps) - chart.ayanamsa) % 360.0
         return (asc - chart.ascendant) % 360.0
 
     need = 30.0 - chart.ascendant % 30.0
@@ -177,9 +166,7 @@ def _tropical_longitudes(t, node_fn) -> dict[str, float]:
     earth = eph["earth"]
     out = {}
     for name, target in KERNEL_TARGETS.items():
-        _lat, lon, _ = (
-            earth.at(t).observe(eph[target]).apparent().frame_latlon(ecliptic_frame)
-        )
+        _lat, lon, _ = earth.at(t).observe(eph[target]).apparent().frame_latlon(ecliptic_frame)
         out[name] = lon.degrees % 360.0
     node = node_fn(t.tt)
     out["rahu"] = node
@@ -197,13 +184,8 @@ def sidereal_track(
     if any(t.tzinfo is None for t in times):
         raise ValueError("times must be timezone-aware")
     utc = [t.astimezone(UTC) for t in times]
-    if not (
-        max(UTC_LEAP_SECONDS_FROM, EPHEMERIS_START) <= min(utc)
-        and max(utc) <= EPHEMERIS_END
-    ):
-        raise OutOfEphemerisRange(
-            f"{min(utc):%Y-%m-%d}..{max(utc):%Y-%m-%d} is outside the supported range"
-        )
+    if not (max(UTC_LEAP_SECONDS_FROM, EPHEMERIS_START) <= min(utc) and max(utc) <= EPHEMERIS_END):
+        raise OutOfEphemerisRange(f"{min(utc):%Y-%m-%d}..{max(utc):%Y-%m-%d} is outside the supported range")
     t = _timescale().from_datetimes(utc)
     ayan = AYANAMSAS[ayanamsa](t.tt)
     tropical = _tropical_longitudes(t, NODES[node])

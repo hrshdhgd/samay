@@ -51,9 +51,7 @@ class DeathTiming:
     start: datetime
     end: datetime
     results: tuple[RuleWindows, ...]
-    dashas: tuple[
-        DashaWindow, ...
-    ]  # the periods of rules maraka_dasha / eighth_twelfth_antardasha
+    dashas: tuple[DashaWindow, ...]  # the periods of rules maraka_dasha / eighth_twelfth_antardasha
     maraka: tuple[str, ...]
     weak_lords: tuple[str, ...]
     tz: str = "UTC"
@@ -69,10 +67,7 @@ def load_rules(path: Path = RULES_PATH) -> DeathRules:
     if set(rules) != set(IDS):
         raise ValueError(f"{path.name}: rules must be exactly {IDS}")
     for r in rules.values():
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
             raise ValueError(f"{path.name} {r['id']}: needs verse, definition and text")
     return DeathRules(
         v.get("level", "unchecked"),
@@ -106,10 +101,7 @@ def find(
         return house_effects.strength(ch20, p, nat[p])
 
     out: list[RuleWindows] = []
-    total = (
-        sum(chart.planets[p].longitude for p in ("sun", "moon", "jupiter", "saturn"))
-        % 360.0
-    )
+    total = sum(chart.planets[p].longitude for p in ("sun", "moon", "jupiter", "saturn")) % 360.0
     point = sign_index(total)
     out.append(
         _result(
@@ -139,10 +131,7 @@ def find(
         flags = []
         for i in range(n):
             s = signs[ll][i]
-            flags.append(
-                house_from(lagna, s) in (1, 6, 8, 12)
-                or house_from(nat["moon"], s) in (1, 6, 8, 12)
-            )
+            flags.append(house_from(lagna, s) in (1, 6, 8, 12) or house_from(nat["moon"], s) in (1, 6, 8, 12))
         out.append(
             _result(
                 rules.rules["lagna_lord_transit"],
@@ -176,14 +165,8 @@ def find(
         )
     )
     maraka = sorted({lord[2], lord[7]} | {p for p in nat if house[p] in (2, 7)})
-    maraka = [
-        p
-        for p in maraka
-        if p in SEVEN and stand(p) in ("own", "moolatrikona", "exaltation")
-    ]
-    flags_m, shown_m = (
-        _dasha_flags(dashas, times, set(maraka)) if maraka else ([False] * n, [])
-    )
+    maraka = [p for p in maraka if p in SEVEN and stand(p) in ("own", "moolatrikona", "exaltation")]
+    flags_m, shown_m = _dasha_flags(dashas, times, set(maraka)) if maraka else ([False] * n, [])
     out.append(
         _result(
             rules.rules["maraka_dasha"],

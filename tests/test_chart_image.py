@@ -8,18 +8,14 @@ from samay.engine.paths import EPHEMERIS_PATH
 from samay.models import BirthInput
 from samay.render import chart_image as ci
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 
 
 @pytest.fixture(scope="module")
 def report():
     # Pune 1990-08-15 14:30: Scorpio lagna; Sun/Venus/Jupiter/Ketu Cancer, Moon Taurus, Mars Aries,
     # Mercury Leo, Saturn (retrograde) Sagittarius, Rahu Capricorn (checked against Swiss Ephemeris).
-    return service.natal_report(
-        service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune"))
-    )
+    return service.natal_report(service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune")))
 
 
 def texts(marks):
@@ -29,15 +25,9 @@ def texts(marks):
 def test_planets_land_in_the_right_signs(report):
     by_sign = ci.marks_by_sign(report)
     assert texts(by_sign[3]) == ["Su", "Ve", "Ju", "Ke"]  # Cancer, in graha order
-    assert (
-        texts(by_sign[1]) == ["Mo"]
-        and texts(by_sign[0]) == ["Ma"]
-        and texts(by_sign[4]) == ["Me"]
-    )
+    assert texts(by_sign[1]) == ["Mo"] and texts(by_sign[0]) == ["Ma"] and texts(by_sign[4]) == ["Me"]
     assert texts(by_sign[8]) == ["Sa(R)"] and by_sign[8][0].retrograde
-    assert (
-        texts(by_sign[9]) == ["Ra"] and not by_sign[9][0].retrograde
-    )  # nodes are not flagged
+    assert texts(by_sign[9]) == ["Ra"] and not by_sign[9][0].retrograde  # nodes are not flagged
     assert sum(len(v) for v in by_sign.values()) == 9
     assert ci.lagna_sign(report) == 7  # Scorpio
 
@@ -66,20 +56,14 @@ def test_north_houses_count_from_the_lagna(report):
     ]  # Scorpio is sign 8
     by_house = {i + 1: texts(m) for i, (_, m) in enumerate(houses)}
     assert by_house[2] == ["Sa(R)"] and by_house[3] == ["Ra"] and by_house[6] == ["Ma"]
-    assert (
-        by_house[7] == ["Mo"]
-        and by_house[9] == ["Su", "Ve", "Ju", "Ke"]
-        and by_house[10] == ["Me"]
-    )
+    assert by_house[7] == ["Mo"] and by_house[9] == ["Su", "Ve", "Ju", "Ke"] and by_house[10] == ["Me"]
     assert by_house[1] == [] and by_house[4] == []
 
 
 def test_south_grid_keeps_each_sign_in_its_fixed_box():
     cells = ci.SOUTH_CELLS
     assert len(set(cells.values())) == 12
-    assert all(
-        r in (0, 3) or c in (0, 3) for r, c in cells.values()
-    )  # only the outer ring is used
+    assert all(r in (0, 3) or c in (0, 3) for r, c in cells.values())  # only the outer ring is used
     assert (cells[11], cells[0], cells[1], cells[2]) == (
         (0, 0),
         (0, 1),
@@ -109,9 +93,7 @@ def test_renders_a_png_of_the_expected_size(report, style, degrees):
 
 
 def test_each_choice_changes_the_picture_and_rendering_is_deterministic(report):
-    south, north = ci.render_chart_png(report, "south"), ci.render_chart_png(
-        report, "north"
-    )
+    south, north = ci.render_chart_png(report, "south"), ci.render_chart_png(report, "north")
     assert south != north
     assert ci.render_chart_png(report, "south", True) != south
     assert ci.render_chart_png(report, "south") == south

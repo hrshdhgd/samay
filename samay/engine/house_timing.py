@@ -64,9 +64,7 @@ class RuleWindows:
     text: str
     ref: str  # "lagna" or "the Moon sign"
     house: int
-    windows: tuple[
-        tuple[datetime, datetime], ...
-    ]  # first and last day (UTC) of each stretch
+    windows: tuple[tuple[datetime, datetime], ...]  # first and last day (UTC) of each stretch
     days: int  # days on which the condition holds
     total: int  # days in the period
     note: str = ""  # a caveat computed for this chart
@@ -112,13 +110,8 @@ def load_rules(path: Path = RULES_PATH) -> TimingRules:
             f"{path.name}: needs rules {GENERAL_IDS} and, for marriage (the 7th house), {MARRIAGE_IDS}"
         )
     for r in (*general.values(), *marriage.values()):
-        if not all(
-            isinstance(r.get(f), str) and r[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
-            raise ValueError(
-                f"{path.name} {r.get('id')}: needs verse, definition and text"
-            )
+        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
+            raise ValueError(f"{path.name} {r.get('id')}: needs verse, definition and text")
     areas = {a: tuple(hs) for a, hs in raw["areas"].items()}
     if not all(1 <= h <= 12 for hs in areas.values() for h in hs):
         raise ValueError(f"{path.name}: houses must be 1-12")
@@ -143,9 +136,7 @@ def _aspects(by: str, by_sign: int, target_sign: int) -> bool:
     return house_from(by_sign, target_sign) in FULL_ASPECTS.get(by, (7,))
 
 
-def _windows(
-    flags: list[bool], times: list[datetime]
-) -> tuple[tuple[datetime, datetime], ...]:
+def _windows(flags: list[bool], times: list[datetime]) -> tuple[tuple[datetime, datetime], ...]:
     out, begin = [], None
     for i, on in enumerate(flags):
         if on and begin is None:
@@ -185,9 +176,7 @@ def _dasha_flags(
     spans = []
     for maha in dashas:
         if maha.lord in lords:
-            spans.append(
-                DashaWindow("mahadasha", maha.lord, maha.lord, maha.start, maha.end)
-            )
+            spans.append(DashaWindow("mahadasha", maha.lord, maha.lord, maha.start, maha.end))
         spans += [
             DashaWindow("antardasha", a.lord, maha.lord, a.start, a.end)
             for a in antardashas(maha)
@@ -254,9 +243,7 @@ def find(
                     note = f"does not apply: the lord of the lagna and the lord of the house are the same planet ({ll.title()})"
                 elif rid == "conjunction" and not strong:
                     note = f"the text asks that the lord of the house be strong at birth; {lh.title()} is not in an own, moolatrikona or exaltation sign"
-                general.append(
-                    _result(rules.general[rid], ref_name, h, flags[rid], times, note)
-                )
+                general.append(_result(rules.general[rid], ref_name, h, flags[rid], times, note))
     marriage: list[RuleWindows] = []
     dasha_list: list[DashaWindow] = []
     m2: list[str] = []
@@ -266,10 +253,7 @@ def find(
         l7, ll = SIGN_LORDS[seventh], SIGN_LORDS[lagna]
         ll_targets = _trines(natal[ll]) | _trines(nav[ll])
         l7_targets = _trines(natal[l7]) | _trines(nav[l7])
-        m1 = [
-            signs["venus"][i] in ll_targets or signs[l7][i] in ll_targets
-            for i in range(n)
-        ]
+        m1 = [signs["venus"][i] in ll_targets or signs[l7][i] in ll_targets for i in range(n)]
         marriage.append(_result(rules.marriage["m1"], "lagna", 7, m1, times))
         m2 = sorted(
             {p for p in natal if natal[p] == seventh}
@@ -279,9 +263,7 @@ def find(
         f2, dasha_list = _dasha_flags(dashas, times, set(m2))
         marriage.append(_result(rules.marriage["m2"], "lagna", 7, f2, times))
         cands = {SIGN_LORDS[natal[l7]], SIGN_LORDS[nav[l7]], "venus", "moon"}
-        rank = {
-            p: STANDING_RANK[house_effects.strength(ch20, p, natal[p])] for p in cands
-        }
+        rank = {p: STANDING_RANK[house_effects.strength(ch20, p, natal[p])] for p in cands}
         best = max(rank.values())
         m3 = sorted(p for p in cands if rank[p] == best)
         f3d, _ = _dasha_flags(dashas, times, set(m3))

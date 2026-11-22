@@ -63,16 +63,10 @@ def load_rules(path: Path = RULES_PATH) -> AshtakavargaRules:
     tables = {}
     for planet, row in raw["tables"].items():
         if set(row) != set(SOURCES):
-            raise ValueError(
-                f"{path.name} {planet}: needs the seven planets and the lagna as sources"
-            )
+            raise ValueError(f"{path.name} {planet}: needs the seven planets and the lagna as sources")
         for src, houses in row.items():
-            if houses != sorted(set(houses)) or not all(
-                isinstance(h, int) and 1 <= h <= 12 for h in houses
-            ):
-                raise ValueError(
-                    f"{path.name} {planet} from {src}: houses must be sorted, unique, 1-12"
-                )
+            if houses != sorted(set(houses)) or not all(isinstance(h, int) and 1 <= h <= 12 for h in houses):
+                raise ValueError(f"{path.name} {planet} from {src}: houses must be sorted, unique, 1-12")
         want = raw["expected"][planet]
         counts = [len(row[s]) for s in SOURCES]
         if counts != want["counts"] or sum(counts) != want["total"]:

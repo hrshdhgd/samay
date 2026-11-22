@@ -123,9 +123,7 @@ def test_citation_text_names_the_level():
     assert LEVELS.index("sanskrit-checked") > LEVELS.index("translation-checked")
 
 
-@pytest.mark.parametrize(
-    "good", ["dasha:saturn", "planet:sun", "transit:saturn:11", "yoga"]
-)
+@pytest.mark.parametrize("good", ["dasha:saturn", "planet:sun", "transit:saturn:11", "yoga"])
 def test_topic_keys(good):
     assert is_topic(good)
 
@@ -157,7 +155,5 @@ def test_a_system_specific_entry_never_answers_for_another_system(tmp_path):
         raw(id="vim", topic="dasha:saturn", system="vimshottari", verification=CHECKED),
         raw(id="gen", topic="dasha:saturn", system="any", verification=CHECKED),
     )
-    assert {
-        e.id for e in answers_for("dasha:saturn", frozenset({"vimshottari"}), d)
-    } == {"vim", "gen"}
+    assert {e.id for e in answers_for("dasha:saturn", frozenset({"vimshottari"}), d)} == {"vim", "gen"}
     assert {e.id for e in answers_for("dasha:saturn", directory=d)} == {"gen"}

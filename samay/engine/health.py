@@ -75,9 +75,7 @@ class HealthRules:
 @dataclass(frozen=True)
 class Source:
     planet: str
-    why: tuple[
-        str, ...
-    ]  # "in the 6th house", "lord of the 6th", "joined with the lord of the 6th"
+    why: tuple[str, ...]  # "in the 6th house", "lord of the 6th", "joined with the lord of the 6th"
     verse: str
     items: tuple[tuple[str, tuple[str, ...]], ...]  # (trouble, tags)
 
@@ -115,10 +113,7 @@ def load_rules(path: Path = RULES_PATH) -> HealthRules:
     if set(raw["combinations"]) != set(COMBINATIONS):
         raise ValueError(f"{path.name}: combinations must be exactly {COMBINATIONS}")
     for k, c in raw["combinations"].items():
-        if not all(
-            isinstance(c.get(f), str) and c[f].strip()
-            for f in ("verse", "definition", "text")
-        ):
+        if not all(isinstance(c.get(f), str) and c[f].strip() for f in ("verse", "definition", "text")):
             raise ValueError(f"{path.name} {k}: needs verse, definition and text")
     return HealthRules(
         v.get("level", "unchecked"),
@@ -156,9 +151,7 @@ def find(rules: HealthRules, chart: Chart) -> Health | None:
         ]
 
     def joined_or_aspected(p: str, by: tuple[str, ...]) -> bool:
-        return any(sign[q] == sign[p] for q in by if q != p) or bool(
-            aspected_by(sign[p], by)
-        )
+        return any(sign[q] == sign[p] for q in by if q != p) or bool(aspected_by(sign[p], by))
 
     why: dict[str, list[str]] = {}
     for p in BODIES:
@@ -173,9 +166,7 @@ def find(rules: HealthRules, chart: Chart) -> Health | None:
             p,
             tuple(w),
             rules.planets[p]["verse"],
-            tuple(
-                (i["text"], tuple(i.get("tags", ()))) for i in rules.planets[p]["items"]
-            ),
+            tuple((i["text"], tuple(i.get("tags", ()))) for i in rules.planets[p]["items"]),
         )
         for p, w in sorted(why.items(), key=lambda kv: BODIES.index(kv[0]))
     )
@@ -206,22 +197,14 @@ def find(rules: HealthRules, chart: Chart) -> Health | None:
     third, eleventh = (lagna + 2) % 12, (lagna + 10) % 12
 
     def house_touched(s: int) -> bool:
-        return any(sign[p] == s for p in ("mars", "saturn")) or bool(
-            aspected_by(s, ("mars", "saturn"))
-        )
+        return any(sign[p] == s for p in ("mars", "saturn")) or bool(aspected_by(s, ("mars", "saturn")))
 
-    if (
-        house_touched(third)
-        and house_touched(eleventh)
-        and joined_or_aspected("jupiter", ("mars", "saturn"))
-    ):
+    if house_touched(third) and house_touched(eleventh) and joined_or_aspected("jupiter", ("mars", "saturn")):
         add(
             "ear",
             "Mars or Saturn is in or aspects the 3rd house, the 11th house and Jupiter",
         )
-    if house["mars"] == 5 and any(
-        lord[h] != "mars" and sign[lord[h]] == sign["mars"] for h in (6, 8)
-    ):
+    if house["mars"] == 5 and any(lord[h] != "mars" and sign[lord[h]] == sign["mars"] for h in (6, 8)):
         add("stomach", "Mars is in the 5th house with the lord of the 6th or the 8th")
     for h, where in ((6, (7, 8)), (8, (7,))):
         lh = lord[h]
@@ -250,9 +233,7 @@ def find(rules: HealthRules, chart: Chart) -> Health | None:
             add("saturn_moon", f"Saturn and the Moon are together in the {where} house")
         if (
             p == "moon"
-            and (chart.planets["moon"].longitude - chart.planets["sun"].longitude)
-            % 360.0
-            >= 180.0
+            and (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0 >= 180.0
             and sign["moon"] in WATERY
             and any(sign[m] == sign["moon"] for m in MALEFICS)
         ):

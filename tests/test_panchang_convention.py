@@ -12,9 +12,7 @@ from samay.engine.panchang import Site
 from samay.engine.panchang_profile import load_panchang_profile
 from samay.engine.paths import EPHEMERIS_PATH
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
@@ -51,17 +49,11 @@ def test_engine_agrees_with_the_tulu_panchanga_app_or_every_difference_is_explai
                 profile.margin_minutes,
                 profile.sunrise_definition,
             )
-            ours = {
-                (name, o.primary) for o in found if o.primary and o.primary.year == year
-            }
+            ours = {(name, o.primary) for o in found if o.primary and o.primary.year == year}
             listed = {(n, d) for n, d in theirs if n == name and d.year == year}
             differing = ours ^ listed
             occurred |= differing & explained
-            problems += [
-                (n, d.isoformat())
-                for n, d in sorted(differing)
-                if (n, d) not in explained
-            ]
+            problems += [(n, d.isoformat()) for n, d in sorted(differing) if (n, d) not in explained]
     assert not problems, f"unexplained differences (observance, date): {problems}"
     stale = sorted((n, d.isoformat()) for n, d in explained - occurred)
     assert not stale, f"known_divergences that no longer occur (remove them): {stale}"

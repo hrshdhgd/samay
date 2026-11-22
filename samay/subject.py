@@ -21,9 +21,7 @@ def clean(text: str, limit: int) -> str:
 class Subject:
     name: str | None = None  # None means the user themself
     relation: str | None = None  # "daughter", "husband", ...
-    minor: bool = (
-        False  # under 18: the classical texts describe adult life, so answers say so
-    )
+    minor: bool = False  # under 18: the classical texts describe adult life, so answers say so
 
     @property
     def is_self(self) -> bool:

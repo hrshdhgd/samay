@@ -82,9 +82,7 @@ def _o(n: int) -> str:
 
 
 def _waning(c: Ctx) -> bool:
-    return (
-        c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude
-    ) % 360.0 > 180.0
+    return (c.chart.planets["moon"].longitude - c.chart.planets["sun"].longitude) % 360.0 > 180.0
 
 
 def _rank(c: Ctx, p: str) -> int:
@@ -129,53 +127,32 @@ def _y_kinsmen(c: Ctx) -> str | None:
 
 def _y_prison(c: Ctx) -> str | None:
     there = [p for p in MALEFICS if c.house[p] in (5, 9)]
-    if len(there) >= 2 and not any(
-        c.sees(b, c.sign[p]) for p in there for b in BENEFICS
-    ):
+    if len(there) >= 2 and not any(c.sees(b, c.sign[p]) for p in there for b in BENEFICS):
         return f"{_names(there)} in the 5th and 9th houses, no benefic aspecting them"
     return None
 
 
 def _y_prison_drekkana(c: Ctx) -> str | None:
     sign, n, _ = _drekkana_of_house(c, 8)
-    return (
-        f"the drekkana in the 8th is the {_o(n)} of {SIGNS[sign]}"
-        if (sign, n) in SARPA | PASA
-        else None
-    )
+    return f"the drekkana in the 8th is the {_o(n)} of {SIGNS[sign]}" if (sign, n) in SARPA | PASA else None
 
 
 def _y_woman(c: Ctx) -> str | None:
     with_moon = [p for p in MALEFICS if c.sign[p] == c.sign["moon"]]
-    if (
-        c.lagna == 11
-        and c.sign["sun"] == 11
-        and c.sign["moon"] == 5
-        and with_moon
-        and c.sign["venus"] == 0
-    ):
+    if c.lagna == 11 and c.sign["sun"] == 11 and c.sign["moon"] == 5 and with_moon and c.sign["venus"] == 0:
         return f"lagna Pisces with the Sun; the Moon in Virgo with {_names(with_moon)}; Venus in Aries"
     return None
 
 
 def _y_spear_2(c: Ctx) -> str | None:
-    if _waning(c) and all(
-        c.house[p] in (1, 5, 9) for p in ("sun", "mars", "saturn", "moon")
-    ):
+    if _waning(c) and all(c.house[p] in (1, 5, 9) for p in ("sun", "mars", "saturn", "moon")):
         return "the Sun, Mars, Saturn and the waning Moon all in the 1st, 5th and 9th houses"
     return None
 
 
 def _y_privities(c: Ctx) -> str | None:
-    if (
-        _waning(c)
-        and c.sees("mars", c.sign["moon"])
-        and c.stand("mars") in STRONG
-        and c.house["saturn"] == 8
-    ):
-        return (
-            f"the waning Moon aspected by Mars ({c.stand('mars')}), Saturn in the 8th"
-        )
+    if _waning(c) and c.sees("mars", c.sign["moon"]) and c.stand("mars") in STRONG and c.house["saturn"] == 8:
+        return f"the waning Moon aspected by Mars ({c.stand('mars')}), Saturn in the 8th"
     return None
 
 
@@ -194,8 +171,7 @@ YOGAS: dict[str, Detect] = {
     ),
     "kinsmen": _y_kinsmen,
     "drowning": _yp(
-        lambda c: c.lagna in (2, 5, 8, 11)
-        and c.sign["sun"] == c.lagna == c.sign["moon"],
+        lambda c: c.lagna in (2, 5, 8, 11) and c.sign["sun"] == c.lagna == c.sign["moon"],
         "the Sun and the Moon in a common rising sign",
     ),
     "dropsy": _yp(
@@ -218,15 +194,12 @@ YOGAS: dict[str, Detect] = {
     "prison_drekkana": _y_prison_drekkana,
     "woman_at_home": _y_woman,
     "spear_1": _yp(
-        lambda c: (c.house["mars"] == 4 or c.house["sun"] == 4)
-        and c.house["saturn"] == 10,
+        lambda c: (c.house["mars"] == 4 or c.house["sun"] == 4) and c.house["saturn"] == 10,
         "Mars or the Sun in the 4th, Saturn in the 10th",
     ),
     "spear_2": _y_spear_2,
     "spear_3": _yp(
-        lambda c: _at(c, sun=4, mars=10)
-        and _waning(c)
-        and c.sees("moon", c.sign["mars"]),
+        lambda c: _at(c, sun=4, mars=10) and _waning(c) and c.sees("moon", c.sign["mars"]),
         "the Sun in the 4th, Mars in the 10th aspected by the waning Moon",
     ),
     "wood": _yp(
@@ -249,17 +222,13 @@ YOGAS: dict[str, Detect] = {
         lambda c: _at(c, saturn=2, moon=4, mars=10),
         "Saturn in the 2nd, the Moon in the 4th, Mars in the 10th",
     ),
-    "vehicle": _yp(
-        lambda c: _at(c, sun=10, mars=4), "the Sun in the 10th, Mars in the 4th"
-    ),
+    "vehicle": _yp(lambda c: _at(c, sun=10, mars=4), "the Sun in the 10th, Mars in the 4th"),
     "machine": _yp(
         lambda c: _at(c, mars=7, saturn=1, moon=1),
         "Mars in the 7th, Saturn and the Moon in the lagna",
     ),
     "excrement_1": _yp(
-        lambda c: c.sign["mars"] == 6
-        and c.sign["saturn"] == 0
-        and c.sign["moon"] in (9, 10),
+        lambda c: c.sign["mars"] == 6 and c.sign["saturn"] == 0 and c.sign["moon"] in (9, 10),
         "Mars in Libra, Saturn in Aries, the Moon in a sign of Saturn",
     ),
     "excrement_2": _yp(
@@ -286,26 +255,17 @@ def load_rules(path: Path = RULES_PATH) -> DeathRules:
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
     yogas = {y["id"]: y for y in raw["yogas"]}
     if len(yogas) != len(raw["yogas"]) or set(yogas) != set(YOGAS):
-        raise ValueError(
-            f"{path.name}: the yoga ids must be exactly those the engine codes"
-        )
+        raise ValueError(f"{path.name}: the yoga ids must be exactly those the engine codes")
     for y in yogas.values():
-        if not all(
-            isinstance(y.get(f), str) and y[f].strip()
-            for f in ("verse", "text", "definition")
-        ):
-            raise ValueError(
-                f"{path.name} {y.get('id')}: needs verse, text and definition"
-            )
+        if not all(isinstance(y.get(f), str) and y[f].strip() for f in ("verse", "text", "definition")):
+            raise ValueError(f"{path.name} {y.get('id')}: needs verse, text and definition")
     for key in ("humours", "worlds"):
         if set(raw[key]) != set(SEVEN):
             raise ValueError(f"{path.name}: {key} needs each of the seven planets")
     if not set(SEVEN) <= set(raw["occupant"]):
         raise ValueError(f"{path.name}: occupant needs each of the seven planets")
     if len(raw["limbs"]) != 12 or len(raw["place"]["places"]) != 12:
-        raise ValueError(
-            f"{path.name}: limbs and places need twelve entries, Aries first"
-        )
+        raise ValueError(f"{path.name}: limbs and places need twelve entries, Aries first")
     return DeathRules(
         v.get("level", "unchecked"),
         v.get("checked_by"),
@@ -319,9 +279,7 @@ def load_rules(path: Path = RULES_PATH) -> DeathRules:
 
 
 def _work(r: dict, c: Ctx, p: str) -> str:
-    kind = (
-        "strong" if c.stand(p) in STRONG else "weak" if c.stand(p) in WEAK else "middle"
-    )
+    kind = "strong" if c.stand(p) in STRONG else "weak" if c.stand(p) in WEAK else "middle"
     return f"{r['occupant']['work'][kind]} {r['occupant']['work_note']}"
 
 
@@ -360,15 +318,11 @@ def _cause(rules: DeathRules, c: Ctx) -> list[Found]:
         got = detect(c)
         if got:
             y = rules.yogas[yid]
-            out.append(
-                Found("cause", yid, y["verse"], got[:1].upper() + got[1:], y["text"])
-            )
+            out.append(Found("cause", yid, y["verse"], got[:1].upper() + got[1:], y["text"]))
     if not out:
         sign, n, lord = _drekkana_of_house(c, 8)
         top = _strongest(c, [lord, SIGN_LORDS[s8]])
-        means = "; ".join(
-            f"{p.title()}: {r['occupant'][p].split(', ', 1)[1]}" for p in top
-        )
+        means = "; ".join(f"{p.title()}: {r['occupant'][p].split(', ', 1)[1]}" for p in top)
         out.append(
             Found(
                 "cause",
@@ -444,26 +398,19 @@ def _place(rules: DeathRules, c: Ctx, unrisen_minutes: float | None) -> list[Fou
         lord_l = SIGN_LORDS[c.lagna]
         by_lord = c.sees(lord_l, c.lagna)
         by_benefic = [b for b in BENEFICS if b != lord_l and c.sees(b, c.lagna)]
-        factor = (
-            6 if by_lord and by_benefic else 2 if by_lord else 3 if by_benefic else 1
-        )
+        factor = 6 if by_lord and by_benefic else 2 if by_lord else 3 if by_benefic else 1
         total = round(unrisen_minutes * factor)
-        why = [
-            f"{SIGNS[c.lagna]} had about {round(unrisen_minutes)} minutes left to rise at birth"
-        ]
+        why = [f"{SIGNS[c.lagna]} had about {round(unrisen_minutes)} minutes left to rise at birth"]
         if by_lord:
             why.append(f"its lord {lord_l.title()} aspects it")
         if by_benefic:
-            why.append(
-                f"{_names(by_benefic)} {'aspects' if len(by_benefic) == 1 else 'aspect'} it"
-            )
+            why.append(f"{_names(by_benefic)} {'aspects' if len(by_benefic) == 1 else 'aspect'} it")
         out.append(
             Found(
                 "place",
                 "insensibility",
                 r["insensibility"]["verse"],
-                "; ".join(why)
-                + f": by the rule, about {total // 60} hours {total % 60} minutes",
+                "; ".join(why) + f": by the rule, about {total // 60} hours {total % 60} minutes",
                 r["insensibility"]["text"],
             )
         )
@@ -474,25 +421,14 @@ def _body(rules: DeathRules, c: Ctx) -> list[Found]:
     r = rules.raw["body"]
     sign, n, lord = _drekkana_of_house(c, 8)
     lo = sign * 30.0 + (n - 1) * 10.0
-    inside = [
-        p for p in SEVEN if lo <= c.chart.planets[p].longitude % 360.0 < lo + 10.0
-    ]
+    inside = [p for p in SEVEN if lo <= c.chart.planets[p].longitude % 360.0 < lo + 10.0]
     benefic_lord = lord in WATERY_LORDS
-    mixed = (
-        any(p in MALEFICS for p in inside)
-        if benefic_lord
-        else any(p in WATERY_LORDS for p in inside)
-    )
+    mixed = any(p in MALEFICS for p in inside) if benefic_lord else any(p in WATERY_LORDS for p in inside)
     kind = "misra" if mixed else "watery" if benefic_lord else "fiery"
-    where = (
-        f"the 22nd drekkana is the {_o(n)} of {SIGNS[sign]}, lord {lord.title()}"
-        + (f", with {_names(inside)} in it" if inside else "")
+    where = f"the 22nd drekkana is the {_o(n)} of {SIGNS[sign]}, lord {lord.title()}" + (
+        f", with {_names(inside)} in it" if inside else ""
     )
-    out = [
-        Found(
-            "body", kind, r["verse"], f"{where}: a {kind} drekkana", r[kind], r["note"]
-        )
-    ]
+    out = [Found("body", kind, r["verse"], f"{where}: a {kind} drekkana", r[kind], r["note"])]
     if (sign, n) in SARPA:
         out.append(
             Found(
@@ -514,11 +450,7 @@ def _past(rules: DeathRules, c: Ctx) -> list[Found]:
         n = int(degree_in_sign(lon) // 10.0)
         lord = SIGN_LORDS[(c.sign[light] + 4 * n) % 12]
         stand = c.stand(lord)
-        grade = (
-            "exalted"
-            if stand == "exaltation"
-            else "debilitated" if stand == "depression" else "middle"
-        )
+        grade = "exalted" if stand == "exaltation" else "debilitated" if stand == "depression" else "middle"
         out.append(
             Found(
                 "past",
@@ -545,8 +477,7 @@ def _next(rules: DeathRules, c: Ctx) -> list[Found]:
                 "next_drekkana",
                 r["next"]["verse"],
                 f"the 6th and 8th are empty; the lords of their drekkanas are {_names(dict.fromkeys(lords))}, the more powerful {_names(top)}",
-                "The person will go to "
-                + " or ".join(r["worlds"][p] for p in dict.fromkeys(top)),
+                "The person will go to " + " or ".join(r["worlds"][p] for p in dict.fromkeys(top)),
             )
         )
     occupants = [p for p in SEVEN if c.house[p] in (6, 7, 8)]
@@ -558,8 +489,7 @@ def _next(rules: DeathRules, c: Ctx) -> list[Found]:
                 "next_occupant",
                 r["next"]["verse"],
                 f"{_names(occupants)} in the 6th, 7th or 8th; the most powerful {_names(top)}",
-                "The person will go to "
-                + " or ".join(dict.fromkeys(r["worlds"][p] for p in top)),
+                "The person will go to " + " or ".join(dict.fromkeys(r["worlds"][p] for p in top)),
             )
         )
     s = r["salvation"]
@@ -591,9 +521,7 @@ def _next(rules: DeathRules, c: Ctx) -> list[Found]:
     return out
 
 
-def find(
-    rules: DeathRules, chart: Chart, unrisen_minutes: float | None = None
-) -> tuple[Found, ...] | None:
+def find(rules: DeathRules, chart: Chart, unrisen_minutes: float | None = None) -> tuple[Found, ...] | None:
     """Everything chapter XXV says of this chart, by section. `unrisen_minutes` is the time the rising sign still had to rise at birth (from the ephemeris), for the period of
     insensibility; without it that line is left out. None until the rules are checked.
     """

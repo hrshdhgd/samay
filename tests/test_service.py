@@ -7,9 +7,7 @@ from samay.engine.errors import InvalidInput, PlaceNotFound, UnknownProfile
 from samay.engine.paths import EPHEMERIS_PATH
 from samay.models import BirthInput, NeedsDisambiguation, ResolvedBirth
 
-needs_kernel = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 PUNE_1990 = BirthInput("1990-08-15", "14:30", "Pune")
 
 
@@ -22,29 +20,21 @@ def test_resolve_with_provenance():
 
 
 def test_day_first_date_accepted():
-    assert (
-        service.resolve_birth(BirthInput("15-08-1990", "14:30", "Pune")).utc.hour == 9
-    )
+    assert service.resolve_birth(BirthInput("15-08-1990", "14:30", "Pune")).utc.hour == 9
 
 
 def test_place_disambiguation_then_choice():
     d = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Springfield, US"))
-    assert (
-        isinstance(d, NeedsDisambiguation) and d.kind == "place" and len(d.options) == 3
-    )
+    assert isinstance(d, NeedsDisambiguation) and d.kind == "place" and len(d.options) == 3
     chosen = d.options[1]
-    b = service.resolve_birth(
-        BirthInput("1990-08-15", "14:30", "Springfield, US", place_choice=chosen.id)
-    )
+    b = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Springfield, US", place_choice=chosen.id))
     assert b.place == chosen
 
 
 def test_time_disambiguation():
     d = service.resolve_birth(BirthInput("2021-11-07", "01:30", "New York City"))
     assert isinstance(d, NeedsDisambiguation) and d.kind == "time"
-    b = service.resolve_birth(
-        BirthInput("2021-11-07", "01:30", "New York City", fold=1)
-    )
+    b = service.resolve_birth(BirthInput("2021-11-07", "01:30", "New York City", fold=1))
     assert b.utc == d.options[1]
 
 
@@ -102,9 +92,7 @@ def test_warm_returns_stamp():
 
 
 def test_nearby_town_is_flagged_approximate():
-    b = service.resolve_birth(
-        BirthInput("1990-08-15", "14:30", "Pune", approx_for="Wagholi")
-    )
+    b = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune", approx_for="Wagholi"))
     assert b.provenance.place_approximate
     assert "Wagholi" in b.provenance.approx_note and "Pune" in b.provenance.approx_note
     assert not service.resolve_birth(PUNE_1990).provenance.place_approximate

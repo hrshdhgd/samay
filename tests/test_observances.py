@@ -16,18 +16,14 @@ from samay.engine.observances import (
 from samay.engine.panchang import Site
 from samay.engine.paths import EPHEMERIS_PATH
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
 PUNE = Site(18.5196, 73.8553, "Asia/Kolkata")
 NOV_DEC = (date(2026, 11, 1), date(2026, 12, 31))
 EKADASHI = Rule(tithis=(11, 26))
 
 
 def summary(found):
-    return [
-        (o.primary, o.kind, [(a.day, a.reason) for a in o.alternates]) for o in found
-    ]
+    return [(o.primary, o.kind, [(a.day, a.reason) for a in o.alternates]) for o in found]
 
 
 def test_sunrise_rule_marks_a_kshaya_ekadashi_and_attaches_the_other_day():
@@ -42,19 +38,13 @@ def test_sunrise_rule_marks_a_kshaya_ekadashi_and_attaches_the_other_day():
 
 def test_kshaya_can_be_resolved_to_the_next_day_instead():
     rule = Rule(tithis=(11, 26), on_kshaya="next_day")
-    kshaya = next(
-        o for o in observances_between(rule, PUNE, *NOV_DEC) if o.kind == "kshaya"
-    )
-    assert kshaya.primary == date(2026, 11, 21) and kshaya.alternates[0].day == date(
-        2026, 11, 20
-    )
+    kshaya = next(o for o in observances_between(rule, PUNE, *NOV_DEC) if o.kind == "kshaya")
+    assert kshaya.primary == date(2026, 11, 21) and kshaya.alternates[0].day == date(2026, 11, 20)
 
 
 def test_kshaya_can_make_no_claim():
     rule = Rule(tithis=(11, 26), on_kshaya="none")
-    kshaya = next(
-        o for o in observances_between(rule, PUNE, *NOV_DEC) if o.kind == "kshaya"
-    )
+    kshaya = next(o for o in observances_between(rule, PUNE, *NOV_DEC) if o.kind == "kshaya")
     assert kshaya.primary is None
 
 
@@ -89,15 +79,9 @@ def test_a_window_spanning_two_sunrises_is_a_vriddhi_with_a_choice_of_day():
         "start_minutes": -2880,
         "end_minutes": 0,
     }
-    first = [
-        o
-        for o in observances_between(Rule(**wide), PUNE, *NOV_DEC)
-        if o.kind == "vriddhi"
-    ]
+    first = [o for o in observances_between(Rule(**wide), PUNE, *NOV_DEC) if o.kind == "vriddhi"]
     last = [
-        o
-        for o in observances_between(Rule(**wide, on_vriddhi="last"), PUNE, *NOV_DEC)
-        if o.kind == "vriddhi"
+        o for o in observances_between(Rule(**wide, on_vriddhi="last"), PUNE, *NOV_DEC) if o.kind == "vriddhi"
     ]
     assert [(o.primary, o.alternates[0].day) for o in first] == [
         (date(2026, 11, 5), date(2026, 11, 7)),
@@ -125,9 +109,7 @@ def test_pradosha_window_after_sunset():
 
 def test_a_boundary_inside_the_margin_adds_a_calculation_alternate():
     # With a huge margin every sunrise-instant decision is within reach of the next day's sunrise.
-    found = observances_between(
-        EKADASHI, PUNE, date(2026, 12, 3), date(2026, 12, 5), margin_minutes=24 * 60
-    )
+    found = observances_between(EKADASHI, PUNE, date(2026, 12, 3), date(2026, 12, 5), margin_minutes=24 * 60)
     assert any(a.reason == "calculation" for o in found for a in o.alternates)
 
 
@@ -139,9 +121,9 @@ def test_sampradaya_picks_the_rule_and_the_other_traditions_become_named_alterna
     found = observances_for(rules, "smarta", PUNE, *NOV_DEC)
     kshaya = next(o for o in found if o.kind == "kshaya")
     assert kshaya.primary == date(2026, 11, 20)
-    assert [
-        (a.day, a.reason) for a in kshaya.alternates if a.reason == "madhva convention"
-    ] == [(date(2026, 11, 21), "madhva convention")]
+    assert [(a.day, a.reason) for a in kshaya.alternates if a.reason == "madhva convention"] == [
+        (date(2026, 11, 21), "madhva convention")
+    ]
 
 
 def test_no_sampradaya_means_no_day_is_named():
@@ -161,9 +143,7 @@ def test_find_next_returns_the_first_upcoming_day():
     ).primary == date(2026, 12, 4)
 
 
-@pytest.mark.skipif(
-    os.environ.get("SAMAY_SLOW_CI") == "1", reason="timing guard skipped on slow CI"
-)
+@pytest.mark.skipif(os.environ.get("SAMAY_SLOW_CI") == "1", reason="timing guard skipped on slow CI")
 def test_observance_search_is_fast_enough_for_a_chat_answer():
     # Cold caches, so this measures the search itself and not lookups left behind by the tests above.
     observances._tithi_at.cache_clear()
@@ -194,27 +174,18 @@ def _walked(begin, stop):
 def test_the_sampled_tithis_are_the_walked_ones():
     from datetime import UTC, datetime
 
-    begin, stop = datetime(2026, 11, 20, 18, 30, tzinfo=UTC), datetime(
-        2027, 1, 3, 18, 30, tzinfo=UTC
-    )
+    begin, stop = datetime(2026, 11, 20, 18, 30, tzinfo=UTC), datetime(2027, 1, 3, 18, 30, tzinfo=UTC)
     walked = _walked(begin, stop)
     points = observances._tithi_points(begin, stop, "lahiri_mean")
     sampled = [observances._tithi_at(t, "lahiri_mean") for _, t in points]
-    assert (
-        [n for n, _ in points]
-        == [t.number for t in sampled]
-        == [t.number for t in walked]
-    )
+    assert [n for n, _ in points] == [t.number for t in sampled] == [t.number for t in walked]
     assert all(
-        abs((a.start - b.start).total_seconds()) <= 2
-        and abs((a.end - b.end).total_seconds()) <= 2
+        abs((a.start - b.start).total_seconds()) <= 2 and abs((a.end - b.end).total_seconds()) <= 2
         for a, b in zip(sampled, walked, strict=True)
     )
 
 
-@pytest.mark.skipif(
-    os.environ.get("SAMAY_SLOW_CI") == "1", reason="timing guard skipped on slow CI"
-)
+@pytest.mark.skipif(os.environ.get("SAMAY_SLOW_CI") == "1", reason="timing guard skipped on slow CI")
 def test_a_year_of_every_observance_is_fast_enough_for_a_chat_answer():
     from samay.engine.panchang_profile import load_panchang_profile
 

@@ -28,11 +28,7 @@ def test_unknown_profile():
 
 
 def test_unsupported_house_system_rejected(tmp_path):
-    text = (
-        (PROFILES_DIR / f"{DEFAULT_PROFILE}.yaml")
-        .read_text()
-        .replace("whole_sign", "placidus")
-    )
+    text = (PROFILES_DIR / f"{DEFAULT_PROFILE}.yaml").read_text().replace("whole_sign", "placidus")
     text = text.replace(f"id: {DEFAULT_PROFILE}", "id: kp-test")
     (tmp_path / "kp-test.yaml").write_text(text)
     with pytest.raises(ValueError, match="houses"):

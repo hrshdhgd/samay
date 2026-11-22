@@ -38,9 +38,7 @@ class Row:
     unless_lagna: frozenset[int] = frozenset()  # rising signs the row is not for
 
     def applies(self, lagna: int) -> bool:
-        return (
-            not self.when_lagna or lagna in self.when_lagna
-        ) and lagna not in self.unless_lagna
+        return (not self.when_lagna or lagna in self.when_lagna) and lagna not in self.unless_lagna
 
 
 @dataclass(frozen=True)
@@ -56,9 +54,7 @@ class PlanetHouseRules:
     def servable(self) -> bool:
         return self.level in SERVABLE_LEVELS
 
-    def lookup(
-        self, planet: str, house: int, lagna: int
-    ) -> tuple[tuple[Row, ...], str] | None:
+    def lookup(self, planet: str, house: int, lagna: int) -> tuple[tuple[Row, ...], str] | None:
         """The rows that apply for this planet, house and rising sign (index 0-11), and the text's verse range;
         None while the rules are unchecked or when no row applies."""
         if not self.servable:

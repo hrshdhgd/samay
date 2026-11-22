@@ -25,9 +25,7 @@ PLACES = [
 DAYS = [date(2026, 1, 1) + timedelta(days=10 * i) for i in range(37)]
 ARCMINUTE_DEG = 1 / 60
 NUTATION_ARCSEC = 18.0
-SAMPLES = (
-    365 * 4
-)  # every 6 hours for a year; each is paired with a sample one hour later
+SAMPLES = 365 * 4  # every 6 hours for a year; each is paired with a sample one hour later
 
 
 def sunrise_shift_minutes() -> float:
@@ -67,9 +65,7 @@ def boundary_shift_minutes() -> float:
 
 def nutation_shift_minutes() -> float:
     """Minutes by which a nakshatra boundary moves for the nutation offset, at the Moon's slowest."""
-    return (NUTATION_ARCSEC / 3600) / _slowest_degrees_per_minute(
-        lambda track: track["moon"]
-    )
+    return (NUTATION_ARCSEC / 3600) / _slowest_degrees_per_minute(lambda track: track["moon"])
 
 
 if __name__ == "__main__":
@@ -78,15 +74,9 @@ if __name__ == "__main__":
         boundary_shift_minutes(),
         nutation_shift_minutes(),
     )
-    print(
-        f"slowest elongation rate {_slowest_degrees_per_minute(_elongation) * 60:.3f} deg/hour"
-    )
-    print(
-        f"slowest Moon rate {_slowest_degrees_per_minute(lambda t: t['moon']) * 60:.3f} deg/hour"
-    )
+    print(f"slowest elongation rate {_slowest_degrees_per_minute(_elongation) * 60:.3f} deg/hour")
+    print(f"slowest Moon rate {_slowest_degrees_per_minute(lambda t: t['moon']) * 60:.3f} deg/hour")
     print(f"sunrise-definition shift {sun:.2f} min")
     print(f"1' elongation error shifts a tithi boundary by {tithi:.2f} min")
-    print(
-        f'{NUTATION_ARCSEC:.0f}" nutation offset shifts a nakshatra boundary by {nutation:.2f} min'
-    )
+    print(f'{NUTATION_ARCSEC:.0f}" nutation offset shifts a nakshatra boundary by {nutation:.2f} min')
     print(f"ambiguity_margin_minutes = {ceil(sun + tithi + nutation)}")

@@ -81,9 +81,7 @@ def load_rules(path: Path = RULES_PATH) -> GocharaRules:
     for section in ("favourable", "vedha", "effects"):
         unknown = set(raw[section]) - set(GRAHAS)
         if unknown:
-            raise ValueError(
-                f"{path.name} {section}: unknown planet(s) {sorted(unknown)}"
-            )
+            raise ValueError(f"{path.name} {section}: unknown planet(s) {sorted(unknown)}")
     effects, verses, hidden = {}, {}, set()
     for planet, block in raw["effects"].items():
         houses = {}
@@ -102,25 +100,16 @@ def load_rules(path: Path = RULES_PATH) -> GocharaRules:
         pairs = {int(k): int(x) for k, x in block["pairs"].items()}
         _houses([*pairs, *pairs.values()], f"vedha.{planet}")
         if any(k == x for k, x in pairs.items()):
-            raise ValueError(
-                f"{path.name} vedha.{planet}: a house cannot obstruct itself"
-            )
+            raise ValueError(f"{path.name} vedha.{planet}: a house cannot obstruct itself")
         if not set(pairs) <= set(raw["favourable"][planet]):
-            raise ValueError(
-                f"{path.name} vedha.{planet}: vedha is only for the favourable houses"
-            )
-        vedha[planet] = Vedha(
-            pairs, frozenset(block.get("exempt", [])), int(block["verse"])
-        )
+            raise ValueError(f"{path.name} vedha.{planet}: vedha is only for the favourable houses")
+        vedha[planet] = Vedha(pairs, frozenset(block.get("exempt", [])), int(block["verse"]))
     return GocharaRules(
         level=v.get("level", "unchecked"),
         checked_by=v.get("checked_by"),
         edition=raw["edition"],
         pages=str(raw.get("pages", "")),
-        favourable={
-            p: frozenset(_houses(hs, f"favourable.{p}"))
-            for p, hs in raw["favourable"].items()
-        },
+        favourable={p: frozenset(_houses(hs, f"favourable.{p}")) for p, hs in raw["favourable"].items()},
         vedha=vedha,
         effects=effects,
         verses=verses,
@@ -139,20 +128,14 @@ class Stay:
     house: int  # counted from the natal Moon sign
     start: datetime | None
     end: datetime | None
-    favourable: bool | None = (
-        None  # None: the text gives no result for this planet (Ketu)
-    )
+    favourable: bool | None = None  # None: the text gives no result for this planet (Ketu)
     effect: str | None = None  # only from a checked rules file
     verse: str | None = None
-    vedha_house: int | None = (
-        None  # the house that obstructs this good result, when the text names one
-    )
+    vedha_house: int | None = None  # the house that obstructs this good result, when the text names one
     blocked_by: tuple[
         str, ...
     ] = ()  # planets in the vedha house at the middle of the stay (within the period)
-    points: int | None = (
-        None  # the planet's own ashtakavarga points in this sign (Sun to Saturn only)
-    )
+    points: int | None = None  # the planet's own ashtakavarga points in this sign (Sun to Saturn only)
 
 
 def stays(
@@ -182,9 +165,7 @@ def stays(
                 times[begin] if begin > 0 else None,
                 times[i] if i < n else None,
             )
-            stay = _read(
-                stay, rules, track, moon_sign, (begin + i - 1) // 2, check_vedha
-            )
+            stay = _read(stay, rules, track, moon_sign, (begin + i - 1) // 2, check_vedha)
             if points and planet in points:
                 stay = replace(stay, points=points[planet][sign])
             out.append(stay)

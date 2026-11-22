@@ -77,11 +77,7 @@ def load_rules(path: Path = RULES_PATH) -> NabhasaRules:
             f"{path.name}: the text counts 3 Asraya, 2 Dala, 20 Akriti and 7 Sankhya yogas, found {counts}"
         )
     for key, y in yogas.items():
-        if (
-            not isinstance(y.get("text"), str)
-            or not y["text"].strip()
-            or not isinstance(y.get("verse"), str)
-        ):
+        if not isinstance(y.get("text"), str) or not y["text"].strip() or not isinstance(y.get("verse"), str):
             raise ValueError(f"{path.name} {key}: needs a text and a verse")
     if sorted(y["signs"] for y in yogas.values() if y["group"] == "sankhya") != [
         1,
@@ -101,9 +97,7 @@ def load_rules(path: Path = RULES_PATH) -> NabhasaRules:
             if not shape or not all(1 <= h <= 12 for h in shape):
                 raise ValueError(f"{path.name} akriti.{key}: houses must be 1-12")
         akriti[key] = tuple(frozenset(s) for s in shapes)
-    if set(akriti) | set(raw["vajra_yava"]) != {
-        k for k, y in yogas.items() if y["group"] == "akriti"
-    }:
+    if set(akriti) | set(raw["vajra_yava"]) != {k for k, y in yogas.items() if y["group"] == "akriti"}:
         raise ValueError(f"{path.name}: every Akriti yoga needs a definition")
     return NabhasaRules(
         v.get("level", "unchecked"),
@@ -154,25 +148,18 @@ def find(rules: NabhasaRules, chart: Chart) -> Nabhasa:
             )
         )
 
-    in_houses = (
-        f"the planets are in the {', '.join(_ord(h) for h in sorted(occupied))} house"
-    )
+    in_houses = f"the planets are in the {', '.join(_ord(h) for h in sorted(occupied))} house"
     # Akriti: the planets occupy exactly the named houses; Vajra and Yava first (they are the more specific shape).
     akriti = None
     for key, shape in rules.vajra_yava.items():
         wanted = set(shape["benefic_houses"]) | set(shape["malefic_houses"])
         if occupied == wanted and all(
-            bool(_benefic(chart, rules, p)) == (house[p] in shape["benefic_houses"])
-            for p in SEVEN
+            bool(_benefic(chart, rules, p)) == (house[p] in shape["benefic_houses"]) for p in SEVEN
         ):
             akriti = key
     if akriti is None:
         akriti = next(
-            (
-                k
-                for k, shapes in rules.akriti.items()
-                if any(occupied == s for s in shapes)
-            ),
+            (k for k, shapes in rules.akriti.items() if any(occupied == s for s in shapes)),
             None,
         )
     if akriti is not None:
@@ -208,11 +195,7 @@ def find(rules: NabhasaRules, chart: Chart) -> Nabhasa:
         elif not (
             dala and n >= 4
         ):  # a Dala that is also Vallaki, Damini, Pasa or Kedara counts as the Dala only
-            key = next(
-                k
-                for k, y in rules.yogas.items()
-                if y["group"] == "sankhya" and y["signs"] == n
-            )
+            key = next(k for k, y in rules.yogas.items() if y["group"] == "sankhya" and y["signs"] == n)
             add(key, f"the planets are in {n} sign{'s' if n > 1 else ''}")
     n_houses = tuple(sorted(occupied))
     return Nabhasa(

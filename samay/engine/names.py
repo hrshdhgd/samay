@@ -21,21 +21,13 @@ _SPELLING = str.maketrans({"c": "k", "q": "k", "w": "v"})
 
 
 def _strip_marks(text: str) -> str:
-    return "".join(
-        c
-        for c in unicodedata.normalize("NFKD", text)
-        if unicodedata.category(c) != "Mn"
-    )
+    return "".join(c for c in unicodedata.normalize("NFKD", text) if unicodedata.category(c) != "Mn")
 
 
 def _romanize(token: str) -> str:
     """Devanagari word -> plain Latin. Drops the final inherent 'a' (नागपुर -> nagpur)."""
-    iast = unicodedata.normalize(
-        "NFC", sanscript.transliterate(token, sanscript.DEVANAGARI, sanscript.IAST)
-    )
-    iast = re.sub("ṃ(?=[pbm])", "m", iast).replace(
-        "ṃ", "n"
-    )  # anusvara: m before labials, else n
+    iast = unicodedata.normalize("NFC", sanscript.transliterate(token, sanscript.DEVANAGARI, sanscript.IAST))
+    iast = re.sub("ṃ(?=[pbm])", "m", iast).replace("ṃ", "n")  # anusvara: m before labials, else n
     if iast.endswith("a") and len(iast) > 2:  # short final a only; long ā is kept
         iast = iast[:-1]
     return _strip_marks(iast).lower()
@@ -53,13 +45,7 @@ def _collapse(word: str) -> str:
 
 
 def _skeleton_word(word: str) -> str:
-    word = (
-        word.replace("w", "v")
-        .replace("oo", "u")
-        .replace("ee", "i")
-        .replace("sh", "s")
-        .replace("ph", "f")
-    )
+    word = word.replace("w", "v").replace("oo", "u").replace("ee", "i").replace("sh", "s").replace("ph", "f")
     word = _collapse(_CONSONANT_H.sub("", word).translate(_SPELLING))
     if not word:
         return ""

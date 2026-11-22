@@ -8,12 +8,8 @@ import yaml
 from samay.engine import panchang
 from samay.engine.paths import EPHEMERIS_PATH
 
-pytestmark = pytest.mark.skipif(
-    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
-)
-DATA = yaml.safe_load(
-    (Path(__file__).parent / "fixtures" / "family_calendar_2026.yaml").read_text()
-)
+pytestmark = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
+DATA = yaml.safe_load((Path(__file__).parent / "fixtures" / "family_calendar_2026.yaml").read_text())
 P = DATA["place"]
 SITE = panchang.Site(P["latitude"], P["longitude"], P["tz"])
 
@@ -31,9 +27,7 @@ def test_sankashti_day_is_krishna_tritiya_at_sunrise_with_chaturthi_arriving_bef
 
     facts = panchang.day_facts(SITE, row["date"])
     assert facts.tithi.name == "Krishna Tritiya"  # Chaturthi begins later that morning
-    assert facts.tithi.end.astimezone(facts.sunrise.tzinfo) < facts.sunset + timedelta(
-        hours=3
-    )
+    assert facts.tithi.end.astimezone(facts.sunrise.tzinfo) < facts.sunset + timedelta(hours=3)
 
 
 @pytest.mark.parametrize("row", DATA["ekadashi"], ids=lambda r: r["date"].isoformat())

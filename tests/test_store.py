@@ -5,9 +5,7 @@ import pytest
 from samay.models import BirthInput
 from samay.store import DRAFT_TTL_SECONDS, MIGRATIONS, Store
 
-BIRTH = BirthInput(
-    "1952-08-15", "06:30", "Pune", "1259229", None, "parashari-lahiri", "Wagholi"
-)
+BIRTH = BirthInput("1952-08-15", "06:30", "Pune", "1259229", None, "parashari-lahiri", "Wagholi")
 
 
 def test_user_round_trip_and_forget(tmp_path):
@@ -62,9 +60,7 @@ def test_home_round_trip_keeps_the_brief_setting_when_the_city_changes(tmp_path)
     s.set_brief(1, 7)
     s.mark_brief_sent(1, "2026-11-09")
     s.save_home(1, "Pune", "222")
-    assert s.get_home(1) == Home(
-        "Pune", "222", 7, None
-    )  # new city: same hour, "sent today" reset
+    assert s.get_home(1) == Home("Pune", "222", 7, None)  # new city: same hour, "sent today" reset
 
 
 def test_brief_on_off_and_listing(tmp_path):
@@ -89,9 +85,7 @@ def test_forget_also_removes_the_home(tmp_path):
 
 def test_existing_database_upgrades_in_place(tmp_path):
     path = tmp_path / "old.db"
-    with sqlite3.connect(
-        path
-    ) as c:  # a database created by the first version of the schema
+    with sqlite3.connect(path) as c:  # a database created by the first version of the schema
         c.executescript(MIGRATIONS[0])
         c.execute(
             "INSERT INTO users VALUES (1,'1952-08-15','06:30','Pune',NULL,NULL,'parashari-lahiri',NULL,0)"
@@ -116,9 +110,7 @@ def test_unanswered_topics_are_counted_without_any_wording_or_chat_id(tmp_path):
         ]
 
 
-@pytest.mark.parametrize(
-    "words", ["will my son marry this year?", "Saturn", "dasha:Saturn", ""]
-)
+@pytest.mark.parametrize("words", ["will my son marry this year?", "Saturn", "dasha:Saturn", ""])
 def test_free_text_is_refused_as_a_topic(tmp_path, words):
     s = Store(tmp_path / "t.db")
     with pytest.raises(ValueError):

@@ -74,9 +74,7 @@ PLANET_NAMES = {
     "rahu": ("rahu",),
     "ketu": ("ketu",),
 }
-_ALIAS = {
-    alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases
-}
+_ALIAS = {alias: planet for planet, aliases in PLANET_NAMES.items() for alias in aliases}
 DASHA_WORDS = ("dasha", "dasa", "mahadasha", "antardasha", "period", "chapter")
 PERSONAL_WORDS = ("my", "mine", "me", "i", "am", "current", "running", "now", "own")
 # Offline fallback only (the model reads the message when it is on): a few single words, no question patterns.
@@ -188,9 +186,7 @@ ORDINAL_WORDS = {
     "eleventh": 11,
     "twelfth": 12,
 }
-_HOUSE_NUMBER = re.compile(
-    r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b"
-)
+_HOUSE_NUMBER = re.compile(r"\b(?:(\d{1,2})(?:st|nd|rd|th)?\s+(?:house|bhava)|(?:house|bhava)\s+(\d{1,2}))\b")
 # Life areas people ask about, and the house(s) Brihat Jataka I.15-16 (and Iyer's note) assign to each. A question about
 # marriage is answered from what the text says the 7th house stands for, plus what sits in that house in the chart.
 LIFE_AREAS = {
@@ -332,15 +328,11 @@ class MoonView:
     conditions: dict
     edition: str
     pages: str
-    yogas: (
-        tuple
-    ) = ()  # chandra_yogas.Found, Brihat Jataka XIII, once its rules are checked
+    yogas: tuple = ()  # chandra_yogas.Found, Brihat Jataka XIII, once its rules are checked
     yogas_checked: bool = False
     yoga_edition: str = ""
     yoga_pages: str = ""
-    aspects: moon_aspects.MoonAspects | None = (
-        None  # Brihat Jataka XIX, once its rules are checked
-    )
+    aspects: moon_aspects.MoonAspects | None = None  # Brihat Jataka XIX, once its rules are checked
     aspects_checked: bool = False
     aspect_texts: tuple = ()  # (aspect rule, degree rule, rising-sign note)
 
@@ -364,28 +356,16 @@ class AshtakaView:
 
 @dataclass(frozen=True)
 class Answer:
-    topic: (
-        str | None
-    )  # None: the question is outside what samay can answer from sources
+    topic: str | None  # None: the question is outside what samay can answer from sources
     entries: tuple[Entry, ...]
     facts: tuple[str, ...]  # computed from the person's own chart
     notes: tuple[str, ...] = ()  # general astronomical notes, not about this person
-    name_line: str | None = (
-        None  # "Shani is the Sanskrit and Hindi name for Saturn." when asked by that name
-    )
-    reading: house_effects.Reading | None = (
-        None  # chapter XX on this planet in this person's house
-    )
-    shares: dict | None = (
-        None  # how much of the good and bad effects the text says apply
-    )
-    more_readings: (
-        tuple
-    ) = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
+    name_line: str | None = None  # "Shani is the Sanskrit and Hindi name for Saturn." when asked by that name
+    reading: house_effects.Reading | None = None  # chapter XX on this planet in this person's house
+    shares: dict | None = None  # how much of the good and bad effects the text says apply
+    more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
     who: Subject = SELF  # whose chart this answer is about
-    outlook: OutlookReport | None = (
-        None  # the transits over a period ahead (future:week ... future:years)
-    )
+    outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
     ashtaka: AshtakaView | None = None  # chart:ashtakavarga
     moon: MoonView | None = None  # chart:moon
@@ -399,9 +379,7 @@ class Answer:
     longevity: longevity.Longevity | None = None  # chart:longevity
     longevity_checked: bool = False
     houses: tuple | None = None  # chart:houses
-    livelihood: livelihood.Livelihood | None = (
-        None  # life:career, Brihat Jataka X, once checked
-    )
+    livelihood: livelihood.Livelihood | None = None  # life:career, Brihat Jataka X, once checked
     houses_checked: bool = False
     women: tuple | None = None  # chart:women
     women_checked: bool = False
@@ -425,9 +403,7 @@ class Answer:
         None  # Brihat Jataka 25: inside chart:longevity (cause, place, body) and chart:afterlife (past, next)
     )
     death_bj_checked: bool = False
-    birth_bj: tuple | None = (
-        None  # chart:birth and chart:birth_parents (Brihat Jataka 5)
-    )
+    birth_bj: tuple | None = None  # chart:birth and chart:birth_parents (Brihat Jataka 5)
     birth_bj_checked: bool = False
     bala_bj: tuple | None = None  # Brihat Jataka 6, inside chart:longevity
     bala_bj_checked: bool = False
@@ -465,23 +441,11 @@ def sort_question(text: str) -> str | None:
     about_dasha = any(w in DASHA_WORDS for w in words)
     if any(w in ASHTAKA_WORDS for w in words):
         return "chart:ashtakavarga"
-    if (
-        not planets
-        and any(w in CONJUNCTION_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in CONJUNCTION_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:conjunctions"
-    if (
-        not planets
-        and any(w in MALEFIC_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in MALEFIC_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:malefic"
-    if (
-        not planets
-        and any(w in YOGA_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in YOGA_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:yogas"
     if (
         any(w in LAGNA_WORDS for w in words)
@@ -504,11 +468,7 @@ def sort_question(text: str) -> str | None:
         and {"horoscope", "chart", "husband"} & set(words)
     ):
         return "chart:women"
-    if (
-        not planets
-        and any(w in VARGAS_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in VARGAS_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:vargas"
     if (
         not planets
@@ -524,15 +484,9 @@ def sort_question(text: str) -> str | None:
         and any(w in PERSONAL_WORDS for w in words)
     ):
         return "chart:strength"
-    if (
-        not planets
-        and {"strength", "houses"} & set(words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and {"strength", "houses"} & set(words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:houses"
-    if any(w in PARENTS_WORDS for w in words) and any(
-        w in PERSONAL_WORDS for w in words
-    ):
+    if any(w in PARENTS_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:birth_parents"
     if any(p in " ".join(words) for p in BIRTH_PHRASES):
         return "chart:birth"
@@ -548,17 +502,9 @@ def sort_question(text: str) -> str | None:
         and any(w in PERSONAL_WORDS for w in words)
     ):
         return "chart:longevity"
-    if (
-        not planets
-        and any(w in HEALTH_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in HEALTH_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:health"
-    if (
-        not planets
-        and any(w in MOON_WORDS for w in words)
-        and any(w in PERSONAL_WORDS for w in words)
-    ):
+    if not planets and any(w in MOON_WORDS for w in words) and any(w in PERSONAL_WORDS for w in words):
         return "chart:moon"  # "what is my nakshatra", not "what is a nakshatra"
     area = next((LIFE_WORDS[w] for w in words if w in LIFE_WORDS), None)
     span = next((SPAN_WORDS[w] for w in words if w in SPAN_WORDS), None)
@@ -575,14 +521,8 @@ def sort_question(text: str) -> str | None:
         return f"house:{house}"
     if planets:
         return f"{'dasha' if about_dasha else 'planet'}:{planets[0]}"
-    if (
-        about_dasha
-    ):  # "my current dasha" is personal; "what is a dasha?" asks for the idea
-        return (
-            "dasha:current"
-            if any(w in PERSONAL_WORDS for w in words)
-            else "concept:dasha"
-        )
+    if about_dasha:  # "my current dasha" is personal; "what is a dasha?" asks for the idea
+        return "dasha:current" if any(w in PERSONAL_WORDS for w in words) else "concept:dasha"
     return None
 
 
@@ -680,9 +620,7 @@ async def route_with_model(
     topic key and a listed name; if the model is off or fails, a few plain single-word rules decide the topic.
     """
     keys = "\n".join(sorted(TOPICS))
-    roster = "; ".join(
-        ["me (the person writing)", *(f"{n} ({r})" if r else n for n, r in people)]
-    )
+    roster = "; ".join(["me (the person writing)", *(f"{n} ({r})" if r else n for n, r in people)])
     prompt = (
         f"Keys:\n{keys}\nnone\n\nPeople: {roster}\nCurrently talking about: {active or 'me'}\n"
         f"Previous topic: {previous or 'none'}\n\nMessage: {text[:MAX_QUESTION_CHARS]}\nAnswer:"
@@ -694,9 +632,7 @@ async def route_with_model(
         # The small model answered but not usably: ask the larger one once. A silent reply (timeout, model down) is
         # not retried: the larger model is slower, and the whole bot waits for this call.
         route = _parse_route(
-            await narrate.complete(
-                MODEL_SYSTEM, prompt, client, model=narrate.AI_MODEL
-            ),
+            await narrate.complete(MODEL_SYSTEM, prompt, client, model=narrate.AI_MODEL),
             names,
         )
     return route if route is not None else rule_route(text)
@@ -709,9 +645,7 @@ def rule_route(text: str) -> Route:
     return Route(sort_question(text))
 
 
-async def sort_with_model(
-    text: str, client=None, previous: str | None = None
-) -> str | None:
+async def sort_with_model(text: str, client=None, previous: str | None = None) -> str | None:
     """The topic only (see route_with_model); kept for callers that do not deal with people."""
     return (await route_with_model(text, client, previous)).topic
 
@@ -755,9 +689,7 @@ def _planet_facts(planet: str, birth: ResolvedBirth, who: Subject = SELF) -> lis
     return [line + "."]
 
 
-def _dasha_facts(
-    planet: str, birth: ResolvedBirth, now: datetime, who: Subject = SELF
-) -> list[str]:
+def _dasha_facts(planet: str, birth: ResolvedBirth, now: datetime, who: Subject = SELF) -> list[str]:
     for period in service.natal_report(birth).dashas:
         if period.lord == planet:
             status = (
@@ -765,27 +697,19 @@ def _dasha_facts(
                 if period.contains(now)
                 else ("it is still ahead" if period.start > now else "it has ended")
             )
-            start = (
-                f"{who.your} birth"
-                if period.start < birth.utc
-                else f"{period.start:%b %Y}"
-            )
+            start = f"{who.your} birth" if period.start < birth.utc else f"{period.start:%b %Y}"
             span = f"{start} – {period.end:%b %Y}"
             return [
                 f"{who.Your} {planet.title()} chapter (dasha) lasts {DASHA_YEARS[planet]} years: {span}; {status}."
             ]
-    return [
-        f"A {planet.title()} chapter (dasha) does not fall within your 120-year cycle."
-    ]
+    return [f"A {planet.title()} chapter (dasha) does not fall within your 120-year cycle."]
 
 
 def _ordinal(n: int) -> str:
     return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
 
 
-def resolve_topic(
-    topic: str | None, birth: ResolvedBirth | None, now: datetime
-) -> str | None:
+def resolve_topic(topic: str | None, birth: ResolvedBirth | None, now: datetime) -> str | None:
     """'dasha:current' becomes the running chapter's planet when the birth is known."""
     if topic == "dasha:current" and birth is not None:
         running = service.today_report(birth, now).current_dasha
@@ -844,9 +768,7 @@ def _moon_view(birth: ResolvedBirth | None) -> MoonView | None:
         return None
     rules = moon_nature.load_rules()
     chart = service.natal_report(birth).chart
-    sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(
-        rules, chart.planets["moon"].longitude
-    )
+    sign, sign_text, nak, nak_text, pada = moon_nature.for_moon(rules, chart.planets["moon"].longitude)
     yoga_rules = chandra_yogas.load_rules()
     yogas = chandra_yogas.find(yoga_rules, chart)
     asp_rules = moon_aspects.load_rules()
@@ -911,17 +833,13 @@ def _ayur_bj(birth: ResolvedBirth | None):
 
 def _bala_bj(birth: ResolvedBirth | None) -> tuple | None:
     return (
-        balarishta_bj.find(
-            balarishta_bj.load_rules(), service.natal_report(birth).chart
-        )
+        balarishta_bj.find(balarishta_bj.load_rules(), service.natal_report(birth).chart)
         if birth is not None
         else None
     )
 
 
-def _death_bj(
-    rules, birth: ResolvedBirth | None, sections: tuple[str, ...]
-) -> tuple | None:
+def _death_bj(rules, birth: ResolvedBirth | None, sections: tuple[str, ...]) -> tuple | None:
     """Brihat Jataka XXV for a birth, only the given sections; None without a birth or until the rules are checked."""
     if birth is None or not rules.servable:
         return None
@@ -934,9 +852,7 @@ def _ashtaka_view(birth: ResolvedBirth | None) -> AshtakaView | None:
     if birth is None:
         return None
     rules = ashtakavarga.load_rules()
-    points = ashtakavarga.bhinna(
-        rules, ashtakavarga.positions(service.natal_report(birth).chart)
-    )
+    points = ashtakavarga.bhinna(rules, ashtakavarga.positions(service.natal_report(birth).chart))
     where = ashtakavarga.positions(service.natal_report(birth).chart)
     return AshtakaView(
         tuple(ashtakavarga.sarva(points)),
@@ -957,9 +873,7 @@ def _lordship(birth: ResolvedBirth, *planets: str) -> tuple[lordship.Verdict, ..
     rules = lordship.load_rules()
     report = service.natal_report(birth)
     first = report.dashas[0].lord  # the dasha the person is born in counts as the first
-    found = (
-        lordship.judge(rules, report.chart, p, first) for p in dict.fromkeys(planets)
-    )
+    found = (lordship.judge(rules, report.chart, p, first) for p in dict.fromkeys(planets))
     return tuple(v for v in found if v is not None)
 
 
@@ -1000,22 +914,16 @@ def _future_answer(
     maha, antar = report.current_dasha
     lord = maha.lord
     chart = service.natal_report(birth).chart
-    entries = entry_store.answers_for(
-        f"dasha:{lord}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR
-    )
+    entries = entry_store.answers_for(f"dasha:{lord}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     own = [
         *_dasha_facts(lord, birth, now, subject),
         f"Inside it {subject.you_are} in the {antar.lord.title()} sub-chapter until {antar.end:%d %b %Y}.",
         *_antardasha_fact(lord, antar.lord),
         *_planet_facts(lord, birth, subject),
     ]
-    reading = (
-        house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
-    )
+    reading = house_effects.reading(chart, lord) if lord in house_effects.PLANETS else None
     shares = (
-        house_effects.shares(house_effects.load_rules(), reading)
-        if reading and reading.effects
-        else None
+        house_effects.shares(house_effects.load_rules(), reading) if reading and reading.effects else None
     )
     return Answer(
         "future:overview",
@@ -1041,11 +949,7 @@ def _life_answer(
     """
     houses = LIFE_AREAS[area][0]
     folder = entries_dir or entry_store.ENTRIES_DIR
-    found = [
-        e
-        for h in houses
-        for e in entry_store.answers_for(f"house:{h}", SYSTEMS, folder)
-    ]
+    found = [e for h in houses for e in entry_store.answers_for(f"house:{h}", SYSTEMS, folder)]
     facts: list[str] = []
     readings: list[tuple] = []
     second: list[SecondVoice] = []
@@ -1055,9 +959,7 @@ def _life_answer(
         rules = house_effects.load_rules()
         for h in houses:
             sign = (lagna + h - 1) % 12
-            tenants = [
-                g for g in GRAHAS if sign_index(chart.planets[g].longitude) == sign
-            ]
+            tenants = [g for g in GRAHAS if sign_index(chart.planets[g].longitude) == sign]
             inside = ", ".join(g.title() for g in tenants) if tenants else "no planets"
             facts.append(
                 f"{subject.Your} {_ordinal(h)} house is in {SIGNS[sign]} ({RASHIS[sign]}), with {inside} in it."
@@ -1070,9 +972,7 @@ def _life_answer(
                     second.append(voice)
     work = None
     if area == "career" and birth is not None:
-        work = livelihood.find(
-            livelihood.load_rules(), service.natal_report(birth).chart
-        )
+        work = livelihood.find(livelihood.load_rules(), service.natal_report(birth).chart)
     return Answer(
         f"life:{area}",
         tuple(found),
@@ -1101,9 +1001,7 @@ def answer_topic(
         return _future_answer(birth, now, entries_dir, subject)
     if topic.startswith(WHEN_PREFIX):
         area = topic[len(WHEN_PREFIX) :]
-        report = (
-            service.timing_report(birth, now, area, tz) if birth is not None else None
-        )
+        report = service.timing_report(birth, now, area, tz) if birth is not None else None
         return Answer(
             topic,
             (),
@@ -1123,42 +1021,22 @@ def answer_topic(
             if birth is not None
             else None
         )
-        return Answer(
-            topic, (), (), signs=found, signs_checked=sr.servable, who=subject
-        )
+        return Answer(topic, (), (), signs=found, signs_checked=sr.servable, who=subject)
     if topic == "chart:malefic":
         mr = malefic_yogas.load_rules()
-        found = (
-            malefic_yogas.find(mr, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
-        return Answer(
-            topic, (), (), malefic=found, malefic_checked=mr.servable, who=subject
-        )
+        found = malefic_yogas.find(mr, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), malefic=found, malefic_checked=mr.servable, who=subject)
     if topic == "chart:vargas":
         vr = vargas.load_rules()
-        found = (
-            vargas.find(vr, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
-        return Answer(
-            topic, (), (), vargas=found, vargas_checked=vr.servable, who=subject
-        )
+        found = vargas.find(vr, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), vargas=found, vargas_checked=vr.servable, who=subject)
     if topic == "chart:strength":
         sr = planet_strength.load_rules()
         found = service.strength_report(birth) if birth is not None else None
-        return Answer(
-            topic, (), (), strength=found, strength_checked=sr.servable, who=subject
-        )
+        return Answer(topic, (), (), strength=found, strength_checked=sr.servable, who=subject)
     if topic == "chart:lagna":
         ar, nat = ascendants.load_rules(), moon_nature.load_rules()
-        sign = (
-            sign_index(service.natal_report(birth).chart.ascendant)
-            if birth is not None
-            else None
-        )
+        sign = sign_index(service.natal_report(birth).chart.ascendant) if birth is not None else None
         view = (
             None
             if sign is None
@@ -1175,9 +1053,7 @@ def answer_topic(
         )
         dr = drekkana_figures.load_rules()
         if view is not None:
-            view["drekkana"] = drekkana_figures.find(
-                dr, service.natal_report(birth).chart.ascendant
-            )
+            view["drekkana"] = drekkana_figures.find(dr, service.natal_report(birth).chart.ascendant)
             view["drekkana_frame"] = dr.frame
         return Answer(
             topic,
@@ -1190,30 +1066,16 @@ def answer_topic(
     if topic == "chart:upagrahas":
         ur = upagrahas.load_rules()
         found = service.upagraha_report(birth) if birth is not None else None
-        return Answer(
-            topic, (), (), upagrahas=found, upagrahas_checked=ur.servable, who=subject
-        )
+        return Answer(topic, (), (), upagrahas=found, upagrahas_checked=ur.servable, who=subject)
     if topic == "chart:death_timing":
         dr = death_timing.load_rules()
-        report = (
-            service.death_timing_report(birth, now, tz) if birth is not None else None
-        )
-        return Answer(
-            topic, (), (), death=report, death_checked=dr.servable, who=subject
-        )
+        report = service.death_timing_report(birth, now, tz) if birth is not None else None
+        return Answer(topic, (), (), death=report, death_checked=dr.servable, who=subject)
     if topic == "chart:women":
         wr = women.load_rules()
-        found = (
-            women.find(wr, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
+        found = women.find(wr, service.natal_report(birth).chart) if birth is not None else None
         bj = women_bj.load_rules()
-        found_bj = (
-            women_bj.find(bj, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
+        found_bj = women_bj.find(bj, service.natal_report(birth).chart) if birth is not None else None
         return Answer(
             topic,
             (),
@@ -1226,21 +1088,11 @@ def answer_topic(
         )
     if topic == "chart:houses":
         hs = house_strength.load_rules()
-        found = (
-            house_strength.find(hs, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
-        return Answer(
-            topic, (), (), houses=found, houses_checked=hs.servable, who=subject
-        )
+        found = house_strength.find(hs, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), houses=found, houses_checked=hs.servable, who=subject)
     if topic == "chart:longevity":
         lrules = longevity.load_rules()
-        found = (
-            longevity.find(lrules, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
+        found = longevity.find(lrules, service.natal_report(birth).chart) if birth is not None else None
         drules = death_bj.load_rules()
         return Answer(
             topic,
@@ -1269,9 +1121,7 @@ def answer_topic(
             if birth is not None
             else None
         )
-        return Answer(
-            topic, (), (), birth_bj=found, birth_bj_checked=br.servable, who=subject
-        )
+        return Answer(topic, (), (), birth_bj=found, birth_bj_checked=br.servable, who=subject)
     if topic == "chart:afterlife":
         drules = death_bj.load_rules()
         return Answer(
@@ -1284,43 +1134,25 @@ def answer_topic(
         )
     if topic == "chart:health":
         hrules = health.load_rules()
-        found = (
-            health.find(hrules, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
-        return Answer(
-            topic, (), (), health=found, health_checked=hrules.servable, who=subject
-        )
+        found = health.find(hrules, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), health=found, health_checked=hrules.servable, who=subject)
     if topic == "chart:yogas":
         return Answer(topic, (), (), yogas=_yogas_view(birth), who=subject)
     if topic == "chart:conjunctions":
         rules = conjunctions.load_rules()
-        found = (
-            conjunctions.find(rules, service.natal_report(birth).chart)
-            if birth is not None
-            else None
-        )
-        return Answer(
-            topic, (), (), together=found, together_checked=rules.servable, who=subject
-        )
+        found = conjunctions.find(rules, service.natal_report(birth).chart) if birth is not None else None
+        return Answer(topic, (), (), together=found, together_checked=rules.servable, who=subject)
     if topic == "chart:moon":
         return Answer(topic, (), (), moon=_moon_view(birth), who=subject)
     if topic == "chart:ashtakavarga":
         return Answer(topic, (), (), ashtaka=_ashtaka_view(birth), who=subject)
     if topic in OUTLOOK_TOPICS:
-        report = (
-            service.outlook_report(birth, now, topic.split(":")[1], tz)
-            if birth is not None
-            else None
-        )
+        report = service.outlook_report(birth, now, topic.split(":")[1], tz) if birth is not None else None
         return Answer(topic, (), (), outlook=report, who=subject)
     kind, _, subject_key = topic.partition(":")
     if kind == "life":
         return _life_answer(subject_key, birth, entries_dir, subject)
-    found = entry_store.answers_for(
-        topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR
-    )
+    found = entry_store.answers_for(topic, SYSTEMS, entries_dir or entry_store.ENTRIES_DIR)
     facts: list[str] = []
     if birth is not None and subject_key in GRAHAS:
         facts = (
@@ -1337,18 +1169,12 @@ def answer_topic(
         )
         found = [
             *found,
-            *entry_store.answers_for(
-                f"house:{house}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR
-            ),
+            *entry_store.answers_for(f"house:{house}", SYSTEMS, entries_dir or entry_store.ENTRIES_DIR),
         ]
-    notes = (
-        (RAHU_KETU_FACT,) if subject_key in ("rahu", "ketu") else ()
-    )  # astronomy, always useful
+    notes = (RAHU_KETU_FACT,) if subject_key in ("rahu", "ketu") else ()  # astronomy, always useful
     alias = name_used(question, subject_key) if subject_key in GRAHAS else None
     name_line = (
-        f"{alias.title()} is the Sanskrit and Hindi name for {subject_key.title()}."
-        if alias
-        else None
+        f"{alias.title()} is the Sanskrit and Hindi name for {subject_key.title()}." if alias else None
     )
     reading = shares = None
     if kind == "planet" and birth is not None:
@@ -1362,9 +1188,7 @@ def answer_topic(
         if kind == "planet" and birth is not None
         else None
     )
-    houses = (
-        _lordship(birth, subject_key) if kind == "dasha" and birth is not None else ()
-    )
+    houses = _lordship(birth, subject_key) if kind == "dasha" and birth is not None else ()
     return Answer(
         topic,
         tuple(found),
@@ -1428,9 +1252,7 @@ def is_prediction(answer: Answer) -> bool:
     )
 
 
-def _ai_prompt(
-    question: str, answer: Answer, history=(), source_answer: str | None = None
-) -> str:
+def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | None = None) -> str:
     verified = (
         [
             f"Checked source {e.citation['text']} {e.citation['chapter']}.{e.citation['verse']}: {e.english}"
@@ -1466,16 +1288,12 @@ def _ai_prompt(
     if answer.health is not None:
         verified += health_facts(answer.health, answer.who)
     if answer.livelihood is not None:
-        verified += [
-            f"Brihat Jataka {v}, {w}: {t}." for v, w, t in answer.livelihood.wealth
-        ]
+        verified += [f"Brihat Jataka {v}, {w}: {t}." for v, w, t in answer.livelihood.wealth]
         verified += [
             f"Brihat Jataka {v}, {'; '.join(routes)}: {t}."
             for v, routes, t in answer.livelihood.grouped_work()
         ]
-        verified += [
-            f"Brihat Jataka {v}: {t}." for v, t in answer.livelihood.conditions
-        ]
+        verified += [f"Brihat Jataka {v}: {t}." for v, t in answer.livelihood.conditions]
     if answer.houses:
         verified += house_facts(answer.houses, answer.who)
     if answer.signs:
@@ -1500,23 +1318,19 @@ def _ai_prompt(
         ]
     if answer.birth_bj:
         verified += [
-            f"Brihat Jataka V.{f.verse.split('.')[1]} ({f.detail}): {f.text}."
-            for f in answer.birth_bj
+            f"Brihat Jataka V.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.birth_bj
         ]
     if answer.death_bj:
         verified += [
-            f"Brihat Jataka XXV.{f.verse.split('.')[1]} ({f.detail}): {f.text}."
-            for f in answer.death_bj
+            f"Brihat Jataka XXV.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.death_bj
         ]
     if answer.malefic:
         verified += [
-            f"Brihat Jataka XXIII.{f.verse.split('.')[1]} ({f.detail}): {f.text}."
-            for f in answer.malefic
+            f"Brihat Jataka XXIII.{f.verse.split('.')[1]} ({f.detail}): {f.text}." for f in answer.malefic
         ]
     if answer.vargas:
         verified += [
-            f"Brihat Jataka XXI.{f.verse.split('.')[1]}, {f.because}: {f.text}."
-            for f in answer.vargas
+            f"Brihat Jataka XXI.{f.verse.split('.')[1]}, {f.because}: {f.text}." for f in answer.vargas
         ]
     if answer.strength is not None:
         verified += [
@@ -1544,9 +1358,7 @@ def _ai_prompt(
             else []
         )
     if answer.upagrahas is not None:
-        verified += [
-            f"Phaladeepika {v}, {h}: {t}." for v, h, t in answer.upagrahas.effects
-        ]
+        verified += [f"Phaladeepika {v}, {h}: {t}." for v, h, t in answer.upagrahas.effects]
     if answer.death is not None:
         verified += [
             f"Phaladeepika {r.verse}: {r.text}. Holds on {r.days} of {r.total} days."
@@ -1559,9 +1371,7 @@ def _ai_prompt(
             for p in answer.women_bj
         ]
     if answer.women:
-        verified += [
-            f"Phaladeepika {p.verse} ({p.detail}): {p.text}." for p in answer.women
-        ]
+        verified += [f"Phaladeepika {p.verse} ({p.detail}): {p.text}." for p in answer.women]
     if answer.yogas is not None:
         verified += yoga_facts(answer.yogas, answer.who)
     if answer.moon is not None and answer.moon.aspects is not None:
@@ -1585,9 +1395,7 @@ def _ai_prompt(
         if answer.topic.startswith("life:"):
             houses, label = LIFE_AREAS[answer.topic.split(":")[1]]
             which = " and ".join(_ordinal(h) for h in houses)
-            parts.append(
-                f"The question is about {label}, read from the {which} house of the chart."
-            )
+            parts.append(f"The question is about {label}, read from the {which} house of the chart.")
             if answer.topic == "life:career":
                 parts.append(
                     "Explain the checked career reading conversationally in short paragraphs, not a list. "
@@ -1617,9 +1425,7 @@ def _ai_prompt(
                 "meanings. Do not say that anything might happen."
             )
     if not answer.who.is_self:
-        relation = (
-            f", the writer's {answer.who.relation}" if answer.who.relation else ""
-        )
+        relation = f", the writer's {answer.who.relation}" if answer.who.relation else ""
         parts.append(f"The question is about {answer.who.name}{relation}.")
         if answer.who.minor:
             parts.append(
@@ -1627,10 +1433,7 @@ def _ai_prompt(
                 "mention marriage, wealth or career as expectations."
             )
     if history:
-        parts.append(
-            "Recent conversation:\n"
-            + "\n".join(f"Person: {q}\nYou: {r}" for q, r in history)
-        )
+        parts.append("Recent conversation:\n" + "\n".join(f"Person: {q}\nYou: {r}" for q, r in history))
     parts.append(f"Question: {question[:MAX_QUESTION_CHARS]}")
     return "\n\n".join(parts)
 
@@ -1654,14 +1457,8 @@ async def ai_answer(
     )
     if not reply:
         return None
-    if (
-        answer.topic == "life:career"
-        and answer.livelihood is not None
-        and answer.livelihood.work
-    ):
-        occupations = "\n".join(
-            f"- {text}" for _, _, text in answer.livelihood.grouped_work()
-        )
+    if answer.topic == "life:career" and answer.livelihood is not None and answer.livelihood.work:
+        occupations = "\n".join(f"- {text}" for _, _, text in answer.livelihood.grouped_work())
         prompt = (
             f"Checked historical occupations:\n{occupations}\n\n"
             f"Full sourced answer for context:\n{source_answer or ''}\n\n"
@@ -1680,9 +1477,7 @@ async def ai_answer(
         )
         if not examples:
             return None
-        reply += (
-            f"\n\nModern examples (illustrations, not from the old text): {examples}"
-        )
+        reply += f"\n\nModern examples (illustrations, not from the old text): {examples}"
     return reply
 
 
@@ -1716,15 +1511,15 @@ def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
                 f"until {s.end:%d %b %Y}"
                 if s.start is None
                 else (
-                    f"from {s.start:%d %b %Y}"
-                    if s.end is None
-                    else f"{s.start:%d %b %Y} to {s.end:%d %b %Y}"
+                    f"from {s.start:%d %b %Y}" if s.end is None else f"{s.start:%d %b %Y} to {s.end:%d %b %Y}"
                 )
             )
         )
         line = f"{s.planet.title()} in the {_ordinal(s.house)} house from the Moon sign, {when}"
         if s.effect:
-            line += f": the text gives {s.effect} ({'a good house' if s.favourable else 'a hard house'} for it)"
+            line += (
+                f": the text gives {s.effect} ({'a good house' if s.favourable else 'a hard house'} for it)"
+            )
             if s.blocked_by:
                 line += f", but {', '.join(g.title() for g in s.blocked_by)} obstruct it (vedha)"
         out.append(line + ".")
@@ -1734,8 +1529,7 @@ def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
 def ashtaka_facts(view: AshtakaView, who: Subject = SELF) -> list[str]:
     """The sign totals as sentences for the AI."""
     by_house = [
-        (h, SIGNS[(view.lagna + h - 1) % 12], view.sarva[(view.lagna + h - 1) % 12])
-        for h in range(1, 13)
+        (h, SIGNS[(view.lagna + h - 1) % 12], view.sarva[(view.lagna + h - 1) % 12]) for h in range(1, 13)
     ]
     line = "; ".join(f"{_ordinal(h)} house {sign}: {n}" for h, sign, n in by_house)
     head = (
@@ -1748,9 +1542,7 @@ def ashtaka_facts(view: AshtakaView, who: Subject = SELF) -> list[str]:
 def moon_facts(view: MoonView, who: Subject = SELF) -> list[str]:
     """The Moon's sign and nakshatra descriptions as sentences for the AI."""
     return [
-        f"Brihat Jataka XIII, {f.name}"
-        + (f" ({f.detail})" if f.detail else "")
-        + f": {f.text}"
+        f"Brihat Jataka XIII, {f.name}" + (f" ({f.detail})" if f.detail else "") + f": {f.text}"
         for f in view.yogas
     ] + [
         f"Brihat Jataka XVII on {who.your} Moon in {SIGNS[view.sign]}: a person born with it {view.sign_text.text}",
@@ -1793,13 +1585,8 @@ def yoga_facts(view: YogasView, who: Subject = SELF) -> list[str]:
         f"Brihat Jataka 12 ({y.name} yoga; {y.detail}): a person born under it {y.text}"
         for y in view.nabhasa.yogas
     ]
-    out += [
-        f"Phaladeepika {f.verse}, {f.name} ({f.detail}): {f.text}."
-        for f in view.chapter6
-    ]
-    out += [
-        f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja
-    ]
+    out += [f"Phaladeepika {f.verse}, {f.name} ({f.detail}): {f.text}." for f in view.chapter6]
+    out += [f"Brihat Jataka {f.verse} raja yoga ({f.detail}): {f.text}" for f in view.raja]
     out += [f"Phaladeepika {f.verse} ({f.detail}): {f.text}." for f in view.ch7]
     out += [f"Brihat Jataka {f.verse} ({f.detail}): {f.text}." for f in view.bj22]
     out += [f"Brihat Jataka {f.verse} ({f.detail}): {f.text}." for f in view.bj15]

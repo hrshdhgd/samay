@@ -71,16 +71,8 @@ def sun_times(
         ts.from_datetime((start + timedelta(days=1)).astimezone(UTC)),
         is_up,
     )
-    rises = [
-        t.utc_datetime().astimezone(zone)
-        for t, up in zip(times, events, strict=True)
-        if up
-    ]
-    sets = [
-        t.utc_datetime().astimezone(zone)
-        for t, up in zip(times, events, strict=True)
-        if not up
-    ]
+    rises = [t.utc_datetime().astimezone(zone) for t, up in zip(times, events, strict=True) if up]
+    sets = [t.utc_datetime().astimezone(zone) for t, up in zip(times, events, strict=True) if not up]
     if not rises or not sets:
         return None
     sunrise = rises[0]
@@ -88,9 +80,7 @@ def sun_times(
     return SunTimes(sunrise, after[0]) if after else None
 
 
-def rahu_kaala(
-    latitude: float, longitude: float, tz: str, day: date
-) -> RahuKaala | None:
+def rahu_kaala(latitude: float, longitude: float, tz: str, day: date) -> RahuKaala | None:
     sun = sun_times(latitude, longitude, tz, day)
     if sun is None:
         return None

@@ -20,16 +20,10 @@ from .errors import GazetteerMissing
 from .names import fold, skeleton
 from .paths import GAZETTEER_PATH
 
-SKELETON_MIN_SCORE = (
-    75  # phonetic-bucket candidates below this similarity are not offered
-)
+SKELETON_MIN_SCORE = 75  # phonetic-bucket candidates below this similarity are not offered
 FUZZY_MIN_SCORE = 85  # prefix-bucket candidates (other scripts, or no phonetic hit)
-NEAR_TOP = (
-    10  # candidates within this many similarity points of the best are all offered
-)
-POPULATION_WEIGHT = (
-    4  # ranking bonus per power of ten of population, in similarity points
-)
+NEAR_TOP = 10  # candidates within this many similarity points of the best are all offered
+POPULATION_WEIGHT = 4  # ranking bonus per power of ten of population, in similarity points
 CHUNK = 500
 
 _db_path: Path = GAZETTEER_PATH
@@ -73,9 +67,7 @@ def _conn() -> sqlite3.Connection:
         raise GazetteerMissing(
             f"Place database not found at {_db_path}. Run: uv run python scripts/build_gazetteer.py"
         )
-    conn = sqlite3.connect(
-        f"file:{_db_path}?mode=ro", uri=True, check_same_thread=False
-    )
+    conn = sqlite3.connect(f"file:{_db_path}?mode=ro", uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -120,16 +112,11 @@ def _candidates(name: str) -> dict[int, float]:
         return {}
     conn = _conn()
     scores: dict[int, float] = {
-        r[0]: 100.0
-        for r in conn.execute("SELECT place_id FROM names WHERE fold = ?", (key,))
+        r[0]: 100.0 for r in conn.execute("SELECT place_id FROM names WHERE fold = ?", (key,))
     }
     skel = skeleton(name)
-    if (
-        skel
-    ):  # spelling variants, even when exact matches exist: "Kolapur" is probably Kolhapur
-        for pid, other in conn.execute(
-            "SELECT place_id, fold FROM names WHERE skel = ?", (skel,)
-        ):
+    if skel:  # spelling variants, even when exact matches exist: "Kolapur" is probably Kolhapur
+        for pid, other in conn.execute("SELECT place_id, fold FROM names WHERE skel = ?", (skel,)):
             score = fuzz.ratio(key, other)
             if score >= SKELETON_MIN_SCORE and score > scores.get(pid, 0):
                 scores[pid] = score
@@ -212,13 +199,7 @@ def get_place(place_id: str) -> Place | None:
 
 def gazetteer_stamp() -> str:
     """'geonames <snapshot> <db hash>' for version stamps."""
-    snapshot = (
-        _conn().execute("SELECT value FROM meta WHERE key = 'snapshot'").fetchone()[0]
-    )
+    snapshot = _conn().execute("SELECT value FROM meta WHERE key = 'snapshot'").fetchone()[0]
     lock = _db_path.with_name("gazetteer.lock")
-    digest = (
-        json.loads(lock.read_text())["database_sha256"][:12]
-        if lock.exists()
-        else "unlocked"
-    )
+    digest = json.loads(lock.read_text())["database_sha256"][:12] if lock.exists() else "unlocked"
     return f"geonames {snapshot} {digest}"

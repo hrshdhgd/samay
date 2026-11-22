@@ -133,9 +133,7 @@ def _years(y: float, year_days: float = YEAR_DAYS) -> timedelta:
     return timedelta(days=y * year_days)
 
 
-def vimshottari(
-    moon_lon: float, birth: datetime, year_days: float = YEAR_DAYS
-) -> list[Period]:
+def vimshottari(moon_lon: float, birth: datetime, year_days: float = YEAR_DAYS) -> list[Period]:
     """The nine mahadashas, the first one starting (partially elapsed) before birth."""
     idx, _ = nakshatra(moon_lon)
     first = idx % 9

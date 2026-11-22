@@ -11,9 +11,7 @@ def test_duplicates_ranked_by_population_in_different_regions():
     places = find_places("Springfield, US")
     assert len(places) == 3
     assert len({p.admin1 for p in places}) == 3
-    assert [p.population for p in places] == sorted(
-        (p.population for p in places), reverse=True
-    )
+    assert [p.population for p in places] == sorted((p.population for p in places), reverse=True)
 
 
 def test_country_filter():

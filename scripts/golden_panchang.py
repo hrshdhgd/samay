@@ -13,9 +13,7 @@ import swisseph as swe
 
 swe.set_sid_mode(swe.SIDM_LAHIRI, 0, 0)
 FLAGS = swe.FLG_SIDEREAL | swe.FLG_MOSEPH
-OUT = (
-    Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_panchang.json"
-)
+OUT = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_panchang.json"
 
 CASES = [
     "1985-03-07T01:00",

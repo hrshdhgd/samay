@@ -21,9 +21,7 @@ EXIT_ERROR, EXIT_AMBIGUOUS = 1, 2
 
 def birth_options(fn: Callable) -> Callable:
     options = [
-        click.option(
-            "--date", "date_text", required=True, help="Birth date, YYYY-MM-DD."
-        ),
+        click.option("--date", "date_text", required=True, help="Birth date, YYYY-MM-DD."),
         click.option(
             "--time",
             "time_text",
@@ -106,18 +104,16 @@ def cli() -> None:
     show_default=True,
     help="Picture style.",
 )
-@click.option(
-    "--degrees", is_flag=True, help="Show each planet's degree in the picture."
-)
+@click.option("--degrees", is_flag=True, help="Show each planet's degree in the picture.")
 def chart(image: str | None, style: str, degrees: bool, **kw) -> None:
     """Birth chart, yogas and provenance."""
     birth = _resolve(**kw)
     if image:
         _run(
-            lambda: Path(image).write_bytes(
-                render_chart_png(service.natal_report(birth), style, degrees)
+            lambda: (
+                Path(image).write_bytes(render_chart_png(service.natal_report(birth), style, degrees))
+                and f"saved {image}"
             )
-            and f"saved {image}"
         )
     _run(lambda: render_chart(service.natal_report(birth)))
 
@@ -157,9 +153,7 @@ def data_info(profile: str) -> None:
 
     def show() -> str:
         stamp = service.data_info(profile)
-        return "\n".join(
-            [f"ref: {stamp.code()}", *(f"{k}: {v}" for k, v in vars(stamp).items())]
-        )
+        return "\n".join([f"ref: {stamp.code()}", *(f"{k}: {v}" for k, v in vars(stamp).items())])
 
     _run(show)
 
