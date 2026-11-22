@@ -1,0 +1,19 @@
+# Panchang entries. Paraphrased in our own words; read in the Subrahmanya Sastri translation (Bangalore, 1946-47).
+# Sloka numbers come from OCR text: confirm against the page image before promoting past `unchecked`.
+- id: panchang-bharani-bs98-8
+  topic: nakshatra:bharani
+  system: any
+  english: >-
+    The old text puts Bharani among five nakshatras it calls ugra, meaning fierce or dreadful (the others are Magha
+    and the three Purvas). It says these suit forceful work: overcoming rivals, destruction, deceit, imprisonment,
+    poisoning, setting fires and using weapons. It is a description of the star's character, not a forecast.
+  citation: {text: Brihat Samhita, chapter: 98, verse: "8", edition: "tr. V. Subrahmanya Sastri and M. Ramakrishna Bhat (Bangalore, 1946-47)"}
+  verification: {level: unchecked}
+- id: panchang-krittika-bs98-11
+  topic: nakshatra:krittika
+  system: any
+  english: >-
+    The old text puts Krittika, together with Vishakha, among the nakshatras it calls mixed (tender-sharp), meaning
+    a nature of both kinds. It is a description of the star's character, not a forecast.
+  citation: {text: Brihat Samhita, chapter: 98, verse: "11", edition: "tr. V. Subrahmanya Sastri and M. Ramakrishna Bhat (Bangalore, 1946-47)"}
+  verification: {level: unchecked}

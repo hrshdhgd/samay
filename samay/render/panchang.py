@@ -42,6 +42,8 @@ def _observance_lines(o: ObservanceDay, day: date | None = None) -> list[str]:
     """`day` is the day being described (None for "when is the next one"): on it the observance is kept by this
     calendar, by some calendars only, or not at all."""
     if o.primary is None:
+        if o.explanation:  # a nakshatra note: shown as it is, with no date wording
+            return [o.explanation]
         return [f"{o.label}: the rule I use gives no clear day for this one. {NOTE_LOCAL}"]
     others = [d for d, _ in o.alternates if d != day]
     if day is not None and day != o.primary and day in {d for d, _ in o.alternates}:

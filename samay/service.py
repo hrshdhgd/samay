@@ -414,6 +414,9 @@ def panchang_report(place: Place, day: date) -> PanchangReport | None:
             needs_tradition = True
             continue
         today += [_as_day(spec.name, spec.label, o) for o in found]
+    nakshatra_key = facts.nakshatra.name.lower().replace(" ", "-")
+    if (note := _explanation(nakshatra_key)) is not None:  # only once a checked entry exists
+        today.append(ObservanceDay(nakshatra_key, facts.nakshatra.name, None, "single", (), note))
     return PanchangReport(place.label, place.tz, facts, date_in_tulu, tulu_profile.cutoff, tuple(today),
                           needs_tradition, withheld)
 

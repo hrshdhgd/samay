@@ -158,3 +158,12 @@ def test_day_answer_from_a_real_report():
     assert "Sunrise 06:44, sunset 17:56." in text and "Tulu date: Jarde 5" in text
     before = words.render_day(service.panchang_report(pune, date(2026, 11, 20)), date(2026, 11, 20))
     assert "Shukla Dashami" in before and not DASHA_WORD.search(before) and "Rahu" not in before
+
+
+def test_a_nakshatra_note_is_shown_alone_without_date_wording():
+    note = ObservanceDay("bharani", "Bharani", None, "single", (), "A description of the star's character.")
+    r = report(observances=(note,), claims_withheld=False)
+    for text in (words.render_day(r, date(2026, 11, 21)),
+                 words.render_brief(datetime(2026, 11, 21, 7, 0), None, "Pune", r)):
+        assert text.count("A description of the star's character.") == 1
+        assert "Bharani:" not in text and words.NOTE_LOCAL not in text and "no clear day" not in text

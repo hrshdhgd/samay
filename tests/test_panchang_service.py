@@ -1,9 +1,9 @@
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
 from samay import service
-from samay.engine import observances, panchang_profile
+from samay.engine import entries, observances, panchang_profile
 from samay.engine.geo import Place
 from samay.engine.paths import EPHEMERIS_PATH
 
@@ -95,3 +95,49 @@ def test_reference_place_comes_from_the_environment(monkeypatch):
 
 def test_explanations_are_only_those_of_checked_entries(tmp_path):
     assert service.observance_explanation("bharani", directory=tmp_path) == []
+
+
+def _bharani_day() -> date:
+    from samay.engine import panchang
+
+    site = service._site(PUNE)
+    profile = service._panchang_profile()
+    for n in range(120):
+        d = date(2026, 11, 1) + timedelta(days=n)
+        facts = panchang.day_facts(site, d, profile.ayanamsa, profile.sunrise_definition)
+        if facts and facts.nakshatra.name == "Bharani":
+            return d
+    raise AssertionError("no Bharani sunrise found")
+
+
+def _write_bharani(tmp_path, level):
+    import yaml
+
+    verification = {"level": level}
+    if level != "unchecked":
+        verification |= {"checked_by": "Harshad", "checked_on": date(2026, 11, 22), "against": "test copy"}
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([{
+        "id": "panchang-bharani-test", "topic": "nakshatra:bharani", "system": "any",
+        "english": "A description of the star's character.",
+        "citation": {"text": "Brihat Samhita", "chapter": 98, "verse": "8", "edition": "test"},
+        "verification": verification}]))
+    entries.load_entries.cache_clear()
+
+
+def test_a_checked_nakshatra_entry_is_shown_once_in_the_day_answer(tmp_path, monkeypatch):
+    from samay.render import panchang as words
+
+    day = _bharani_day()
+    monkeypatch.setattr(entries, "ENTRIES_DIR", tmp_path)
+    _write_bharani(tmp_path, "translation-checked")
+    text = words.render_day(service.panchang_report(PUNE, day), day)
+    assert text.count("A description of the star's character.") == 1
+    entries.load_entries.cache_clear()
+
+
+def test_an_unchecked_nakshatra_entry_adds_nothing(tmp_path, monkeypatch):
+    day = _bharani_day()
+    monkeypatch.setattr(entries, "ENTRIES_DIR", tmp_path)
+    _write_bharani(tmp_path, "unchecked")
+    assert not any(o.name == "bharani" for o in service.panchang_report(PUNE, day).observances)
+    entries.load_entries.cache_clear()
