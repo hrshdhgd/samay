@@ -55,3 +55,14 @@ observances:
     source: {text: "Dharmasindhu, English summary (Kamakoti); Tulu Panchanga app docs/VERIFY.md", locus: "ch. 3 Tithi Nirnaya"}
     rules:
       all: {tithis: [30], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
+  sankashti:
+    label: Sankashti Chaturthi
+    # Read 2026-11-22. Rule: Krishna Chaturthi (tithi 19) present at local moonrise, the Tulu Panchanga app's documented
+    # rule ("Chaturthi at moonrise, every paksha/month"), and the day the family's printed calendar marks (Friday 27 Nov 2026,
+    # Mangaluru; moonrise 20:59, Chaturthi from 09:49). No vedha and no kshaya/vriddhi tie-break are sourced, so the defaults
+    # apply. NO primary text has been read for this rule yet; the day is a calendar convention, and no claim is made about
+    # what the day signifies.
+    verified: true
+    source: {text: "Tulu Panchanga app festival rule; family printed calendar 2026 (27 Nov)", locus: "app festivals_mangaluru_2026.csv; family calendar, Nov 2026"}
+    rules:
+      all: {tithis: [19], anchor: moonrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}

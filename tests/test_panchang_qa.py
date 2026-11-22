@@ -24,6 +24,11 @@ NOW = datetime(2026, 11, 21, 4, 0, tzinfo=UTC)
         ("what is Ekadashi", "about", "ekadashi"),
         ("why is Purnima important", "about", "purnima"),
         ("when is amavasya", "next", "amavasya"),
+        ("next sankashti", "next", "sankashti"),
+        ("when is sankasthi chaturthi", "next", "sankashti"),
+        ("is today sankata chaturthi", "day", "sankashti"),
+        ("what is sankatahara chaturthi", "about", "sankashti"),
+        ("when is sankashta chaturthi", "next", "sankashti"),
         ("what is the panchang on 2026-12-04", "day", None),
         (
             "is it ekadashi today",
@@ -284,6 +289,7 @@ SUNDAY = date(2026, 11, 22)  # the week of Mon 16 to Sun 22 November 2026
             date(2026, 12, 21),
         ),
         ("ekadashi dates in 2027", ("ekadashi",), date(2027, 1, 1), date(2027, 12, 31)),
+        ("list sankashti days in 2027", ("sankashti",), date(2027, 1, 1), date(2027, 12, 31)),
         ("pradosha this month", ("pradosha",), date(2026, 11, 1), date(2026, 11, 30)),
         (
             "when are amavasya days in January",

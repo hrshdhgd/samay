@@ -16,10 +16,12 @@ def write(tmp_path, **changes):
 def test_shipped_profile_loads_with_the_smarta_tradition():
     p = load_panchang_profile()
     assert p.sampradaya == "smarta"
-    assert set(p.observances) == {"ekadashi", "pradosha", "purnima", "amavasya"}
+    assert set(p.observances) == {"ekadashi", "pradosha", "purnima", "amavasya", "sankashti"}
     assert p.observances["ekadashi"].rules["madhva"].viddha is not None
     assert p.observances["pradosha"].rules["all"].anchor == "sunset"
     assert p.observances["pradosha"].rules["all"].end_minutes == 144
+    assert p.observances["sankashti"].rules["all"].tithis == (19,)
+    assert p.observances["sankashti"].rules["all"].anchor == "moonrise"
     assert p.margin_minutes >= 0 and p.sunrise_definition in (
         "upper_limb",
         "disc_centre",

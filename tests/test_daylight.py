@@ -97,3 +97,18 @@ def test_disc_centre_sunrise_is_later_and_sunset_earlier_than_upper_limb():
 def test_unknown_sunrise_definition_is_rejected():
     with pytest.raises(ValueError, match="sunrise definition"):
         daylight.sun_times(18.5196, 73.8553, "Asia/Kolkata", date(2026, 11, 21), definition="moonlight")
+
+
+def test_moonrise_at_mangaluru_matches_the_tulu_panchanga_app_to_a_minute():
+    # The app's moonrise column (Mangaluru, 2026): 20:59 on 27 Nov and 20:49 on 26 Dec.
+    for day, hhmm in ((date(2026, 11, 27), "20:59"), (date(2026, 12, 26), "20:49")):
+        rise = daylight.moon_rise(12.9141, 74.8560, "Asia/Kolkata", day)
+        want = datetime.combine(day, datetime.strptime(hhmm, "%H:%M").time(), tzinfo=rise.tzinfo)
+        assert abs(rise - want) <= timedelta(minutes=1)
+
+
+def test_moonrise_is_the_first_on_the_local_day_and_none_when_the_moon_does_not_rise():
+    # 10 Jan 2026 at Mangaluru: the Moon sets before the day starts and next rises at 00:37 on the 11th.
+    assert daylight.moon_rise(12.9141, 74.8560, "Asia/Kolkata", date(2026, 1, 10)) is None
+    rise = daylight.moon_rise(12.9141, 74.8560, "Asia/Kolkata", date(2026, 1, 11))
+    assert rise.date() == date(2026, 1, 11) and rise.hour == 0

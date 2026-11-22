@@ -165,3 +165,28 @@ dates:
   - {observance: ekadashi, date: 2027-12-23}
   - {observance: pradosha, date: 2027-12-25}
   - {observance: amavasya, date: 2027-12-27}
+  - {observance: sankashti, date: 2026-01-06}
+  - {observance: sankashti, date: 2026-02-05}
+  - {observance: sankashti, date: 2026-03-06}
+  - {observance: sankashti, date: 2026-04-05}
+  - {observance: sankashti, date: 2026-05-05}
+  - {observance: sankashti, date: 2026-06-03}
+  - {observance: sankashti, date: 2026-07-03}
+  - {observance: sankashti, date: 2026-08-02}
+  - {observance: sankashti, date: 2026-08-31}
+  - {observance: sankashti, date: 2026-09-29}
+  - {observance: sankashti, date: 2026-10-29}
+  - {observance: sankashti, date: 2026-11-27}
+  - {observance: sankashti, date: 2026-12-26}
+  - {observance: sankashti, date: 2027-01-25}
+  - {observance: sankashti, date: 2027-02-23}
+  - {observance: sankashti, date: 2027-03-25}
+  - {observance: sankashti, date: 2027-04-24}
+  - {observance: sankashti, date: 2027-05-23}
+  - {observance: sankashti, date: 2027-06-22}
+  - {observance: sankashti, date: 2027-07-22}
+  - {observance: sankashti, date: 2027-08-20}
+  - {observance: sankashti, date: 2027-09-19}
+  - {observance: sankashti, date: 2027-10-18}
+  - {observance: sankashti, date: 2027-11-17}
+  - {observance: sankashti, date: 2027-12-16}

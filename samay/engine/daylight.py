@@ -27,6 +27,9 @@ PARTS = 8
 # upper_limb: top edge on the horizon, standard refraction (34' + 16' semidiameter).
 # disc_centre: centre on the horizon, 34' refraction only.
 HORIZON_DEGREES = {"upper_limb": -0.8333, "disc_centre": -0.5667}
+# Moonrise: 34' refraction, and the Moon's mean semidiameter so the upper limb is what counts.
+MOON_HORIZON_DEGREES = -0.5667
+MOON_RADIUS_DEGREES = 0.2725
 
 
 @dataclass(frozen=True)
@@ -78,6 +81,31 @@ def sun_times(
     sunrise = rises[0]
     after = [s for s in sets if s > sunrise]
     return SunTimes(sunrise, after[0]) if after else None
+
+
+def moon_rise(latitude: float, longitude: float, tz: str, day: date) -> datetime | None:
+    """The first moonrise on a local calendar day, in the place's own zone, or None when the Moon does not
+    rise that day (it rises about 50 minutes later each day, so some days have none). Moon's centre on the
+    horizon with 34' refraction (the Moon's own semidiameter is passed to Skyfield, which takes the upper limb)."""
+    zone = ZoneInfo(tz)
+    start = datetime(day.year, day.month, day.day, tzinfo=zone)
+    ts = ephemeris._timescale()
+    kernel = ephemeris._kernel()
+    topos = wgs84.latlon(latitude, longitude)
+    is_up = almanac.risings_and_settings(
+        kernel,
+        kernel["moon"],
+        topos,
+        horizon_degrees=MOON_HORIZON_DEGREES,
+        radius_degrees=MOON_RADIUS_DEGREES,
+    )
+    times, events = almanac.find_discrete(
+        ts.from_datetime(start.astimezone(UTC)),
+        ts.from_datetime((start + timedelta(days=1)).astimezone(UTC)),
+        is_up,
+    )
+    rises = [t.utc_datetime().astimezone(zone) for t, up in zip(times, events, strict=True) if up]
+    return rises[0] if rises else None
 
 
 def rahu_kaala(latitude: float, longitude: float, tz: str, day: date) -> RahuKaala | None:

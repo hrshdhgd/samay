@@ -1,6 +1,6 @@
 """Which local day an observance falls on, from a rule stored as data.
 
-A rule names the tithis it is about, an anchor (local sunrise or sunset) and a window measured from that anchor in
+A rule names the tithis it is about, an anchor (local sunrise, sunset or moonrise; a day with no moonrise never qualifies) and a window measured from that anchor in
 minutes. A zero-length window is an instant: the tithi must be current at the anchor. A longer window needs the
 tithi to overlap it. The result is always one primary day plus, where the rule is ambiguous, an alternate:
   kshaya  - the tithi is current at no anchor, so on_kshaya picks start_day, next_day or none (no claim);
@@ -22,7 +22,7 @@ from .ephemeris import sidereal_track
 from .errors import SampradayaNotSet
 from .panchang import TITHI_DEG, Element, Site, _elongation, element_at
 
-ANCHORS = ("sunrise", "sunset")
+ANCHORS = ("sunrise", "sunset", "moonrise")
 KSHAYA_CHOICES = ("start_day", "next_day", "none")
 VRIDDHI_CHOICES = ("first", "last")
 SEARCH_DAYS = 70  # long enough for the rarest observance here (Amavasya, about 30 days apart)
@@ -72,7 +72,14 @@ def _sun(latitude: float, longitude: float, tz: str, day: date, definition: str)
     return daylight.sun_times(latitude, longitude, tz, day, definition)
 
 
+@lru_cache(maxsize=4096)
+def _moonrise(latitude: float, longitude: float, tz: str, day: date) -> datetime | None:
+    return daylight.moon_rise(latitude, longitude, tz, day)
+
+
 def _anchor(site: Site, day: date, anchor: str, definition: str) -> datetime | None:
+    if anchor == "moonrise":
+        return _moonrise(site.latitude, site.longitude, site.tz, day)
     sun = _sun(site.latitude, site.longitude, site.tz, day, definition)
     if sun is None:
         return None

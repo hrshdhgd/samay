@@ -205,3 +205,10 @@ def test_a_year_of_every_observance_is_fast_enough_for_a_chat_answer():
             profile.sunrise_definition,
         )
     assert time.perf_counter() - started < 6.0
+
+
+def test_a_moonrise_rule_names_the_day_chaturthi_is_current_at_moonrise():
+    mangaluru = Site(12.9141, 74.8560, "Asia/Kolkata")
+    rule = Rule(tithis=(19,), anchor="moonrise")
+    found = observances_between(rule, mangaluru, date(2026, 11, 20), date(2026, 12, 5))
+    assert [o.primary for o in found] == [date(2026, 11, 27)]

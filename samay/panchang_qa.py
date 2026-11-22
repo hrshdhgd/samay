@@ -20,12 +20,14 @@ OBSERVANCES = {
     "pradosha": ("pradosha", "pradosh", "pradoshas", "pradosham", "pradoshan"),
     "purnima": ("purnima", "poornima", "pournami", "fullmoon"),
     "amavasya": ("amavasya", "amavasai", "newmoon"),
+    "sankashti": ("sankashti", "sankasthi", "sankata", "sankatahara", "sankashta"),
 }
 LABELS = {
     "ekadashi": "Ekadashi",
     "pradosha": "Pradosha",
     "purnima": "Purnima",
     "amavasya": "Amavasya",
+    "sankashti": "Sankashti Chaturthi",
 }
 DAY_WORDS = ("tithi", "panchang", "panchanga", "panchangam")
 # A day only when one is named ("nakshatra tomorrow"); alone ("what is a nakshatra") qa.py answers from its sources.

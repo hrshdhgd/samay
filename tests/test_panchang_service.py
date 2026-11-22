@@ -268,7 +268,17 @@ MANGALURU = Place(
 def test_a_list_names_every_verified_observance_in_the_range():
     r = service.observance_list_report(MANGALURU, date(2026, 11, 22), date(2026, 12, 31))
     assert not r.too_long and not r.needs_sampradaya and r.withheld == ()
-    assert r.labels == ("Ekadashi", "Pradosha", "Purnima", "Amavasya") and not r.filtered
+    assert (
+        r.labels
+        == (
+            "Ekadashi",
+            "Pradosha",
+            "Purnima",
+            "Amavasya",
+            "Sankashti Chaturthi",
+        )
+        and not r.filtered
+    )
     primaries = [(o.primary, o.name) for o in r.days]
     assert primaries == sorted(primaries)
     # The Tulu Panchanga app for Mangaluru (2026 festival list) gives these days for the same span.
@@ -279,6 +289,8 @@ def test_a_list_names_every_verified_observance_in_the_range():
         (date(2026, 12, 8), "amavasya"),
         (date(2026, 12, 20), "ekadashi"),
         (date(2026, 12, 24), "purnima"),
+        (date(2026, 11, 27), "sankashti"),
+        (date(2026, 12, 26), "sankashti"),
     }
     assert all(o.explanation is None for o in r.days)  # a list carries no explanation text
 
@@ -299,6 +311,7 @@ def test_a_list_never_names_a_day_from_an_unverified_rule(profile_dir):
         "Pradosha",
         "Purnima",
         "Amavasya",
+        "Sankashti Chaturthi",
     }  # the copy's key order
 
 
