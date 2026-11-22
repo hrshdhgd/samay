@@ -8,4 +8,5 @@ nakshatra_days:
   - {date: 2026-11-24, nakshatra: Krittika, family_name: Keertige}
 sankashti:
   - {date: 2026-11-27, note: "marked auspicious (Friday)"}
-ekadashi: []
+ekadashi:
+  - {date: 2026-11-20, note: "owner, 2026-11-22; other Ekadashi dates for 2026 still to come"}
