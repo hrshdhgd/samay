@@ -1,4 +1,5 @@
 """Tradition profiles: one YAML file per lineage, holding every disputed calculation choice."""
+
 from __future__ import annotations
 
 import hashlib
@@ -39,7 +40,9 @@ def _check(field_name: str, value: object, allowed: set) -> None:
 
 
 @lru_cache(maxsize=16)
-def load_profile(profile_id: str = DEFAULT_PROFILE, directory: Path = PROFILES_DIR) -> Profile:
+def load_profile(
+    profile_id: str = DEFAULT_PROFILE, directory: Path = PROFILES_DIR
+) -> Profile:
     path = directory / f"{profile_id}.yaml"
     if not path.is_file():
         raise UnknownProfile(f"unknown tradition profile {profile_id!r}")

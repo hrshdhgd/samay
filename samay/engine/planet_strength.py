@@ -3,6 +3,7 @@
 Texts and definitions come from data/rules/phaladeepika-ch4-strength.yaml (paraphrased); the tests are coded here. This is a count of the book's simple
 conditions, not the full shadbala arithmetic. Nothing is returned until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,10 +22,26 @@ RULES_PATH = DATA_DIR / "rules" / "phaladeepika-ch4-strength.yaml"
 SEVEN = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
 KINDS = ("kala", "chesta", "uchcha", "dik", "ayana", "sthana")
 NATURAL_ORDER = ("sun", "moon", "venus", "jupiter", "mercury", "mars", "saturn")
-DEEP_EXALTATION = {"sun": 10.0, "moon": 33.0, "mars": 298.0, "mercury": 165.0, "jupiter": 95.0, "venus": 357.0, "saturn": 200.0}
+DEEP_EXALTATION = {
+    "sun": 10.0,
+    "moon": 33.0,
+    "mars": 298.0,
+    "mercury": 165.0,
+    "jupiter": 95.0,
+    "venus": 357.0,
+    "saturn": 200.0,
+}
 DAY_PLANETS, NIGHT_PLANETS = ("sun", "jupiter", "saturn"), ("moon", "mars", "venus")
 SOUTH_PLANETS = ("mercury", "saturn", "moon")
-DIK_HOUSE = {"sun": 10, "mars": 10, "mercury": 1, "jupiter": 1, "saturn": 7, "moon": 4, "venus": 4}
+DIK_HOUSE = {
+    "sun": 10,
+    "mars": 10,
+    "mercury": 1,
+    "jupiter": 1,
+    "saturn": 7,
+    "moon": 4,
+    "venus": 4,
+}
 GOOD_SIGNS = ("exaltation", "moolatrikona", "own", "friendly")
 
 
@@ -70,10 +87,22 @@ def load_rules(path: Path = RULES_PATH) -> StrengthRules:
     if set(raw["kinds"]) != set(KINDS):
         raise ValueError(f"{path.name}: kinds must be exactly {KINDS}")
     for k, d in raw["kinds"].items():
-        if not all(isinstance(d.get(f), str) and d[f].strip() for f in ("verse", "name", "definition", "text")):
+        if not all(
+            isinstance(d.get(f), str) and d[f].strip()
+            for f in ("verse", "name", "definition", "text")
+        ):
             raise ValueError(f"{path.name} {k}: needs verse, name, definition and text")
-    return StrengthRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), raw["frame"], raw["order_note"],
-                         raw["kinds"], raw["modifiers"], raw["nodes"])
+    return StrengthRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["frame"],
+        raw["order_note"],
+        raw["kinds"],
+        raw["modifiers"],
+        raw["nodes"],
+    )
 
 
 def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | None:
@@ -100,15 +129,23 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         # kala: two half-points
         k = 0.0
         if night is not None:
-            suits_time = p == "mercury" or (night and p in NIGHT_PLANETS) or (not night and p in DAY_PLANETS)
+            suits_time = (
+                p == "mercury"
+                or (night and p in NIGHT_PLANETS)
+                or (not night and p in DAY_PLANETS)
+            )
             if suits_time:
                 k += 0.5
         # the bright half suits the benefics (Mercury, Jupiter, Venus) and the Moon when she waxes; the dark half suits the Sun, Mars and Saturn
-        if (bright if p == "moon" else (p in ("mercury", "jupiter", "venus")) == bright):
+        if bright if p == "moon" else (p in ("mercury", "jupiter", "venus")) == bright:
             k += 0.5
         held["kala"] = k
         # chesta
-        held["chesta"] = 1.0 if (full_moon if p == "moon" else north if p == "sun" else pl.retrograde) else 0.0
+        held["chesta"] = (
+            1.0
+            if (full_moon if p == "moon" else north if p == "sun" else pl.retrograde)
+            else 0.0
+        )
         # uchcha
         dist = abs((pl.longitude - DEEP_EXALTATION[p] + 180.0) % 360.0 - 180.0)
         frac = (180.0 - dist) / 180.0
@@ -119,7 +156,11 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
         # ayana
         held["ayana"] = 1.0 if (north != (p in SOUTH_PLANETS)) else 0.0
         # sthana
-        held["sthana"] = 0.0 if (stand == "depression" or combust) else 1.0 if (stand in GOOD_SIGNS or house in (1, 4, 7, 10)) else 0.0
+        held["sthana"] = (
+            0.0
+            if (stand == "depression" or combust)
+            else 1.0 if (stand in GOOD_SIGNS or house in (1, 4, 7, 10)) else 0.0
+        )
         if combust:
             notes.append(rules.modifiers["combust"])
         if stand == "depression" and pl.retrograde and not combust:
@@ -128,9 +169,31 @@ def find(rules: StrengthRules, chart: Chart, night: bool | None) -> Strengths | 
     best = max(s.total for s in out)
     worst = min(s.total for s in out)
     n = rules.nodes
-    rahu, ketu = SIGNS[sign_index(chart.planets["rahu"].longitude)], SIGNS[sign_index(chart.planets["ketu"].longitude)]
+    rahu, ketu = (
+        SIGNS[sign_index(chart.planets["rahu"].longitude)],
+        SIGNS[sign_index(chart.planets["ketu"].longitude)],
+    )
     ketu_lon = chart.planets["ketu"].longitude
-    ketu_ok = ketu in n["ketu_strong_in"] or (ketu == "Sagittarius" and degree_in_sign(ketu_lon) >= 15.0)
-    nodes = (f"Rahu is in {rahu}: " + ("strong there" if rahu in n["rahu_strong_in"] else "not one of the signs where the book calls it strong"),
-             f"Ketu is in {ketu}: " + ("strong there" if ketu_ok else "not one of the signs where the book calls it strong"))
-    return Strengths(tuple(out), tuple(s.planet for s in out if s.total == best), tuple(s.planet for s in out if s.total == worst), nodes)
+    ketu_ok = ketu in n["ketu_strong_in"] or (
+        ketu == "Sagittarius" and degree_in_sign(ketu_lon) >= 15.0
+    )
+    nodes = (
+        f"Rahu is in {rahu}: "
+        + (
+            "strong there"
+            if rahu in n["rahu_strong_in"]
+            else "not one of the signs where the book calls it strong"
+        ),
+        f"Ketu is in {ketu}: "
+        + (
+            "strong there"
+            if ketu_ok
+            else "not one of the signs where the book calls it strong"
+        ),
+    )
+    return Strengths(
+        tuple(out),
+        tuple(s.planet for s in out if s.total == best),
+        tuple(s.planet for s in out if s.total == worst),
+        nodes,
+    )

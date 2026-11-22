@@ -5,6 +5,7 @@ server) or, for local development only, from a key file that is created on first
 owner-only permissions. Values are stored as "enc1:<token>"; anything without the prefix is
 legacy plaintext and is upgraded when the store opens.
 """
+
 from __future__ import annotations
 
 import logging
@@ -44,7 +45,11 @@ def resolve_key(env: dict | None = None, key_file: Path | None = None) -> str:
     fd = os.open(key_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w") as f:
         f.write(key + "\n")
-    log.warning("created a local database key at %s; on a server set %s instead", key_file, KEY_ENV)
+    log.warning(
+        "created a local database key at %s; on a server set %s instead",
+        key_file,
+        KEY_ENV,
+    )
     return key
 
 
@@ -53,7 +58,9 @@ class Cipher:
         try:
             self._fernet = Fernet(key.encode())
         except (ValueError, TypeError):
-            raise StoreKeyError(f"{KEY_ENV} is not a valid key; make one with: uv run samay keygen") from None
+            raise StoreKeyError(
+                f"{KEY_ENV} is not a valid key; make one with: uv run samay keygen"
+            ) from None
 
     def encrypt(self, value: str) -> str:
         return PREFIX + self._fernet.encrypt(value.encode()).decode()
@@ -63,9 +70,11 @@ class Cipher:
         if not value.startswith(PREFIX):
             return value
         try:
-            return self._fernet.decrypt(value[len(PREFIX):].encode()).decode()
+            return self._fernet.decrypt(value[len(PREFIX) :].encode()).decode()
         except InvalidToken:
-            raise StoreKeyError("the database key does not match this database") from None
+            raise StoreKeyError(
+                "the database key does not match this database"
+            ) from None
 
 
 def is_encrypted(value: object) -> bool:

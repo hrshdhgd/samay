@@ -3,6 +3,7 @@
 Texts and definitions come from data/rules/brihat-jataka-nabhasa.yaml. This module loads and validates it and decides which yogas a
 chart has, by the precedence the text and its translator give. Nothing is returned until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -72,11 +73,25 @@ def load_rules(path: Path = RULES_PATH) -> NabhasaRules:
     yogas = raw["yogas"]
     counts = {g: sum(1 for y in yogas.values() if y["group"] == g) for g in GROUPS}
     if counts != {"asraya": 3, "dala": 2, "akriti": 20, "sankhya": 7}:
-        raise ValueError(f"{path.name}: the text counts 3 Asraya, 2 Dala, 20 Akriti and 7 Sankhya yogas, found {counts}")
+        raise ValueError(
+            f"{path.name}: the text counts 3 Asraya, 2 Dala, 20 Akriti and 7 Sankhya yogas, found {counts}"
+        )
     for key, y in yogas.items():
-        if not isinstance(y.get("text"), str) or not y["text"].strip() or not isinstance(y.get("verse"), str):
+        if (
+            not isinstance(y.get("text"), str)
+            or not y["text"].strip()
+            or not isinstance(y.get("verse"), str)
+        ):
             raise ValueError(f"{path.name} {key}: needs a text and a verse")
-    if sorted(y["signs"] for y in yogas.values() if y["group"] == "sankhya") != [1, 2, 3, 4, 5, 6, 7]:
+    if sorted(y["signs"] for y in yogas.values() if y["group"] == "sankhya") != [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+    ]:
         raise ValueError(f"{path.name}: the Sankhya yogas run from 1 sign to 7")
     akriti = {}
     for key, shapes in raw["akriti"].items():
@@ -86,10 +101,22 @@ def load_rules(path: Path = RULES_PATH) -> NabhasaRules:
             if not shape or not all(1 <= h <= 12 for h in shape):
                 raise ValueError(f"{path.name} akriti.{key}: houses must be 1-12")
         akriti[key] = tuple(frozenset(s) for s in shapes)
-    if set(akriti) | set(raw["vajra_yava"]) != {k for k, y in yogas.items() if y["group"] == "akriti"}:
+    if set(akriti) | set(raw["vajra_yava"]) != {
+        k for k, y in yogas.items() if y["group"] == "akriti"
+    }:
         raise ValueError(f"{path.name}: every Akriti yoga needs a definition")
-    return NabhasaRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), yogas,
-                        akriti, raw["vajra_yava"], tuple(raw["benefics"]), tuple(raw["malefics"]), raw["life_note"])
+    return NabhasaRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        yogas,
+        akriti,
+        raw["vajra_yava"],
+        tuple(raw["benefics"]),
+        tuple(raw["malefics"]),
+        raw["life_note"],
+    )
 
 
 def _benefic(chart: Chart, rules: NabhasaRules, planet: str) -> bool | None:
@@ -97,7 +124,9 @@ def _benefic(chart: Chart, rules: NabhasaRules, planet: str) -> bool | None:
         return True
     if planet in rules.malefics:
         return False
-    return (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0 < 180.0  # the Moon: waxing = benefic
+    return (
+        chart.planets["moon"].longitude - chart.planets["sun"].longitude
+    ) % 360.0 < 180.0  # the Moon: waxing = benefic
 
 
 def find(rules: NabhasaRules, chart: Chart) -> Nabhasa:
@@ -113,19 +142,39 @@ def find(rules: NabhasaRules, chart: Chart) -> Nabhasa:
 
     def add(key: str, detail: str) -> None:
         y = rules.yogas[key]
-        found.append(Yoga(key, y["name"], y["group"], y["verse"], y["text"].strip(), y.get("variant"), detail))
+        found.append(
+            Yoga(
+                key,
+                y["name"],
+                y["group"],
+                y["verse"],
+                y["text"].strip(),
+                y.get("variant"),
+                detail,
+            )
+        )
 
-    in_houses = f"the planets are in the {', '.join(_ord(h) for h in sorted(occupied))} house"
+    in_houses = (
+        f"the planets are in the {', '.join(_ord(h) for h in sorted(occupied))} house"
+    )
     # Akriti: the planets occupy exactly the named houses; Vajra and Yava first (they are the more specific shape).
     akriti = None
     for key, shape in rules.vajra_yava.items():
         wanted = set(shape["benefic_houses"]) | set(shape["malefic_houses"])
         if occupied == wanted and all(
-            bool(_benefic(chart, rules, p)) == (house[p] in shape["benefic_houses"]) for p in SEVEN
+            bool(_benefic(chart, rules, p)) == (house[p] in shape["benefic_houses"])
+            for p in SEVEN
         ):
             akriti = key
     if akriti is None:
-        akriti = next((k for k, shapes in rules.akriti.items() if any(occupied == s for s in shapes)), None)
+        akriti = next(
+            (
+                k
+                for k, shapes in rules.akriti.items()
+                if any(occupied == s for s in shapes)
+            ),
+            None,
+        )
     if akriti is not None:
         add(akriti, in_houses)
 
@@ -136,22 +185,45 @@ def find(rules: NabhasaRules, chart: Chart) -> Nabhasa:
     dala = None
     if len({kend[p] for p in ben}) == 3 and not mal:
         dala = "srik"
-        add("srik", f"{', '.join(p.title() for p in ben)} in three kendras and no malefic in a kendra")
+        add(
+            "srik",
+            f"{', '.join(p.title() for p in ben)} in three kendras and no malefic in a kendra",
+        )
     elif len({kend[p] for p in mal}) == 3 and not ben:
         dala = "sarpa"
-        add("sarpa", f"{', '.join(p.title() for p in mal)} in three kendras and no benefic in a kendra")
+        add(
+            "sarpa",
+            f"{', '.join(p.title() for p in mal)} in three kendras and no benefic in a kendra",
+        )
 
     n = len(signs)
     if akriti is None:
         kind = (("rajju", MOVABLE), ("musala", FIXED), ("nala", COMMON))
         asraya = next((k for k, group in kind if signs <= set(group)), None)
         if asraya and n >= 2:  # one sign is Gola (the commentator), not an Asraya
-            add(asraya, f"all the planets are in {'movable' if asraya == 'rajju' else 'fixed' if asraya == 'musala' else 'common'} signs")
-        elif not (dala and n >= 4):  # a Dala that is also Vallaki, Damini, Pasa or Kedara counts as the Dala only
-            key = next(k for k, y in rules.yogas.items() if y["group"] == "sankhya" and y["signs"] == n)
+            add(
+                asraya,
+                f"all the planets are in {'movable' if asraya == 'rajju' else 'fixed' if asraya == 'musala' else 'common'} signs",
+            )
+        elif not (
+            dala and n >= 4
+        ):  # a Dala that is also Vallaki, Damini, Pasa or Kedara counts as the Dala only
+            key = next(
+                k
+                for k, y in rules.yogas.items()
+                if y["group"] == "sankhya" and y["signs"] == n
+            )
             add(key, f"the planets are in {n} sign{'s' if n > 1 else ''}")
     n_houses = tuple(sorted(occupied))
-    return Nabhasa(tuple(found), True, n_houses, n, rules.life_note["text"], rules.life_note["except"], rules.life_note["verse"])
+    return Nabhasa(
+        tuple(found),
+        True,
+        n_houses,
+        n,
+        rules.life_note["text"],
+        rules.life_note["except"],
+        rules.life_note["verse"],
+    )
 
 
 def _ord(n: int) -> str:

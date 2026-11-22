@@ -3,6 +3,7 @@
 Everything comes from data/rules/brihat-jataka-moon.yaml (quoted from the public-domain translation). This module loads
 and validates it and picks the two rows for a Moon longitude; nothing is returned until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,9 +19,33 @@ from .vedic import SIGNS, nakshatra, sign_index
 RULES_PATH = DATA_DIR / "rules" / "brihat-jataka-moon.yaml"
 # The translation's spelling of the 27 nakshatras, in the order of vedic.NAKSHATRAS (Ashwini first).
 TRANSLATION_NAMES = (
-    "Aswini", "Bharani", "Krittika", "Rohini", "Mrigasirsha", "Ardra", "Punarvasu", "Pushya", "Aslesha", "Magha",
-    "P. Phalguni", "U. Phalguni", "Hasta", "Chittra", "Swati", "Visakha", "Anuradha", "Jyeshta", "Moola", "P. Ashadha",
-    "U. Ashadha", "Sravana", "Dhanishta", "Satabhishak", "P. Bhadrapada", "U. Bhadrapada", "Revati",
+    "Aswini",
+    "Bharani",
+    "Krittika",
+    "Rohini",
+    "Mrigasirsha",
+    "Ardra",
+    "Punarvasu",
+    "Pushya",
+    "Aslesha",
+    "Magha",
+    "P. Phalguni",
+    "U. Phalguni",
+    "Hasta",
+    "Chittra",
+    "Swati",
+    "Visakha",
+    "Anuradha",
+    "Jyeshta",
+    "Moola",
+    "P. Ashadha",
+    "U. Ashadha",
+    "Sravana",
+    "Dhanishta",
+    "Satabhishak",
+    "P. Bhadrapada",
+    "U. Bhadrapada",
+    "Revati",
 )
 
 
@@ -57,23 +82,40 @@ def load_rules(path: Path = RULES_PATH) -> MoonRules:
             raise ValueError(f"{path.name}: needs {want} {key}, has {len(raw[key])}")
     for i, row in enumerate(raw["signs"]):
         if row["name"] != SIGNS[i]:
-            raise ValueError(f"{path.name}: sign {i + 1} is {row['name']!r}, expected {SIGNS[i]!r}")
+            raise ValueError(
+                f"{path.name}: sign {i + 1} is {row['name']!r}, expected {SIGNS[i]!r}"
+            )
     for i, row in enumerate(raw["nakshatras"]):
         if row["name"] != TRANSLATION_NAMES[i]:
-            raise ValueError(f"{path.name}: nakshatra {i + 1} is {row['name']!r}, expected {TRANSLATION_NAMES[i]!r}")
+            raise ValueError(
+                f"{path.name}: nakshatra {i + 1} is {row['name']!r}, expected {TRANSLATION_NAMES[i]!r}"
+            )
     for row in (*raw["nakshatras"], *raw["signs"]):
-        if not isinstance(row["text"], str) or not row["text"].strip() or not isinstance(row["verse"], int):
+        if (
+            not isinstance(row["text"], str)
+            or not row["text"].strip()
+            or not isinstance(row["verse"], int)
+        ):
             raise ValueError(f"{path.name}: every row needs a text and a verse number")
     return MoonRules(
-        level=v.get("level", "unchecked"), checked_by=v.get("checked_by"), edition=raw["edition"],
+        level=v.get("level", "unchecked"),
+        checked_by=v.get("checked_by"),
+        edition=raw["edition"],
         pages=str(raw.get("pages", "")),
-        nakshatras=tuple(Description(r["name"], r["verse"], r["text"].strip()) for r in raw["nakshatras"]),
-        signs=tuple(Description(r["name"], r["verse"], r["text"].strip()) for r in raw["signs"]),
+        nakshatras=tuple(
+            Description(r["name"], r["verse"], r["text"].strip())
+            for r in raw["nakshatras"]
+        ),
+        signs=tuple(
+            Description(r["name"], r["verse"], r["text"].strip()) for r in raw["signs"]
+        ),
         conditions={k: (c["verse"], c["text"]) for k, c in raw["conditions"].items()},
     )
 
 
-def for_moon(rules: MoonRules, longitude: float) -> tuple[int, Description, int, Description, int]:
+def for_moon(
+    rules: MoonRules, longitude: float
+) -> tuple[int, Description, int, Description, int]:
     """(sign index, the sign's description, nakshatra index, its description, pada 1-4) for a sidereal Moon longitude."""
     sign = sign_index(longitude)
     nak, pada = nakshatra(longitude)

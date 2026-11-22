@@ -4,7 +4,9 @@ from click.testing import CliRunner
 from samay.cli import EXIT_AMBIGUOUS, EXIT_ERROR, cli
 from samay.engine.paths import EPHEMERIS_PATH
 
-needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
+needs_kernel = pytest.mark.skipif(
+    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
+)
 PUNE = ["--date", "1990-08-15", "--time", "14:30", "--place", "Pune"]
 
 
@@ -23,19 +25,43 @@ def test_today_and_dasha_with_now():
 
 
 def test_ambiguous_place_lists_choices():
-    r = CliRunner().invoke(cli, ["chart", "--date", "1990-08-15", "--time", "14:30", "--place", "Springfield, US"])
+    r = CliRunner().invoke(
+        cli,
+        [
+            "chart",
+            "--date",
+            "1990-08-15",
+            "--time",
+            "14:30",
+            "--place",
+            "Springfield, US",
+        ],
+    )
     assert r.exit_code == EXIT_AMBIGUOUS
     assert r.output.count("--choice ") == 3
 
 
 def test_ambiguous_time_lists_folds():
-    r = CliRunner().invoke(cli, ["chart", "--date", "2021-11-07", "--time", "01:30", "--place", "New York City"])
+    r = CliRunner().invoke(
+        cli,
+        [
+            "chart",
+            "--date",
+            "2021-11-07",
+            "--time",
+            "01:30",
+            "--place",
+            "New York City",
+        ],
+    )
     assert r.exit_code == EXIT_AMBIGUOUS
     assert "--fold 0" in r.output and "--fold 1" in r.output
 
 
 def test_malformed_date():
-    r = CliRunner().invoke(cli, ["chart", "--date", "15th Aug", "--time", "14:30", "--place", "Pune"])
+    r = CliRunner().invoke(
+        cli, ["chart", "--date", "15th Aug", "--time", "14:30", "--place", "Pune"]
+    )
     assert r.exit_code == EXIT_ERROR and "error:" in r.output
 
 
@@ -56,7 +82,9 @@ def test_bot_command_is_listed():
     assert "bot" in r.output and "Telegram" in r.output
 
 
-def test_research_queue_lists_the_most_wanted_topics(tmp_path, monkeypatch, empty_entries):
+def test_research_queue_lists_the_most_wanted_topics(
+    tmp_path, monkeypatch, empty_entries
+):
     from samay.store import Store
 
     monkeypatch.setenv("SAMAY_DB", str(tmp_path / "q.db"))

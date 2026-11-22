@@ -1,4 +1,5 @@
 """The shipped rules files, as they are: each loads, and the ones the owner has checked say so."""
+
 import importlib
 import pkgutil
 
@@ -6,7 +7,11 @@ import pytest
 
 from samay import engine
 
-NAMES = [i.name for i in pkgutil.iter_modules(engine.__path__) if i.name not in ("entries", "profiles", "rules")]
+NAMES = [
+    i.name
+    for i in pkgutil.iter_modules(engine.__path__)
+    if i.name not in ("entries", "profiles", "rules")
+]
 
 
 def _real(mod):

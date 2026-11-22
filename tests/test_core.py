@@ -3,7 +3,13 @@ from datetime import UTC, datetime
 
 import pytest
 
-from samay.engine.ephemeris import Chart, Placement, ascendant_tropical, lahiri_ayanamsa, mean_lunar_node
+from samay.engine.ephemeris import (
+    Chart,
+    Placement,
+    ascendant_tropical,
+    lahiri_ayanamsa,
+    mean_lunar_node,
+)
 from samay.engine.rules import Context, evaluate, fired, load_rules
 from samay.engine.vedic import (
     DASHA_ORDER,
@@ -39,9 +45,9 @@ def test_nakshatra_and_pada():
 
 def test_house_and_navamsa():
     assert house_from(0, 0) == 1 and house_from(11, 0) == 2 and house_from(3, 0) == 10
-    assert navamsa_sign(0.0) == 0      # Aries -> Aries
-    assert navamsa_sign(30.0) == 9     # Taurus 0° -> Capricorn
-    assert navamsa_sign(359.9) == 11   # Pisces end -> Pisces
+    assert navamsa_sign(0.0) == 0  # Aries -> Aries
+    assert navamsa_sign(30.0) == 9  # Taurus 0° -> Capricorn
+    assert navamsa_sign(359.9) == 11  # Pisces end -> Pisces
 
 
 def test_vimshottari_spans_120_years():
@@ -69,22 +75,34 @@ def _chart(**signs):
 def test_rules_load_and_fire():
     rules = load_rules()
     assert {"gajakesari", "hamsa"} <= {r.id for r in rules}
-    c = _chart(sun=4, moon=3, mars=6, mercury=4, jupiter=3, venus=1, saturn=8, rahu=2, ketu=8)
+    c = _chart(
+        sun=4, moon=3, mars=6, mercury=4, jupiter=3, venus=1, saturn=8, rahu=2, ketu=8
+    )
     ids = {r.id for r in fired(c, rules)}
-    assert "gajakesari" in ids        # Jupiter with Moon
-    assert "hamsa" in ids             # Jupiter in Cancer, 4th from Aries lagna
+    assert "gajakesari" in ids  # Jupiter with Moon
+    assert "hamsa" in ids  # Jupiter in Cancer, 4th from Aries lagna
     assert "budhaditya" in ids
-    assert "malavya" not in ids       # Venus in Taurus but 2nd house
+    assert "malavya" not in ids  # Venus in Taurus but 2nd house
 
 
 def test_dsl_combinators():
     ctx = Context({"lagna": 0, "moon": 3, "mars": 3})
-    assert evaluate({"any": [{"same_sign": ["moon", "mars"]}, {"in_house": {"planet": "moon", "houses": [1]}}]}, ctx)
+    assert evaluate(
+        {
+            "any": [
+                {"same_sign": ["moon", "mars"]},
+                {"in_house": {"planet": "moon", "houses": [1]}},
+            ]
+        },
+        ctx,
+    )
     assert not evaluate({"not": {"same_sign": ["moon", "mars"]}}, ctx)
 
 
-@pytest.mark.skipif(not os.path.exists(os.environ.get("SAMAY_EPHEMERIS", "data/de440s.bsp")),
-                    reason="ephemeris file not present")
+@pytest.mark.skipif(
+    not os.path.exists(os.environ.get("SAMAY_EPHEMERIS", "data/de440s.bsp")),
+    reason="ephemeris file not present",
+)
 def test_full_chart_smoke():
     from samay.engine.ephemeris import compute_chart
 

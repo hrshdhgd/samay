@@ -3,6 +3,7 @@
 Everything the text says comes from data/rules/phaladeepika-ch8-planets-in-houses.yaml. This module loads and validates
 it and picks the rows that apply to a rising sign; nothing is returned until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,7 +17,17 @@ from .paths import DATA_DIR
 from .vedic import SIGNS
 
 RULES_PATH = DATA_DIR / "rules" / "phaladeepika-ch8-planets-in-houses.yaml"
-PLANETS = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+PLANETS = (
+    "sun",
+    "moon",
+    "mars",
+    "mercury",
+    "jupiter",
+    "venus",
+    "saturn",
+    "rahu",
+    "ketu",
+)
 _SIGN = {name.casefold(): i for i, name in enumerate(SIGNS)}
 
 
@@ -27,7 +38,9 @@ class Row:
     unless_lagna: frozenset[int] = frozenset()  # rising signs the row is not for
 
     def applies(self, lagna: int) -> bool:
-        return (not self.when_lagna or lagna in self.when_lagna) and lagna not in self.unless_lagna
+        return (
+            not self.when_lagna or lagna in self.when_lagna
+        ) and lagna not in self.unless_lagna
 
 
 @dataclass(frozen=True)
@@ -43,7 +56,9 @@ class PlanetHouseRules:
     def servable(self) -> bool:
         return self.level in SERVABLE_LEVELS
 
-    def lookup(self, planet: str, house: int, lagna: int) -> tuple[tuple[Row, ...], str] | None:
+    def lookup(
+        self, planet: str, house: int, lagna: int
+    ) -> tuple[tuple[Row, ...], str] | None:
         """The rows that apply for this planet, house and rising sign (index 0-11), and the text's verse range;
         None while the rules are unchecked or when no row applies."""
         if not self.servable:
@@ -80,10 +95,21 @@ def load_rules(path: Path = RULES_PATH) -> PlanetHouseRules:
                 s = {"text": s} if isinstance(s, str) else s
                 if not isinstance(s.get("text"), str) or not s["text"].strip():
                     raise ValueError(f"{where}: every row needs a text")
-                built.append(Row(s["text"].strip(), _signs(s.get("when_lagna", ()), where),
-                                 _signs(s.get("unless_lagna", ()), where)))
+                built.append(
+                    Row(
+                        s["text"].strip(),
+                        _signs(s.get("when_lagna", ()), where),
+                        _signs(s.get("unless_lagna", ()), where),
+                    )
+                )
             rows[planet, int(house)] = tuple(built)
     if set(verses) != set(PLANETS):
         raise ValueError(f"{path.name}: needs all nine planets")
-    return PlanetHouseRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"],
-                            str(raw.get("pages", "")), verses, rows)
+    return PlanetHouseRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        verses,
+        rows,
+    )

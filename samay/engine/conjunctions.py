@@ -3,6 +3,7 @@
 Texts come from data/rules/conjunctions.yaml. This module loads and validates it and finds the pairs sharing a sign; nothing is
 returned until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -59,16 +60,31 @@ def load_rules(path: Path = RULES_PATH) -> ConjunctionRules:
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
     want = {f"{a}+{b}" for a, b in combinations(SEVEN, 2)}
     if set(raw["pairs"]) != want:
-        raise ValueError(f"{path.name}: needs exactly the 21 pairs of the seven planets, in the order Sun..Saturn")
+        raise ValueError(
+            f"{path.name}: needs exactly the 21 pairs of the seven planets, in the order Sun..Saturn"
+        )
     pairs = {}
     for key, p in raw["pairs"].items():
         for field in ("bj", "pd", "verse_bj", "verse_pd"):
             if not isinstance(p.get(field), str) or not p[field].strip():
                 raise ValueError(f"{path.name} {key}: needs {field}")
         a, b = key.split("+")
-        pairs[a, b] = PairText(p["verse_bj"], p["verse_pd"], p["bj"].strip(), p.get("bj_note"), p["pd"].strip())
+        pairs[a, b] = PairText(
+            p["verse_bj"],
+            p["verse_pd"],
+            p["bj"].strip(),
+            p.get("bj_note"),
+            p["pd"].strip(),
+        )
     t = raw["three_or_more"]
-    return ConjunctionRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], pairs, t["bj"], t["pd"])
+    return ConjunctionRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        pairs,
+        t["bj"],
+        t["pd"],
+    )
 
 
 def find(rules: ConjunctionRules, chart: Chart) -> tuple[Together, ...]:
@@ -79,6 +95,11 @@ def find(rules: ConjunctionRules, chart: Chart) -> tuple[Together, ...]:
     for p in SEVEN:
         by_sign.setdefault(sign_index(chart.planets[p].longitude), []).append(p)
     return tuple(
-        Together(sign, tuple(ps), tuple(((a, b), rules.pairs[a, b]) for a, b in combinations(ps, 2)))
-        for sign, ps in sorted(by_sign.items()) if len(ps) > 1
+        Together(
+            sign,
+            tuple(ps),
+            tuple(((a, b), rules.pairs[a, b]) for a, b in combinations(ps, 2)),
+        )
+        for sign, ps in sorted(by_sign.items())
+        if len(ps) > 1
     )

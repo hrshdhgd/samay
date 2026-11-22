@@ -11,7 +11,12 @@ from samay.engine.vedic import vimshottari
 
 def test_default_profile_loads_unvalidated():
     p = load_profile(DEFAULT_PROFILE)
-    assert (p.ayanamsa, p.node, p.houses, p.dasha_year_days) == ("lahiri_mean", "mean", "whole_sign", 365.25)
+    assert (p.ayanamsa, p.node, p.houses, p.dasha_year_days) == (
+        "lahiri_mean",
+        "mean",
+        "whole_sign",
+        365.25,
+    )
     assert p.validated is False
     assert p.schools == ("parashari",)
     assert len(p.sha256) == 12 and p.sha256 == load_profile(DEFAULT_PROFILE).sha256
@@ -23,7 +28,11 @@ def test_unknown_profile():
 
 
 def test_unsupported_house_system_rejected(tmp_path):
-    text = (PROFILES_DIR / f"{DEFAULT_PROFILE}.yaml").read_text().replace("whole_sign", "placidus")
+    text = (
+        (PROFILES_DIR / f"{DEFAULT_PROFILE}.yaml")
+        .read_text()
+        .replace("whole_sign", "placidus")
+    )
     text = text.replace(f"id: {DEFAULT_PROFILE}", "id: kp-test")
     (tmp_path / "kp-test.yaml").write_text(text)
     with pytest.raises(ValueError, match="houses"):

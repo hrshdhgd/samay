@@ -7,7 +7,9 @@ from samay.engine.errors import InvalidInput, PlaceNotFound, UnknownProfile
 from samay.engine.paths import EPHEMERIS_PATH
 from samay.models import BirthInput, NeedsDisambiguation, ResolvedBirth
 
-needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
+needs_kernel = pytest.mark.skipif(
+    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
+)
 PUNE_1990 = BirthInput("1990-08-15", "14:30", "Pune")
 
 
@@ -20,25 +22,36 @@ def test_resolve_with_provenance():
 
 
 def test_day_first_date_accepted():
-    assert service.resolve_birth(BirthInput("15-08-1990", "14:30", "Pune")).utc.hour == 9
+    assert (
+        service.resolve_birth(BirthInput("15-08-1990", "14:30", "Pune")).utc.hour == 9
+    )
 
 
 def test_place_disambiguation_then_choice():
     d = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Springfield, US"))
-    assert isinstance(d, NeedsDisambiguation) and d.kind == "place" and len(d.options) == 3
+    assert (
+        isinstance(d, NeedsDisambiguation) and d.kind == "place" and len(d.options) == 3
+    )
     chosen = d.options[1]
-    b = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Springfield, US", place_choice=chosen.id))
+    b = service.resolve_birth(
+        BirthInput("1990-08-15", "14:30", "Springfield, US", place_choice=chosen.id)
+    )
     assert b.place == chosen
 
 
 def test_time_disambiguation():
     d = service.resolve_birth(BirthInput("2021-11-07", "01:30", "New York City"))
     assert isinstance(d, NeedsDisambiguation) and d.kind == "time"
-    b = service.resolve_birth(BirthInput("2021-11-07", "01:30", "New York City", fold=1))
+    b = service.resolve_birth(
+        BirthInput("2021-11-07", "01:30", "New York City", fold=1)
+    )
     assert b.utc == d.options[1]
 
 
-@pytest.mark.parametrize("date_text,time_text", [("1990-13-40", "14:30"), ("1990-08-15", "25:61"), ("1990-08-15", "13pm")])
+@pytest.mark.parametrize(
+    "date_text,time_text",
+    [("1990-13-40", "14:30"), ("1990-08-15", "25:61"), ("1990-08-15", "13pm")],
+)
 def test_bad_input(date_text, time_text):
     with pytest.raises(InvalidInput):
         service.resolve_birth(BirthInput(date_text, time_text, "Pune"))
@@ -89,7 +102,9 @@ def test_warm_returns_stamp():
 
 
 def test_nearby_town_is_flagged_approximate():
-    b = service.resolve_birth(BirthInput("1990-08-15", "14:30", "Pune", approx_for="Wagholi"))
+    b = service.resolve_birth(
+        BirthInput("1990-08-15", "14:30", "Pune", approx_for="Wagholi")
+    )
     assert b.provenance.place_approximate
     assert "Wagholi" in b.provenance.approx_note and "Pune" in b.provenance.approx_note
     assert not service.resolve_birth(PUNE_1990).provenance.place_approximate
@@ -97,7 +112,15 @@ def test_nearby_town_is_flagged_approximate():
 
 @pytest.mark.parametrize(
     "text",
-    ["1952-08-15", "15-08-1952", "15/8/1952", "15.08.1952", "15 August 1952", "15th Aug 1952", "August 15, 1952"],
+    [
+        "1952-08-15",
+        "15-08-1952",
+        "15/8/1952",
+        "15.08.1952",
+        "15 August 1952",
+        "15th Aug 1952",
+        "August 15, 1952",
+    ],
 )
 def test_friendly_dates(text):
     assert service.parse_date(text) == datetime(1952, 8, 15)
@@ -106,9 +129,17 @@ def test_friendly_dates(text):
 @pytest.mark.parametrize(
     "text,hour,minute,ambiguous",
     [
-        ("6:30", 6, 30, True), ("6.30", 6, 30, True), ("6", 6, 0, True), ("12:15", 12, 15, True),
-        ("6:30 am", 6, 30, False), ("6:30PM", 18, 30, False), ("6pm", 18, 0, False),
-        ("12 am", 0, 0, False), ("12:30 pm", 12, 30, False), ("18:30", 18, 30, False), ("0:45", 0, 45, False),
+        ("6:30", 6, 30, True),
+        ("6.30", 6, 30, True),
+        ("6", 6, 0, True),
+        ("12:15", 12, 15, True),
+        ("6:30 am", 6, 30, False),
+        ("6:30PM", 18, 30, False),
+        ("6pm", 18, 0, False),
+        ("12 am", 0, 0, False),
+        ("12:30 pm", 12, 30, False),
+        ("18:30", 18, 30, False),
+        ("0:45", 0, 45, False),
     ],
 )
 def test_friendly_clock(text, hour, minute, ambiguous):

@@ -1,34 +1,94 @@
 """Jyotish primitives: signs, nakshatras, houses, navamsa, Vimshottari dasha."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 SIGNS = [
-    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
-    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
+    "Aries",
+    "Taurus",
+    "Gemini",
+    "Cancer",
+    "Leo",
+    "Virgo",
+    "Libra",
+    "Scorpio",
+    "Sagittarius",
+    "Capricorn",
+    "Aquarius",
+    "Pisces",
 ]
 RASHIS = [
-    "Mesha", "Vrishabha", "Mithuna", "Karka", "Simha", "Kanya",
-    "Tula", "Vrishchika", "Dhanu", "Makara", "Kumbha", "Meena",
+    "Mesha",
+    "Vrishabha",
+    "Mithuna",
+    "Karka",
+    "Simha",
+    "Kanya",
+    "Tula",
+    "Vrishchika",
+    "Dhanu",
+    "Makara",
+    "Kumbha",
+    "Meena",
 ]
 SIGN_LORDS = [
-    "mars", "venus", "mercury", "moon", "sun", "mercury",
-    "venus", "mars", "jupiter", "saturn", "saturn", "jupiter",
+    "mars",
+    "venus",
+    "mercury",
+    "moon",
+    "sun",
+    "mercury",
+    "venus",
+    "mars",
+    "jupiter",
+    "saturn",
+    "saturn",
+    "jupiter",
 ]
 NAKSHATRAS = [
-    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu",
-    "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta",
-    "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha",
-    "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada",
-    "Uttara Bhadrapada", "Revati",
+    "Ashwini",
+    "Bharani",
+    "Krittika",
+    "Rohini",
+    "Mrigashira",
+    "Ardra",
+    "Punarvasu",
+    "Pushya",
+    "Ashlesha",
+    "Magha",
+    "Purva Phalguni",
+    "Uttara Phalguni",
+    "Hasta",
+    "Chitra",
+    "Swati",
+    "Vishakha",
+    "Anuradha",
+    "Jyeshtha",
+    "Mula",
+    "Purva Ashadha",
+    "Uttara Ashadha",
+    "Shravana",
+    "Dhanishta",
+    "Shatabhisha",
+    "Purva Bhadrapada",
+    "Uttara Bhadrapada",
+    "Revati",
 ]
 NAK_SPAN = 360.0 / 27.0  # 13°20'
 
 # Vimshottari: lord, years (total 120). Nakshatra n is ruled by DASHA_ORDER[n % 9].
 DASHA_ORDER = [
-    ("ketu", 7), ("venus", 20), ("sun", 6), ("moon", 10), ("mars", 7),
-    ("rahu", 18), ("jupiter", 16), ("saturn", 19), ("mercury", 17),
+    ("ketu", 7),
+    ("venus", 20),
+    ("sun", 6),
+    ("moon", 10),
+    ("mars", 7),
+    ("rahu", 18),
+    ("jupiter", 16),
+    ("saturn", 19),
+    ("mercury", 17),
 ]
 DASHA_YEARS = dict(DASHA_ORDER)
 YEAR_DAYS = 365.25  # default; tradition profiles may choose another year length
@@ -73,7 +133,9 @@ def _years(y: float, year_days: float = YEAR_DAYS) -> timedelta:
     return timedelta(days=y * year_days)
 
 
-def vimshottari(moon_lon: float, birth: datetime, year_days: float = YEAR_DAYS) -> list[Period]:
+def vimshottari(
+    moon_lon: float, birth: datetime, year_days: float = YEAR_DAYS
+) -> list[Period]:
     """The nine mahadashas, the first one starting (partially elapsed) before birth."""
     idx, _ = nakshatra(moon_lon)
     first = idx % 9

@@ -7,6 +7,7 @@ calculators agree on (checked 2026-11-09 against several, and against a publishe
 figure; see tests/fixtures/rahu_kaala_published.yaml). It is not yet checked against a primary
 text, so it carries no citation to one.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -44,7 +45,11 @@ class RahuKaala:
 
 
 def sun_times(
-    latitude: float, longitude: float, tz: str, day: date, definition: str = "upper_limb"
+    latitude: float,
+    longitude: float,
+    tz: str,
+    day: date,
+    definition: str = "upper_limb",
 ) -> SunTimes | None:
     """Sunrise and sunset on a local calendar day, or None when the Sun does not both rise and set
     that day (polar summer and winter)."""
@@ -58,12 +63,24 @@ def sun_times(
     if definition == "upper_limb":
         is_up = almanac.sunrise_sunset(kernel, topos)
     else:
-        is_up = almanac.risings_and_settings(kernel, kernel["sun"], topos, horizon_degrees=HORIZON_DEGREES[definition])
+        is_up = almanac.risings_and_settings(
+            kernel, kernel["sun"], topos, horizon_degrees=HORIZON_DEGREES[definition]
+        )
     times, events = almanac.find_discrete(
-        ts.from_datetime(start.astimezone(UTC)), ts.from_datetime((start + timedelta(days=1)).astimezone(UTC)), is_up
+        ts.from_datetime(start.astimezone(UTC)),
+        ts.from_datetime((start + timedelta(days=1)).astimezone(UTC)),
+        is_up,
     )
-    rises = [t.utc_datetime().astimezone(zone) for t, up in zip(times, events, strict=True) if up]
-    sets = [t.utc_datetime().astimezone(zone) for t, up in zip(times, events, strict=True) if not up]
+    rises = [
+        t.utc_datetime().astimezone(zone)
+        for t, up in zip(times, events, strict=True)
+        if up
+    ]
+    sets = [
+        t.utc_datetime().astimezone(zone)
+        for t, up in zip(times, events, strict=True)
+        if not up
+    ]
     if not rises or not sets:
         return None
     sunrise = rises[0]
@@ -71,7 +88,9 @@ def sun_times(
     return SunTimes(sunrise, after[0]) if after else None
 
 
-def rahu_kaala(latitude: float, longitude: float, tz: str, day: date) -> RahuKaala | None:
+def rahu_kaala(
+    latitude: float, longitude: float, tz: str, day: date
+) -> RahuKaala | None:
     sun = sun_times(latitude, longitude, tz, day)
     if sun is None:
         return None

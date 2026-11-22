@@ -3,6 +3,7 @@
 The tables are in data/rules/ashtakavarga.yaml and are checked on load against the text's own totals. This module only
 counts points from the positions in a chart; the meanings are returned only once a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,7 +18,15 @@ from .paths import DATA_DIR
 from .vedic import sign_index
 
 RULES_PATH = DATA_DIR / "rules" / "ashtakavarga.yaml"
-PLANETS = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")  # Rahu and Ketu have no ashtakavarga
+PLANETS = (
+    "sun",
+    "moon",
+    "mars",
+    "mercury",
+    "jupiter",
+    "venus",
+    "saturn",
+)  # Rahu and Ketu have no ashtakavarga
 SOURCES = (*PLANETS, "lagna")
 
 
@@ -27,7 +36,9 @@ class AshtakavargaRules:
     checked_by: str | None
     edition: str
     pages: str
-    tables: dict[str, dict[str, tuple[int, ...]]]  # planet -> source -> houses (from the source) that give a point
+    tables: dict[
+        str, dict[str, tuple[int, ...]]
+    ]  # planet -> source -> houses (from the source) that give a point
     meaning: dict[int, str]  # number of points -> what the text says
     meaning_verse: str
     threshold: int
@@ -52,23 +63,38 @@ def load_rules(path: Path = RULES_PATH) -> AshtakavargaRules:
     tables = {}
     for planet, row in raw["tables"].items():
         if set(row) != set(SOURCES):
-            raise ValueError(f"{path.name} {planet}: needs the seven planets and the lagna as sources")
+            raise ValueError(
+                f"{path.name} {planet}: needs the seven planets and the lagna as sources"
+            )
         for src, houses in row.items():
-            if houses != sorted(set(houses)) or not all(isinstance(h, int) and 1 <= h <= 12 for h in houses):
-                raise ValueError(f"{path.name} {planet} from {src}: houses must be sorted, unique, 1-12")
+            if houses != sorted(set(houses)) or not all(
+                isinstance(h, int) and 1 <= h <= 12 for h in houses
+            ):
+                raise ValueError(
+                    f"{path.name} {planet} from {src}: houses must be sorted, unique, 1-12"
+                )
         want = raw["expected"][planet]
         counts = [len(row[s]) for s in SOURCES]
         if counts != want["counts"] or sum(counts) != want["total"]:
-            raise ValueError(f"{path.name} {planet}: counts {counts} (total {sum(counts)}) do not match the text's "
-                             f"{want['counts']} (total {want['total']})")
+            raise ValueError(
+                f"{path.name} {planet}: counts {counts} (total {sum(counts)}) do not match the text's "
+                f"{want['counts']} (total {want['total']})"
+            )
         tables[planet] = {s: tuple(h) for s, h in row.items()}
     m = raw["points_meaning"]
     s = raw["sarva"]
     return AshtakavargaRules(
-        level=v.get("level", "unchecked"), checked_by=v.get("checked_by"), edition=raw["edition"],
-        pages=str(raw.get("pages", "")), tables=tables,
-        meaning={int(k): str(t) for k, t in m.items() if k != "verse"}, meaning_verse=str(m["verse"]),
-        threshold=int(s["threshold"]), above=s["above"], below=s["below"], sarva_verse=str(s["verse"]),
+        level=v.get("level", "unchecked"),
+        checked_by=v.get("checked_by"),
+        edition=raw["edition"],
+        pages=str(raw.get("pages", "")),
+        tables=tables,
+        meaning={int(k): str(t) for k, t in m.items() if k != "verse"},
+        meaning_verse=str(m["verse"]),
+        threshold=int(s["threshold"]),
+        above=s["above"],
+        below=s["below"],
+        sarva_verse=str(s["verse"]),
         variants=tuple(raw.get("variants", ())),
     )
 

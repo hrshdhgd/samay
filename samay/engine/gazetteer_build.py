@@ -3,6 +3,7 @@
 A pure function of the input files: the same files always give the same database bytes, which is
 what lets data/gazetteer.lock pin the result by hash.
 """
+
 from __future__ import annotations
 
 import csv
@@ -54,7 +55,9 @@ def _read(src: Path, stem: str) -> Iterator[list[str]]:
         with plain.open(encoding="utf-8", newline="") as f:
             yield from _rows(f)
     else:
-        raise FileNotFoundError(f"missing GeoNames file {stem}.zip or {stem}.txt in {src}")
+        raise FileNotFoundError(
+            f"missing GeoNames file {stem}.zip or {stem}.txt in {src}"
+        )
 
 
 def _name_row(place_id: int, text: str) -> tuple[int, str, str] | None:
@@ -88,7 +91,9 @@ def build(
     names: list[tuple] = []
 
     def flush() -> None:
-        conn.executemany("INSERT INTO places VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", places)
+        conn.executemany(
+            "INSERT INTO places VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", places
+        )
         conn.executemany("INSERT OR IGNORE INTO names VALUES (?,?,?)", names)
         places.clear()
         names.clear()
@@ -98,15 +103,32 @@ def build(
             if len(r) < 18:
                 continue
             gid = int(r[0])
-            if gid in ids or r[6] not in FEATURE_CLASSES or r[7].startswith("PCL") or not r[17]:
+            if (
+                gid in ids
+                or r[6] not in FEATURE_CLASSES
+                or r[7].startswith("PCL")
+                or not r[17]
+            ):
                 continue
             ids.add(gid)
             cc, a1, a2 = r[8], r[10], r[11]
-            places.append((
-                gid, r[1], cc, a1 or None, a2 or None,
-                admin1.get(f"{cc}.{a1}"), admin2.get(f"{cc}.{a1}.{a2}"),
-                float(r[4]), float(r[5]), r[17], int(r[14] or 0), r[6], r[7],
-            ))
+            places.append(
+                (
+                    gid,
+                    r[1],
+                    cc,
+                    a1 or None,
+                    a2 or None,
+                    admin1.get(f"{cc}.{a1}"),
+                    admin2.get(f"{cc}.{a1}.{a2}"),
+                    float(r[4]),
+                    float(r[5]),
+                    r[17],
+                    int(r[14] or 0),
+                    r[6],
+                    r[7],
+                )
+            )
             names.extend(n for n in (_name_row(gid, r[1]), _name_row(gid, r[2])) if n)
             if len(places) >= BATCH:
                 flush()

@@ -3,6 +3,7 @@
 Texts come from data/rules/phaladeepika-ch15-house-strength.yaml (paraphrased); the conditions are coded here. Nothing is returned until a person has
 checked the file. The book reads a house by its occupants, its lord and the aspects on it, and says a house is not good or bad by itself.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,15 +19,38 @@ from .paths import DATA_DIR
 from .vedic import SIGN_LORDS, house_from, sign_index
 
 RULES_PATH = DATA_DIR / "rules" / "phaladeepika-ch15-house-strength.yaml"
-BODIES = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+BODIES = (
+    "sun",
+    "moon",
+    "mars",
+    "mercury",
+    "jupiter",
+    "venus",
+    "saturn",
+    "rahu",
+    "ketu",
+)
 SEVEN = BODIES[:7]
 MALEFICS = ("sun", "mars", "saturn", "rahu", "ketu")
 BENEFICS = ("mercury", "jupiter", "venus")
 DUSTHANA = (6, 8, 12)
 FULL_ASPECTS = {"mars": (4, 7, 8), "jupiter": (5, 7, 9), "saturn": (3, 7, 10)}
-RULE_KEYS = ("helped_by_occupants", "harmed_by_occupants", "destroyed_lord", "destroyed_occupant", "malefic_in_dusthana", "lord_in_dusthana",
-             "saved_by_benefic", "lagna_lord_in_it", "lagna_lord_with_lord", "lagna_lord_owns_dusthana", "occupied_benefic", "occupied_malefic",
-             "dusthana_malefic", "dusthana_benefic")
+RULE_KEYS = (
+    "helped_by_occupants",
+    "harmed_by_occupants",
+    "destroyed_lord",
+    "destroyed_occupant",
+    "malefic_in_dusthana",
+    "lord_in_dusthana",
+    "saved_by_benefic",
+    "lagna_lord_in_it",
+    "lagna_lord_with_lord",
+    "lagna_lord_owns_dusthana",
+    "occupied_benefic",
+    "occupied_malefic",
+    "dusthana_malefic",
+    "dusthana_benefic",
+)
 
 
 @dataclass(frozen=True)
@@ -71,10 +95,20 @@ def load_rules(path: Path = RULES_PATH) -> StrengthRules:
     if set(raw["rules"]) != set(RULE_KEYS):
         raise ValueError(f"{path.name}: rules must be exactly {RULE_KEYS}")
     for k, r in raw["rules"].items():
-        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
+        if not all(
+            isinstance(r.get(f), str) and r[f].strip()
+            for f in ("verse", "definition", "text")
+        ):
             raise ValueError(f"{path.name} {k}: needs verse, definition and text")
-    return StrengthRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")),
-                         raw["frame"], raw["mixed"], raw["rules"])
+    return StrengthRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["frame"],
+        raw["mixed"],
+        raw["rules"],
+    )
 
 
 def _ord(n: int) -> str:
@@ -90,20 +124,31 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
     sign = {p: sign_index(chart.planets[p].longitude) for p in BODIES}
     house = {p: house_from(lagna, s) for p, s in sign.items()}
     lord = {h: SIGN_LORDS[(lagna + h - 1) % 12] for h in range(1, 13)}
-    waxing = (chart.planets["moon"].longitude - chart.planets["sun"].longitude) % 360.0 < 180.0
+    waxing = (
+        chart.planets["moon"].longitude - chart.planets["sun"].longitude
+    ) % 360.0 < 180.0
     benefics = BENEFICS + (("moon",) if waxing else ())
 
     def stand(p: str) -> str:
         return house_effects.strength(ch20, p, sign[p])
 
     def sees(by: str, target: int) -> bool:
-        return by in SEVEN and sign[by] != target and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
+        return (
+            by in SEVEN
+            and sign[by] != target
+            and house_from(sign[by], target) in FULL_ASPECTS.get(by, (7,))
+        )
 
     def helped(p: str) -> bool:
-        return any(q != p and (sign[q] == sign[p] or sees(q, sign[p])) for q in BENEFICS)
+        return any(
+            q != p and (sign[q] == sign[p] or sees(q, sign[p])) for q in BENEFICS
+        )
 
     def afflicted(p: str) -> bool:
-        return p in SEVEN and (stand(p) in ("depression", "inimical") or house_effects.is_astangata(ch20, p, chart))
+        return p in SEVEN and (
+            stand(p) in ("depression", "inimical")
+            or house_effects.is_astangata(ch20, p, chart)
+        )
 
     out = []
     for h in range(1, 13):
@@ -119,9 +164,17 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
         ben_hit = [x for x in around if any(house[p] == x for p in benefics)]
         mal_hit = [x for x in around if any(house[p] == x for p in MALEFICS)]
         if len(ben_hit) >= 3 and not mal_hit:
-            add("helped_by_occupants", f"benefics hold {len(ben_hit)} of those houses ({', '.join(_ord(x) for x in ben_hit)} from it) and no malefic does", "helps")
+            add(
+                "helped_by_occupants",
+                f"benefics hold {len(ben_hit)} of those houses ({', '.join(_ord(x) for x in ben_hit)} from it) and no malefic does",
+                "helps",
+            )
         if len(mal_hit) >= 3 and not ben_hit:
-            add("harmed_by_occupants", f"malefics hold {len(mal_hit)} of those houses ({', '.join(_ord(x) for x in mal_hit)} from it) and no benefic does", "harms")
+            add(
+                "harmed_by_occupants",
+                f"malefics hold {len(mal_hit)} of those houses ({', '.join(_ord(x) for x in mal_hit)} from it) and no benefic does",
+                "harms",
+            )
         reasons = []
         if house[lh] == 8:
             reasons.append("in the 8th house")
@@ -132,43 +185,101 @@ def find(rules: StrengthRules, chart: Chart) -> tuple[HouseReading, ...] | None:
         if house_effects.is_astangata(ch20, lh, chart):
             reasons.append("combust")
         if reasons and not helped(lh):
-            add("destroyed_lord", f"the lord {lh.title()} is {', '.join(reasons)} with no benefic joined or aspecting", "harms")
+            add(
+                "destroyed_lord",
+                f"the lord {lh.title()} is {', '.join(reasons)} with no benefic joined or aspecting",
+                "harms",
+            )
         for p in BODIES:
             if house[p] == h and afflicted(p) and not helped(p):
-                add("destroyed_occupant", f"{p.title()} is in the house, {stand(p) if stand(p) in ('depression', 'inimical') else 'combust'}, with no benefic joined or aspecting", "harms")
+                add(
+                    "destroyed_occupant",
+                    f"{p.title()} is in the house, {stand(p) if stand(p) in ('depression', 'inimical') else 'combust'}, with no benefic joined or aspecting",
+                    "harms",
+                )
         for d in (6, 8, 12):
             x = (h + d - 1 - 1) % 12 + 1
             bad = [p for p in MALEFICS if house[p] == x]
             if bad:
-                add("malefic_in_dusthana", f"{', '.join(p.title() for p in bad)} in the {_ord(d)} from it", "harms")
+                add(
+                    "malefic_in_dusthana",
+                    f"{', '.join(p.title() for p in bad)} in the {_ord(d)} from it",
+                    "harms",
+                )
         if house[lh] in DUSTHANA:
-            add("lord_in_dusthana", f"the lord {lh.title()} is in the {_ord(house[lh])} house", "harms")
+            add(
+                "lord_in_dusthana",
+                f"the lord {lh.title()} is in the {_ord(house[lh])} house",
+                "harms",
+            )
         for d in DUSTHANA:
             if lord[d] != lh and house[lord[d]] == h:
-                add("lord_in_dusthana", f"{lord[d].title()}, lord of the {_ord(d)}, is in the house", "harms")
+                add(
+                    "lord_in_dusthana",
+                    f"{lord[d].title()}, lord of the {_ord(d)}, is in the house",
+                    "harms",
+                )
         saver = [p for p in BENEFICS if house[p] == h or sees(p, hs)]
         if saver and any(f.kind == "harms" for f in found):
-            add("saved_by_benefic", f"{', '.join(p.title() for p in saver)} sits in it or aspects it", "helps")
+            add(
+                "saved_by_benefic",
+                f"{', '.join(p.title() for p in saver)} sits in it or aspects it",
+                "helps",
+            )
         if h not in DUSTHANA:
             ben = [p for p in BENEFICS if house[p] == h]
             mal = [p for p in MALEFICS if house[p] == h]
             if ben:
-                add("occupied_benefic", f"{', '.join(p.title() for p in ben)} in it", "helps")
+                add(
+                    "occupied_benefic",
+                    f"{', '.join(p.title() for p in ben)} in it",
+                    "helps",
+                )
             if mal:
-                add("occupied_malefic", f"{', '.join(p.title() for p in mal)} in it", "harms")
+                add(
+                    "occupied_malefic",
+                    f"{', '.join(p.title() for p in mal)} in it",
+                    "harms",
+                )
         else:
             ben = [p for p in BENEFICS if house[p] == h]
             mal = [p for p in MALEFICS if house[p] == h]
             if mal:
-                add("dusthana_malefic", f"{', '.join(p.title() for p in mal)} in it", "harms")
+                add(
+                    "dusthana_malefic",
+                    f"{', '.join(p.title() for p in mal)} in it",
+                    "harms",
+                )
             if ben:
-                add("dusthana_benefic", f"{', '.join(p.title() for p in ben)} in it", "note")
+                add(
+                    "dusthana_benefic",
+                    f"{', '.join(p.title() for p in ben)} in it",
+                    "note",
+                )
         if lord[1] != lh and house[lord[1]] == h:
-            add("lagna_lord_in_it", f"the lagna lord {lord[1].title()} is in the house", "helps")
-        if lord[1] != lh and (sign[lord[1]] == sign[lh] or sees(lord[1], sign[lh]) or sees(lh, sign[lord[1]])):
-            add("lagna_lord_with_lord", f"the lord {lh.title()} is joined with or aspected by the lagna lord {lord[1].title()}", "helps")
+            add(
+                "lagna_lord_in_it",
+                f"the lagna lord {lord[1].title()} is in the house",
+                "helps",
+            )
+        if lord[1] != lh and (
+            sign[lord[1]] == sign[lh]
+            or sees(lord[1], sign[lh])
+            or sees(lh, sign[lord[1]])
+        ):
+            add(
+                "lagna_lord_with_lord",
+                f"the lord {lh.title()} is joined with or aspected by the lagna lord {lord[1].title()}",
+                "helps",
+            )
         if h == 1 and any(lord[d] == lord[1] for d in DUSTHANA):
-            add("lagna_lord_owns_dusthana", f"{lord[1].title()} rules the lagna and also the {', '.join(_ord(d) for d in DUSTHANA if lord[d] == lord[1])}", "note")
-        mixed = any(f.kind == "helps" for f in found) and any(f.kind == "harms" for f in found)
+            add(
+                "lagna_lord_owns_dusthana",
+                f"{lord[1].title()} rules the lagna and also the {', '.join(_ord(d) for d in DUSTHANA if lord[d] == lord[1])}",
+                "note",
+            )
+        mixed = any(f.kind == "helps" for f in found) and any(
+            f.kind == "harms" for f in found
+        )
         out.append(HouseReading(h, hs, lh, tuple(found), mixed))
     return tuple(out)

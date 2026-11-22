@@ -26,7 +26,13 @@ sys.path.insert(0, str(ROOT))
 from samay.engine.gazetteer_build import build
 
 BASE = "https://download.geonames.org/export/dump/"
-SHARED = ["cities500.zip", "countryInfo.txt", "admin1CodesASCII.txt", "admin2Codes.txt", "alternateNamesV2.zip"]
+SHARED = [
+    "cities500.zip",
+    "countryInfo.txt",
+    "admin1CodesASCII.txt",
+    "admin2Codes.txt",
+    "alternateNamesV2.zip",
+]
 
 
 def sha256(path: Path) -> str:
@@ -51,7 +57,9 @@ def fetch(name: str, dest_dir: Path) -> Path:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--countries", default=os.environ.get("GEONAMES_FULL_COUNTRIES", "IN,US,UA,IT"))
+    p.add_argument(
+        "--countries", default=os.environ.get("GEONAMES_FULL_COUNTRIES", "IN,US,UA,IT")
+    )
     p.add_argument("--src", type=Path, default=ROOT / "data" / "geonames-src")
     p.add_argument("--out", type=Path, default=ROOT / "data" / "gazetteer.sqlite")
     p.add_argument("--lock", type=Path, default=ROOT / "data" / "gazetteer.lock")
@@ -62,7 +70,10 @@ def main() -> int:
         lock = json.loads(args.lock.read_text())
         actual = sha256(args.out)
         ok = actual == lock["database_sha256"]
-        print(("ok" if ok else f"MISMATCH: {actual} != {lock['database_sha256']}"), args.out)
+        print(
+            ("ok" if ok else f"MISMATCH: {actual} != {lock['database_sha256']}"),
+            args.out,
+        )
         return 0 if ok else 1
 
     countries = [c.strip().upper() for c in args.countries.split(",") if c.strip()]
@@ -78,9 +89,16 @@ def main() -> int:
 
     print("building database ...", flush=True)
     build(args.src, args.out, countries, snapshot, hashes)
-    lock = {"snapshot": snapshot, "countries": countries, "sources": hashes, "database_sha256": sha256(args.out)}
+    lock = {
+        "snapshot": snapshot,
+        "countries": countries,
+        "sources": hashes,
+        "database_sha256": sha256(args.out),
+    }
     args.lock.write_text(json.dumps(lock, indent=2, sort_keys=True) + "\n")
-    print(f"wrote {args.out} ({args.out.stat().st_size / 1e6:.0f} MB), snapshot {snapshot}")
+    print(
+        f"wrote {args.out} ({args.out.stat().st_size / 1e6:.0f} MB), snapshot {snapshot}"
+    )
     return 0
 
 

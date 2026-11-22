@@ -31,13 +31,21 @@ def test_happy_path_collects_everything_and_asks_one_thing_at_a_time():
     assert o.reply.text == prompts.ASK_PLACE and o.draft.time_text == "18:30"
     o = flow.on_text(o.draft, "Pune, India")
     assert o.draft is None and o.reply.text == prompts.SAVED
-    assert (o.done.date_text, o.done.time_text, o.done.place_text) == ("1952-08-15", "18:30", "Pune, India")
+    assert (o.done.date_text, o.done.time_text, o.done.place_text) == (
+        "1952-08-15",
+        "18:30",
+        "Pune, India",
+    )
     assert o.done.place_choice and not o.done.approx_for
 
 
 def test_time_without_am_pm_asks_morning_or_evening():
     o = say(flow.begin(), "15-08-1952", "6:30")
-    assert o.draft.step == "ampm" and labels(o) == [prompts.BTN_AM, prompts.BTN_PM, prompts.BTN_START_OVER]
+    assert o.draft.step == "ampm" and labels(o) == [
+        prompts.BTN_AM,
+        prompts.BTN_PM,
+        prompts.BTN_START_OVER,
+    ]
     assert tap(o, prompts.BTN_PM).draft.time_text == "18:30"
     assert tap(o, prompts.BTN_AM).draft.time_text == "06:30"
 
@@ -58,7 +66,10 @@ def test_bad_date_and_time_reask_the_same_question():
 def test_duplicate_place_names_become_labelled_buttons():
     o = say(flow.begin(), "15-08-1952", "18:30", "Maplewood")
     assert o.draft.step == "pick_place"
-    assert labels(o)[:2] == ["Maplewood, Ramsey County, Minnesota, US", "Maplewood, Essex County, New Jersey, US"]
+    assert labels(o)[:2] == [
+        "Maplewood, Ramsey County, Minnesota, US",
+        "Maplewood, Essex County, New Jersey, US",
+    ]
     done = tap(o, "Maplewood, Essex County, New Jersey, US")
     assert done.done.place_choice and done.draft is None
 
@@ -67,7 +78,9 @@ def test_unknown_place_asks_for_nearest_town_and_marks_the_chart_approximate():
     o = say(flow.begin(), "15-08-1952", "18:30", "Nowhereville")
     assert o.draft.step == "nearby" and "Nowhereville" in o.reply.text
     o = say(o, "Atlantis")
-    assert o.draft.step == "nearby" and o.reply.text.startswith(prompts.ASK_NEARBY_AGAIN)
+    assert o.draft.step == "nearby" and o.reply.text.startswith(
+        prompts.ASK_NEARBY_AGAIN
+    )
     o = say(o, "Pune")
     assert o.done.approx_for == "Nowhereville" and o.done.place_text == "Pune"
 
@@ -91,7 +104,9 @@ def test_stale_tap_gets_a_friendly_restart_button():
     o = say(flow.begin(), "15-08-1952", "6:30")
     old = o.reply.buttons[0][0].data
     newer = tap(o, prompts.BTN_PM)
-    result = flow.on_button(newer.draft, old)  # the old message's button, after the draft moved on
+    result = flow.on_button(
+        newer.draft, old
+    )  # the old message's button, after the draft moved on
     assert result.reply.text == prompts.STALE and result.draft == newer.draft
     assert result.reply.buttons[0][0].data == flow.START_OVER
     assert flow.on_button(None, old).reply.text == prompts.STALE
@@ -117,7 +132,10 @@ def test_draft_survives_a_json_round_trip():
     o = say(flow.begin(), "15-08-1952", "6:30")
     restored = flow.Draft.from_dict(o.draft.to_dict())
     assert restored == o.draft
-    assert tap(o, prompts.BTN_PM).draft.time_text == flow.on_button(restored, o.reply.buttons[0][1].data).draft.time_text
+    assert (
+        tap(o, prompts.BTN_PM).draft.time_text
+        == flow.on_button(restored, o.reply.buttons[0][1].data).draft.time_text
+    )
 
 
 def test_free_text_with_no_draft_starts_the_conversation():
@@ -129,7 +147,11 @@ def test_free_text_with_no_draft_starts_the_conversation():
 
 def test_home_question_saves_a_unique_city_and_stores_what_was_typed():
     o = flow.begin_home()
-    assert o.reply.text == prompts.ASK_HOME and o.draft.purpose == "home" and o.draft.step == "home_place"
+    assert (
+        o.reply.text == prompts.ASK_HOME
+        and o.draft.purpose == "home"
+        and o.draft.step == "home_place"
+    )
     o = flow.on_text(o.draft, "Maplewood, Minnesota")
     assert o.draft is None and o.done is None
     text, place_id = o.home
@@ -141,12 +163,18 @@ def test_home_with_several_matches_offers_buttons_then_saves_the_one_tapped():
     o = flow.on_text(flow.begin_home().draft, "Maplewood")
     assert o.draft.step == "pick_place" and o.home is None
     done = tap(o, "Maplewood, Essex County, New Jersey, US")
-    assert done.home[0] == "Maplewood" and geo.get_place(done.home[1]).admin1 == "NJ" and done.draft is None
+    assert (
+        done.home[0] == "Maplewood"
+        and geo.get_place(done.home[1]).admin1 == "NJ"
+        and done.draft is None
+    )
 
 
 def test_home_not_found_asks_again_without_the_approximate_detour():
     o = flow.on_text(flow.begin_home().draft, "Nowhereville")
-    assert o.draft.step == "home_place" and o.reply.text.startswith(prompts.HOME_NOT_FOUND)
+    assert o.draft.step == "home_place" and o.reply.text.startswith(
+        prompts.HOME_NOT_FOUND
+    )
     assert o.home is None and o.draft.approx_for is None
 
 

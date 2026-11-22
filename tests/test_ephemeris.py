@@ -3,10 +3,16 @@ from datetime import UTC, datetime
 import pytest
 
 from samay.engine import ephemeris
-from samay.engine.errors import EphemerisMissing, OutOfEphemerisRange, UnsupportedLatitude
+from samay.engine.errors import (
+    EphemerisMissing,
+    OutOfEphemerisRange,
+    UnsupportedLatitude,
+)
 from samay.engine.paths import EPHEMERIS_PATH
 
-needs_kernel = pytest.mark.skipif(not EPHEMERIS_PATH.exists(), reason="ephemeris file not present")
+needs_kernel = pytest.mark.skipif(
+    not EPHEMERIS_PATH.exists(), reason="ephemeris file not present"
+)
 PUNE = (18.52, 73.86)
 
 
@@ -27,7 +33,9 @@ def test_polar_latitude_rejected():
 
 def test_unknown_ayanamsa_rejected():
     with pytest.raises(ValueError):
-        ephemeris.compute_chart(datetime(2000, 1, 1, tzinfo=UTC), *PUNE, ayanamsa="nope")
+        ephemeris.compute_chart(
+            datetime(2000, 1, 1, tzinfo=UTC), *PUNE, ayanamsa="nope"
+        )
 
 
 def test_missing_kernel(monkeypatch, tmp_path):
@@ -53,4 +61,6 @@ def test_mercury_retrograde_and_direct():
     direct = ephemeris.compute_chart(datetime(2023, 3, 1, tzinfo=UTC), *PUNE)
     assert retro.planets["mercury"].retrograde
     assert not direct.planets["mercury"].retrograde
-    assert not direct.planets["sun"].retrograde and not direct.planets["moon"].retrograde
+    assert (
+        not direct.planets["sun"].retrograde and not direct.planets["moon"].retrograde
+    )

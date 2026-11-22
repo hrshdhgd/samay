@@ -1,4 +1,5 @@
 """The family's panchang conventions: one YAML file, validated on load."""
+
 from __future__ import annotations
 
 import hashlib
@@ -54,14 +55,33 @@ def _rule(where: str, raw: dict) -> Rule:
     if start > end:
         raise ValueError(f"{where}: start_minutes is after end_minutes")
     v = raw.get("viddha")
-    viddha = None if v is None else Viddha(tuple(int(t) for t in v["tithis"]), v["anchor"], int(v["start_minutes"]), int(v["end_minutes"]))
+    viddha = (
+        None
+        if v is None
+        else Viddha(
+            tuple(int(t) for t in v["tithis"]),
+            v["anchor"],
+            int(v["start_minutes"]),
+            int(v["end_minutes"]),
+        )
+    )
     if viddha is not None:
         _check(f"{where} viddha anchor", viddha.anchor, ANCHORS)
-    return Rule(tithis, raw["anchor"], start, end, raw.get("on_kshaya", "start_day"), raw.get("on_vriddhi", "first"), viddha)
+    return Rule(
+        tithis,
+        raw["anchor"],
+        start,
+        end,
+        raw.get("on_kshaya", "start_day"),
+        raw.get("on_vriddhi", "first"),
+        viddha,
+    )
 
 
 @lru_cache(maxsize=4)
-def load_panchang_profile(profile_id: str = DEFAULT_PANCHANG_PROFILE, directory: Path = PROFILES_DIR) -> PanchangProfile:
+def load_panchang_profile(
+    profile_id: str = DEFAULT_PANCHANG_PROFILE, directory: Path = PROFILES_DIR
+) -> PanchangProfile:
     path = directory / f"{profile_id}.yaml"
     if not path.is_file():
         raise UnknownProfile(f"unknown panchang profile {profile_id!r}")
@@ -72,13 +92,26 @@ def load_panchang_profile(profile_id: str = DEFAULT_PANCHANG_PROFILE, directory:
     _check("sunrise_definition", raw["sunrise_definition"], set(HORIZON_DEGREES))
     margin = int(raw["ambiguity_margin_minutes"])
     if margin < 0:
-        raise ValueError("profile field 'ambiguity_margin_minutes' must not be negative")
+        raise ValueError(
+            "profile field 'ambiguity_margin_minutes' must not be negative"
+        )
     observances = {}
     for name, spec in raw["observances"].items():
         rules = {who: _rule(f"{name}.{who}", r) for who, r in spec["rules"].items()}
         sampradaya = raw.get("sampradaya")
         if sampradaya is not None and "all" not in rules and sampradaya not in rules:
-            raise ValueError(f"profile field 'sampradaya': observance {name!r} has no rule for tradition {sampradaya!r}")
-        observances[name] = ObservanceSpec(name, spec["label"], rules, bool(spec["verified"]), spec["source"])
-    return PanchangProfile(raw["id"], raw.get("sampradaya"), raw["ayanamsa"], raw["sunrise_definition"], margin,
-                           observances, hashlib.sha256(raw_bytes).hexdigest()[:12])
+            raise ValueError(
+                f"profile field 'sampradaya': observance {name!r} has no rule for tradition {sampradaya!r}"
+            )
+        observances[name] = ObservanceSpec(
+            name, spec["label"], rules, bool(spec["verified"]), spec["source"]
+        )
+    return PanchangProfile(
+        raw["id"],
+        raw.get("sampradaya"),
+        raw["ayanamsa"],
+        raw["sunrise_definition"],
+        margin,
+        observances,
+        hashlib.sha256(raw_bytes).hexdigest()[:12],
+    )

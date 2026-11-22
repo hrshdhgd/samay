@@ -1,4 +1,5 @@
 """Phaladeepika chapter 9: what each rising sign says of a person. Texts are in data/rules/phaladeepika-ch9-ascendants.yaml (paraphrased); nothing is returned until checked."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -30,7 +31,11 @@ class AscendantRules:
 
     def text(self, sign: int) -> tuple[str, str] | None:
         """(verse, text) for a rising sign index, or None until the rules are checked."""
-        return (self.signs[SIGNS[sign]]["verse"], self.signs[SIGNS[sign]]["text"]) if self.servable else None
+        return (
+            (self.signs[SIGNS[sign]]["verse"], self.signs[SIGNS[sign]]["text"])
+            if self.servable
+            else None
+        )
 
 
 @lru_cache(maxsize=4)
@@ -42,6 +47,18 @@ def load_rules(path: Path = RULES_PATH) -> AscendantRules:
     if list(raw["signs"]) != SIGNS:
         raise ValueError(f"{path.name}: needs the twelve signs, Aries first")
     for s, row in raw["signs"].items():
-        if not (isinstance(row.get("text"), str) and row["text"].strip() and isinstance(row.get("verse"), str)):
+        if not (
+            isinstance(row.get("text"), str)
+            and row["text"].strip()
+            and isinstance(row.get("verse"), str)
+        ):
             raise ValueError(f"{path.name} {s}: needs a verse and a text")
-    return AscendantRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), raw["frame"], raw["moon_rule"], raw["signs"])
+    return AscendantRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["frame"],
+        raw["moon_rule"],
+        raw["signs"],
+    )

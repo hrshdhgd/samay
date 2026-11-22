@@ -1,4 +1,5 @@
 """Locations of bundled data. Each can be overridden by an environment variable."""
+
 from __future__ import annotations
 
 import os

@@ -9,8 +9,18 @@ from samay.cli import cli
 from samay.models import BirthInput
 from samay.store import MIGRATIONS, Store
 
-SECRET = BirthInput("1952-08-15", "06:30", "Kolhapur", "1266285", 1, "parashari-lahiri", "Wagholi")
-WORDS = ("1952-08-15", "06:30", "Kolhapur", "1266285", "Wagholi", "Maplewood", "5036588")
+SECRET = BirthInput(
+    "1952-08-15", "06:30", "Kolhapur", "1266285", 1, "parashari-lahiri", "Wagholi"
+)
+WORDS = (
+    "1952-08-15",
+    "06:30",
+    "Kolhapur",
+    "1266285",
+    "Wagholi",
+    "Maplewood",
+    "5036588",
+)
 
 
 def raw_dump(path) -> str:
@@ -25,13 +35,17 @@ def key() -> str:
 def test_nothing_personal_is_readable_on_disk(tmp_path):
     s = Store(tmp_path / "t.db", key())
     s.save_user(1, SECRET)
-    s.save_draft(1, {"step": "place", "date_text": "1952-08-15", "place_text": "Kolhapur"})
+    s.save_draft(
+        1, {"step": "place", "date_text": "1952-08-15", "place_text": "Kolhapur"}
+    )
     s.save_home(1, "Maplewood", "5036588")
     dump = raw_dump(tmp_path / "t.db")
     for word in WORDS:
         assert word not in dump, word
     assert dump.count(crypto.PREFIX) >= 9  # users (6) + drafts (1) + homes (2)
-    assert "parashari-lahiri" in dump  # the profile name is not personal and stays readable
+    assert (
+        "parashari-lahiri" in dump
+    )  # the profile name is not personal and stays readable
 
 
 def test_everything_still_round_trips(tmp_path):
@@ -42,10 +56,16 @@ def test_everything_still_round_trips(tmp_path):
     s.save_home(1, "Maplewood", "5036588")
     s.set_brief(1, 7)
     assert s.get_user(1) == SECRET
-    assert s.get_user(2) == BirthInput("1990-08-15", "14:30", "Pune")  # None fields stay None, fold too
+    assert s.get_user(2) == BirthInput(
+        "1990-08-15", "14:30", "Pune"
+    )  # None fields stay None, fold too
     assert s.get_draft(1) == {"step": "time", "options": ["a", "b"]}
     home = s.get_home(1)
-    assert (home.place_text, home.place_id, home.brief_hour) == ("Maplewood", "5036588", 7)
+    assert (home.place_text, home.place_id, home.brief_hour) == (
+        "Maplewood",
+        "5036588",
+        7,
+    )
     assert [c for c, _ in s.briefs_enabled()] == [1]
 
 
@@ -72,7 +92,10 @@ def test_a_failed_rekey_changes_nothing(tmp_path):
     before = raw_dump(tmp_path / "t.db")
     with pytest.raises(crypto.StoreKeyError):
         s.rekey("not-a-key")
-    assert raw_dump(tmp_path / "t.db") == before and Store(tmp_path / "t.db", k).get_user(1) == SECRET
+    assert (
+        raw_dump(tmp_path / "t.db") == before
+        and Store(tmp_path / "t.db", k).get_user(1) == SECRET
+    )
 
 
 def test_the_test_suite_runs_on_an_isolated_database():
@@ -86,25 +109,35 @@ def test_a_wrong_key_is_refused_when_the_store_opens(tmp_path):
     Store(tmp_path / "t.db", first).save_user(1, SECRET)
     with pytest.raises(crypto.StoreKeyError, match="does not match"):
         Store(tmp_path / "t.db", key())
-    assert Store(tmp_path / "t.db", first).get_user(1) == SECRET  # the right key still works
+    assert (
+        Store(tmp_path / "t.db", first).get_user(1) == SECRET
+    )  # the right key still works
 
 
 def test_tampered_ciphertext_is_refused_not_misread(tmp_path):
     s = Store(tmp_path / "t.db", key())
     s.save_user(1, SECRET)
     with sqlite3.connect(tmp_path / "t.db") as c:
-        c.execute("UPDATE users SET place_text = ? WHERE chat_id = 1",
-                  (crypto.PREFIX + "gAAAAAB" + "A" * 80,))
+        c.execute(
+            "UPDATE users SET place_text = ? WHERE chat_id = 1",
+            (crypto.PREFIX + "gAAAAAB" + "A" * 80,),
+        )
     with pytest.raises(crypto.StoreKeyError):
         s.get_user(1)
 
 
 def test_plaintext_from_an_older_version_is_encrypted_when_the_store_opens(tmp_path):
     path = tmp_path / "old.db"
-    with sqlite3.connect(path) as c:  # the first schema, with plaintext rows, as the early bot wrote them
+    with sqlite3.connect(
+        path
+    ) as c:  # the first schema, with plaintext rows, as the early bot wrote them
         c.executescript(MIGRATIONS[0])
-        c.execute("INSERT INTO users VALUES (1,'1952-08-15','06:30','Kolhapur','1266285',1,'parashari-lahiri','Wagholi',0)")
-        c.execute("INSERT INTO drafts VALUES (1,'{\"step\": \"date\", \"place_text\": \"Kolhapur\"}', 0)")
+        c.execute(
+            "INSERT INTO users VALUES (1,'1952-08-15','06:30','Kolhapur','1266285',1,'parashari-lahiri','Wagholi',0)"
+        )
+        c.execute(
+            'INSERT INTO drafts VALUES (1,\'{"step": "date", "place_text": "Kolhapur"}\', 0)'
+        )
         c.execute("PRAGMA user_version = 1")
     k = key()
     s = Store(path, k)
@@ -155,7 +188,9 @@ def test_keygen_prints_a_usable_unique_key():
     assert out[0] != out[1] and all(crypto.Cipher(k) for k in out)
 
 
-def test_backup_is_private_encrypted_readable_and_never_overwrites(tmp_path, monkeypatch):
+def test_backup_is_private_encrypted_readable_and_never_overwrites(
+    tmp_path, monkeypatch
+):
     k = key()
     monkeypatch.setenv("SAMAY_DB", str(tmp_path / "live.db"))
     monkeypatch.setenv(crypto.KEY_ENV, k)
@@ -184,6 +219,6 @@ def test_the_bot_refuses_to_start_with_a_bad_key(monkeypatch, tmp_path):
 def test_topic_counts_stay_anonymous_and_unencrypted(tmp_path):
     s = Store(tmp_path / "t.db", key())
     s.record_miss("dasha:saturn")
-    assert "dasha:saturn" in raw_dump(tmp_path / "t.db") and s.top_misses() == [("dasha:saturn", 1)]
-
-
+    assert "dasha:saturn" in raw_dump(tmp_path / "t.db") and s.top_misses() == [
+        ("dasha:saturn", 1)
+    ]

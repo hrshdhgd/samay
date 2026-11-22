@@ -5,6 +5,7 @@ The local model only PROPOSES what it understood, as JSON. Everything it returns
 dates and times must parse, a year the model produced must actually appear in the message, text is cleaned and
 bounded, and the person is always shown a summary to confirm. Nothing the model says is treated as fact.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,14 +24,14 @@ MAX_QUESTION = 300
 
 EXTRACT_SYSTEM = (
     "You read a message in which someone describes people and their birth details, and you reply with ONE JSON "
-    "object and nothing else. Schema: {\"people\": [{\"name\": str, \"relation\": str, \"date\": \"YYYY-MM-DD\", "
-    "\"time\": \"HH:MM\", \"time_certain\": bool, \"place\": str}], \"question\": str, \"about\": str}. "
+    'object and nothing else. Schema: {"people": [{"name": str, "relation": str, "date": "YYYY-MM-DD", '
+    '"time": "HH:MM", "time_certain": bool, "place": str}], "question": str, "about": str}. '
     "Rules: one entry per person described. Use an empty string for anything the message does not state; never "
-    "guess or invent. \"relation\" is how the person relates to the writer (daughter, son, wife, husband, mother, "
-    "father, friend...) or empty. \"time\" is 24-hour HH:MM, and time_certain is true only if the message makes "
+    'guess or invent. "relation" is how the person relates to the writer (daughter, son, wife, husband, mother, '
+    'father, friend...) or empty. "time" is 24-hour HH:MM, and time_certain is true only if the message makes '
     "morning or evening clear (am/pm, 'in the evening', a 24-hour time); if it does not, give the time as written "
-    "and set time_certain to false. \"place\" is the birthplace as written, with the country if given. "
-    "\"question\" is what the writer wants to know, in their own words, or empty. \"about\" is the name of the "
+    'and set time_certain to false. "place" is the birthplace as written, with the country if given. '
+    '"question" is what the writer wants to know, in their own words, or empty. "about" is the name of the '
     "person the question is about, or empty."
 )
 
@@ -41,7 +42,9 @@ class Mentioned:
     relation: str = ""
     date_text: str = ""  # YYYY-MM-DD, validated, or ""
     time_text: str = ""  # HH:MM, validated, or ""
-    ask_ampm: tuple[int, int] | None = None  # (hour, minute) as written, when morning or evening is unclear
+    ask_ampm: tuple[int, int] | None = (
+        None  # (hour, minute) as written, when morning or evening is unclear
+    )
     place_text: str = ""
 
 
@@ -86,7 +89,7 @@ def parse_extraction(reply: str, narrative: str) -> Extraction | None:
     if start < 0 or end <= start:
         return None
     try:
-        raw = json.loads(reply[start:end + 1])
+        raw = json.loads(reply[start : end + 1])
     except ValueError:
         return None
     if not isinstance(raw, dict) or not isinstance(raw.get("people"), list):
@@ -95,30 +98,47 @@ def parse_extraction(reply: str, narrative: str) -> Extraction | None:
     for item in raw["people"][:MAX_PEOPLE_PER_MESSAGE]:
         if not isinstance(item, dict):
             continue
-        time_text, ask = _time(_text(item.get("time"), 12), item.get("time_certain") is True)
+        time_text, ask = _time(
+            _text(item.get("time"), 12), item.get("time_certain") is True
+        )
         person = Mentioned(
-            name=_text(item.get("name"), MAX_NAME), relation=_text(item.get("relation"), MAX_RELATION),
-            date_text=_date(_text(item.get("date"), 20), narrative), time_text=time_text, ask_ampm=ask,
+            name=_text(item.get("name"), MAX_NAME),
+            relation=_text(item.get("relation"), MAX_RELATION),
+            date_text=_date(_text(item.get("date"), 20), narrative),
+            time_text=time_text,
+            ask_ampm=ask,
             place_text=_text(item.get("place"), MAX_PLACE),
         )
         if person.name or person.date_text or person.place_text:
             people.append(person)
     if not people:
         return None
-    return Extraction(tuple(people), _text(raw.get("question"), MAX_QUESTION), _text(raw.get("about"), MAX_NAME))
+    return Extraction(
+        tuple(people),
+        _text(raw.get("question"), MAX_QUESTION),
+        _text(raw.get("about"), MAX_NAME),
+    )
 
 
 async def extract_people(narrative: str, client=None) -> Extraction | None:
     """Ask the local model to read the message. None if the model is off, fails, or finds no one."""
     narrative = narrative[:MAX_NARRATIVE_CHARS]
-    reply = await narrate.complete(EXTRACT_SYSTEM, f"Message:\n{narrative}", client,
-                                   model=narrate.AI_MODEL, timeout=narrate.AI_TIMEOUT_SECONDS)
+    reply = await narrate.complete(
+        EXTRACT_SYSTEM,
+        f"Message:\n{narrative}",
+        client,
+        model=narrate.AI_MODEL,
+        timeout=narrate.AI_TIMEOUT_SECONDS,
+    )
     return parse_extraction(reply, narrative) if reply else None
 
 
 def match_person(text: str, people) -> object | None:
     """The one saved person whose first name appears in `text` as a whole word; None if none or more than one.
-    This is the offline fallback for "who is this about"; with the model on, the model decides."""
+    This is the offline fallback for "who is this about"; with the model on, the model decides.
+    """
     words = set(re.findall(r"[^\W\d_]+", text.casefold()))
-    hits = [p for p in people if p.name.split() and p.name.split()[0].casefold() in words]
+    hits = [
+        p for p in people if p.name.split() and p.name.split()[0].casefold() in words
+    ]
     return hits[0] if len(hits) == 1 else None

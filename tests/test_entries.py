@@ -10,8 +10,16 @@ from samay.engine.entries import LEVELS, Entry, answers_for, is_topic, load_entr
 
 def raw(**changes):
     base = {
-        "id": "e1", "topic": "planet:sun", "system": "any", "english": "Our own words.",
-        "citation": {"text": "Brihat Jataka", "chapter": 2, "verse": 1, "edition": "Iyer 1885"},
+        "id": "e1",
+        "topic": "planet:sun",
+        "system": "any",
+        "english": "Our own words.",
+        "citation": {
+            "text": "Brihat Jataka",
+            "chapter": 2,
+            "verse": 1,
+            "edition": "Iyer 1885",
+        },
         "verification": {"level": "unchecked"},
     }
     base.update(changes)
@@ -24,8 +32,12 @@ def write(tmp_path, *items) -> Path:
     return tmp_path
 
 
-CHECKED = {"level": "translation-checked", "checked_by": "Harshad", "checked_on": date(2026, 11, 9),
-           "against": "Iyer 1885 (public domain)"}
+CHECKED = {
+    "level": "translation-checked",
+    "checked_by": "Harshad",
+    "checked_on": date(2026, 11, 9),
+    "against": "Iyer 1885 (public domain)",
+}
 
 
 def test_shipped_entries_directory_loads():
@@ -39,8 +51,17 @@ def test_unchecked_entries_are_stored_but_never_served(tmp_path):
 
 
 def test_checked_entries_are_served_best_checked_first(tmp_path):
-    scholar = {"level": "sanskrit-checked", "checked_by": "Scholar", "checked_on": date(2026, 11, 10)}
-    d = write(tmp_path, raw(id="a", verification=CHECKED), raw(id="b", verification=scholar), raw(id="c"))
+    scholar = {
+        "level": "sanskrit-checked",
+        "checked_by": "Scholar",
+        "checked_on": date(2026, 11, 10),
+    }
+    d = write(
+        tmp_path,
+        raw(id="a", verification=CHECKED),
+        raw(id="b", verification=scholar),
+        raw(id="c"),
+    )
     assert [e.id for e in answers_for("planet:sun", directory=d)] == ["b", "a"]
     assert answers_for("planet:moon", directory=d) == []
 
@@ -51,8 +72,20 @@ def test_checked_entries_are_served_best_checked_first(tmp_path):
         ({"topic": "What does my Saturn mean?"}, "topic"),
         ({"verification": {"level": "trusted"}}, "level"),
         ({"verification": {"level": "translation-checked"}}, "checked_by"),
-        ({"verification": {"level": "translation-checked", "checked_by": "H", "checked_on": date(2026, 1, 1)}}, "against"),
-        ({"verification": {"level": "sanskrit-checked", "checked_by": "H"}}, "checked_on"),
+        (
+            {
+                "verification": {
+                    "level": "translation-checked",
+                    "checked_by": "H",
+                    "checked_on": date(2026, 1, 1),
+                }
+            },
+            "against",
+        ),
+        (
+            {"verification": {"level": "sanskrit-checked", "checked_by": "H"}},
+            "checked_on",
+        ),
         ({"citation": {"text": "Brihat Jataka"}}, "citation"),
         ({"system": "Vimshottari Dasha"}, "system"),
         ({"verse": {"devanagari": "x"}}, "devanagari and roman"),
@@ -70,11 +103,16 @@ def test_missing_fields_and_duplicate_ids_are_rejected(tmp_path):
         load_entries(write(tmp_path, raw(), raw()))
 
 
-def test_a_verse_is_shown_only_if_its_text_was_checked_and_the_entry_is_checked(tmp_path):
+def test_a_verse_is_shown_only_if_its_text_was_checked_and_the_entry_is_checked(
+    tmp_path,
+):
     verse = {"devanagari": "सूर्यः", "roman": "sūryaḥ", "text_checked": False}
-    d = write(tmp_path, raw(id="a", verification=CHECKED, verse=verse),
-              raw(id="b", verification=CHECKED, verse={**verse, "text_checked": True}),
-              raw(id="c", verse={**verse, "text_checked": True}))
+    d = write(
+        tmp_path,
+        raw(id="a", verification=CHECKED, verse=verse),
+        raw(id="b", verification=CHECKED, verse={**verse, "text_checked": True}),
+        raw(id="c", verse={**verse, "text_checked": True}),
+    )
     by_id = {e.id: e for e in load_entries(d)}
     assert [by_id[i].shows_verse for i in "abc"] == [False, True, False]
 
@@ -85,20 +123,41 @@ def test_citation_text_names_the_level():
     assert LEVELS.index("sanskrit-checked") > LEVELS.index("translation-checked")
 
 
-@pytest.mark.parametrize("good", ["dasha:saturn", "planet:sun", "transit:saturn:11", "yoga"])
+@pytest.mark.parametrize(
+    "good", ["dasha:saturn", "planet:sun", "transit:saturn:11", "yoga"]
+)
 def test_topic_keys(good):
     assert is_topic(good)
 
 
-@pytest.mark.parametrize("bad", ["", "Dasha:Saturn", "will I marry this year", "a:b:c:d:e", "x" * 70, "dasha:sat urn"])
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "",
+        "Dasha:Saturn",
+        "will I marry this year",
+        "a:b:c:d:e",
+        "x" * 70,
+        "dasha:sat urn",
+    ],
+)
 def test_free_text_is_not_a_topic(bad):
     assert not is_topic(bad)
 
 
 def test_a_system_specific_entry_never_answers_for_another_system(tmp_path):
-    d = write(tmp_path,
-              raw(id="bj", topic="dasha:saturn", system="brihat-jataka-dasa", verification=CHECKED),
-              raw(id="vim", topic="dasha:saturn", system="vimshottari", verification=CHECKED),
-              raw(id="gen", topic="dasha:saturn", system="any", verification=CHECKED))
-    assert {e.id for e in answers_for("dasha:saturn", frozenset({"vimshottari"}), d)} == {"vim", "gen"}
+    d = write(
+        tmp_path,
+        raw(
+            id="bj",
+            topic="dasha:saturn",
+            system="brihat-jataka-dasa",
+            verification=CHECKED,
+        ),
+        raw(id="vim", topic="dasha:saturn", system="vimshottari", verification=CHECKED),
+        raw(id="gen", topic="dasha:saturn", system="any", verification=CHECKED),
+    )
+    assert {
+        e.id for e in answers_for("dasha:saturn", frozenset({"vimshottari"}), d)
+    } == {"vim", "gen"}
     assert {e.id for e in answers_for("dasha:saturn", directory=d)} == {"gen"}

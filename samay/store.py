@@ -6,6 +6,7 @@ city a person lives in) is encrypted at rest (see crypto.py). Left in the clear 
 Telegram chat id (it is the row key), the chosen profile, the morning-message hour, and the
 anonymous topic counts, none of which identify a birth.
 """
+
 from __future__ import annotations
 
 import json
@@ -81,10 +82,26 @@ MIGRATIONS = [
 
 # Columns holding personal data, per table (all encrypted).
 SEALED = {
-    "users": ("date_text", "time_text", "place_text", "place_choice", "fold", "approx_for"),
+    "users": (
+        "date_text",
+        "time_text",
+        "place_text",
+        "place_choice",
+        "fold",
+        "approx_for",
+    ),
     "drafts": ("data",),
     "homes": ("place_text", "place_id"),
-    "people": ("name", "relation", "date_text", "time_text", "place_text", "place_choice", "fold", "approx_for"),
+    "people": (
+        "name",
+        "relation",
+        "date_text",
+        "time_text",
+        "place_text",
+        "place_choice",
+        "fold",
+        "approx_for",
+    ),
 }
 KEY_ROW = {"users": "chat_id", "drafts": "chat_id", "homes": "chat_id", "people": "id"}
 MAX_PEOPLE = 12  # per chat
@@ -110,9 +127,14 @@ class Store:
         with self._conn() as c:
             row = c.execute("SELECT token FROM keycheck WHERE id = 1").fetchone()
             if row is None:
-                c.execute("INSERT INTO keycheck VALUES (1, ?)", (self._cipher.encrypt(CHECK_VALUE),))
+                c.execute(
+                    "INSERT INTO keycheck VALUES (1, ?)",
+                    (self._cipher.encrypt(CHECK_VALUE),),
+                )
             elif self._cipher.decrypt(row["token"]) != CHECK_VALUE:
-                raise crypto.StoreKeyError("the database key does not match this database")
+                raise crypto.StoreKeyError(
+                    "the database key does not match this database"
+                )
 
     def _seal(self, value: object) -> str | None:
         return None if value is None else self._cipher.encrypt(str(value))
@@ -125,12 +147,17 @@ class Store:
         with self._conn() as c:
             for table, columns in SEALED.items():
                 for row in c.execute(f"SELECT * FROM {table}").fetchall():
-                    todo = {col: self._seal(row[col]) for col in columns
-                            if row[col] is not None and not crypto.is_encrypted(row[col])}
+                    todo = {
+                        col: self._seal(row[col])
+                        for col in columns
+                        if row[col] is not None and not crypto.is_encrypted(row[col])
+                    }
                     if todo:
                         sets = ", ".join(f"{col} = ?" for col in todo)
-                        c.execute(f"UPDATE {table} SET {sets} WHERE {KEY_ROW[table]} = ?",
-                                  (*todo.values(), row[KEY_ROW[table]]))
+                        c.execute(
+                            f"UPDATE {table} SET {sets} WHERE {KEY_ROW[table]} = ?",
+                            (*todo.values(), row[KEY_ROW[table]]),
+                        )
 
     def _conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path)
@@ -141,32 +168,60 @@ class Store:
         with self._conn() as c:
             c.execute(
                 "INSERT OR REPLACE INTO users VALUES (?,?,?,?,?,?,?,?,?)",
-                (chat_id, *map(self._seal, (b.date_text, b.time_text, b.place_text, b.place_choice, b.fold)),
-                 b.profile, self._seal(b.approx_for), int(now if now is not None else time.time())),
+                (
+                    chat_id,
+                    *map(
+                        self._seal,
+                        (
+                            b.date_text,
+                            b.time_text,
+                            b.place_text,
+                            b.place_choice,
+                            b.fold,
+                        ),
+                    ),
+                    b.profile,
+                    self._seal(b.approx_for),
+                    int(now if now is not None else time.time()),
+                ),
             )
 
     def get_user(self, chat_id: int) -> BirthInput | None:
         with self._conn() as c:
-            r = c.execute("SELECT * FROM users WHERE chat_id = ?", (chat_id,)).fetchone()
+            r = c.execute(
+                "SELECT * FROM users WHERE chat_id = ?", (chat_id,)
+            ).fetchone()
         if r is None:
             return None
         fold = self._open(r["fold"])
-        return BirthInput(self._open(r["date_text"]), self._open(r["time_text"]), self._open(r["place_text"]),
-                          self._open(r["place_choice"]), None if fold is None else int(fold), r["profile"],
-                          self._open(r["approx_for"]))
+        return BirthInput(
+            self._open(r["date_text"]),
+            self._open(r["time_text"]),
+            self._open(r["place_text"]),
+            self._open(r["place_choice"]),
+            None if fold is None else int(fold),
+            r["profile"],
+            self._open(r["approx_for"]),
+        )
 
     def save_draft(self, chat_id: int, data: dict, now: float | None = None) -> None:
         with self._conn() as c:
             c.execute(
                 "INSERT OR REPLACE INTO drafts VALUES (?,?,?)",
-                (chat_id, self._seal(json.dumps(data)), int(now if now is not None else time.time())),
+                (
+                    chat_id,
+                    self._seal(json.dumps(data)),
+                    int(now if now is not None else time.time()),
+                ),
             )
 
     def get_draft(self, chat_id: int, now: float | None = None) -> dict | None:
         """The draft, or None if there is none or it has expired (expired drafts are deleted)."""
         now = time.time() if now is None else now
         with self._conn() as c:
-            r = c.execute("SELECT data, updated_at FROM drafts WHERE chat_id = ?", (chat_id,)).fetchone()
+            r = c.execute(
+                "SELECT data, updated_at FROM drafts WHERE chat_id = ?", (chat_id,)
+            ).fetchone()
             if r is None:
                 return None
             if now - r["updated_at"] > DRAFT_TTL_SECONDS:
@@ -181,7 +236,10 @@ class Store:
     def purge_expired(self, now: float | None = None) -> int:
         now = time.time() if now is None else now
         with self._conn() as c:
-            return c.execute("DELETE FROM drafts WHERE updated_at < ?", (int(now - DRAFT_TTL_SECONDS),)).rowcount
+            return c.execute(
+                "DELETE FROM drafts WHERE updated_at < ?",
+                (int(now - DRAFT_TTL_SECONDS),),
+            ).rowcount
 
     def save_home(self, chat_id: int, place_text: str, place_id: str) -> None:
         """Set or change the living city; the morning-message setting is kept."""
@@ -194,40 +252,61 @@ class Store:
             )
 
     def _home(self, r: sqlite3.Row) -> Home:
-        return Home(self._open(r["place_text"]), self._open(r["place_id"]), r["brief_hour"], r["brief_last"])
+        return Home(
+            self._open(r["place_text"]),
+            self._open(r["place_id"]),
+            r["brief_hour"],
+            r["brief_last"],
+        )
 
     def get_home(self, chat_id: int) -> Home | None:
         with self._conn() as c:
-            r = c.execute("SELECT * FROM homes WHERE chat_id = ?", (chat_id,)).fetchone()
+            r = c.execute(
+                "SELECT * FROM homes WHERE chat_id = ?", (chat_id,)
+            ).fetchone()
         return self._home(r) if r else None
 
     def set_brief(self, chat_id: int, hour: int | None) -> None:
         """Turn the morning message on at a local hour, or off with None. Needs a home city."""
         with self._conn() as c:
-            c.execute("UPDATE homes SET brief_hour = ?, brief_last = NULL WHERE chat_id = ?", (hour, chat_id))
+            c.execute(
+                "UPDATE homes SET brief_hour = ?, brief_last = NULL WHERE chat_id = ?",
+                (hour, chat_id),
+            )
 
     def mark_brief_sent(self, chat_id: int, local_date: str) -> None:
         with self._conn() as c:
-            c.execute("UPDATE homes SET brief_last = ? WHERE chat_id = ?", (local_date, chat_id))
+            c.execute(
+                "UPDATE homes SET brief_last = ? WHERE chat_id = ?",
+                (local_date, chat_id),
+            )
 
     def briefs_enabled(self) -> list[tuple[int, Home]]:
         with self._conn() as c:
-            rows = c.execute("SELECT * FROM homes WHERE brief_hour IS NOT NULL").fetchall()
+            rows = c.execute(
+                "SELECT * FROM homes WHERE brief_hour IS NOT NULL"
+            ).fetchall()
         return [(r["chat_id"], self._home(r)) for r in rows]
 
     def record_miss(self, topic: str) -> None:
         """Count one unanswered question under its sorted topic. Anything that is not a plain
         topic key (which could carry someone's words) is refused."""
         if not is_topic(topic):
-            raise ValueError("record_miss takes a topic key like 'dasha:saturn', never free text")
+            raise ValueError(
+                "record_miss takes a topic key like 'dasha:saturn', never free text"
+            )
         with self._conn() as c:
             c.execute(
-                "INSERT INTO topic_misses VALUES (?, 1) ON CONFLICT(topic) DO UPDATE SET count = count + 1", (topic,)
+                "INSERT INTO topic_misses VALUES (?, 1) ON CONFLICT(topic) DO UPDATE SET count = count + 1",
+                (topic,),
             )
 
     def top_misses(self, limit: int = 20) -> list[tuple[str, int]]:
         with self._conn() as c:
-            rows = c.execute("SELECT topic, count FROM topic_misses ORDER BY count DESC, topic LIMIT ?", (limit,))
+            rows = c.execute(
+                "SELECT topic, count FROM topic_misses ORDER BY count DESC, topic LIMIT ?",
+                (limit,),
+            )
             return [(r["topic"], r["count"]) for r in rows]
 
     def rekey(self, new_key: str) -> None:
@@ -237,45 +316,97 @@ class Store:
         with self._conn() as c:
             for table, columns in SEALED.items():
                 for row in c.execute(f"SELECT * FROM {table}").fetchall():
-                    changed = {col: new.encrypt(self._cipher.decrypt(str(row[col])))
-                               for col in columns if row[col] is not None}
+                    changed = {
+                        col: new.encrypt(self._cipher.decrypt(str(row[col])))
+                        for col in columns
+                        if row[col] is not None
+                    }
                     if changed:
                         sets = ", ".join(f"{col} = ?" for col in changed)
-                        c.execute(f"UPDATE {table} SET {sets} WHERE {KEY_ROW[table]} = ?",
-                                  (*changed.values(), row[KEY_ROW[table]]))
-            c.execute("UPDATE keycheck SET token = ? WHERE id = 1", (new.encrypt(CHECK_VALUE),))
+                        c.execute(
+                            f"UPDATE {table} SET {sets} WHERE {KEY_ROW[table]} = ?",
+                            (*changed.values(), row[KEY_ROW[table]]),
+                        )
+            c.execute(
+                "UPDATE keycheck SET token = ? WHERE id = 1",
+                (new.encrypt(CHECK_VALUE),),
+            )
         self._cipher = new
 
     def _person(self, r: sqlite3.Row) -> Person:
         fold = self._open(r["fold"])
-        birth = BirthInput(self._open(r["date_text"]), self._open(r["time_text"]), self._open(r["place_text"]),
-                           self._open(r["place_choice"]), None if fold is None else int(fold), r["profile"],
-                           self._open(r["approx_for"]))
+        birth = BirthInput(
+            self._open(r["date_text"]),
+            self._open(r["time_text"]),
+            self._open(r["place_text"]),
+            self._open(r["place_choice"]),
+            None if fold is None else int(fold),
+            r["profile"],
+            self._open(r["approx_for"]),
+        )
         return Person(r["id"], self._open(r["name"]), self._open(r["relation"]), birth)
 
     def list_people(self, chat_id: int) -> list[Person]:
         with self._conn() as c:
-            rows = c.execute("SELECT * FROM people WHERE chat_id = ? ORDER BY id", (chat_id,)).fetchall()
+            rows = c.execute(
+                "SELECT * FROM people WHERE chat_id = ? ORDER BY id", (chat_id,)
+            ).fetchall()
         return [self._person(r) for r in rows]
 
     def get_person(self, chat_id: int, person_id: int) -> Person | None:
         """A person, only if they belong to this chat: one chat can never read another chat's people."""
         with self._conn() as c:
-            r = c.execute("SELECT * FROM people WHERE id = ? AND chat_id = ?", (person_id, chat_id)).fetchone()
+            r = c.execute(
+                "SELECT * FROM people WHERE id = ? AND chat_id = ?",
+                (person_id, chat_id),
+            ).fetchone()
         return self._person(r) if r else None
 
-    def save_person(self, chat_id: int, name: str, relation: str | None, b: BirthInput, now: float | None = None) -> int:
+    def save_person(
+        self,
+        chat_id: int,
+        name: str,
+        relation: str | None,
+        b: BirthInput,
+        now: float | None = None,
+    ) -> int:
         """Save someone, or update them if the chat already has a person of that name (case-insensitive)."""
-        same = next((p for p in self.list_people(chat_id) if p.name.casefold() == name.casefold()), None)
-        values = (*map(self._seal, (name, relation, b.date_text, b.time_text, b.place_text, b.place_choice, b.fold)),
-                  self._seal(b.approx_for), b.profile)
+        same = next(
+            (
+                p
+                for p in self.list_people(chat_id)
+                if p.name.casefold() == name.casefold()
+            ),
+            None,
+        )
+        values = (
+            *map(
+                self._seal,
+                (
+                    name,
+                    relation,
+                    b.date_text,
+                    b.time_text,
+                    b.place_text,
+                    b.place_choice,
+                    b.fold,
+                ),
+            ),
+            self._seal(b.approx_for),
+            b.profile,
+        )
         with self._conn() as c:
             if same is not None:
-                c.execute("UPDATE people SET name=?, relation=?, date_text=?, time_text=?, place_text=?, place_choice=?, "
-                          "fold=?, approx_for=?, profile=? WHERE id = ? AND chat_id = ?", (*values, same.id, chat_id))
+                c.execute(
+                    "UPDATE people SET name=?, relation=?, date_text=?, time_text=?, place_text=?, place_choice=?, "
+                    "fold=?, approx_for=?, profile=? WHERE id = ? AND chat_id = ?",
+                    (*values, same.id, chat_id),
+                )
                 return same.id
             if len(self.list_people(chat_id)) >= MAX_PEOPLE:
-                raise TooManyPeople(f"I can keep up to {MAX_PEOPLE} people; please delete one first")
+                raise TooManyPeople(
+                    f"I can keep up to {MAX_PEOPLE} people; please delete one first"
+                )
             return c.execute(
                 "INSERT INTO people (chat_id, name, relation, date_text, time_text, place_text, place_choice, fold, "
                 "approx_for, profile, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -284,14 +415,23 @@ class Store:
 
     def delete_person(self, chat_id: int, person_id: int) -> bool:
         with self._conn() as c:
-            return c.execute("DELETE FROM people WHERE id = ? AND chat_id = ?", (person_id, chat_id)).rowcount > 0
+            return (
+                c.execute(
+                    "DELETE FROM people WHERE id = ? AND chat_id = ?",
+                    (person_id, chat_id),
+                ).rowcount
+                > 0
+            )
 
     def backup(self, out: str | os.PathLike) -> Path:
         """A consistent copy of the database. It holds only encrypted personal data, but the key is
-        not in it: keep the key safe separately, because without it the copy cannot be read."""
+        not in it: keep the key safe separately, because without it the copy cannot be read.
+        """
         dest = Path(out)
         if dest.exists():
-            raise FileExistsError(f"{dest} already exists; refusing to overwrite a backup")
+            raise FileExistsError(
+                f"{dest} already exists; refusing to overwrite a backup"
+            )
         fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         os.close(fd)
         src, dst = self._conn(), sqlite3.connect(dest)

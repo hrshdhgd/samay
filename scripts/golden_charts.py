@@ -5,6 +5,7 @@ pyswisseph is AGPL and is never a samay dependency; only its output values are c
 Settings match the parashari-lahiri profile: Lahiri ayanamsa (mean), mean node, Moshier
 ephemeris (built in, no data files).
 """
+
 from __future__ import annotations
 
 import json
@@ -23,29 +24,42 @@ CHARTS = [
     ("pune-1952-pre-ist", datetime(1952, 8, 5, 0, 30), 18.5196, 73.8553),
 ]
 BODIES = {
-    "sun": swe.SUN, "moon": swe.MOON, "mercury": swe.MERCURY, "venus": swe.VENUS,
-    "mars": swe.MARS, "jupiter": swe.JUPITER, "saturn": swe.SATURN, "rahu": swe.MEAN_NODE,
+    "sun": swe.SUN,
+    "moon": swe.MOON,
+    "mercury": swe.MERCURY,
+    "venus": swe.VENUS,
+    "mars": swe.MARS,
+    "jupiter": swe.JUPITER,
+    "saturn": swe.SATURN,
+    "rahu": swe.MEAN_NODE,
 }
 
 
 def main() -> None:
     swe.set_sid_mode(swe.SIDM_LAHIRI)
     flags = swe.FLG_MOSEPH | swe.FLG_SIDEREAL
-    out = {"generator": f"pyswisseph {swe.version}, Moshier, SIDM_LAHIRI, mean node", "charts": []}
+    out = {
+        "generator": f"pyswisseph {swe.version}, Moshier, SIDM_LAHIRI, mean node",
+        "charts": [],
+    }
     for name, utc, lat, lon in CHARTS:
         jd = swe.julday(utc.year, utc.month, utc.day, utc.hour + utc.minute / 60)
         planets = {k: swe.calc_ut(jd, body, flags)[0][0] for k, body in BODIES.items()}
         planets["ketu"] = (planets["rahu"] + 180.0) % 360.0
         _, ascmc = swe.houses_ex(jd, lat, lon, b"W", swe.FLG_SIDEREAL)
-        out["charts"].append({
-            "name": name,
-            "utc": utc.replace(tzinfo=UTC).isoformat(),
-            "latitude": lat,
-            "longitude": lon,
-            "ayanamsa_mean": swe.get_ayanamsa_ex_ut(jd, swe.FLG_MOSEPH | swe.FLG_NONUT)[1],
-            "ascendant": ascmc[0],
-            "planets": planets,
-        })
+        out["charts"].append(
+            {
+                "name": name,
+                "utc": utc.replace(tzinfo=UTC).isoformat(),
+                "latitude": lat,
+                "longitude": lon,
+                "ayanamsa_mean": swe.get_ayanamsa_ex_ut(
+                    jd, swe.FLG_MOSEPH | swe.FLG_NONUT
+                )[1],
+                "ascendant": ascmc[0],
+                "planets": planets,
+            }
+        )
     OUT.write_text(json.dumps(out, indent=2) + "\n")
     print(f"wrote {OUT}")
 

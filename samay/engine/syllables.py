@@ -4,6 +4,7 @@ The table is data/nakshatra_syllables.yaml (two modern sources, in agreement on 
 readings that other panchanga traditions use, listed as `also`). The Moon's nakshatra and pada come from
 vedic.nakshatra.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,7 +28,9 @@ class Syllable:
     also: tuple[str, ...] = ()
 
     def __str__(self) -> str:
-        more = f" (other traditions also use {', '.join(self.also)})" if self.also else ""
+        more = (
+            f" (other traditions also use {', '.join(self.also)})" if self.also else ""
+        )
         return f"{self.syllable}{more}"
 
 
@@ -38,10 +41,19 @@ def load_table(path: Path = TABLE) -> dict[tuple[str, int], Syllable]:
     for row in raw:
         for pada, p in enumerate(row["padas"], start=1):
             for field in (p["syllable"], p["devanagari"], *p.get("also", ())):
-                if not isinstance(field, str):  # e.g. a bare `No` is read by YAML as False
-                    raise TypeError(f"{path.name}: {row['nakshatra']} pada {pada}: {field!r} must be quoted text")
+                if not isinstance(
+                    field, str
+                ):  # e.g. a bare `No` is read by YAML as False
+                    raise TypeError(
+                        f"{path.name}: {row['nakshatra']} pada {pada}: {field!r} must be quoted text"
+                    )
             table[(row["nakshatra"], pada)] = Syllable(
-                row["nakshatra"], pada, p["syllable"], p["devanagari"], tuple(p.get("also", ())))
+                row["nakshatra"],
+                pada,
+                p["syllable"],
+                p["devanagari"],
+                tuple(p.get("also", ())),
+            )
     if len(table) != 108 or {n for n, _ in table} != set(NAKSHATRAS):
         raise ValueError(f"{path.name}: expected 27 nakshatras with 4 padas each")
     return table

@@ -1,4 +1,5 @@
 """Brihat Jataka chapter XXVII: the figure of each of the 36 drekkanas. Texts in data/rules/brihat-jataka-drekkanas.yaml (quoted); nothing is returned until checked."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -44,11 +45,30 @@ def load_rules(path: Path = RULES_PATH) -> DrekkanaRules:
     v = raw["verification"]
     if v.get("level") in SERVABLE_LEVELS and not v.get("checked_by"):
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
-    if list(raw["figures"]) != SIGNS or any(len(r) != 3 for r in raw["figures"].values()):
-        raise ValueError(f"{path.name}: needs three figures for each of the twelve signs, Aries first")
-    if any(not (isinstance(f.get("text"), str) and f["text"].strip() and isinstance(f.get("verse"), str)) for r in raw["figures"].values() for f in r):
+    if list(raw["figures"]) != SIGNS or any(
+        len(r) != 3 for r in raw["figures"].values()
+    ):
+        raise ValueError(
+            f"{path.name}: needs three figures for each of the twelve signs, Aries first"
+        )
+    if any(
+        not (
+            isinstance(f.get("text"), str)
+            and f["text"].strip()
+            and isinstance(f.get("verse"), str)
+        )
+        for r in raw["figures"].values()
+        for f in r
+    ):
         raise ValueError(f"{path.name}: every figure needs a verse and a text")
-    return DrekkanaRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), raw["frame"], raw["figures"])
+    return DrekkanaRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["frame"],
+        raw["figures"],
+    )
 
 
 def find(rules: DrekkanaRules, longitude: float) -> Figure | None:
@@ -57,4 +77,11 @@ def find(rules: DrekkanaRules, longitude: float) -> Figure | None:
         return None
     s, n = sign_index(longitude), int(degree_in_sign(longitude) // 10.0)
     row = rules.figures[SIGNS[s]][n]
-    return Figure(s, n + 1, SIGN_LORDS[(s + 4 * n) % 12], row["verse"], row["text"], row.get("shape"))
+    return Figure(
+        s,
+        n + 1,
+        SIGN_LORDS[(s + 4 * n) % 12],
+        row["verse"],
+        row["text"],
+        row.get("shape"),
+    )

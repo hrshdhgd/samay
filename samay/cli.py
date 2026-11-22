@@ -1,4 +1,5 @@
 """Stateless command line: birth data in, chart text out. Never touches the user store."""
+
 from __future__ import annotations
 
 import sys
@@ -20,13 +21,42 @@ EXIT_ERROR, EXIT_AMBIGUOUS = 1, 2
 
 def birth_options(fn: Callable) -> Callable:
     options = [
-        click.option("--date", "date_text", required=True, help="Birth date, YYYY-MM-DD."),
-        click.option("--time", "time_text", required=True, help="Local clock time at the birthplace, HH:MM."),
-        click.option("--place", "place_text", required=True, help='Birthplace, e.g. "Pune" or "Pune, IN".'),
-        click.option("--choice", "place_choice", help="Place id from a previous ambiguity listing."),
-        click.option("--fold", type=click.IntRange(0, 1), help="0 = first, 1 = second occurrence of a repeated time."),
-        click.option("--profile", default=DEFAULT_PROFILE, show_default=True, help="Tradition profile."),
-        click.option("--approx-for", "approx_for", help="Real birthplace name, when --place is a nearby town."),
+        click.option(
+            "--date", "date_text", required=True, help="Birth date, YYYY-MM-DD."
+        ),
+        click.option(
+            "--time",
+            "time_text",
+            required=True,
+            help="Local clock time at the birthplace, HH:MM.",
+        ),
+        click.option(
+            "--place",
+            "place_text",
+            required=True,
+            help='Birthplace, e.g. "Pune" or "Pune, IN".',
+        ),
+        click.option(
+            "--choice",
+            "place_choice",
+            help="Place id from a previous ambiguity listing.",
+        ),
+        click.option(
+            "--fold",
+            type=click.IntRange(0, 1),
+            help="0 = first, 1 = second occurrence of a repeated time.",
+        ),
+        click.option(
+            "--profile",
+            default=DEFAULT_PROFILE,
+            show_default=True,
+            help="Tradition profile.",
+        ),
+        click.option(
+            "--approx-for",
+            "approx_for",
+            help="Real birthplace name, when --place is a nearby town.",
+        ),
     ]
     for option in reversed(options):
         fn = option(fn)
@@ -64,20 +94,41 @@ def cli() -> None:
 
 @cli.command()
 @birth_options
-@click.option("--image", type=click.Path(dir_okay=False, writable=True), help="Also save the chart picture (PNG).")
-@click.option("--style", type=click.Choice(STYLES), default="south", show_default=True, help="Picture style.")
-@click.option("--degrees", is_flag=True, help="Show each planet's degree in the picture.")
+@click.option(
+    "--image",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Also save the chart picture (PNG).",
+)
+@click.option(
+    "--style",
+    type=click.Choice(STYLES),
+    default="south",
+    show_default=True,
+    help="Picture style.",
+)
+@click.option(
+    "--degrees", is_flag=True, help="Show each planet's degree in the picture."
+)
 def chart(image: str | None, style: str, degrees: bool, **kw) -> None:
     """Birth chart, yogas and provenance."""
     birth = _resolve(**kw)
     if image:
-        _run(lambda: Path(image).write_bytes(render_chart_png(service.natal_report(birth), style, degrees)) and f"saved {image}")
+        _run(
+            lambda: Path(image).write_bytes(
+                render_chart_png(service.natal_report(birth), style, degrees)
+            )
+            and f"saved {image}"
+        )
     _run(lambda: render_chart(service.natal_report(birth)))
 
 
 @cli.command()
 @birth_options
-@click.option("--now", type=click.DateTime(), help="Moment to mark as now (UTC). Default: current time.")
+@click.option(
+    "--now",
+    type=click.DateTime(),
+    help="Moment to mark as now (UTC). Default: current time.",
+)
 def dasha(now: datetime | None, **kw) -> None:
     """Vimshottari mahadashas."""
     birth = _resolve(**kw)
@@ -87,7 +138,11 @@ def dasha(now: datetime | None, **kw) -> None:
 
 @cli.command()
 @birth_options
-@click.option("--now", type=click.DateTime(), help="Moment for transits (UTC). Default: current time.")
+@click.option(
+    "--now",
+    type=click.DateTime(),
+    help="Moment for transits (UTC). Default: current time.",
+)
 def today(now: datetime | None, **kw) -> None:
     """Transits relative to the natal Moon."""
     birth = _resolve(**kw)
@@ -99,9 +154,12 @@ def today(now: datetime | None, **kw) -> None:
 @click.option("--profile", default=DEFAULT_PROFILE, show_default=True)
 def data_info(profile: str) -> None:
     """Versions of every data source a reading depends on."""
+
     def show() -> str:
         stamp = service.data_info(profile)
-        return "\n".join([f"ref: {stamp.code()}", *(f"{k}: {v}" for k, v in vars(stamp).items())])
+        return "\n".join(
+            [f"ref: {stamp.code()}", *(f"{k}: {v}" for k, v in vars(stamp).items())]
+        )
 
     _run(show)
 
@@ -117,7 +175,11 @@ def research_queue(limit: int) -> None:
     if not rows:
         click.echo("No unanswered topics recorded yet.")
     for topic, count in rows:
-        state = "has a checked entry (now answerable)" if answers_for(topic, frozenset({"vimshottari"})) else "needs research"
+        state = (
+            "has a checked entry (now answerable)"
+            if answers_for(topic, frozenset({"vimshottari"}))
+            else "needs research"
+        )
         click.echo(f"{count:5}  {topic}  {state}")
 
 
@@ -130,7 +192,12 @@ def keygen() -> None:
 
 
 @cli.command()
-@click.option("--out", required=True, type=click.Path(dir_okay=False), help="Where to write the backup.")
+@click.option(
+    "--out",
+    required=True,
+    type=click.Path(dir_okay=False),
+    help="Where to write the backup.",
+)
 def backup(out: str) -> None:
     """Copy the database (personal data stays encrypted). The key is not included: keep it safe too."""
     from .store import Store

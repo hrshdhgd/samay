@@ -1,4 +1,5 @@
 """Typed errors. Front ends map each one to a single user-facing message."""
+
 from __future__ import annotations
 
 

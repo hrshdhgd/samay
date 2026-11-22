@@ -4,6 +4,7 @@ The rules are data (data/rules/phaladeepika-ch17-exit.yaml): each names a moving
 (sums and differences of longitudes, Gulika, Yamakantaka, the 22nd decanate lord). This module resolves those points for a chart and marks the days on which
 the mover is in a matching sign. It names no date. Hidden until a person has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,9 +23,27 @@ from .vedic import SIGN_LORDS, degree_in_sign, navamsa_sign, sign_index
 RULES_PATH = DATA_DIR / "rules" / "phaladeepika-ch17-exit.yaml"
 MOVERS = ("saturn", "jupiter", "sun", "moon")
 VIAS = ("sign", "sign_navamsa", "navamsa")
-UPAGRAHAS = ("gulika", "yamakantaka", "dhuma", "vyatipata", "paridhi", "indra_dhanus", "upaketu")
+UPAGRAHAS = (
+    "gulika",
+    "yamakantaka",
+    "dhuma",
+    "vyatipata",
+    "paridhi",
+    "indra_dhanus",
+    "upaketu",
+)
 PLAIN = ("lagna", "lord22", "lord22_moon", "lord_dec_lagna", *UPAGRAHAS)
-BODIES = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn", "rahu", "ketu")
+BODIES = (
+    "sun",
+    "moon",
+    "mars",
+    "mercury",
+    "jupiter",
+    "venus",
+    "saturn",
+    "rahu",
+    "ketu",
+)
 
 
 @dataclass(frozen=True)
@@ -48,7 +67,11 @@ class Unavailable(Exception):
 def _check_expr(expr: str, where: str) -> None:
     head, _, rest = expr.partition(":")
     if head in ("lord", "natal"):
-        ok = (rest.isdigit() and 1 <= int(rest) <= 12) if head == "lord" else rest in BODIES
+        ok = (
+            (rest.isdigit() and 1 <= int(rest) <= 12)
+            if head == "lord"
+            else rest in BODIES
+        )
         if not ok:
             raise ValueError(f"{where}: bad point {expr!r}")
     elif head in ("diff", "sum", "x9"):
@@ -72,17 +95,37 @@ def load_rules(path: Path = RULES_PATH) -> ExitRules:
     seen = set()
     for r in raw["rules"]:
         where = f"{path.name} {r.get('id')}"
-        if r["id"] in seen or r.get("mover") not in MOVERS or not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "text", "definition")):
-            raise ValueError(f"{where}: needs a unique id, a mover from {MOVERS}, verse, text and definition")
+        if (
+            r["id"] in seen
+            or r.get("mover") not in MOVERS
+            or not all(
+                isinstance(r.get(f), str) and r[f].strip()
+                for f in ("verse", "text", "definition")
+            )
+        ):
+            raise ValueError(
+                f"{where}: needs a unique id, a mover from {MOVERS}, verse, text and definition"
+            )
         seen.add(r["id"])
         if r.get("when") not in (None, "day", "night"):
             raise ValueError(f"{where}: when must be day or night")
         for t in r["targets"]:
-            if t["via"] not in VIAS or not t["offsets"] or not all(0 <= o < 12 for o in t["offsets"]):
+            if (
+                t["via"] not in VIAS
+                or not t["offsets"]
+                or not all(0 <= o < 12 for o in t["offsets"])
+            ):
                 raise ValueError(f"{where}: bad target {t}")
             for p in t["points"]:
                 _check_expr(p, where)
-    return ExitRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), raw["notes"], tuple(raw["rules"]))
+    return ExitRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["notes"],
+        tuple(raw["rules"]),
+    )
 
 
 class Points:
@@ -103,8 +146,10 @@ class Points:
         return SIGN_LORDS[(s + (0, 4, 8)[k]) % 12]
 
     def _lord22(self, lon: float) -> str:
-        n = sign_index(lon) * 3 + int(degree_in_sign(lon) // 10)      # 0-based decanate number, Aries first
-        t = (n + 21) % 36                                             # the 22nd counting the starting decanate as the 1st
+        n = sign_index(lon) * 3 + int(
+            degree_in_sign(lon) // 10
+        )  # 0-based decanate number, Aries first
+        t = (n + 21) % 36  # the 22nd counting the starting decanate as the 1st
         return SIGN_LORDS[(t // 3 + (0, 4, 8)[t % 3]) % 12]
 
     def lon(self, expr: str) -> float:
@@ -144,13 +189,23 @@ def _signs(points: Points, target: dict) -> set[int]:
     out: set[int] = set()
     for expr in target["points"]:
         lon = points.lon(expr)
-        bases = {"sign": [sign_index(lon)], "navamsa": [navamsa_sign(lon)], "sign_navamsa": [sign_index(lon), navamsa_sign(lon)]}[target["via"]]
+        bases = {
+            "sign": [sign_index(lon)],
+            "navamsa": [navamsa_sign(lon)],
+            "sign_navamsa": [sign_index(lon), navamsa_sign(lon)],
+        }[target["via"]]
         out |= {(b + o) % 12 for b in bases for o in target["offsets"]}
     return out
 
 
-def find(rules: ExitRules, chart: Chart, times: list[datetime], track: dict[str, list[float]], upagraha_longitudes: dict[str, float],
-         night: bool | None) -> tuple[RuleWindows, ...]:
+def find(
+    rules: ExitRules,
+    chart: Chart,
+    times: list[datetime],
+    track: dict[str, list[float]],
+    upagraha_longitudes: dict[str, float],
+    night: bool | None,
+) -> tuple[RuleWindows, ...]:
     """The days on which each chapter 17 transit condition holds. Empty until the rules are checked."""
     if not rules.servable:
         return ()
@@ -163,8 +218,28 @@ def find(rules: ExitRules, chart: Chart, times: list[datetime], track: dict[str,
         try:
             sets = [_signs(points, t) for t in r["targets"]]
         except Unavailable as e:
-            out.append(_result(r, "birth", 0, [False] * len(times), times, f"does not apply: {e.args[0]} cannot be worked out for this birth (the Sun does not both rise and set that day)"))
+            out.append(
+                _result(
+                    r,
+                    "birth",
+                    0,
+                    [False] * len(times),
+                    times,
+                    f"does not apply: {e.args[0]} cannot be worked out for this birth (the Sun does not both rise and set that day)",
+                )
+            )
             continue
         allowed = set().union(*sets)
-        out.append(_result(r, "birth", 0, [s in allowed for s in movers["moon" if r["mover"] == "moon" else r["mover"]]], times))
+        out.append(
+            _result(
+                r,
+                "birth",
+                0,
+                [
+                    s in allowed
+                    for s in movers["moon" if r["mover"] == "moon" else r["mover"]]
+                ],
+                times,
+            )
+        )
     return tuple(out)

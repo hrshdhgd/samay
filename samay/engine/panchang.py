@@ -4,6 +4,7 @@ A tithi is each 12 degrees the Moon gains on the Sun, a karana half of that, a n
 longitude, a yoga each 13 deg 20' of the Sun's plus the Moon's. These are geocentric, so they do not depend on the
 place; the day a tithi counts for does (see observances.py). Searches go 2 hours at a time, then bisect to a second.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,13 +22,53 @@ RESOLUTION = timedelta(seconds=1)
 # How far the true boundary may be from the interpolated guess and still be found in the batched call.
 GUESS_SLACK = timedelta(seconds=20)
 
-TITHI_NAMES = ("Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami",
-               "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi")
+TITHI_NAMES = (
+    "Pratipada",
+    "Dwitiya",
+    "Tritiya",
+    "Chaturthi",
+    "Panchami",
+    "Shashthi",
+    "Saptami",
+    "Ashtami",
+    "Navami",
+    "Dashami",
+    "Ekadashi",
+    "Dwadashi",
+    "Trayodashi",
+    "Chaturdashi",
+)
 KARANA_MOVABLE = ("Bava", "Balava", "Kaulava", "Taitila", "Gara", "Vanija", "Vishti")
 KARANA_FIXED = ("Kimstughna", "Shakuni", "Chatushpada", "Naga")
-YOGA_NAMES = ("Vishkambha", "Priti", "Ayushman", "Saubhagya", "Shobhana", "Atiganda", "Sukarma", "Dhriti", "Shula",
-              "Ganda", "Vriddhi", "Dhruva", "Vyaghata", "Harshana", "Vajra", "Siddhi", "Vyatipata", "Variyana",
-              "Parigha", "Shiva", "Siddha", "Sadhya", "Shubha", "Shukla", "Brahma", "Indra", "Vaidhriti")
+YOGA_NAMES = (
+    "Vishkambha",
+    "Priti",
+    "Ayushman",
+    "Saubhagya",
+    "Shobhana",
+    "Atiganda",
+    "Sukarma",
+    "Dhriti",
+    "Shula",
+    "Ganda",
+    "Vriddhi",
+    "Dhruva",
+    "Vyaghata",
+    "Harshana",
+    "Vajra",
+    "Siddhi",
+    "Vyatipata",
+    "Variyana",
+    "Parigha",
+    "Shiva",
+    "Siddha",
+    "Sadhya",
+    "Shubha",
+    "Shukla",
+    "Brahma",
+    "Indra",
+    "Vaidhriti",
+)
 
 
 def tithi_name(number: int) -> str:
@@ -96,8 +137,15 @@ def _bracket(kind: str, grid: list[datetime], values: list[float], base: int) ->
     raise RuntimeError(f"no {kind} boundary within {SEARCH_LIMIT} of {grid[0]}")
 
 
-def _guess(kind: str, inside: datetime, outside: datetime, a_in: float, a_out: float, base: int,
-           forward: bool) -> datetime:
+def _guess(
+    kind: str,
+    inside: datetime,
+    outside: datetime,
+    a_in: float,
+    a_out: float,
+    base: int,
+    forward: bool,
+) -> datetime:
     """Where the boundary between two grid instants should be, by linear interpolation of the angle."""
     width = QUANTITIES[kind][1]
     if forward:
@@ -108,7 +156,13 @@ def _guess(kind: str, inside: datetime, outside: datetime, a_in: float, a_out: f
     return inside + (outside - inside) * fraction
 
 
-def _plan(inside: datetime, outside: datetime, guess: datetime, forward: bool, into: list[datetime]) -> None:
+def _plan(
+    inside: datetime,
+    outside: datetime,
+    guess: datetime,
+    forward: bool,
+    into: list[datetime],
+) -> None:
     """Every midpoint the bisection below can visit if the boundary is within GUESS_SLACK of `guess`."""
     while abs(outside - inside) > RESOLUTION:
         mid = inside + (outside - inside) / 2
@@ -122,8 +176,15 @@ def _plan(inside: datetime, outside: datetime, guess: datetime, forward: bool, i
             outside = mid
 
 
-def _bisect(kind: str, inside: datetime, outside: datetime, base: int, forward: bool, known: dict[datetime, int],
-            ayanamsa: str) -> datetime:
+def _bisect(
+    kind: str,
+    inside: datetime,
+    outside: datetime,
+    base: int,
+    forward: bool,
+    known: dict[datetime, int],
+    ayanamsa: str,
+) -> datetime:
     """Bisect to a second. Cells already computed in `known` are reused; any other midpoint is computed here,
     so the answer is the plain bisection's whatever the guess was."""
     while abs(outside - inside) > RESOLUTION:
@@ -157,25 +218,40 @@ def element_at(kind: str, utc: datetime, ayanamsa: str = "lahiri_mean") -> Eleme
     """The element holding `utc`, with its start and end to a second.
 
     Two ephemeris calls cover the usual case: one for the 2-hour grids either side, one for every midpoint the
-    bisections can visit near the interpolated boundaries. Any midpoint the guess missed is computed on its own."""
+    bisections can visit near the interpolated boundaries. Any midpoint the guess missed is computed on its own.
+    """
     angle, width = QUANTITIES[kind]
     steps = range(1, int(SEARCH_LIMIT / COARSE_STEP) + 1)
     back = [utc] + [utc - COARSE_STEP * i for i in steps]
     ahead = [utc] + [utc + COARSE_STEP * i for i in steps]
-    values = [angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)]
-    back_values, ahead_values = values[:len(back)], values[:1] + values[len(back):]
+    values = [
+        angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)
+    ]
+    back_values, ahead_values = values[: len(back)], values[:1] + values[len(back) :]
     cell = _cell(values[0], width)
     edges = []
-    for forward, grid, vals in ((False, back, back_values), (True, ahead, ahead_values)):
+    for forward, grid, vals in (
+        (False, back, back_values),
+        (True, ahead, ahead_values),
+    ):
         i = _bracket(kind, grid, vals, cell)
         inside, outside = grid[i - 1], grid[i]
-        edges.append((forward, inside, outside, _guess(kind, inside, outside, vals[i - 1], vals[i], cell, forward)))
+        edges.append(
+            (
+                forward,
+                inside,
+                outside,
+                _guess(kind, inside, outside, vals[i - 1], vals[i], cell, forward),
+            )
+        )
     candidates: list[datetime] = []
     for forward, inside, outside, guess in edges:
         _plan(inside, outside, guess, forward, candidates)
     known = dict(zip(candidates, _cells(kind, candidates, ayanamsa), strict=True))
-    start, end = (_bisect(kind, inside, outside, cell, forward, known, ayanamsa)
-                  for forward, inside, outside, _ in edges)
+    start, end = (
+        _bisect(kind, inside, outside, cell, forward, known, ayanamsa)
+        for forward, inside, outside, _ in edges
+    )
     return Element(kind, cell + 1, _name(kind, cell), start, end)
 
 
@@ -190,10 +266,20 @@ class DayFacts:
     yoga: Element
 
 
-def day_facts(site: Site, day: date, ayanamsa: str = "lahiri_mean", definition: str = "upper_limb") -> DayFacts | None:
+def day_facts(
+    site: Site, day: date, ayanamsa: str = "lahiri_mean", definition: str = "upper_limb"
+) -> DayFacts | None:
     """What prevails at the place's own sunrise on a local calendar day; None when the Sun does not rise and set."""
     sun = daylight.sun_times(site.latitude, site.longitude, site.tz, day, definition)
     if sun is None:
         return None
     at = sun.sunrise.astimezone(UTC)
-    return DayFacts(day, sun.sunrise, sun.sunset, *(element_at(k, at, ayanamsa) for k in ("tithi", "nakshatra", "karana", "yoga")))
+    return DayFacts(
+        day,
+        sun.sunrise,
+        sun.sunset,
+        *(
+            element_at(k, at, ayanamsa)
+            for k in ("tithi", "nakshatra", "karana", "yoga")
+        ),
+    )

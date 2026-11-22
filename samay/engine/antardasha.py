@@ -3,6 +3,7 @@
 Everything the text says comes from data/rules/phaladeepika-ch21-antardasha.yaml. This module only loads and validates
 it and looks up a pair; nothing is returned until the rules file has been checked by a person.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -25,7 +26,9 @@ class AntardashaRules:
     checked_by: str | None
     edition: str
     pages: str
-    effects: dict[tuple[str, str], tuple[str, int]]  # (mahadasha lord, antardasha lord) -> (text, verse)
+    effects: dict[
+        tuple[str, str], tuple[str, int]
+    ]  # (mahadasha lord, antardasha lord) -> (text, verse)
 
     @property
     def servable(self) -> bool:
@@ -56,7 +59,15 @@ def load_rules(path: Path = RULES_PATH) -> AntardashaRules:
             if not isinstance(verse, int):
                 raise TypeError(f"{where}: needs a verse number")
             if verse in seen_verses:
-                raise ValueError(f"{where}: verse {verse} is already used by {seen_verses[verse]}")
+                raise ValueError(
+                    f"{where}: verse {verse} is already used by {seen_verses[verse]}"
+                )
             seen_verses[verse] = f"{maha}.{antar}"
             effects[(maha, antar)] = (text.strip(), verse)
-    return AntardashaRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")), effects)
+    return AntardashaRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        effects,
+    )

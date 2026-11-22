@@ -4,6 +4,7 @@ Dev tool only: `uv run --with pyswisseph python scripts/golden_panchang.py`.
 pyswisseph is AGPL, so it is never a runtime dependency; only the JSON it writes is kept.
 Independent of samay's own search code on purpose.
 """
+
 import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -12,18 +13,38 @@ import swisseph as swe
 
 swe.set_sid_mode(swe.SIDM_LAHIRI, 0, 0)
 FLAGS = swe.FLG_SIDEREAL | swe.FLG_MOSEPH
-OUT = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_panchang.json"
+OUT = (
+    Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "golden_panchang.json"
+)
 
 CASES = [
-    "1985-03-07T01:00", "1999-12-31T06:00", "2000-01-01T00:00", "2010-06-21T05:30", "2015-09-28T02:15",
-    "2019-02-04T23:50", "2022-10-25T13:00", "2023-07-04T00:10", "2024-04-08T18:00", "2025-11-05T02:00",
-    "2026-03-14T01:00", "2026-04-14T00:43", "2026-11-20T01:13", "2026-11-21T01:14", "2027-01-15T06:30",
-    "2030-08-01T03:00", "2040-12-25T11:11",
+    "1985-03-07T01:00",
+    "1999-12-31T06:00",
+    "2000-01-01T00:00",
+    "2010-06-21T05:30",
+    "2015-09-28T02:15",
+    "2019-02-04T23:50",
+    "2022-10-25T13:00",
+    "2023-07-04T00:10",
+    "2024-04-08T18:00",
+    "2025-11-05T02:00",
+    "2026-03-14T01:00",
+    "2026-04-14T00:43",
+    "2026-11-20T01:13",
+    "2026-11-21T01:14",
+    "2027-01-15T06:30",
+    "2030-08-01T03:00",
+    "2040-12-25T11:11",
 ]
 
 
 def lon(body: int, t: datetime) -> float:
-    jd = swe.julday(t.year, t.month, t.day, t.hour + t.minute / 60 + t.second / 3600 + t.microsecond / 3.6e9)
+    jd = swe.julday(
+        t.year,
+        t.month,
+        t.day,
+        t.hour + t.minute / 60 + t.second / 3600 + t.microsecond / 3.6e9,
+    )
     return swe.calc_ut(jd, body, FLAGS)[0][0] % 360.0
 
 
@@ -68,7 +89,15 @@ def main() -> None:
                 "end": edge(kind, t, True).isoformat(),
             }
         cases.append(entry)
-    OUT.write_text(json.dumps({"source": "Swiss Ephemeris (Moshier), Lahiri sidereal, geocentric", "cases": cases}, indent=1))
+    OUT.write_text(
+        json.dumps(
+            {
+                "source": "Swiss Ephemeris (Moshier), Lahiri sidereal, geocentric",
+                "cases": cases,
+            },
+            indent=1,
+        )
+    )
     print(f"wrote {OUT} ({len(cases)} cases)")
 
 

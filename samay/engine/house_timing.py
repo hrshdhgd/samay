@@ -4,6 +4,7 @@ The statements come from data/rules/phaladeepika-timing.yaml. This module codes 
 time) in which each holds for a chart, and merges them into windows. The text gives conditions, never dates; nothing is returned until a person
 has checked the file.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -21,10 +22,22 @@ from .vedic import SIGN_LORDS, Period, antardashas, house_from, navamsa_sign, si
 
 RULES_PATH = DATA_DIR / "rules" / "phaladeepika-timing.yaml"
 SEVEN = ("sun", "moon", "mars", "mercury", "jupiter", "venus", "saturn")
-FULL_ASPECTS = {"mars": (4, 7, 8), "jupiter": (5, 7, 9), "saturn": (3, 7, 10)}  # Brihat Jataka II.13; every other body the 7th
+FULL_ASPECTS = {
+    "mars": (4, 7, 8),
+    "jupiter": (5, 7, 9),
+    "saturn": (3, 7, 10),
+}  # Brihat Jataka II.13; every other body the 7th
 GENERAL_IDS = ("t1", "t2", "t3", "t4", "jupiter", "conjunction")
 MARRIAGE_IDS = ("m1", "m2", "m3")
-STANDING_RANK = {"exaltation": 6, "moolatrikona": 5, "own": 4, "friendly": 3, "neutral": 2, "inimical": 1, "depression": 0}
+STANDING_RANK = {
+    "exaltation": 6,
+    "moolatrikona": 5,
+    "own": 4,
+    "friendly": 3,
+    "neutral": 2,
+    "inimical": 1,
+    "depression": 0,
+}
 
 
 @dataclass(frozen=True)
@@ -51,7 +64,9 @@ class RuleWindows:
     text: str
     ref: str  # "lagna" or "the Moon sign"
     house: int
-    windows: tuple[tuple[datetime, datetime], ...]  # first and last day (UTC) of each stretch
+    windows: tuple[
+        tuple[datetime, datetime], ...
+    ]  # first and last day (UTC) of each stretch
     days: int  # days on which the condition holds
     total: int  # days in the period
     note: str = ""  # a caveat computed for this chart
@@ -88,16 +103,36 @@ def load_rules(path: Path = RULES_PATH) -> TimingRules:
         raise ValueError(f"{path.name}: a checked rules file needs checked_by")
     general = {r["id"]: r for r in raw["general"]}
     marriage = {r["id"]: r for r in raw["marriage"]["rules"]}
-    if set(general) != set(GENERAL_IDS) or set(marriage) != set(MARRIAGE_IDS) or raw["marriage"]["house"] != 7:
-        raise ValueError(f"{path.name}: needs rules {GENERAL_IDS} and, for marriage (the 7th house), {MARRIAGE_IDS}")
+    if (
+        set(general) != set(GENERAL_IDS)
+        or set(marriage) != set(MARRIAGE_IDS)
+        or raw["marriage"]["house"] != 7
+    ):
+        raise ValueError(
+            f"{path.name}: needs rules {GENERAL_IDS} and, for marriage (the 7th house), {MARRIAGE_IDS}"
+        )
     for r in (*general.values(), *marriage.values()):
-        if not all(isinstance(r.get(f), str) and r[f].strip() for f in ("verse", "definition", "text")):
-            raise ValueError(f"{path.name} {r.get('id')}: needs verse, definition and text")
+        if not all(
+            isinstance(r.get(f), str) and r[f].strip()
+            for f in ("verse", "definition", "text")
+        ):
+            raise ValueError(
+                f"{path.name} {r.get('id')}: needs verse, definition and text"
+            )
     areas = {a: tuple(hs) for a, hs in raw["areas"].items()}
     if not all(1 <= h <= 12 for hs in areas.values() for h in hs):
         raise ValueError(f"{path.name}: houses must be 1-12")
-    return TimingRules(v.get("level", "unchecked"), v.get("checked_by"), raw["edition"], str(raw.get("pages", "")),
-                       raw["frame"], raw["moon_note"], general, marriage, areas)
+    return TimingRules(
+        v.get("level", "unchecked"),
+        v.get("checked_by"),
+        raw["edition"],
+        str(raw.get("pages", "")),
+        raw["frame"],
+        raw["moon_note"],
+        general,
+        marriage,
+        areas,
+    )
 
 
 def _trines(sign: int) -> set[int]:
@@ -108,7 +143,9 @@ def _aspects(by: str, by_sign: int, target_sign: int) -> bool:
     return house_from(by_sign, target_sign) in FULL_ASPECTS.get(by, (7,))
 
 
-def _windows(flags: list[bool], times: list[datetime]) -> tuple[tuple[datetime, datetime], ...]:
+def _windows(
+    flags: list[bool], times: list[datetime]
+) -> tuple[tuple[datetime, datetime], ...]:
     out, begin = [], None
     for i, on in enumerate(flags):
         if on and begin is None:
@@ -120,24 +157,55 @@ def _windows(flags: list[bool], times: list[datetime]) -> tuple[tuple[datetime, 
     return tuple(out)
 
 
-def _result(rule: dict, ref: str, house: int, flags: list[bool], times: list[datetime], note: str = "") -> RuleWindows:
-    return RuleWindows(rule["id"], rule["verse"], rule["text"], ref, house, _windows(flags, times), sum(flags), len(flags), note)
+def _result(
+    rule: dict,
+    ref: str,
+    house: int,
+    flags: list[bool],
+    times: list[datetime],
+    note: str = "",
+) -> RuleWindows:
+    return RuleWindows(
+        rule["id"],
+        rule["verse"],
+        rule["text"],
+        ref,
+        house,
+        _windows(flags, times),
+        sum(flags),
+        len(flags),
+        note,
+    )
 
 
-def _dasha_flags(dashas: tuple[Period, ...], times: list[datetime], lords: set[str]) -> tuple[list[bool], list[DashaWindow]]:
+def _dasha_flags(
+    dashas: tuple[Period, ...], times: list[datetime], lords: set[str]
+) -> tuple[list[bool], list[DashaWindow]]:
     """A flag per day for 'a mahadasha or antardasha of one of these planets runs', and those periods clipped to the timeline."""
     spans = []
     for maha in dashas:
         if maha.lord in lords:
-            spans.append(DashaWindow("mahadasha", maha.lord, maha.lord, maha.start, maha.end))
-        spans += [DashaWindow("antardasha", a.lord, maha.lord, a.start, a.end) for a in antardashas(maha) if a.lord in lords]
+            spans.append(
+                DashaWindow("mahadasha", maha.lord, maha.lord, maha.start, maha.end)
+            )
+        spans += [
+            DashaWindow("antardasha", a.lord, maha.lord, a.start, a.end)
+            for a in antardashas(maha)
+            if a.lord in lords
+        ]
     flags = [any(s.start <= t < s.end for s in spans) for t in times]
     shown = [s for s in spans if s.end > times[0] and s.start <= times[-1]]
     return flags, sorted(shown, key=lambda s: (s.start, s.kind))
 
 
-def find(rules: TimingRules, chart: Chart, dashas: tuple[Period, ...], times: list[datetime], track: dict[str, list[float]],
-         area: str) -> Timing | None:
+def find(
+    rules: TimingRules,
+    chart: Chart,
+    dashas: tuple[Period, ...],
+    times: list[datetime],
+    track: dict[str, list[float]],
+    area: str,
+) -> Timing | None:
     """The stretches of `times` (one per day) in which each timing rule holds for this chart and area. None until the rules are checked."""
     if not rules.servable or area not in rules.areas:
         return None
@@ -157,14 +225,26 @@ def find(rules: TimingRules, chart: Chart, dashas: tuple[Period, ...], times: li
             lh_targets = _trines(natal[lh]) | _trines(nav[lh])
             ll_targets = _trines(natal[ll]) | _trines(nav[ll])
             same = ll == lh
-            strong = house_effects.strength(ch20, lh, natal[lh]) in ("own", "moolatrikona", "exaltation")
+            strong = house_effects.strength(ch20, lh, natal[lh]) in (
+                "own",
+                "moolatrikona",
+                "exaltation",
+            )
             conj = [signs[ll][i] == signs[lh][i] for i in range(n)]
             flags = {
                 "t1": [signs[ll][i] in lh_targets for i in range(n)],
                 "t2": [signs[ll][i] == hs for i in range(n)],
                 "t3": [signs[lh][i] in ll_targets for i in range(n)],
-                "t4": [False] * n if same else [conj[i] or _aspects(ll, signs[ll][i], signs[lh][i]) or _aspects(lh, signs[lh][i], signs[ll][i])
-                                                for i in range(n)],
+                "t4": (
+                    [False] * n
+                    if same
+                    else [
+                        conj[i]
+                        or _aspects(ll, signs[ll][i], signs[lh][i])
+                        or _aspects(lh, signs[lh][i], signs[ll][i])
+                        for i in range(n)
+                    ]
+                ),
                 "jupiter": [signs["jupiter"][i] in lh_targets for i in range(n)],
                 "conjunction": [False] * n if same or not strong else conj,
             }
@@ -174,7 +254,9 @@ def find(rules: TimingRules, chart: Chart, dashas: tuple[Period, ...], times: li
                     note = f"does not apply: the lord of the lagna and the lord of the house are the same planet ({ll.title()})"
                 elif rid == "conjunction" and not strong:
                     note = f"the text asks that the lord of the house be strong at birth; {lh.title()} is not in an own, moolatrikona or exaltation sign"
-                general.append(_result(rules.general[rid], ref_name, h, flags[rid], times, note))
+                general.append(
+                    _result(rules.general[rid], ref_name, h, flags[rid], times, note)
+                )
     marriage: list[RuleWindows] = []
     dasha_list: list[DashaWindow] = []
     m2: list[str] = []
@@ -184,17 +266,43 @@ def find(rules: TimingRules, chart: Chart, dashas: tuple[Period, ...], times: li
         l7, ll = SIGN_LORDS[seventh], SIGN_LORDS[lagna]
         ll_targets = _trines(natal[ll]) | _trines(nav[ll])
         l7_targets = _trines(natal[l7]) | _trines(nav[l7])
-        m1 = [signs["venus"][i] in ll_targets or signs[l7][i] in ll_targets for i in range(n)]
+        m1 = [
+            signs["venus"][i] in ll_targets or signs[l7][i] in ll_targets
+            for i in range(n)
+        ]
         marriage.append(_result(rules.marriage["m1"], "lagna", 7, m1, times))
-        m2 = sorted({p for p in natal if natal[p] == seventh}
-                    | {p for p in SEVEN if _aspects(p, natal[p], seventh)} | {l7})
+        m2 = sorted(
+            {p for p in natal if natal[p] == seventh}
+            | {p for p in SEVEN if _aspects(p, natal[p], seventh)}
+            | {l7}
+        )
         f2, dasha_list = _dasha_flags(dashas, times, set(m2))
         marriage.append(_result(rules.marriage["m2"], "lagna", 7, f2, times))
         cands = {SIGN_LORDS[natal[l7]], SIGN_LORDS[nav[l7]], "venus", "moon"}
-        rank = {p: STANDING_RANK[house_effects.strength(ch20, p, natal[p])] for p in cands}
+        rank = {
+            p: STANDING_RANK[house_effects.strength(ch20, p, natal[p])] for p in cands
+        }
         best = max(rank.values())
         m3 = sorted(p for p in cands if rank[p] == best)
         f3d, _ = _dasha_flags(dashas, times, set(m3))
         jup = [signs["jupiter"][i] in l7_targets for i in range(n)]
-        marriage.append(_result(rules.marriage["m3"], "lagna", 7, [a and b for a, b in zip(f3d, jup, strict=True)], times))
-    return Timing(area, houses, times[0], times[-1], tuple(general), tuple(marriage), tuple(dasha_list), tuple(m2), tuple(m3))
+        marriage.append(
+            _result(
+                rules.marriage["m3"],
+                "lagna",
+                7,
+                [a and b for a, b in zip(f3d, jup, strict=True)],
+                times,
+            )
+        )
+    return Timing(
+        area,
+        houses,
+        times[0],
+        times[-1],
+        tuple(general),
+        tuple(marriage),
+        tuple(dasha_list),
+        tuple(m2),
+        tuple(m3),
+    )
