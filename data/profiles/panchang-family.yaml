@@ -1,0 +1,49 @@
+# Panchang conventions for the family. Every disputed choice lives here, not in code.
+# `sampradaya` has NO default: until it is set (smarta | madhva | vaishnava) the bot gives tithis and nakshatras
+# but names no observance day. Set it after Task 0 identifies the family's printed panchang.
+id: panchang-family
+name: Family panchang conventions
+sampradaya: null
+ayanamsa: lahiri_mean
+sunrise_definition: upper_limb      # upper_limb | disc_centre (standard 34' refraction)
+# Calculation spread only (sunrise definition, ayanamsa, ephemeris). PROVISIONAL until Task 8 replaces it with the
+# measured value from scripts/measure_margin.py. Rule differences between traditions are never absorbed here.
+ambiguity_margin_minutes: 3
+observances:
+  ekadashi:
+    label: Ekadashi
+    # Every value below is UNVERIFIED. Smarta: the tithi current at local sunrise governs the day (Dharmasindhu, per the
+    # Kamakoti English summary, ch. 3). Madhva: as Smarta but a day is rejected when Dashami touches the 96 minutes
+    # (4 ghatikas) before sunrise (arunodaya). Task 13 reads the texts and sets verified: true or changes these.
+    verified: false
+    source: {text: "Dharmasindhu; Nirnaya Sindhu", locus: null}
+    rules:
+      smarta: {tithis: [11, 26], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
+      madhva:
+        tithis: [11, 26]
+        anchor: sunrise
+        start_minutes: 0
+        end_minutes: 0
+        on_kshaya: next_day
+        on_vriddhi: first
+        viddha: {tithis: [10, 25], anchor: sunrise, start_minutes: -96, end_minutes: 0}
+  pradosha:
+    label: Pradosha
+    # UNVERIFIED window: dusk on Trayodashi. 72 minutes (3 ghatikas) after sunset is one common reading; some texts
+    # give a longer span. Task 13 fixes it from the Skanda Purana passage (Brahma Khanda vv. 5-14) and a digest.
+    verified: false
+    source: {text: "Skanda Purana, Brahma Khanda", locus: "vv. 5-14"}
+    rules:
+      all: {tithis: [13, 28], anchor: sunset, start_minutes: 0, end_minutes: 72, on_kshaya: start_day, on_vriddhi: first}
+  purnima:
+    label: Purnima
+    verified: false
+    source: {text: "Dharmasindhu", locus: null}
+    rules:
+      all: {tithis: [15], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
+  amavasya:
+    label: Amavasya
+    verified: false
+    source: {text: "Dharmasindhu", locus: null}
+    rules:
+      all: {tithis: [30], anchor: sunrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
