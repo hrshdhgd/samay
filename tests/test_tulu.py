@@ -67,3 +67,22 @@ def test_every_family_anchor_matches_under_the_profile_cutoff():
     for a in data["anchors"]:
         t = tulu.tulu_date(a["date"], place["latitude"], place["longitude"], place["tz"], cutoff)
         assert (t.month, t.day) == (a["month"], a["day"]), a
+
+
+CHICAGO = (41.8781, -87.6298, "America/Chicago")
+
+
+def test_a_25_hour_fall_back_day_ends_at_the_next_local_midnight(monkeypatch):
+    from datetime import UTC, datetime
+
+    seen = []
+    real = tulu.last_ingress
+    monkeypatch.setattr(tulu, "last_ingress", lambda moment, *a: seen.append(moment) or real(moment, *a))
+    tulu.tulu_date(date(2026, 11, 1), *CHICAGO, "sunset")
+    assert seen[0] == datetime(2026, 11, 2, 5, 59, 59, tzinfo=UTC)  # 23:59:59 CST, not 22:59:59
+
+
+def test_the_day_count_advances_by_one_across_the_chicago_clock_change():
+    days = [tulu.tulu_date(d, *CHICAGO, "sunset") for d in (date(2026, 10, 31), date(2026, 11, 1), date(2026, 11, 2))]
+    assert len({t.month for t in days}) == 1
+    assert [t.day - days[0].day for t in days] == [0, 1, 2]

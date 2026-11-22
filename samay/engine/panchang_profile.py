@@ -76,6 +76,9 @@ def load_panchang_profile(profile_id: str = DEFAULT_PANCHANG_PROFILE, directory:
     observances = {}
     for name, spec in raw["observances"].items():
         rules = {who: _rule(f"{name}.{who}", r) for who, r in spec["rules"].items()}
+        sampradaya = raw.get("sampradaya")
+        if sampradaya is not None and "all" not in rules and sampradaya not in rules:
+            raise ValueError(f"profile field 'sampradaya': observance {name!r} has no rule for tradition {sampradaya!r}")
         observances[name] = ObservanceSpec(name, spec["label"], rules, bool(spec["verified"]), spec["source"])
     return PanchangProfile(raw["id"], raw.get("sampradaya"), raw["ayanamsa"], raw["sunrise_definition"], margin,
                            observances, hashlib.sha256(raw_bytes).hexdigest()[:12])

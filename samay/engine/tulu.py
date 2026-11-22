@@ -108,7 +108,8 @@ def tulu_date(
     if cutoff not in CUTOFFS:
         raise ValueError(f"unknown sankranti cutoff {cutoff!r}")
     zone = ZoneInfo(tz)
-    day_end = datetime(day.year, day.month, day.day, tzinfo=zone).astimezone(UTC) + timedelta(days=1)
+    following = day + timedelta(days=1)
+    day_end = datetime(following.year, following.month, following.day, tzinfo=zone).astimezone(UTC)
     sign, ingress = last_ingress(day_end - timedelta(seconds=1), ayanamsa)
     start = month_start(ingress, latitude, longitude, tz, cutoff)
     if start > day:  # the Sun entered the sign today but the cutoff makes the month start tomorrow

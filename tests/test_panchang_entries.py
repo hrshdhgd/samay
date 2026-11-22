@@ -7,7 +7,7 @@ def test_shipped_panchang_entries_load_and_are_hidden_until_checked():
     assert {e.topic for e in found} == {"nakshatra:bharani", "nakshatra:krittika"}
     assert all(e.citation["text"] == "Brihat Samhita" and e.citation["chapter"] == 98 for e in found)
     assert all(not e.servable for e in found)  # unchecked until Task 13
-    assert service.observance_explanation("bharani") == []
+    assert service.nakshatra_explanation("bharani") == []
 
 
 def test_wording_follows_the_text_and_gives_no_avoid_instruction():

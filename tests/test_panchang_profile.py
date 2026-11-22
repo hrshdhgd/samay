@@ -55,3 +55,13 @@ def test_measure_margin_script_exposes_its_three_components():
     spec.loader.exec_module(module)
     assert all(callable(getattr(module, n)) for n in
                ("sunrise_shift_minutes", "boundary_shift_minutes", "nutation_shift_minutes"))
+
+
+def test_a_tradition_some_observance_has_no_rule_for_fails_on_load(tmp_path):
+    with pytest.raises(ValueError, match="ekadashi.*vaishnava"):
+        load_panchang_profile(directory=write(tmp_path, sampradaya="vaishnava"))
+
+
+@pytest.mark.parametrize("tradition", ["smarta", "madhva"])
+def test_a_tradition_every_observance_covers_loads(tmp_path, tradition):
+    assert load_panchang_profile(directory=write(tmp_path, sampradaya=tradition)).sampradaya == tradition

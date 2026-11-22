@@ -167,3 +167,12 @@ def test_a_nakshatra_note_is_shown_alone_without_date_wording():
                  words.render_brief(datetime(2026, 11, 21, 7, 0), None, "Pune", r)):
         assert text.count("A description of the star's character.") == 1
         assert "Bharani:" not in text and words.NOTE_LOCAL not in text and "no clear day" not in text
+
+
+def test_a_nakshatra_note_does_not_hide_that_observance_days_are_withheld():
+    note = ObservanceDay("bharani", "Bharani", None, "single", (), "A description of the star's character.")
+    assert words.NO_CLAIM in words.render_day(report(observances=(note,)), date(2026, 11, 21))
+
+
+def test_a_dated_observance_does_not_add_the_withheld_line():
+    assert words.NO_CLAIM not in words.render_day(report(observances=(ekadashi(),)), date(2026, 11, 20))

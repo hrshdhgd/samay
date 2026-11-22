@@ -719,7 +719,11 @@ def compose_brief(saved: BirthInput | None, place, now: datetime) -> str:
     """The morning message for someone living at `place`. Synchronous; the bot runs it in a thread. `saved` is no
     longer read (the dasha line was dropped) but stays in the signature so callers do not change."""
     local_now = now.astimezone(ZoneInfo(place.tz))
-    report = service.panchang_report(place, local_now.date())
+    try:
+        report = service.panchang_report(place, local_now.date())
+    except Exception as e:  # noqa: BLE001 - the date and the avoid-window still go out
+        log.error("panchang report failed error=%s", type(e).__name__)
+        report = None
     return render_brief(local_now, service.rahu_kaala_for(place, now), place.label, report)
 
 

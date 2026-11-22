@@ -75,7 +75,7 @@ def render_day(report: PanchangReport, day: date) -> str:
         lines += _observance_lines(o, day)
     if report.needs_sampradaya:
         lines.append(NEED_TRADITION)
-    elif report.claims_withheld and not report.observances:
+    elif report.claims_withheld and all(o.primary is None for o in report.observances):
         lines.append(NO_CLAIM)
     return "\n".join(lines)
 

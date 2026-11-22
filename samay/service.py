@@ -371,9 +371,13 @@ def reference_place() -> Place | None:
 
 
 def observance_explanation(name: str, directory=None) -> list[str]:
-    """Checked entries for an observance or nakshatra, in our own words. Unchecked entries are never returned."""
-    topic = f"nakshatra:{name}" if name in ("bharani", "krittika") else f"observance:{name}"
-    return [e.english for e in entries.answers_for(topic, directory=directory)]
+    """Checked entries for an observance, in our own words. Unchecked entries are never returned."""
+    return [e.english for e in entries.answers_for(f"observance:{name}", directory=directory)]
+
+
+def nakshatra_explanation(name: str, directory=None) -> list[str]:
+    """Checked entries for a nakshatra, in our own words. Unchecked entries are never returned."""
+    return [e.english for e in entries.answers_for(f"nakshatra:{name}", directory=directory)]
 
 
 def _explanation(name: str) -> str | None:
@@ -415,8 +419,8 @@ def panchang_report(place: Place, day: date) -> PanchangReport | None:
             continue
         today += [_as_day(spec.name, spec.label, o) for o in found]
     nakshatra_key = facts.nakshatra.name.lower().replace(" ", "-")
-    if (note := _explanation(nakshatra_key)) is not None:  # only once a checked entry exists
-        today.append(ObservanceDay(nakshatra_key, facts.nakshatra.name, None, "single", (), note))
+    if notes := nakshatra_explanation(nakshatra_key):  # only once a checked entry exists
+        today.append(ObservanceDay(nakshatra_key, facts.nakshatra.name, None, "single", (), notes[0]))
     return PanchangReport(place.label, place.tz, facts, date_in_tulu, tulu_profile.cutoff, tuple(today),
                           needs_tradition, withheld)
 

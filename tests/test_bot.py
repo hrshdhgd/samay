@@ -1064,6 +1064,19 @@ def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reac
     assert qa.is_prediction(a("life:career", Subject("Maya", "daughter", True)))      # a child's life area is still gentle, not gated
 
 
+@needs_kernel
+def test_the_morning_message_keeps_the_date_and_avoid_window_when_the_panchang_fails(monkeypatch, caplog):
+    def broken(*_a, **_k):
+        raise RuntimeError("secret Maplewood details")
+
+    monkeypatch.setattr(bot.service, "panchang_report", broken)
+    with caplog.at_level(logging.ERROR, logger="samay"):
+        text = bot.compose_brief(None, MAPLEWOOD(), datetime(2026, 11, 9, 13, 5, tzinfo=UTC))
+    assert "Good morning! Today is Monday, 09 November 2026." in text and "Tulu date" not in text
+    assert "Traditionally avoided for starting new things: 08:15 to 09:28 (called Rahu Kaala), Maplewood" in text
+    assert "panchang report failed error=RuntimeError" in caplog.text and "secret" not in caplog.text
+
+
 # --- panchang questions -------------------------------------------------------------------------
 
 from samay.render import panchang as panchang_words

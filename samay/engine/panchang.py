@@ -81,11 +81,17 @@ def _longitudes(times: list[datetime], ayanamsa: str) -> list[tuple[float, float
     return list(zip(track["sun"], track["moon"], strict=True))
 
 
+def _cell(angle: float, width: float) -> int:
+    """The element index holding `angle`. An angle of exactly 360.0 (a tiny negative value taken modulo 360) is the
+    first cell again, not one past the last."""
+    return int(angle // width) % round(360.0 / width)
+
+
 def _bracket(kind: str, grid: list[datetime], values: list[float], base: int) -> int:
     """Index of the first grid instant past cell `base`; the one before it is still inside."""
     width = QUANTITIES[kind][1]
     for i in range(1, len(grid)):
-        if int(values[i] // width) != base:
+        if _cell(values[i], width) != base:
             return i
     raise RuntimeError(f"no {kind} boundary within {SEARCH_LIMIT} of {grid[0]}")
 
@@ -134,7 +140,7 @@ def _bisect(kind: str, inside: datetime, outside: datetime, base: int, forward: 
 
 def _cells(kind: str, times: list[datetime], ayanamsa: str) -> list[int]:
     angle, width = QUANTITIES[kind]
-    return [int(angle(s, m) // width) for s, m in _longitudes(times, ayanamsa)]
+    return [_cell(angle(s, m), width) for s, m in _longitudes(times, ayanamsa)]
 
 
 def _name(kind: str, cell: int) -> str:
@@ -158,7 +164,7 @@ def element_at(kind: str, utc: datetime, ayanamsa: str = "lahiri_mean") -> Eleme
     ahead = [utc] + [utc + COARSE_STEP * i for i in steps]
     values = [angle(s, m) for s, m in _longitudes([utc, *back[1:], *ahead[1:]], ayanamsa)]
     back_values, ahead_values = values[:len(back)], values[:1] + values[len(back):]
-    cell = int(values[0] // width)
+    cell = _cell(values[0], width)
     edges = []
     for forward, grid, vals in ((False, back, back_values), (True, ahead, ahead_values)):
         i = _bracket(kind, grid, vals, cell)

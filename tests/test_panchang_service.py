@@ -94,7 +94,7 @@ def test_reference_place_comes_from_the_environment(monkeypatch):
 
 
 def test_explanations_are_only_those_of_checked_entries(tmp_path):
-    assert service.observance_explanation("bharani", directory=tmp_path) == []
+    assert service.nakshatra_explanation("bharani", directory=tmp_path) == []
 
 
 def _bharani_day() -> date:
@@ -140,4 +140,21 @@ def test_an_unchecked_nakshatra_entry_adds_nothing(tmp_path, monkeypatch):
     monkeypatch.setattr(entries, "ENTRIES_DIR", tmp_path)
     _write_bharani(tmp_path, "unchecked")
     assert not any(o.name == "bharani" for o in service.panchang_report(PUNE, day).observances)
+    entries.load_entries.cache_clear()
+
+
+def test_nakshatra_and_observance_explanations_use_their_own_topics(tmp_path):
+    import yaml
+
+    checked = {"level": "translation-checked", "checked_by": "Harshad", "checked_on": date(2026, 11, 22),
+               "against": "test copy"}
+    (tmp_path / "e.yaml").write_text(yaml.safe_dump([
+        {"id": f"panchang-{topic.replace(':', '-')}-test", "topic": topic, "system": "any", "english": f"About {topic}.",
+         "citation": {"text": "Brihat Samhita", "chapter": 98, "verse": "1", "edition": "test"}, "verification": checked}
+        for topic in ("nakshatra:rohini", "observance:ekadashi")]))
+    entries.load_entries.cache_clear()
+    assert service.nakshatra_explanation("rohini", directory=tmp_path) == ["About nakshatra:rohini."]
+    assert service.observance_explanation("rohini", directory=tmp_path) == []
+    assert service.observance_explanation("ekadashi", directory=tmp_path) == ["About observance:ekadashi."]
+    assert service.nakshatra_explanation("ekadashi", directory=tmp_path) == []
     entries.load_entries.cache_clear()

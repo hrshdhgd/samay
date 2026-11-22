@@ -100,3 +100,18 @@ def test_southern_hemisphere_place_works():
 
 def test_polar_day_without_a_sunrise_gives_none():
     assert panchang.day_facts(panchang.Site(69.65, 18.96, "Europe/Oslo"), date(2026, 12, 21)) is None
+
+
+@pytest.mark.parametrize("kind, last", [("tithi", 29), ("karana", 59)])
+def test_a_full_circle_angle_is_the_first_cell_and_just_below_it_the_last(kind, last):
+    import math
+
+    width = panchang.QUANTITIES[kind][1]
+    assert panchang._cell(360.0, width) == 0
+    assert panchang._cell(math.nextafter(360.0, 0.0), width) == last
+
+
+@pytest.mark.parametrize("kind", ["tithi", "karana", "nakshatra", "yoga"])
+def test_a_full_circle_angle_always_names_a_real_element(kind):
+    width = panchang.QUANTITIES[kind][1]
+    assert panchang._name(kind, panchang._cell(360.0, width))  # no IndexError for any kind
