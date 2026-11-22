@@ -6,9 +6,9 @@ name: Family panchang conventions
 sampradaya: null
 ayanamsa: lahiri_mean
 sunrise_definition: upper_limb      # upper_limb | disc_centre (standard 34' refraction)
-# Calculation spread only (sunrise definition, ayanamsa, ephemeris). PROVISIONAL until Task 8 replaces it with the
-# measured value from scripts/measure_margin.py. Rule differences between traditions are never absorbed here.
-ambiguity_margin_minutes: 3
+# Measured 2026-11-21 by scripts/measure_margin.py (sunrise definition 2.27 min + 1' elongation 2.23 min + 18" nutation 0.61 min).
+# Do not tune it to make a calendar comparison pass.
+ambiguity_margin_minutes: 6
 observances:
   ekadashi:
     label: Ekadashi

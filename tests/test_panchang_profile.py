@@ -39,3 +39,19 @@ def test_a_rule_with_a_bad_choice_is_rejected(tmp_path):
     write(tmp_path, observances=raw["observances"])
     with pytest.raises(ValueError, match="on_kshaya"):
         load_panchang_profile(directory=tmp_path)
+
+
+def test_shipped_margin_is_in_a_sane_band():
+    assert 3 <= load_panchang_profile().margin_minutes <= 15
+
+
+def test_measure_margin_script_exposes_its_three_components():
+    import importlib.util
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parent.parent / "scripts" / "measure_margin.py"
+    spec = importlib.util.spec_from_file_location("measure_margin", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert all(callable(getattr(module, n)) for n in
+               ("sunrise_shift_minutes", "boundary_shift_minutes", "nutation_shift_minutes"))
