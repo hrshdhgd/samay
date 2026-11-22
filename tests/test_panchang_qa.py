@@ -175,3 +175,8 @@ def test_a_nakshatra_question_is_asked_for_the_right_day():
 def test_a_nakshatra_question_gets_the_days_facts():
     reply = pq.answer(pq.sort("what is the nakshatra today"), PUNE, NOW)
     assert "Nakshatra (the Moon's star)" in reply and "Karana" in reply and "Tulu date" in reply
+
+
+@pytest.mark.parametrize("text", ["when is the next pradosham", "what is Pradosham", "next pradosh vratham"])
+def test_south_indian_spellings_of_pradosha_are_understood(text):
+    assert pq.sort(text).observance == "pradosha"

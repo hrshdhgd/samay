@@ -16,7 +16,7 @@ from .render import panchang as words
 # Aliases match a whole word, or two neighbouring words joined ("full moon" -> "fullmoon"), never a substring.
 OBSERVANCES = {
     "ekadashi": ("ekadashi", "ekadasi", "ekadashis"),
-    "pradosha": ("pradosha", "pradosh", "pradoshas"),
+    "pradosha": ("pradosha", "pradosh", "pradoshas", "pradosham", "pradoshan"),
     "purnima": ("purnima", "poornima", "pournami", "fullmoon"),
     "amavasya": ("amavasya", "amavasai", "newmoon"),
 }
