@@ -43,3 +43,11 @@ https://www.kamakoti.org/kamakoti/dharmasindhu/bookview.php?chapnum=3). Smarta/V
 
 ## Decision (owner, 2026-11-21)
 No Sanskrit reader available. v1 ships computed facts only; no "why" is shown until verified.
+
+## Convention check against the Tulu Panchanga app (2026-11-22)
+Engine (provisional Smarta rules, Mangaluru, margin 6 min) vs the app's published Ekadashi, Pradosha, Purnima and Amavasya
+for 2026 and 2027: 96 of 97 dates agree (tests/test_panchang_convention.py, fixture tests/fixtures/tulu_app_observances.yaml).
+The one difference, Pradosha 3 vs 4 May 2027, is the window: the app uses sunset + 1/5 of the night (137 min that day),
+the engine's placeholder is 72 min. The app's other definitions match ours: arunodaya = two night-muhurtas (96 min)
+before sunrise; Ekadashi Smarta at sunrise, Madhwa variant when Dashami touches arunodaya. Caveat: the app is a
+computation, not a printed almanac. Open: the Pradosha window should be a fraction of the night, not fixed minutes.
