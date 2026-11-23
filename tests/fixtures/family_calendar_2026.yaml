@@ -4,9 +4,18 @@
 source: family Bunts calendar (printed), 2026
 place: {name: Mangaluru, latitude: 12.9141, longitude: 74.856, tz: Asia/Kolkata}
 nakshatra_days:
+  - {date: 2026-12-21, nakshatra: Bharani, family_name: Barani}
+  - {date: 2026-12-22, nakshatra: Krittika, family_name: Keertige}
   - {date: 2026-11-23, nakshatra: Bharani, family_name: Barani}
   - {date: 2026-11-24, nakshatra: Krittika, family_name: Keertige}
 sankashti:
+  - {date: 2026-12-26, note: "owner, December list"}
   - {date: 2026-11-27, note: "marked auspicious (Friday)"}
 ekadashi:
+  - {date: 2026-12-04, note: "owner, December list (Friday)"}
+  - {date: 2026-12-20, note: "owner, December list (Sunday)"}
   - {date: 2026-11-20, note: "owner, 2026-11-22; other Ekadashi dates for 2026 still to come"}
+purnima:
+  - {date: 2026-12-24, note: "owner, December list (Poornima)"}
+amavasya:
+  - {date: 2026-12-08, note: "owner, December list; the family lists it among its 'bad days' with Barani and Keertige"}

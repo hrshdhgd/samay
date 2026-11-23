@@ -59,3 +59,10 @@ day is 06:31:42 at the Sun's upper limb and 06:32:52 at its centre. Upper-limb s
 (Bharani 23 Nov, Krittika 24 Nov, Sankashti 27 Nov) matches either way. One date decides this; revisit when the rest of the
 year's Ekadashi dates arrive. Known side effect: the Tulu date still uses the default upper-limb sunrise only in its
 aparahna cutoff (the shipped cutoff is sunset, which does not use it).
+
+## Family December 2026 list (owner, 2026-11-22)
+"Good days": Ekadashi 4 Dec and 20 Dec, Poornima 24 Dec, Sankashti 26 Dec (Christmas 25 Dec). "Bad days": Amavasya 8 Dec,
+Barani 21 Dec, Keertige 22 Dec. All nine tithi and nakshatra dates agree with the engine at Mangaluru
+(tests/test_family_calendar.py). Note the family's own grouping: Amavasya, Bharani and Krittika are listed together as
+"bad days". That grouping is the family's custom; the bot has no checked source for it (Brihat Samhita ch. 98 only classes
+Bharani as fierce and Krittika as mixed, and says nothing about Amavasya), so it is recorded here, not shown to users.

@@ -70,3 +70,23 @@ def test_the_family_sankashti_is_the_engines_primary_day(row):
         profile.sunrise_definition,
     )
     assert [o.primary for o in found] == [row["date"]]
+
+
+@pytest.mark.parametrize("name", ["purnima", "amavasya"])
+def test_family_purnima_and_amavasya_are_the_engines_primary_days(name):
+    from samay.engine import observances as ob
+    from samay.engine.panchang_profile import load_panchang_profile
+
+    profile = load_panchang_profile()
+    for row in DATA[name]:
+        found = ob.observances_for(
+            profile.observances[name].rules,
+            profile.sampradaya,
+            SITE,
+            row["date"],
+            row["date"],
+            profile.ayanamsa,
+            profile.margin_minutes,
+            profile.sunrise_definition,
+        )
+        assert [o.primary for o in found] == [row["date"]], row
