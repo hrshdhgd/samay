@@ -29,6 +29,19 @@ class ObservanceSpec:
 
 
 @dataclass(frozen=True)
+class CareNote:
+    """A traditional "do not choose this day for new starts" note. `checked` is False: the original text has not
+    been read by us, so it is shown labelled as muhurta tradition, never as a sourced rule."""
+
+    id: str
+    tithi: int | None  # the note applies when the sunrise tithi is this one (1-30), or
+    nakshatra: str | None  # when the Moon is in this nakshatra at sunrise (lowercase)
+    text: str
+    basis: str
+    checked: bool
+
+
+@dataclass(frozen=True)
 class PanchangProfile:
     id: str
     sampradaya: str | None
@@ -37,6 +50,7 @@ class PanchangProfile:
     margin_minutes: int
     observances: dict[str, ObservanceSpec]
     sha256: str
+    care_notes: tuple[CareNote, ...] = ()
 
 
 def _check(field: str, value: object, allowed) -> None:
@@ -78,6 +92,38 @@ def _rule(where: str, raw: dict) -> Rule:
     )
 
 
+def _care_note(raw: object) -> CareNote:
+    if not isinstance(raw, dict):
+        raise ValueError("traditional_care: each item must be a mapping")  # noqa: TRY004
+    note_id = raw.get("id")
+    if not isinstance(note_id, str) or not note_id.strip():
+        raise ValueError("traditional_care: each item needs a non-empty id")
+    where = f"traditional_care {note_id!r}"
+    applies = raw.get("applies_to")
+    if (
+        not isinstance(applies, dict)
+        or len(applies) != 1
+        or next(iter(applies)) not in ("tithi", "nakshatra")
+    ):
+        raise ValueError(f"{where}: applies_to must be exactly one of tithi or nakshatra")
+    ((kind, value),) = applies.items()
+    tithi = nakshatra = None
+    if kind == "tithi":
+        if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 30:
+            raise ValueError(f"{where}: tithi must be a number 1-30")
+        tithi = value
+    else:
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"{where}: nakshatra must be a non-empty name")
+        nakshatra = value.strip().lower()
+    for field in ("text", "basis"):
+        if not isinstance(raw.get(field), str) or not raw[field].strip():
+            raise ValueError(f"{where}: {field} must be non-empty text")
+    if not isinstance(raw.get("checked"), bool):
+        raise ValueError(f"{where}: checked must be true or false")  # noqa: TRY004
+    return CareNote(note_id, tithi, nakshatra, raw["text"].strip(), raw["basis"].strip(), raw["checked"])
+
+
 @lru_cache(maxsize=4)
 def load_panchang_profile(
     profile_id: str = DEFAULT_PANCHANG_PROFILE, directory: Path = PROFILES_DIR
@@ -110,4 +156,5 @@ def load_panchang_profile(
         margin,
         observances,
         hashlib.sha256(raw_bytes).hexdigest()[:12],
+        tuple(_care_note(n) for n in raw.get("traditional_care") or ()),
     )

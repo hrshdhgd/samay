@@ -152,6 +152,9 @@ class PanchangReport:
     observances: tuple[ObservanceDay, ...]  # only observances whose rules are verified and touch the day
     needs_sampradaya: bool  # True when day claims were withheld because the family's tradition is not set
     claims_withheld: bool  # True when some observance rules are not verified yet
+    care_notes: tuple[
+        str, ...
+    ] = ()  # traditional-care texts for the day (muhurta tradition, original unchecked)
 
 
 @dataclass(frozen=True)

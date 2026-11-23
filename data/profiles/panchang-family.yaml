@@ -66,3 +66,31 @@ observances:
     source: {text: "Tulu Panchanga app festival rule; family printed calendar 2026 (27 Nov)", locus: "app festivals_mangaluru_2026.csv; family calendar, Nov 2026"}
     rules:
       all: {tithis: [19], anchor: moonrise, start_minutes: 0, end_minutes: 0, on_kshaya: start_day, on_vriddhi: first}
+
+# Traditional care: days traditionally not chosen for starting auspicious things (weddings, housewarming, new
+# ventures). Owner decision 2026-11-22: show these as widely known muhurta tradition, NOT as a family custom. The
+# only sources found are modern muhurta guides that paraphrase Muhurta Chintamani; no primary text or verse-level
+# translation has been read, so `checked: false` and the bot shows them on a separate line saying so. They are not
+# entries (that machinery means checked against a translation). Sources:
+#   https://atmanandanatha.in/marriage-muhurtas/
+#   https://dekhopanchang.com/en/learn/vivah-muhurta
+#   https://www.roopalia.com/en/vrat/what-not-to-do-on-amavasya-new-moon-day.html (also cites Manusmriti 3.122-127
+#   for ancestor rites on Amavasya; secondary)
+# applies_to is {tithi: 30} (sunrise tithi, 30 = Amavasya) or {nakshatra: <name>} (Moon's nakshatra at sunrise,
+# any case).
+traditional_care:
+  - id: amavasya
+    applies_to: {tithi: 30}
+    text: "Amavasya (new moon day) is traditionally not chosen for starting auspicious things such as a wedding, a housewarming or a new venture."
+    basis: "Modern muhurta guides paraphrasing Muhurta Chintamani; original text not read by us"
+    checked: false
+  - id: bharani
+    applies_to: {nakshatra: bharani}
+    text: "Days when the Moon is in Bharani are traditionally not chosen for starting auspicious things such as a wedding, a housewarming or a new venture."
+    basis: "Modern muhurta guides paraphrasing Muhurta Chintamani; original text not read by us"
+    checked: false
+  - id: krittika
+    applies_to: {nakshatra: krittika}
+    text: "Days when the Moon is in Krittika are traditionally not chosen for starting auspicious things such as a wedding, a housewarming or a new venture."
+    basis: "Modern muhurta guides paraphrasing Muhurta Chintamani; original text not read by us"
+    checked: false

@@ -94,3 +94,59 @@ def test_a_tradition_some_observance_has_no_rule_for_fails_on_load(tmp_path):
 @pytest.mark.parametrize("tradition", ["smarta", "madhva"])
 def test_a_tradition_every_observance_covers_loads(tmp_path, tradition):
     assert load_panchang_profile(directory=write(tmp_path, sampradaya=tradition)).sampradaya == tradition
+
+
+def _note(**changes):
+    note = {
+        "id": "x",
+        "applies_to": {"tithi": 30},
+        "text": "t",
+        "basis": "b",
+        "checked": False,
+    }
+    note.update(changes)
+    return note
+
+
+def test_shipped_profile_has_unchecked_care_notes_for_amavasya_bharani_krittika():
+    notes = {n.id: n for n in load_panchang_profile().care_notes}
+    assert set(notes) == {"amavasya", "bharani", "krittika"}
+    assert notes["amavasya"].tithi == 30 and notes["bharani"].nakshatra == "bharani"
+    assert all(n.text and n.basis and n.checked is False for n in notes.values())
+
+
+def test_care_nakshatra_is_case_insensitive(tmp_path):
+    d = write(tmp_path, traditional_care=[_note(applies_to={"nakshatra": "BharaNI"})])
+    assert load_panchang_profile("panchang-family", d).care_notes[0].nakshatra == "bharani"
+
+
+def test_a_profile_without_care_notes_loads_with_none(tmp_path):
+    raw = yaml.safe_load((PROFILES_DIR / "panchang-family.yaml").read_text())
+    raw.pop("traditional_care")
+    (tmp_path / "panchang-family.yaml").write_text(yaml.safe_dump(raw))
+    load_panchang_profile.cache_clear()
+    assert load_panchang_profile("panchang-family", tmp_path).care_notes == ()
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        _note(applies_to={"tithi": 31}),
+        _note(applies_to={"tithi": 0}),
+        _note(applies_to={"tithi": True}),
+        _note(applies_to={"tithi": 30, "nakshatra": "bharani"}),
+        _note(applies_to={"yoga": "siddhi"}),
+        _note(applies_to={"nakshatra": ""}),
+        _note(applies_to="amavasya"),
+        _note(text=""),
+        _note(basis="  "),
+        _note(checked="no"),
+        _note(id=""),
+        "not a mapping",
+    ],
+)
+def test_bad_care_note_shapes_are_rejected(tmp_path, bad):
+    d = write(tmp_path, traditional_care=[bad])
+    with pytest.raises(ValueError):
+        load_panchang_profile("panchang-family", d)
+    load_panchang_profile.cache_clear()

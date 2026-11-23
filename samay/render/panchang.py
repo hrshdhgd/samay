@@ -14,6 +14,7 @@ from ..models import (
 )
 
 NOTE_LOCAL = "A local panchang may differ, because traditions count this day differently."
+CARE_PREFIX = "Traditional guidance (muhurta tradition; we have not checked the original text): "
 NO_CLAIM = "Observance days are not named yet: the rules for them are not set up from a checked source."
 NEED_TRADITION = (
     "To name observance days I need to know which tradition your family follows. Please set it first."
@@ -93,6 +94,10 @@ def _observance_lines(o: ObservanceDay, day: date | None = None) -> list[str]:
     return lines
 
 
+def _care_lines(report: PanchangReport) -> list[str]:
+    return [f"{CARE_PREFIX}{text}" for text in report.care_notes]
+
+
 def render_day(report: PanchangReport, day: date) -> str:
     f, tz, tulu = report.facts, report.tz, report.tulu
     rule = f"by the {report.cutoff.replace('_', ' ')} rule"
@@ -108,6 +113,7 @@ def render_day(report: PanchangReport, day: date) -> str:
     ]
     for o in report.observances:
         lines += _observance_lines(o, day)
+    lines += _care_lines(report)
     if report.needs_sampradaya:
         lines.append(NEED_TRADITION)
     elif report.claims_withheld and all(o.primary is None for o in report.observances):
@@ -128,10 +134,13 @@ def render_next(report: NextObservanceReport) -> str:
     )
 
 
-def render_about(label: str, explanations: list[str]) -> str:
+def render_about(label: str, explanations: list[str], care_notes: tuple[str, ...] = ()) -> str:
+    care = [f"{CARE_PREFIX}{text}" for text in care_notes]
     if not explanations:
-        return f"I have no checked source for {label} yet, so I will not describe what it means."
-    return "\n\n".join(explanations)
+        return "\n\n".join(
+            [f"I have no checked source for {label} yet, so I will not describe what it means.", *care]
+        )
+    return "\n\n".join([*explanations, *care])
 
 
 def render_avoid_window(rahu, place_label: str) -> str:
@@ -162,6 +171,7 @@ def render_brief(local_now: datetime, rahu, place_label: str, report: PanchangRe
         )
         for o in report.observances:
             lines += _observance_lines(o, today)
+        lines += _care_lines(report)
         lines.append(f"Tulu date: {report.tulu.month} {report.tulu.day}.")
     return "\n".join(lines)
 

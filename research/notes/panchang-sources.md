@@ -66,3 +66,14 @@ Barani 21 Dec, Keertige 22 Dec. All nine tithi and nakshatra dates agree with th
 (tests/test_family_calendar.py). Note the family's own grouping: Amavasya, Bharani and Krittika are listed together as
 "bad days". That grouping is the family's custom; the bot has no checked source for it (Brihat Samhita ch. 98 only classes
 Bharani as fierce and Krittika as mixed, and says nothing about Amavasya), so it is recorded here, not shown to users.
+
+## Traditional care notes: Amavasya, Bharani, Krittika (owner decision, 2026-11-22)
+The bot tells users that Amavasya days, and days when the Moon is in Bharani or Krittika, are traditionally not chosen for
+starting auspicious things (weddings, housewarming, new ventures). The owner holds this is a universally known muhurta
+tradition, not a family custom. Sources found are modern muhurta guides that paraphrase Muhurta Chintamani
+(Ramadayalu/Ram Daivajna): https://atmanandanatha.in/marriage-muhurtas/, https://dekhopanchang.com/en/learn/vivah-muhurta,
+https://www.roopalia.com/en/vrat/what-not-to-do-on-amavasya-new-moon-day.html (which also cites Manusmriti 3.122-127 for
+ancestor rites on Amavasya; secondary). No primary text or verse-level translation was read, so this is NOT verified. The
+notes live in `traditional_care` in data/profiles/panchang-family.yaml (`checked: false`), not in data/entries, and are shown
+on a separate line labelled "muhurta tradition; we have not checked the original text". Brihat Samhita ch. 98 (entries,
+unchecked) calls only Bharani fierce and Krittika mixed and gives no avoid instruction; it is left as is.

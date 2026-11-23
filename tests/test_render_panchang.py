@@ -431,3 +431,17 @@ def test_a_years_list_splits_between_lines_under_telegrams_limit():
     assert "\n".join(parts).replace("\n\n", "\n") == text.replace(
         "\n\n", "\n"
     )  # whole lines only, nothing lost
+
+
+def test_care_notes_are_shown_labelled_in_day_and_brief_and_absent_otherwise():
+    note = "Amavasya is traditionally not chosen for starting auspicious things."
+    line = f"{words.CARE_PREFIX}{note}"
+    assert "we have not checked the original text" in words.CARE_PREFIX
+    r = report(care_notes=(note,))
+    assert line in words.render_day(r, date(2026, 11, 21)).splitlines()
+    brief = words.render_brief(datetime(2026, 11, 21, 7, 0, tzinfo=IST), None, "Pune", r)
+    assert line in brief.splitlines()
+    assert "Traditional guidance" not in words.render_day(report(), date(2026, 11, 21))
+    assert "Traditional guidance" not in words.render_brief(
+        datetime(2026, 11, 21, 7, 0, tzinfo=IST), None, "Pune", report()
+    )

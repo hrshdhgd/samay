@@ -330,6 +330,7 @@ def answer(asked: Asked, place, now: datetime) -> str:
             return words.render_about(
                 LABELS[asked.observance],
                 service.observance_explanation(asked.observance),
+                service.observance_care_notes(asked.observance),
             )
         if asked.kind == "next":
             return words.render_next(service.next_observance_report(place, asked.observance, today))

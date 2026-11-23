@@ -342,3 +342,37 @@ def test_a_list_longer_than_a_year_is_refused_without_working_it_out(monkeypatch
     assert not service.observance_list_report(
         MANGALURU, date(2028, 1, 1), date(2028, 12, 31), ("x",)
     ).too_long
+
+
+MANGALURU = Place("mangaluru", "Mangaluru", "IN", "Karnataka", None, 12.9141, 74.856, "Asia/Kolkata", 1)
+
+
+@pytest.mark.parametrize(
+    "day, expected",
+    [
+        (date(2026, 12, 8), ["Amavasya"]),
+        (date(2026, 12, 21), ["Bharani"]),
+        (date(2026, 12, 22), ["Krittika"]),
+        (date(2026, 12, 10), []),
+    ],
+)
+def test_care_notes_follow_the_sunrise_tithi_and_nakshatra(day, expected):
+    from samay.render import panchang as words
+
+    r = service.panchang_report(MANGALURU, day)
+    assert len(r.care_notes) == len(expected)
+    assert all(w in t for w, t in zip(expected, r.care_notes))
+    text = words.render_day(r, day)
+    assert text.count(
+        "Traditional guidance (muhurta tradition; we have not checked the original text)"
+    ) == len(expected)
+
+
+def test_care_notes_are_absent_when_the_profile_has_none(profile_dir):
+    profile_dir(traditional_care=[])
+    assert service.panchang_report(MANGALURU, date(2026, 12, 8)).care_notes == ()
+
+
+def test_care_notes_do_not_touch_the_checked_entry_machinery():
+    assert entries.answers_for("nakshatra:bharani") == []
+    assert service.nakshatra_explanation("bharani") == []

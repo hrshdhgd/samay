@@ -497,6 +497,12 @@ def panchang_report(place: Place, day: date) -> PanchangReport | None:
     nakshatra_key = facts.nakshatra.name.lower().replace(" ", "-")
     if notes := nakshatra_explanation(nakshatra_key):  # only once a checked entry exists
         today.append(ObservanceDay(nakshatra_key, facts.nakshatra.name, None, "single", (), notes[0]))
+    care = tuple(
+        n.text
+        for n in profile.care_notes
+        if (n.tithi is not None and facts.tithi.number == n.tithi)
+        or (n.nakshatra is not None and facts.nakshatra.name.lower() == n.nakshatra)
+    )
     return PanchangReport(
         place.label,
         place.tz,
@@ -506,7 +512,17 @@ def panchang_report(place: Place, day: date) -> PanchangReport | None:
         tuple(today),
         needs_tradition,
         withheld,
+        care,
     )
+
+
+def observance_care_notes(name: str) -> tuple[str, ...]:
+    """Traditional-care texts for the tithi(s) an observance is kept on (Amavasya: tithi 30)."""
+    spec = _panchang_profile().observances.get(name)
+    if spec is None:
+        return ()
+    tithis = {t for rule in spec.rules.values() for t in rule.tithis}
+    return tuple(n.text for n in _panchang_profile().care_notes if n.tithi in tithis)
 
 
 def next_observance_report(place: Place, name: str, today: date) -> NextObservanceReport:

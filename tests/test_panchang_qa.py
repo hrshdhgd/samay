@@ -434,3 +434,11 @@ def test_a_list_question_gets_the_days_in_the_range():
         == f"Ekadashi and Pradosha days from Tue 1 Dec to Thu 31 Dec 2026 in {PUNE.label}"
     )
     assert "Fri 4 Dec: Ekadashi" in reply and "Purnima" not in reply and "Amavasya" not in reply
+
+
+@pytestmark_engine
+def test_about_amavasya_gives_the_labelled_traditional_guidance():
+    reply = pq.answer(pq.sort("what is Amavasya"), PUNE, NOW)
+    assert words.CARE_PREFIX in reply and "Amavasya" in reply
+    assert "no checked source" in reply.lower()
+    assert "Traditional guidance" not in pq.answer(pq.sort("what is Ekadashi"), PUNE, NOW)
