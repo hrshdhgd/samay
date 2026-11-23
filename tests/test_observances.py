@@ -204,7 +204,10 @@ def test_a_year_of_every_observance_is_fast_enough_for_a_chat_answer():
             profile.margin_minutes,
             profile.sunrise_definition,
         )
-    assert time.perf_counter() - started < 6.0
+    # About 2 s on a laptop; GitHub's shared runners (CI=true) take 5-9 times as long. Still tight enough to catch a
+    # slow-down of an order of magnitude, which is what this guard is for.
+    limit = 60.0 if os.environ.get("CI") else 6.0
+    assert time.perf_counter() - started < limit
 
 
 def test_a_moonrise_rule_names_the_day_chaturthi_is_current_at_moonrise():

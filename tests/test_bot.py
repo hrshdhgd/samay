@@ -1037,7 +1037,12 @@ async def test_typing_is_shown_while_the_block_runs_and_stops_afterwards(monkeyp
     chat = _chat_with_actions()
     update = SimpleNamespace(effective_chat=chat)
     async with bot.typing(update):
-        await asyncio.sleep(0.05)
+        for _ in range(
+            200
+        ):  # wait for the refreshes (not a fixed sleep: a busy CI runner can be slow to schedule them)
+            if chat.send_action.await_count >= 2:
+                break
+            await asyncio.sleep(0.01)
     calls_while_running = chat.send_action.await_count
     assert calls_while_running >= 2 and chat.send_action.await_args.args[0] == bot.ChatAction.TYPING
     await asyncio.sleep(0.05)
