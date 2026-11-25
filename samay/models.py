@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from typing import Literal
 
+from .engine.daylight import RahuKaala
 from .engine.ephemeris import Chart
 from .engine.geo import Place
 from .engine.gochara import Stay
@@ -126,6 +127,20 @@ class OutlookReport:
     )
     ashtaka_meaning: tuple[tuple[int, str], ...] = ()  # (points, what the text says), Phaladeepika 23.11
     ashtaka_variants: int = 0  # lists where Phaladeepika's printed table differs from the tables used
+
+
+@dataclass(frozen=True)
+class DayReport:
+    """One local day for a person (today or tomorrow): the transits over that day, counted from the natal Moon sign,
+    and, where they live, the day's panchang and Rahu Kaala. Without a saved home the day is the UTC one."""
+
+    which: str  # today | tomorrow
+    day: date  # the local calendar day
+    outlook: OutlookReport  # span "day": local midnight to the next
+    place_label: str | None  # the saved home, None when not known
+    panchang: PanchangReport | None  # None without a home, or when the Sun does not rise and set there
+    rahu: RahuKaala | None
+    birth_nakshatra: int  # 0-26, the natal Moon's nakshatra
 
 
 @dataclass(frozen=True)

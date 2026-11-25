@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from . import narrate, service
 from .engine import (
@@ -56,8 +57,9 @@ from .engine import (
 from .engine import entries as entry_store
 from .engine.entries import Entry
 from .engine.ephemeris import GRAHAS
+from .engine.geo import Place
 from .engine.vedic import DASHA_YEARS, RASHIS, SIGNS, house_from, sign_index
-from .models import OutlookReport, ResolvedBirth
+from .models import DayReport, OutlookReport, ResolvedBirth
 from .subject import SELF, Subject
 
 # Calculation systems samay computes; entries tied to any other system are never used.
@@ -89,7 +91,11 @@ SPAN_WORDS = {
     "years": "years",
     "decade": "years",
 }
-OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS)
+OUTLOOK_TOPICS = tuple(f"future:{span}" for span in service.OUTLOOK_SPANS if span != "day")
+# Offline fallback only: a personal question about one day ("how will my day be", "what does tomorrow look like for me").
+DAY_WORDS = {"today": "today", "tonight": "today", "tomorrow": "tomorrow"}
+DAY_PERSONAL = ("my", "me", "i", "mine", "myself")
+DAY_TOPICS = tuple(f"future:{which}" for which in service.DAYS_AHEAD)
 WHEN_PREFIX = "when:"
 ASHTAKA_WORDS = ("ashtakavarga", "ashtakvarga", "sarvashtakavarga", "bindu", "bindus")
 CONJUNCTION_WORDS = ("conjunction", "conjunctions", "together")
@@ -255,6 +261,7 @@ TOPICS = frozenset(
         "concept:dasha",
         "future:overview",
         *OUTLOOK_TOPICS,
+        *DAY_TOPICS,
         "chart:ashtakavarga",
         "chart:moon",
         "chart:conjunctions",
@@ -366,6 +373,7 @@ class Answer:
     more_readings: tuple = ()  # (Reading, shares) for each planet in the asked-about house, for life areas
     who: Subject = SELF  # whose chart this answer is about
     outlook: OutlookReport | None = None  # the transits over a period ahead (future:week ... future:years)
+    day: DayReport | None = None  # one day: future:today, future:tomorrow
     second: tuple[SecondVoice, ...] = ()  # Phaladeepika 8, once its rules are checked
     ashtaka: AshtakaView | None = None  # chart:ashtakavarga
     moon: MoonView | None = None  # chart:moon
@@ -512,6 +520,15 @@ def sort_question(text: str) -> str | None:
         return f"when:{area}"
     if span and not planets and not area and not about_dasha:
         return f"future:{span}"
+    day = next((DAY_WORDS[w] for w in words if w in DAY_WORDS), None)
+    if (
+        (day or "day" in words)
+        and any(w in DAY_PERSONAL for w in words)
+        and not planets
+        and not area
+        and not about_dasha
+    ):
+        return f"future:{day or 'today'}"  # "how will my day be" is today
     if not planets and any(w in FUTURE_WORDS for w in words):
         return "future:overview"
     if area and not planets and not about_dasha:
@@ -558,6 +575,8 @@ TOPIC_HELP = {
     "chart:conjunctions": "which planets sit together in one sign in the person's chart and what the texts say of each pair (yogas, planetary combinations)",
     "chart:ashtakavarga": "the person's ashtakavarga: how many benefic points each sign has in their chart and which signs are strong",
     "future:overview": "the person's future, luck or what to expect in general, with no particular period named",
+    "future:today": "the person's own day today: how their day will be, what today looks like or holds for them",
+    "future:tomorrow": "the person's own day tomorrow: what their day looks like tomorrow, how tomorrow will be for them",
     "future:week": "the coming week or the next few days (what the week looks like, this weekend)",
     "future:fortnight": "the next two weeks",
     "future:month": "the coming month or the next few weeks",
@@ -992,8 +1011,10 @@ def answer_topic(
     question: str = "",
     subject: Subject = SELF,
     tz: str | None = None,
+    home: Place | None = None,
 ) -> Answer:
-    """The answer for a sorted topic: checked entries for it, plus the person's own chart facts."""
+    """The answer for a sorted topic: checked entries for it, plus the person's own chart facts. `home` is where the
+    person lives now: a day reading's calendar day, panchang and Rahu Kaala are worked out there."""
     topic = resolve_topic(topic, birth, now)
     if topic is None or topic not in TOPICS:
         return Answer(None, (), ())
@@ -1149,6 +1170,9 @@ def answer_topic(
     if topic in OUTLOOK_TOPICS:
         report = service.outlook_report(birth, now, topic.split(":")[1], tz) if birth is not None else None
         return Answer(topic, (), (), outlook=report, who=subject)
+    if topic in DAY_TOPICS:
+        found = service.day_report(birth, now, topic.split(":")[1], home) if birth is not None else None
+        return Answer(topic, (), (), day=found, who=subject)
     kind, _, subject_key = topic.partition(":")
     if kind == "life":
         return _life_answer(subject_key, birth, entries_dir, subject)
@@ -1233,6 +1257,29 @@ AI_PREDICT_SYSTEM = (
     "in everyday words. Never mention planet or Moon positions, houses, signs, sub-chapters, running periods or dates, and do not "
     "repeat the list. Do not use the words 'house' or 'sign'."
 )
+# Owner's decision (2026-11-24): a question about a coming day, week, month or year may get an informed, forward-looking
+# reading from the model, grounded only in the engine's facts and checked rules. Used instead of AI_PREDICT_SYSTEM for
+# those topics; "when" questions, life areas and the current dasha keep AI_PREDICT_SYSTEM. The app labels the reply as an
+# AI reading, not a guarantee (prompts.AI_FORECAST_CAVEAT).
+AI_FORECAST_SYSTEM = (
+    "You are Samay, a thoughtful Jyotish pandit speaking warmly and naturally in a family chat. The reader asks what a "
+    "coming day or period looks like. Give an informed, forward-looking reading of it in plain, everyday English: four "
+    "to six short sentences, plain text with no markdown, no heading and no list. Say what the time tends to favour or "
+    "call for, and what to be careful about, in hedged but direct words such as 'tends to', 'traditionally', 'a good "
+    "day for...' or 'better to hold off on...'. Ground every point in the supplied facts: use only the supplied facts, "
+    "the checked texts' results and the day's panchang. Never invent planet positions, dates, times, events or "
+    "astrological claims, and never add astrological meanings from your general knowledge. If the facts give no "
+    "checked result, say only what the positions and the day's panchang are and that the meanings are not checked yet. "
+    "Where good and hard results are both supplied, weigh them and say so plainly. Rahu Kaala, when supplied, is the "
+    "window traditionally avoided for starting new things; give its times only exactly as supplied. Do not calculate "
+    "or introduce dates or times that are not supplied. Never speak of death, serious illness or accidents. Do not "
+    "give medical, legal or financial advice, and do not tell anyone to buy, sell or invest. Leave out house numbers "
+    "and other technical terms unless the question asks for them; explain any Sanskrit word briefly. Do not include "
+    "book or verse citations; the app adds checked sources. Do not promise outcomes: this is a traditional reading for "
+    "reflection, not a guarantee. The question may be about someone else: refer to them by name, and keep a child's "
+    "reading gentle and age-appropriate. Jyotish is a traditional belief system, not science. Start with the reading, "
+    "not an AI label or disclaimer; the app adds that."
+)
 AI_CAREER_EXAMPLES_SYSTEM = (
     "Translate historical occupations into a few specific, closely related present-day examples. "
     "Respond with only a short comma-separated list, no introduction, markdown or citations. "
@@ -1250,6 +1297,14 @@ def is_prediction(answer: Answer) -> bool:
         and answer.topic.startswith(PREDICTIVE_PREFIXES)
         and sensitivity(answer.topic, answer.who) is None
     )
+
+
+def is_forecast(answer: Answer) -> bool:
+    """True for a reading of a coming day, week, month or year: the model may then give an informed, forward-looking
+    reading (AI_FORECAST_SYSTEM). Sensitive topics never reach the model."""
+    return (answer.topic in DAY_TOPICS or answer.topic in OUTLOOK_TOPICS) and sensitivity(
+        answer.topic, answer.who
+    ) is None
 
 
 def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | None = None) -> str:
@@ -1279,6 +1334,8 @@ def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | N
     ]
     if answer.outlook is not None:
         verified += outlook_facts(answer.outlook, answer.who)
+    if answer.day is not None:
+        verified += day_facts(answer.day, answer.who)
     if answer.ashtaka is not None and answer.ashtaka.checked:
         verified += ashtaka_facts(answer.ashtaka, answer.who)
     verified += [lordship_fact(v) for v in answer.lordship]
@@ -1409,6 +1466,11 @@ def _ai_prompt(question: str, answer: Answer, history=(), source_answer: str | N
                     "old occupational examples are traditional associations, not a guaranteed job or career outcome. "
                     "End: 'This does not predict how the career will unfold.'"
                 )
+        elif answer.day is not None:
+            parts.append(
+                f"This is a reading for one day only, {answer.day.which}: {_long_day(answer.day.day)}. Speak about "
+                "that day, not a longer period."
+            )
         elif answer.topic == "future:overview":
             parts.append(
                 "For this current dasha answer, use exactly three short paragraphs and no introduction: (1) say "
@@ -1447,7 +1509,9 @@ async def ai_answer(
 ) -> str | None:
     """A plain-language answer grounded in checked entries and chart facts, or None if the model is off or fails."""
     reply = await narrate.complete(
-        AI_PREDICT_SYSTEM if is_prediction(answer) else AI_SYSTEM,
+        AI_FORECAST_SYSTEM
+        if is_forecast(answer)
+        else (AI_PREDICT_SYSTEM if is_prediction(answer) else AI_SYSTEM),
         _ai_prompt(question, answer, history, source_answer),
         client,
         model=narrate.AI_MODEL,
@@ -1515,14 +1579,87 @@ def outlook_facts(report: OutlookReport, who: Subject = SELF) -> list[str]:
                 )
             )
         )
-        line = f"{s.planet.title()} in the {_ordinal(s.house)} house from the Moon sign, {when}"
-        if s.effect:
-            line += (
-                f": the text gives {s.effect} ({'a good house' if s.favourable else 'a hard house'} for it)"
+        out.append(_stay_fact(s, when))
+    return out
+
+
+def _stay_fact(s, when: str) -> str:
+    """One transit stay as a sentence: the house from the Moon sign, and the text's result only once checked (the
+    engine gives no effect otherwise)."""
+    line = f"{s.planet.title()} in the {_ordinal(s.house)} house from the Moon sign, {when}"
+    if s.effect:
+        line += f": the text gives {s.effect} ({'a good house' if s.favourable else 'a hard house'} for it)"
+        if s.blocked_by:
+            line += f", but {', '.join(g.title() for g in s.blocked_by)} obstruct it (vedha)"
+    return line + "."
+
+
+def _long_day(d) -> str:
+    return f"{d:%A} {d.day} {d:%b %Y}"
+
+
+def day_facts(report: DayReport, who: Subject = SELF) -> list[str]:
+    """One day's facts as sentences for the AI: the natal Moon sign, the running chapter, the day's panchang and Rahu
+    Kaala at home, and each planet's house from the Moon sign that day, with the text's result only once checked."""
+    o = report.outlook
+    zone = ZoneInfo(o.tz)
+
+    def clock(moment) -> str:
+        local = moment.astimezone(zone)
+        return f"{local:%H:%M}" if local.date() == report.day else f"{local:%H:%M} on {local.day} {local:%b}"
+
+    where = f" in {report.place_label}" if report.place_label else ""
+    out = [
+        (
+            f"The day is {report.which}, {_long_day(report.day)}{where}. Transits are counted from {who.your} Moon "
+            f"sign, {SIGNS[o.moon_sign]} ({RASHIS[o.moon_sign]}), as Phaladeepika chapter 26 teaches."
+        )
+    ]
+    if o.dasha_at_start:
+        maha, antar = o.dasha_at_start
+        out.append(
+            f"Running that day: the {maha.lord.title()} chapter (mahadasha), {antar.lord.title()} sub-chapter until "
+            f"{antar.end:%d %b %Y}."
+        )
+    out += [
+        f"That day the {a.lord.title()} sub-chapter of the {lord.title()} chapter begins."
+        for lord, a in o.dasha_changes
+    ]
+    out += [
+        f"Phaladeepika 21.{verse} on the {a.title()} sub-chapter of the {m.title()} chapter: {text}."
+        for m, a, text, verse in o.antardasha
+    ]
+    if report.panchang is not None:
+        f = report.panchang.facts
+        out.append(
+            f"At sunrise{where} the tithi (the Moon's lunar day) is {f.tithi.name}, until {clock(f.tithi.end)}, and the "
+            f"nakshatra (the Moon's star) is {f.nakshatra.name}, until {clock(f.nakshatra.end)}."
+        )
+        if f.nakshatra.number - 1 == report.birth_nakshatra:
+            out.append(
+                f"That nakshatra, {f.nakshatra.name}, is also {who.your} birth nakshatra (the Moon's star at birth)."
             )
-            if s.blocked_by:
-                line += f", but {', '.join(g.title() for g in s.blocked_by)} obstruct it (vedha)"
-        out.append(line + ".")
+        out += [
+            f"{d.label} falls on this day by the checked rules."
+            for d in report.panchang.observances
+            if d.primary == report.day
+        ]
+    if report.rahu is not None:
+        out.append(
+            f"Rahu Kaala, the window traditionally avoided for starting new things, is {clock(report.rahu.start)} to "
+            f"{clock(report.rahu.end)}{where}."
+        )
+    for s in o.stays:
+        when = (
+            "all day"
+            if s.start is None and s.end is None
+            else (
+                f"until {clock(s.end)}"
+                if s.start is None
+                else (f"from {clock(s.start)}" if s.end is None else f"{clock(s.start)} to {clock(s.end)}")
+            )
+        )
+        out.append(_stay_fact(s, when))
     return out
 
 

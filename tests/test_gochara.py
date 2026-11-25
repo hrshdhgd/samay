@@ -202,7 +202,7 @@ def test_each_span_covers_its_length_and_its_stays_join_up(span):
         mine = [s for s in report.stays if s.planet == g]
         assert mine[0].start is None and mine[-1].end is None
         assert all(a.end == b.start for a, b in itertools.pairwise(mine))
-    assert ("moon" in planets) == (span in ("week", "fortnight"))
+    assert ("moon" in planets) == (span in ("day", "week", "fortnight"))
 
 
 @needs_kernel

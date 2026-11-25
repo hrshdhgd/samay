@@ -63,7 +63,7 @@ def test_rule_based_sorter(question, topic):
 def test_every_topic_is_a_valid_storable_key():
     from samay.engine.entries import is_topic
 
-    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 85
+    assert all(is_topic(t) for t in qa.TOPICS) and len(qa.TOPICS) == 87  # 85 + future:today, future:tomorrow
 
 
 def _client(reply):
@@ -290,7 +290,9 @@ def test_the_ai_is_told_the_guardrails():
         assert phrase in qa.AI_SYSTEM, phrase
 
 
-def test_prediction_prompt_uses_sources_and_refuses_to_make_event_predictions():
+def test_when_and_life_area_prompt_still_refuses_to_make_event_predictions():
+    # Since 2026-11-24 a coming day, week, month or year uses AI_FORECAST_SYSTEM (an informed reading, see
+    # tests/test_day_reading.py); "when" questions, life areas and the current dasha keep this stricter prompt.
     assert "source and chart facts as traditional ideas" in qa.AI_PREDICT_SYSTEM
     assert "do not present anything as likely, expected, or a prediction" in qa.AI_PREDICT_SYSTEM
     assert "Do not mention death, serious illness or accidents." in qa.AI_PREDICT_SYSTEM

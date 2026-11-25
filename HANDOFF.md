@@ -4,7 +4,8 @@
 
 samay (समय, "time") is a **self-contained Telegram bot** that computes sidereal (Jyotish) charts
 from bundled planetary data and interprets them with a **rule engine built from classical
-Indian texts**. Every rule cites its source. A local LLM can optionally reword the output.
+Indian texts**. Every rule cites its source. A local LLM can optionally reword the output and, for a coming
+day or period, give a labelled forward-looking reading grounded only in the engine's facts and checked rules.
 
 ---
 
@@ -98,7 +99,7 @@ Telegram ⇄ (long polling) ⇄ samay.bot
 | Time zones | `zoneinfo` + `tzdata` | — | Historical offsets/DST. Biggest real-world error source |
 | Rules | YAML DSL → Python evaluator | — | Ontology/SHACL later |
 | Storage | SQLite on a Docker volume | — | |
-| LLM | Optional Ollama sidecar (`qwen2.5:3b` default) | — | Only rewords supplied facts; template fallback |
+| LLM | Optional Ollama sidecar (`qwen2.5:3b` default) | — | Rewords supplied facts; for a coming day/week/month/year may give a labelled, forward-looking reading from engine facts and checked rules only (owner, 2026-11-24); template fallback |
 | Bot | python-telegram-bot v21, long polling | LGPL | |
 
 ---

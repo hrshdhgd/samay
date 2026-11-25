@@ -7,8 +7,11 @@ Read `HANDOFF.md` first. It has the full background, decisions, and the ordered 
   optional local Ollama sidecar). Data files (ephemeris, gazetteer, tzdata) are bundled.
 - **Permissive dependencies only** (MIT/BSD/Apache/LGPL). No AGPL (PyJHora, Swiss Ephemeris
   without a licence) and no cloud-backed libs (VedAstro).
-- **Honest framing.** Readings are traditional interpretation, not accurate prediction. Keep the
-  disclaimer. The LLM may only reword facts computed by the engine.
+- **Honest framing.** Readings stay labelled as traditional interpretation, not a guarantee; keep the
+  disclaimer. Owner's decision (2026-11-24): for a coming day, week, month or year the LLM may give an
+  informed, forward-looking reading (`qa.AI_FORECAST_SYSTEM`, labelled as an AI reading), but only from
+  facts computed by the engine and checked rules, never inventing positions, dates or claims. Elsewhere
+  it only rewords the sourced answer.
 - **Provenance.** Every rule in `rules/*.yaml` has `source.text`, `source.locus` and
   `source.verified`. Effects are paraphrased, never copied from copyrighted translations.
 - **Portable.** Must build and run on both amd64 and arm64 (Oracle Ampere).

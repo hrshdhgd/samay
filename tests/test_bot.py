@@ -1175,21 +1175,81 @@ async def test_a_reply_over_telegrams_limit_is_sent_in_parts_with_the_buttons_on
 
 
 @needs_kernel
-async def test_a_question_that_looks_ahead_gets_one_reflective_ai_answer(ctx, store, ai_on, monkeypatch):
+async def test_a_question_that_looks_ahead_gets_one_labelled_forward_looking_ai_reading(
+    ctx, store, ai_on, monkeypatch
+):
+    # Owner's decision (2026-11-24): a coming day, week, month or year may get an informed reading from the model,
+    # grounded in the supplied facts and labelled as an AI reading, not a guarantee.
     monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 12, 6, tzinfo=UTC))
     _save_pune(store)
     ai_on["sort"] = "future:week"
-    ai_on["ai"] = "This is a guess by an AI: the week may feel busy."
+    ai_on["ai"] = "The week tends to favour steady work."
     update, msg = message(ALLOWED, "what will my week be like")
     await bot.on_text(update, ctx)
     (last,) = _texts(msg)
-    assert prompts.NO_SOURCE_AI in last and "This is a guess by an AI:" in last
-    assert prompts.AI_PREDICTION_CAVEAT in last
+    assert prompts.NO_SOURCE_AI in last and "The week tends to favour steady work." in last
+    assert last.endswith(prompts.AI_FORECAST_CAVEAT)
     system = next(c["system"] for c in ai_on["calls"] if c["system"] != qa.MODEL_SYSTEM)
-    assert (
-        system == qa.AI_PREDICT_SYSTEM
-        and "do not present anything as likely, expected, or a prediction" in system
+    assert system == qa.AI_FORECAST_SYSTEM and "informed, forward-looking reading" in system
+    assert "do not present anything as likely, expected, or a prediction" not in system
+
+
+@needs_kernel
+async def test_my_day_tomorrow_gets_an_ai_reading_from_the_day_s_facts_at_home(
+    ctx, store, ai_on, monkeypatch
+):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 24, 1, 30, tzinfo=UTC))  # 07:00 in Pune
+    _save_pune(store)
+    pune = geo.find_places("Pune")[0]
+    store.save_home(ALLOWED, "Pune", pune.id)
+    ai_on["sort"] = "future:tomorrow"
+    ai_on["ai"] = "Tomorrow tends to favour quiet, steady work."
+    update, msg = message(ALLOWED, "What does my day look like tomorrow")
+    await bot.on_text(update, ctx)
+    (last,) = _texts(msg)
+    assert "Tomorrow tends to favour quiet, steady work." in last and last.endswith(
+        prompts.AI_FORECAST_CAVEAT
     )
+    call = next(c for c in ai_on["calls"] if c["system"] != qa.MODEL_SYSTEM)
+    assert call["system"] == qa.AI_FORECAST_SYSTEM
+    assert "Wednesday 25 Nov 2026" in call["prompt"] and "Rahu Kaala" in call["prompt"]
+    assert "tithi" in call["prompt"] and "Pune" in call["prompt"]
+
+
+@needs_kernel
+async def test_my_day_with_the_model_off_is_the_sourced_answer_and_no_model_is_asked(ctx, store, monkeypatch):
+    monkeypatch.setattr(bot, "_now", lambda: datetime(2026, 11, 24, 1, 30, tzinfo=UTC))
+    calls = []
+
+    async def never(*a, **k):
+        calls.append(a)
+        return "should not be used"
+
+    monkeypatch.setattr(qa.narrate, "complete", never)
+    monkeypatch.setattr(qa.narrate, "OLLAMA_URL", "")
+    _save_pune(store)
+    store.save_home(ALLOWED, "Pune", geo.find_places("Pune")[0].id)
+    update, msg = message(ALLOWED, "What does my day look like tomorrow")
+    await bot.on_text(update, ctx)
+    (last,) = _texts(msg)
+    assert last.startswith("🔮 Your day tomorrow: Wednesday 25 Nov 2026") and "Rahu Kaala" in last
+    assert calls == [] and "AI" not in last
+
+
+async def test_my_day_without_saved_birth_details_asks_for_them(ctx, store, ai_on):
+    ai_on["sort"] = "future:tomorrow"
+    update, msg = message(ALLOWED, "What does my day look like tomorrow")
+    await bot.on_text(update, ctx)
+    assert _texts(msg)[-1] == prompts.NEED_BIRTH_FOR_FUTURE
+    assert all(
+        c["system"] == qa.MODEL_SYSTEM for c in ai_on["calls"]
+    )  # only the router; no reading without a birth
+
+
+async def test_my_day_without_saved_birth_details_and_the_model_off_asks_for_them(ctx, store):
+    update, msg = message(ALLOWED, "how will my day be")
+    await bot.on_text(update, ctx)
+    assert _texts(msg)[-1] == prompts.NEED_BIRTH_FOR_FUTURE
 
 
 def test_only_looking_ahead_topics_are_predictions_and_sensitive_ones_never_reach_the_model():

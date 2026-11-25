@@ -143,6 +143,14 @@ OUTLOOK_TECH_HINT = "Tap “🔧 Technical details” for the houses, the points
 OUTLOOK_DASHA_UNCHECKED = (
     "What the text says about each sub-chapter is waiting for a check, so it is not shown yet."
 )
+OUTLOOK_PLAIN_UNCHECKED = (
+    "What the old book says these planet positions bring is still waiting for a check, so I am not saying what they "
+    "mean yet."
+)
+NEED_HOME_FOR_DAY = (
+    "Tell me where you live now (“📍 Where I live”) and I will add that day's tithi, nakshatra and Rahu Kaala for "
+    "your city."
+)
 OUTLOOK_UNCHECKED = "The text's results for these transits are waiting for a check, so for now I show only where the planets are."
 NEED_BIRTH_FOR_CHART = "To count your ashtakavarga I need your birth details first. Tap “✏️ Change birth details”, then ask me again."
 ASHTAKA_UNCHECKED = (
@@ -271,6 +279,7 @@ AI_PREDICTION_CAVEAT = (
     "Traditional Jyotish interpretation, for reflection and fun — not a forecast or guarantee of events."
 )
 AI_CAVEAT = "Traditional Jyotish interpretation, for reflection and fun — not a guarantee of events."
+AI_FORECAST_CAVEAT = "🤖 AI reading based on traditional Jyotish rules and the planets' positions, for reflection, not a guarantee."
 AI_UNAVAILABLE = "🤖 The local AI helper is unavailable right now; this is Samay's non-AI fallback."
 STALE = "Sorry, that button is from an earlier conversation. Let's start again 🙏"
 RE_ASK = "Please tap one of the buttons below."

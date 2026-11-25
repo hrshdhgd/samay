@@ -40,13 +40,14 @@ from ..engine.vedic import (
     sign_index,
 )
 from ..models import (
+    DayReport,
     NatalReport,
     NeedsDisambiguation,
     OutlookReport,
     PanchangReport,
     TodayReport,
 )
-from ..qa import LIFE_AREAS, OUTLOOK_TOPICS
+from ..qa import DAY_TOPICS, LIFE_AREAS, OUTLOOK_TOPICS
 from ..subject import SELF
 from . import panchang as panchang_words
 from . import prompts
@@ -559,6 +560,11 @@ def render_answer(answer, view: str = "compact", birth_known: bool = True, ai_fo
     if answer.topic == "chart:ashtakavarga":
         if answer.ashtaka is not None:
             blocks.append(render_ashtaka(answer.ashtaka, full=full, who=who))
+        blocks.append(DISCLAIMER)
+        return "\n\n".join(blocks)
+    if answer.topic in DAY_TOPICS:
+        if answer.day is not None:
+            blocks.append(render_day_reading(answer.day, who, full))
         blocks.append(DISCLAIMER)
         return "\n\n".join(blocks)
     if answer.topic in OUTLOOK_TOPICS:
@@ -1678,9 +1684,15 @@ def render_ai(
     source_line: str | None = None,
     heading: str | None = None,
     note: str | None = None,
+    forecast: bool = False,
 ) -> str:
-    """One direct AI answer, with the checked citation and the appropriate traditional-reading caveat."""
-    caveat = prompts.AI_PREDICTION_CAVEAT if prediction else prompts.AI_CAVEAT
+    """One direct AI answer, with the checked citation and the appropriate traditional-reading caveat. `forecast`: an
+    informed reading of a coming day or period, labelled as an AI reading."""
+    caveat = (
+        prompts.AI_FORECAST_CAVEAT
+        if forecast
+        else (prompts.AI_PREDICTION_CAVEAT if prediction else prompts.AI_CAVEAT)
+    )
     return "\n\n".join(part for part in (heading, note, reply, source_line, caveat) if part)
 
 
@@ -1703,6 +1715,7 @@ PLANET_ICONS = {
     "ketu": "☋",
 }
 OUTLOOK_TITLES = {
+    "day": "{Your} day",
     "week": "{Your} week ahead",
     "fortnight": "{Your} next two weeks",
     "month": "{Your} month ahead",
@@ -1717,6 +1730,8 @@ def _day(moment: datetime) -> str:
 
 def _stamp(moment: datetime, tz: ZoneInfo, span: str) -> str:
     local = moment.astimezone(tz)
+    if span == "day":
+        return clock12(local).replace(":00", "")
     if span in ("week", "fortnight"):
         return f"{local:%a} {local.day} {local:%b} {clock12(local).replace(':00', '')}"
     return f"{local.day} {local:%b}" if span == "month" else f"{local:%b %Y}"
@@ -1742,8 +1757,10 @@ def _stay_line(
         house += f" ({s.points} pts{f': {meaning}' if meaning else ''})"
     if chained:
         line = house + (f" until {_stamp(s.end, tz, span)}" if s.end is not None else "")
+    elif span == "day" and s.start is None and s.end is None:
+        line = f"all day · {house}"
     else:
-        since = "now" if s.start is None else _stamp(s.start, tz, span)
+        since = ("start" if span == "day" else "now") if s.start is None else _stamp(s.start, tz, span)
         until = "end" if s.end is None else _stamp(s.end, tz, span)
         line = f"{since} – {until} · {house}"
     if s.effect and not repeat:
@@ -1804,47 +1821,125 @@ def render_outlook_plain(report: OutlookReport, who=SELF) -> str:
             + "."
         )
     if not checked:
-        blocks.append(
-            "What the old book says these planet positions bring is still waiting for a check, so I am not saying what they mean yet."
-        )
+        blocks.append(prompts.OUTLOOK_PLAIN_UNCHECKED)
     else:
-        lines = []
-        by_planet: dict[str, list] = {}
-        for s in report.stays:
-            by_planet.setdefault(s.planet, []).append(s)
-        for planet, stays in by_planet.items():
-            keep = 6 if planet == "moon" else 3
-            shown = stays[:keep]
-            for s in shown:
-                if not s.effect:
-                    continue
-                if s.favourable is None:
-                    verdict = ""
-                else:
-                    verdict = "a good stretch" if s.favourable else "a hard stretch"
-                    if s.blocked_by:
-                        verdict += f" (its good result is held back by {' and '.join(g.title() for g in s.blocked_by)})"
-                first = "now" if s.start is None else _stamp(s.start, tz, report.span)
-                last = "the end" if s.end is None else _stamp(s.end, tz, report.span)
-                when = "all through" if s.start is None and s.end is None else f"{first} – {last}"
-                lines.append(
-                    f"{PLANET_ICONS[planet]} {planet.title()}, {when}: {verdict + ': ' if verdict else ''}{s.effect}."
-                )
-            if len(stays) > keep:
-                n = len(stays) - keep
-                lines.append(
-                    f"   …and {n} more change{'s' if n > 1 else ''} for {planet.title()} (see the technical details)."
-                )
-        if lines:
+
+        def when(s) -> str:
+            first = "now" if s.start is None else _stamp(s.start, tz, report.span)
+            last = "the end" if s.end is None else _stamp(s.end, tz, report.span)
+            return "all through" if s.start is None and s.end is None else f"{first} – {last}"
+
+        if lines := _stretch_lines(report, when):
             blocks.append("What the old book says each stretch brings:\n" + "\n".join(lines))
-        verses = sorted(
-            {s.verse for s in report.stays if s.verse},
-            key=lambda v: int(v.split("-")[0]),
+        blocks.append(_plain_sources(report))
+    blocks.append(prompts.OUTLOOK_TECH_HINT)
+    return "\n\n".join(blocks)
+
+
+def _stretch_lines(report: OutlookReport, when) -> list[str]:
+    """Each stay with a checked result, as 'icon Planet, <when>: a good stretch: <result>.' (`when` words the stay's
+    time), with at most six Moon and three other stays per planet."""
+    lines = []
+    by_planet: dict[str, list] = {}
+    for s in report.stays:
+        by_planet.setdefault(s.planet, []).append(s)
+    for planet, stays in by_planet.items():
+        keep = 6 if planet == "moon" else 3
+        for s in stays[:keep]:
+            if not s.effect:
+                continue
+            if s.favourable is None:
+                verdict = ""
+            else:
+                verdict = "a good stretch" if s.favourable else "a hard stretch"
+                if s.blocked_by:
+                    verdict += (
+                        f" (its good result is held back by {' and '.join(g.title() for g in s.blocked_by)})"
+                    )
+            lines.append(
+                f"{PLANET_ICONS[planet]} {planet.title()}, {when(s)}: {verdict + ': ' if verdict else ''}{s.effect}."
+            )
+        if len(stays) > keep:
+            n = len(stays) - keep
+            lines.append(
+                f"   …and {n} more change{'s' if n > 1 else ''} for {planet.title()} (see the technical details)."
+            )
+    return lines
+
+
+def _plain_sources(report: OutlookReport) -> str:
+    verses = sorted(
+        {s.verse for s in report.stays if s.verse},
+        key=lambda v: int(v.split("-")[0]),
+    )
+    refs = ["26.2–8", *(f"26.{v.replace('-', '–')}" for v in verses)]
+    if report.antardasha_checked:
+        refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
+    return f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)} · checked"
+
+
+def _long_day(d) -> str:
+    return f"{d:%A} {d.day} {d:%b %Y}"
+
+
+def render_day_reading(report: DayReport, who=SELF, full: bool = False) -> str:
+    """One day for the person in plain words: the life chapter, the day's panchang and Rahu Kaala where they live, and
+    (once the book's meanings are checked) what each planet's stretch that day is said to bring. `full` adds the
+    technical view (houses, points and verse numbers) of the same day."""
+    o = report.outlook
+    tz = ZoneInfo(o.tz)
+    where = f", {report.place_label}" if report.place_label else ""
+    lines = [f"🔮 {who.Your} day {report.which}: {_long_day(report.day)}{where}"]
+    said = {(m, a): text for m, a, text, _ in o.antardasha}
+    if o.dasha_at_start:
+        maha, antar = o.dasha_at_start
+        lines.append(
+            f"{who.you_are.capitalize()} in the {maha.lord.title()} chapter of life, in its {antar.lord.title()} "
+            f"sub-chapter until {_day(antar.end)}."
         )
-        refs = ["26.2–8", *(f"26.{v.replace('-', '–')}" for v in verses)]
-        if report.antardasha_checked:
-            refs += [f"21.{verse}" for _, _, _, verse in sorted(report.antardasha, key=lambda r: r[3])]
-        blocks.append(f"{prompts.OUTLOOK_FRAME}\n\nSource: Phaladeepika {', '.join(refs)} · checked")
+        if (maha.lord, antar.lord) in said:
+            lines.append(f"The old book says of this sub-chapter: {said[maha.lord, antar.lord]}.")
+    for lord, a in o.dasha_changes:
+        lines.append(
+            f"A new sub-chapter ({a.lord.title()}, in the {lord.title()} chapter) begins that day."
+            + (f" The book says of it: {said[lord, a.lord]}." if (lord, a.lord) in said else "")
+        )
+    blocks = [] if full else ["\n".join(lines)]  # the technical view has its own heading and chapter lines
+    if report.panchang is not None:
+        day = panchang_words.day_lines(report.panchang, report.day)
+        if report.panchang.facts.nakshatra.number - 1 == report.birth_nakshatra:
+            day.append(
+                f"It is also {who.your} birth nakshatra, the star the Moon was in at {who.your} birth."
+            )
+        if report.rahu is not None:
+            day.append(
+                f"⚠ Traditionally avoided for starting new things: {clock12(report.rahu.start)} – "
+                f"{clock12(report.rahu.end)} (Rahu Kaala)."
+            )
+        blocks.append("\n".join(day))
+    elif report.place_label is None:
+        blocks.append(prompts.NEED_HOME_FOR_DAY)
+    if moon := [s.start for s in o.stays if s.planet == "moon" and s.start is not None]:
+        times = ", ".join(_stamp(t, tz, o.span) for t in moon)
+        blocks.append(f"🌙 The Moon moves on to the next house from {who.your} Moon sign at {times}.")
+    if full:
+        return "\n\n".join([render_outlook(o, full=True, who=who), *blocks])
+    if o.rules_level not in SERVABLE_LEVELS:
+        blocks.append(prompts.OUTLOOK_PLAIN_UNCHECKED)
+    else:
+
+        def when(s) -> str:
+            if s.start is None and s.end is None:
+                return "all day"
+            if s.start is None:
+                return f"until {_stamp(s.end, tz, o.span)}"
+            if s.end is None:
+                return f"from {_stamp(s.start, tz, o.span)}"
+            return f"{_stamp(s.start, tz, o.span)} – {_stamp(s.end, tz, o.span)}"
+
+        if lines := _stretch_lines(o, when):
+            blocks.append("What the old book says the day brings:\n" + "\n".join(lines))
+        blocks.append(_plain_sources(o))
     blocks.append(prompts.OUTLOOK_TECH_HINT)
     return "\n\n".join(blocks)
 
@@ -1856,8 +1951,9 @@ def render_outlook(report: OutlookReport, full: bool = False, who=SELF) -> str:
     tz = ZoneInfo(report.tz)
     checked = report.rules_level in SERVABLE_LEVELS
     start, end = report.start.astimezone(tz), report.end.astimezone(tz)
+    period = _day(start) if report.span == "day" else f"{_day(start)} – {_day(end)}"
     lines = [
-        f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {_day(start)} – {_day(end)}",
+        f"🔮 {OUTLOOK_TITLES[report.span].format(Your=who.Your)}: {period}",
         f"Counted from {who.your} Moon sign, {SIGNS[report.moon_sign]} ({RASHIS[report.moon_sign]}).",
     ]
     said = {(m, a): text for m, a, text, _ in report.antardasha}

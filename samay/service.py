@@ -7,7 +7,7 @@ import importlib.metadata
 import os
 import re
 from dataclasses import dataclass, replace
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from functools import lru_cache
 from zoneinfo import ZoneInfo
 
@@ -44,8 +44,10 @@ from .engine.vedic import (
     sign_index,
     vimshottari,
 )
+from .engine.vedic import nakshatra as nakshatra_of
 from .models import (
     BirthInput,
+    DayReport,
     NatalReport,
     NeedsDisambiguation,
     NextObservanceReport,
@@ -221,9 +223,11 @@ def today_report(birth: ResolvedBirth, now: datetime) -> TodayReport:
 
 
 # span -> (length, sampling step, planets shown, whether to check vedha). The Moon changes sign every ~2.5 days, so it
-# is shown only for a week or a fortnight; over a year or more only the slow planets mark the time.
+# is shown only for a day, a week or a fortnight; over a year or more only the slow planets mark the time. "day" is the
+# engine's span for a one-day reading (day_report); it is not a period a question names, so it has no outlook topic.
 _FAST = ("moon", "sun", "mercury", "venus", "mars", "jupiter", "saturn", "rahu", "ketu")
 OUTLOOK_SPANS = {
+    "day": (timedelta(days=1), timedelta(hours=1), _FAST, True),
     "week": (timedelta(days=7), timedelta(hours=1), _FAST, True),
     "fortnight": (timedelta(days=14), timedelta(hours=1), _FAST, True),
     "month": (timedelta(days=30), timedelta(hours=3), _FAST[1:], True),
@@ -287,6 +291,29 @@ def outlook_report(birth: ResolvedBirth, now: datetime, span: str, tz: str | Non
         ashtaka_checked=ashtaka.servable,
         ashtaka_meaning=(tuple(sorted(ashtaka.meaning.items())) if ashtaka.servable else ()),
         ashtaka_variants=sum(1 for v in ashtaka.variants if "phaladeepika" in v),
+    )
+
+
+DAYS_AHEAD = {"today": 0, "tomorrow": 1}
+
+
+def day_report(birth: ResolvedBirth, now: datetime, which: str, home: Place | None = None) -> DayReport:
+    """One local day for the person: today or tomorrow by the calendar where they live now (`home`), or by UTC when
+    that is not known. The transits run from that day's local midnight for a day; the panchang and Rahu Kaala are
+    worked out at the home place only."""
+    tz = home.tz if home is not None else "UTC"
+    zone = ZoneInfo(tz)
+    day = now.astimezone(zone).date() + timedelta(days=DAYS_AHEAD[which])
+    start = datetime.combine(day, time(), zone)
+    outlook = outlook_report(birth, start, "day", tz)
+    return DayReport(
+        which=which,
+        day=day,
+        outlook=outlook,
+        place_label=home.label if home is not None else None,
+        panchang=panchang_report(home, day) if home is not None else None,
+        rahu=rahu_kaala_for(home, start) if home is not None else None,
+        birth_nakshatra=nakshatra_of(outlook.natal.chart.planets["moon"].longitude)[0],
     )
 
 

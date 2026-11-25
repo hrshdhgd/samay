@@ -59,8 +59,11 @@ created at `data/samay.key`. **Back the key up separately**: without it the data
 ### Questions
 Relatives can type a question or tap **❓ Ask a question**. With Ollama available, Samay gives one answer in plain,
 everyday language. The model receives the checked source text and the person's chart facts as context; Samay appends
-the source citation and a reminder that this is a traditional interpretation, not a guarantee. For questions about
-the future, it describes traditional themes for reflection rather than predicting events. For career readings with
+the source citation and a reminder that this is a traditional interpretation, not a guarantee. For a coming day,
+week, month or year ("what does my day look like tomorrow"), it gives an informed, forward-looking reading in
+hedged words, built only from the engine's facts (the day's panchang and Rahu Kaala where you live, transits from
+the natal Moon sign, the running dasha) and checked rules, labelled as an AI reading, not a guarantee. For "when"
+questions and life areas it describes traditional themes for reflection rather than predicting events. For career readings with
 checked occupational descriptions, it can give clearly labelled modern illustrations; these are not claims from the
 old text or career predictions. If Ollama is unavailable, Samay falls back to the checked, source-based answer.
 

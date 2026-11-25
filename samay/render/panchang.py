@@ -121,6 +121,27 @@ def render_day(report: PanchangReport, day: date) -> str:
     return "\n".join(lines)
 
 
+def day_lines(report: PanchangReport, day: date) -> list[str]:
+    """The day's tithi and nakshatra at sunrise, any observance on it and any labelled traditional-care note: the
+    panchang part of a personal day reading."""
+    f, tz = report.facts, report.tz
+    lines = [
+        (
+            f"At sunrise: the Moon's lunar day (tithi) {f.tithi.name}, "
+            f"{_until(f.tithi, tz, day)}{_then(f.tithi, tz, day)}; the Moon's star (nakshatra) {f.nakshatra.name}, "
+            f"{_until(f.nakshatra, tz, day)}."
+        )
+    ]
+    for o in report.observances:  # "this day", not "today": the reading may be for tomorrow
+        if o.primary is None:
+            lines += [o.explanation] if o.explanation else []
+        elif o.primary == day:
+            lines.append(f"{o.label} falls on this day.")
+        elif day in {d for d, _ in o.alternates}:
+            lines.append(f"{o.label}: some calendars keep it on this day. {NOTE_LOCAL}")
+    return lines + _care_lines(report)
+
+
 def render_next(report: NextObservanceReport) -> str:
     if report.needs_sampradaya:
         return NEED_TRADITION

@@ -260,10 +260,15 @@ async def _begin(update: Update, ctx, chat_id: int, prefix: str = "") -> None:
     await _send_flow(update, ctx, chat_id, flow.begin(), prefix)
 
 
+async def _home_place(ctx, chat_id: int):
+    """Where the person lives now (a geo Place); None when they have not said."""
+    home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
+    return geo.get_place(home.place_id) if home is not None else None
+
+
 async def _home_tz(ctx, chat_id: int) -> str | None:
     """The timezone of where the person lives now, for dates in a reading; None when they have not said."""
-    home = await asyncio.to_thread(_store(ctx).get_home, chat_id)
-    place = geo.get_place(home.place_id) if home is not None else None
+    place = await _home_place(ctx, chat_id)
     return place.tz if place is not None else None
 
 
@@ -432,7 +437,9 @@ def answer_markup(
         row = [InlineKeyboardButton(prompts.BTN_ENGLISH, callback_data=f"{QA_PREFIX}en{tag}:{answer.topic}")]
     else:
         row = []
-        if answer.outlook is not None:  # plain words by default, the houses and points one tap away
+        if (
+            answer.outlook is not None or answer.day is not None
+        ):  # plain words first, houses and points one tap away
             row.append(
                 InlineKeyboardButton(
                     prompts.BTN_PLAIN if view == "full" else prompts.BTN_TECH,
@@ -619,11 +626,19 @@ async def _answer_question(
             ),
         )
         return
-    tz = await _home_tz(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz)
+    home = await _home_place(ctx, chat_id)
+    tz = home.tz if home is not None else None
+    answer = await asyncio.to_thread(
+        qa.answer_topic, route.topic, birth, _now(), None, question, subject, tz, home
+    )
     if answer.topic is not None and not answer.topic.startswith(qa.COMPUTED_PREFIXES) and not answer.entries:
         await asyncio.to_thread(_store(ctx).record_miss, answer.topic)
     sourced = render_answer(answer, birth_known=birth is not None, ai_follows=ai)
+    if (
+        ai and birth is None and qa.is_forecast(answer)
+    ):  # a reading of a coming day or period needs the birth first
+        await _say(update, sourced, MENU)
+        return
     if ai:
         async with typing(update):
             reply = await qa.ai_answer(question, answer, history=history, source_answer=sourced)
@@ -636,7 +651,14 @@ async def _answer_question(
             note = prompts.MINOR_NOTE if answer.who.minor else None
             if answer.topic is not None and source_line is None:
                 note = "\n\n".join(part for part in (note, prompts.NO_SOURCE_AI) if part)
-            text = render_ai(reply, qa.is_prediction(answer), source_line, answer.who.heading, note)
+            text = render_ai(
+                reply,
+                qa.is_prediction(answer),
+                source_line,
+                answer.who.heading,
+                note,
+                forecast=qa.is_forecast(answer),
+            )
         elif answer.topic is None:
             text = prompts.NO_TOPIC + "\n\n" + prompts.AI_UNAVAILABLE
         else:
@@ -691,8 +713,9 @@ async def _toggle_answer(update: Update, ctx, chat_id: int, choice: str) -> None
         topic, subject
     ):  # a sensitive answer is reached only through its warning, never through a More/Less button
         return
-    tz = await _home_tz(ctx, chat_id)
-    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz)
+    home = await _home_place(ctx, chat_id)
+    tz = home.tz if home is not None else None
+    answer = await asyncio.to_thread(qa.answer_topic, topic, birth, _now(), None, "", subject, tz, home)
     view = QA_VIEWS[mode]
     try:
         first, *rest = split_message(render_answer(answer, view, birth_known=birth is not None))
