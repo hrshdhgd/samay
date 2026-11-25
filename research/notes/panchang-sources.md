@@ -77,3 +77,10 @@ ancestor rites on Amavasya; secondary). No primary text or verse-level translati
 notes live in `traditional_care` in data/profiles/panchang-family.yaml (`checked: false`), not in data/entries, and are shown
 on a separate line labelled "muhurta tradition; we have not checked the original text". Brihat Samhita ch. 98 (entries,
 unchecked) calls only Bharani fierce and Krittika mixed and gives no avoid instruction; it is left as is.
+
+## Rohini days (owner, 2026-11-25)
+Family calendar marks 25 Nov and 23 Dec 2026 as auspicious. The Moon is in Rohini at sunrise (Mangaluru) on exactly those two
+days in Nov-Dec (checked in tests/test_family_calendar.py); the next is 19 Jan 2027. Brihat Samhita ch. 98 (Sastri
+translation, OCR read; sloka number unconfirmed) calls Rohini and the three Uttaras "Dhruva" (fixed): coronations, expiatory
+rites, planting trees, laying town foundations, starting meritorious acts. Shown as a labelled tradition note
+(panchang-family.yaml traditional_care, checked: false). The Uttaras are not added until the family marks them.

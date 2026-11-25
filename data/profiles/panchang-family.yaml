@@ -94,3 +94,14 @@ traditional_care:
     text: "Days when the Moon is in Krittika are traditionally not chosen for starting auspicious things such as a wedding, a housewarming or a new venture."
     basis: "Modern muhurta guides paraphrasing Muhurta Chintamani; original text not read by us"
     checked: false
+  # Rohini (owner, 2026-11-25): the family calendar marks 25 Nov and 23 Dec 2026 as auspicious; the Moon is in Rohini at
+  # sunrise on exactly those two days in Nov-Dec (the engine checks this in tests/test_family_calendar.py). Located text: Brihat
+  # Samhita ch. 98 ("On the Functions and Properties of the Asterisms", Sastri translation, read as OCR text, sloka number
+  # not confirmed against the page image) calls Rohini and the three Uttaras "Dhruva" (fixed) and says they suit coronations,
+  # expiatory rites, planting trees, laying the foundations of towns and starting meritorious acts. Shown as labelled
+  # tradition like the notes above, not as a checked entry. The Uttaras are NOT added: the family has not marked them.
+  - id: rohini
+    applies_to: {nakshatra: rohini}
+    text: "Days when the Moon is in Rohini are traditionally considered favourable for starting lasting things, such as laying a foundation, planting trees or beginning a meritorious undertaking."
+    basis: "Family calendar marks these days; Brihat Samhita ch. 98 (Sastri translation) lists Rohini among the fixed (dhruva) nakshatras suited to such beginnings; sloka number not confirmed against the page image"
+    checked: false

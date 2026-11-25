@@ -1,5 +1,6 @@
 """The engine against dates read from the family's own printed calendar."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -90,3 +91,24 @@ def test_family_purnima_and_amavasya_are_the_engines_primary_days(name):
             profile.sunrise_definition,
         )
         assert [o.primary for o in found] == [row["date"]], row
+
+
+@pytest.mark.parametrize("day", [date(2026, 11, 25), date(2026, 12, 23)])
+def test_rohini_days_the_family_marks_carry_the_rohini_note(day):
+    from samay import service
+    from samay.engine.geo import Place
+
+    place = Place("mangaluru", "Mangaluru", "IN", "Karnataka", None, 12.9141, 74.856, "Asia/Kolkata", 488000)
+    notes = service.panchang_report(place, day).care_notes
+    assert len(notes) == 1 and "Rohini" in notes[0] and "favourable" in notes[0]
+
+
+def test_no_other_day_in_november_and_december_is_a_rohini_day():
+    from datetime import timedelta
+
+    d, found = date(2026, 11, 1), []
+    while d <= date(2026, 12, 31):
+        if panchang.day_facts(SITE, d).nakshatra.name == "Rohini":
+            found.append(d)
+        d += timedelta(days=1)
+    assert found == [date(2026, 11, 25), date(2026, 12, 23)]
