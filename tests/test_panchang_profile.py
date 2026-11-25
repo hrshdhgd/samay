@@ -108,9 +108,17 @@ def _note(**changes):
     return note
 
 
-def test_shipped_profile_has_unchecked_care_notes_for_amavasya_bharani_krittika_rohini():
+def test_shipped_profile_has_unchecked_care_notes_for_amavasya_bharani_krittika_rohini_and_the_uttaras():
     notes = {n.id: n for n in load_panchang_profile().care_notes}
-    assert set(notes) == {"amavasya", "bharani", "krittika", "rohini"}
+    assert set(notes) == {
+        "amavasya",
+        "bharani",
+        "krittika",
+        "rohini",
+        "uttara-phalguni",
+        "uttara-ashadha",
+        "uttara-bhadrapada",
+    }
     assert notes["amavasya"].tithi == 30 and notes["bharani"].nakshatra == "bharani"
     assert all(n.text and n.basis and n.checked is False for n in notes.values())
 

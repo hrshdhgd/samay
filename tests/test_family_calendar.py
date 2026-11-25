@@ -112,3 +112,21 @@ def test_no_other_day_in_november_and_december_is_a_rohini_day():
             found.append(d)
         d += timedelta(days=1)
     assert found == [date(2026, 11, 25), date(2026, 12, 23)]
+
+
+@pytest.mark.parametrize(
+    "day, star",
+    [
+        (date(2026, 11, 21), "Uttara Bhadrapada"),
+        (date(2026, 12, 3), "Uttara Phalguni"),
+        (date(2026, 12, 12), "Uttara Ashadha"),
+    ],
+)
+def test_each_uttara_day_carries_its_own_note(day, star):
+    from samay import service
+    from samay.engine.geo import Place
+
+    place = Place("mangaluru", "Mangaluru", "IN", "Karnataka", None, 12.9141, 74.856, "Asia/Kolkata", 488000)
+    facts = panchang.day_facts(SITE, day)
+    notes = service.panchang_report(place, day).care_notes
+    assert facts.nakshatra.name == star and len(notes) == 1 and star in notes[0]

@@ -99,9 +99,25 @@ traditional_care:
   # Samhita ch. 98 ("On the Functions and Properties of the Asterisms", Sastri translation, read as OCR text, sloka number
   # not confirmed against the page image) calls Rohini and the three Uttaras "Dhruva" (fixed) and says they suit coronations,
   # expiatory rites, planting trees, laying the foundations of towns and starting meritorious acts. Shown as labelled
-  # tradition like the notes above, not as a checked entry. The Uttaras are NOT added: the family has not marked them.
+  # tradition like the notes above, not as a checked entry. The three Uttaras (same passage) were added on 2026-11-25 at the owner's request; the family calendar has not yet been
+  # seen marking them, so these three rest on the located text alone.
   - id: rohini
     applies_to: {nakshatra: rohini}
     text: "Days when the Moon is in Rohini are traditionally considered favourable for starting lasting things, such as laying a foundation, planting trees or beginning a meritorious undertaking."
     basis: "Family calendar marks these days; Brihat Samhita ch. 98 (Sastri translation) lists Rohini among the fixed (dhruva) nakshatras suited to such beginnings; sloka number not confirmed against the page image"
+    checked: false
+  - id: uttara-phalguni
+    applies_to: {nakshatra: uttara phalguni}
+    text: "Days when the Moon is in Uttara Phalguni are traditionally considered favourable for starting lasting things, such as laying a foundation, planting trees or beginning a meritorious undertaking."
+    basis: "Brihat Samhita ch. 98 (Sastri translation) lists the three Uttaras and Rohini among the fixed (dhruva) nakshatras suited to such beginnings; added at the owner's request, not yet seen on the family calendar; sloka number not confirmed against the page image"
+    checked: false
+  - id: uttara-ashadha
+    applies_to: {nakshatra: uttara ashadha}
+    text: "Days when the Moon is in Uttara Ashadha are traditionally considered favourable for starting lasting things, such as laying a foundation, planting trees or beginning a meritorious undertaking."
+    basis: "Brihat Samhita ch. 98 (Sastri translation) lists the three Uttaras and Rohini among the fixed (dhruva) nakshatras suited to such beginnings; added at the owner's request, not yet seen on the family calendar; sloka number not confirmed against the page image"
+    checked: false
+  - id: uttara-bhadrapada
+    applies_to: {nakshatra: uttara bhadrapada}
+    text: "Days when the Moon is in Uttara Bhadrapada are traditionally considered favourable for starting lasting things, such as laying a foundation, planting trees or beginning a meritorious undertaking."
+    basis: "Brihat Samhita ch. 98 (Sastri translation) lists the three Uttaras and Rohini among the fixed (dhruva) nakshatras suited to such beginnings; added at the owner's request, not yet seen on the family calendar; sloka number not confirmed against the page image"
     checked: false
